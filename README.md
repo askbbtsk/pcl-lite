@@ -5,6 +5,7 @@
 # PCL Lite
 
 前言：pcl和它的护卫队天天说动了蛋糕，顺手扣帽子，我想知道pcl这个帽子工厂和烘焙店是有仇吗 怎么帽子工厂天天动蛋糕？
+https://github.com/bedkillerspacex-boop/Pcl-Lite/readmedlc
 
 [![Stars](https://img.shields.io/github/stars/bedkillerspacex-boop/Pcl-Lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/bedkillerspacex-boop/Pcl-Lite/stargazers)
 [![Release](https://img.shields.io/github/v/release/bedkillerspacex-boop/Pcl-Lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases)

@@ -3300,7 +3300,29 @@
 
     <!-- Tools -->
 
+    <sys:String x:Key="Tools.Bedrock.AddFolder">新增目錄</sys:String>
+    <sys:String x:Key="Tools.Bedrock.AlreadyAdded">這個目錄已經在清單裡了。</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Description">這裡列出本機已安裝的基岩版（商店版與 GDK 可攜版）。PCL Lite 只負責找到並啟動它們，不下載、不解包遊戲本體。</sys:String>
+    <sys:String x:Key="Tools.Bedrock.DetectFailed">偵測基岩版失敗：{0}</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Detecting">正在偵測基岩版…</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Empty">沒有找到基岩版。商店版請先在 Microsoft Store 裡安裝；GDK 可攜版可以用「新增目錄」指定解包位置。</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Kind.Gdk">GDK 可攜版</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Kind.Store">商店版</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Launch">啟動</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Launched">已啟動 {0}</sys:String>
+    <sys:String x:Key="Tools.Bedrock.LaunchFailed">啟動基岩版失敗：{0}</sys:String>
+    <sys:String x:Key="Tools.Bedrock.List.Title">已安裝的基岩版</sys:String>
+    <sys:String x:Key="Tools.Bedrock.NoneRunning">目前沒有正在執行的基岩版。</sys:String>
+    <sys:String x:Key="Tools.Bedrock.NotRunning">基岩版未在執行。</sys:String>
+    <sys:String x:Key="Tools.Bedrock.OpenSaves">開啟存檔目錄</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Refresh">重新偵測</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Running">基岩版正在執行。</sys:String>
+    <sys:String x:Key="Tools.Bedrock.SavesNotFound">沒有找到基岩版存檔目錄，可能還沒有啟動過遊戲。</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Stop">結束遊戲處理程序</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Stopped">已結束 {0} 個基岩版處理程序。</sys:String>
+    <sys:String x:Key="Tools.Bedrock.Title">基岩版</sys:String>
     <sys:String x:Key="Tools.Error.OperationFailed">工具頁操作失敗。請檢視錯誤詳情。</sys:String>
+    <sys:String x:Key="Tools.Left.Bedrock">基岩版</sys:String>
     <sys:String x:Key="Tools.Left.Lobby">大廳</sys:String>
     <sys:String x:Key="Tools.Left.Multiplayer">連線</sys:String>
     <sys:String x:Key="Tools.Left.Utilities">奇妙小工具</sys:String>

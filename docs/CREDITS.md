@@ -1,0 +1,91 @@
+# 开源项目清单
+
+PCL Lite 站在很多人的肩膀上。这份清单列出直接借用了代码或资源的项目，以及运行期依赖的第三方库。
+
+> **本清单不改变本项目的许可证。** PCL Lite 仍以 [MIT + 传染性附加条款](../LICENSE) 发布，
+> 详见 [README 的许可证一节](../README.md#-许可证)。这里列出的上游项目各自保留自己的许可证。
+
+## 一、代码来源
+
+### PCL（Plain Craft Launcher）
+
+- 作者：龙腾猫跃（LTCat）
+- 许可证：MIT
+- 仓库：<https://github.com/Meloong-Git/PCL>
+- 关系：PCL Lite 的**全部基础代码**来自 PCL。界面框架、下载器、实例管理、主题引擎、
+  语言系统等绝大部分功能都是上游的实现，本项目只在其上做增量修改。
+
+### PCL-CE（Community Edition）
+
+- 仓库：<https://github.com/PCL-Community/PCL2-CE>
+- 许可证：MIT
+- 关系：PCL Lite 的**直接 fork 基线**。`PCL.Core` 的分层结构、生命周期服务、
+  `ConfigItem` 源生成器、MCP 服务骨架等均来自此分支。
+
+### PCL-Symbio-Edition
+
+- 作者：Hydrogen-Peroxide
+- 许可证：Apache-2.0
+- 仓库：<https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition>
+- 关系：**基岩版启动**部分移植自此项目。
+
+  具体范围：`PCL.Core/Link/Bedrock/BedrockService.cs` 的「检测已安装的基岩版」与
+  「启动基岩版」两条路径，参考了上游 `ModBedrockUwp` / `ModBedrockGdk` 的实现思路
+  （商店版走 `shell:appsFolder\<PackageFamilyName>!<AppId>`、GDK 便携版直接运行目录内的
+  `Minecraft.Windows.exe`、进程名 `Minecraft.Windows` / `Minecraft.Win10.DX11`、
+  存档目录 `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\...`）。
+
+  按 PCL Lite 的结构重写为不依赖 WPF 的静态服务类，可独立单测；**没有**移植上游的
+  `.msixvc` 解包与商店包下载（那部分需要微软内容密钥 CIK，不适合随源码分发，
+  也与「启动器只负责启动」的定位不符）。
+
+  依据 Apache-2.0 第 4 条，此移植部分仍受 Apache-2.0 约束；本项目整体许可证不变。
+
+## 二、第三方库（NuGet）
+
+运行期依赖，按包名排序。全部为宽松许可证（MIT / Apache-2.0 / BSD），与项目的 MIT 兼容。
+
+| 包 | 用途 | 许可证 |
+| --- | --- | --- |
+| `Ae.Dns.Client` | DNS 解析（含 DoH） | MIT |
+| `CommunityToolkit.Mvvm` | MVVM 基础设施 | MIT |
+| `Dapper` | 轻量 ORM | Apache-2.0 |
+| `DotNet.Glob` | 通配符匹配 | MIT |
+| `Downloader` | 分块多线程下载 | MIT |
+| `fNbt` | NBT 读写（存档、Level.dat） | MIT |
+| `FluentValidation` | 参数校验 | Apache-2.0 |
+| `Humanizer.Core.zh-CN` | 中文数字/时间人性化 | MIT |
+| `LiteDB` | 嵌入式文档数据库 | MIT |
+| `Markdig.Wpf` | Markdown 渲染（更新说明） | BSD-2-Clause |
+| `Microsoft.Data.Sqlite` | SQLite 访问 | MIT |
+| `Microsoft.Extensions.Http` | `HttpClientFactory` | MIT |
+| `Microsoft.Extensions.Logging` | 日志抽象 | MIT |
+| `Microsoft.Xaml.Behaviors.Wpf` | WPF 行为 | MIT |
+| `NAudio` | 音频播放 | MIT |
+| `PlainToolkit.CngProtectedData` | CNG 加密存储（口令） | MIT |
+| `Polly` | 重试与熔断 | BSD-3-Clause |
+| `protobuf-net` | Protobuf 序列化 | Apache-2.0 |
+| `SharpZipLib` | zip 读写 | MIT |
+| `SQLitePCLRaw.bundle_e_sqlite3` | SQLite 原生绑定 | Apache-2.0 |
+| `System.IdentityModel.Tokens.Jwt` | JWT 解析（正版登录） | MIT |
+| `System.Management` | WMI 查询 | MIT |
+| `System.Security.Cryptography.ProtectedData` | DPAPI | MIT |
+| `System.Text.Json` | JSON | MIT |
+| `Wacton.Unicolour` | OKLCH / 色彩空间转换（主题引擎） | MIT |
+| `YamlDotNet` | YAML 配置读写 | MIT |
+
+## 三、资源与图标
+
+| 资源 | 来源 | 许可证 |
+| --- | --- | --- |
+| SVG 图标集 | [Lucide](https://lucide.dev) | ISC |
+| PCL Lite 图标 | 本项目自制 | 随本项目 |
+
+## 四、怎么补充这份清单
+
+新增第三方代码或资源时：
+
+1. 在上面对应小节加一行，写清**作者、许可证、仓库地址**；
+2. 如果是移植代码，在源文件顶部注释里注明出处（参考 `BedrockService.cs` 的写法）；
+3. **不要因为引入外部代码而修改本项目的 LICENSE**。上游许可证的约束写在本文档里，
+   而不是替换掉 `LICENSE`。

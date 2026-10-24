@@ -22,6 +22,8 @@ internal static class McpToolRegistration
 
         InstanceTools.Register(catalog);
         ModTools.Register(catalog);
+        TrashTools.Register(catalog);
+        GameFileTools.Register(catalog);
         GameTools.Register(catalog);
         AnalysisTools.Register(catalog);
         LauncherTools.Register(catalog);

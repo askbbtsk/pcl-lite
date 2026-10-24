@@ -35,7 +35,17 @@ internal static class McpResults
 /// </summary>
 internal static class McpPath
 {
-    /// <summary>把相对路径解析到 <paramref name="root" /> 下；越界时返回 null。</summary>
+    /// <summary>
+    ///     把相对路径解析到 <paramref name="root" /> 下；越界时返回 null。
+    ///     <para>
+    ///         比较之前会把两边的 junction / 符号链接展开成真实路径。
+    ///         只做字符串前缀比较的话，游戏目录里放一个指向 <c>C:\</c> 的目录联接就能越界。
+    ///     </para>
+    ///     <para>
+    ///         注意这仍然不是原子的：校验与实际操作之间文件系统可能变化（TOCTOU）。
+    ///         彻底解决要改成按句柄操作，代价远大于收益，这里只保证常规路径不可绕过。
+    ///     </para>
+    /// </summary>
     public static string? ResolveUnder(string root, string? relative)
     {
         if (string.IsNullOrWhiteSpace(root)) return null;
@@ -43,9 +53,9 @@ internal static class McpPath
         string rootFull, targetFull;
         try
         {
-            rootFull = Path.GetFullPath(root);
-            targetFull = Path.GetFullPath(
-                Path.IsPathRooted(relative ?? "") ? relative! : Path.Combine(rootFull, relative ?? ""));
+            rootFull = RealPath(Path.GetFullPath(root));
+            targetFull = RealPath(Path.GetFullPath(
+                Path.IsPathRooted(relative ?? "") ? relative! : Path.Combine(rootFull, relative ?? "")));
         }
         catch (Exception)
         {
@@ -58,6 +68,51 @@ internal static class McpPath
                 StringComparison.OrdinalIgnoreCase))
             return targetFull;
         return targetFull.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? targetFull : null;
+    }
+
+    /// <summary>
+    ///     逐级展开路径中已存在部分的链接目标。不存在或解析失败的部分原样保留。
+    /// </summary>
+    private static string RealPath(string path)
+    {
+        try
+        {
+            var full = Path.GetFullPath(path);
+            var rootPart = Path.GetPathRoot(full);
+            if (string.IsNullOrEmpty(rootPart)) return full;
+
+            var current = rootPart;
+            var segments = full[rootPart.Length..]
+                .Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+                    StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var segment in segments)
+            {
+                var next = Path.Combine(current, segment);
+                current = ResolveOne(next) ?? next;
+            }
+
+            return current;
+        }
+        catch (Exception)
+        {
+            return path;
+        }
+    }
+
+    private static string? ResolveOne(string path)
+    {
+        try
+        {
+            FileSystemInfo info = Directory.Exists(path) ? new DirectoryInfo(path) : new FileInfo(path);
+            if (!info.Exists) return null;
+            return info.ResolveLinkTarget(true)?.FullName;
+        }
+        catch (Exception)
+        {
+            // 没有权限、链接损坏等，当作普通路径
+            return null;
+        }
     }
 
     /// <summary>只取文件名部分，去掉任何目录成分。</summary>

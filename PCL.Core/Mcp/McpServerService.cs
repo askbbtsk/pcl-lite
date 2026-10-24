@@ -37,7 +37,13 @@ public static class McpServerService
     public static DateTime? StartedAt { get; private set; }
 
     /// <summary>已处理的请求数，用于在设置页显示「服务确实在被用」。</summary>
-    public static long RequestCount;
+    public static long RequestCount
+    {
+        get
+        {
+            lock (Gate) return _host?.RequestCount ?? 0;
+        }
+    }
 
     public static McpServerCatalog Catalog
     {

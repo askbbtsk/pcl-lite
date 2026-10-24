@@ -1,12 +1,18 @@
 {
   "name": "PCL Lite",
   "version": {
-    "base": "1.2.4",
+    "base": "1.2.5",
     "upstream": "2.12.1",
     "suffix": "beta",
-    "code": 6
+    "code": 7
   },
   "licenses": [
+    {
+      "name": "PCL-Symbio-Edition",
+      "info": "Copyright © Hydrogen-Peroxide\n基岩版检测与启动逻辑移植自此项目，Licensed under the Apache-2.0 License.",
+      "website": "https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition",
+      "license": "https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition/blob/main/LICENSE"
+    },
     {
       "name": "LegacyFix",
       "info": "Copyright © betacraftuk\nLicensed under the GPL-3.0 license.",
@@ -36,12 +42,6 @@
       "info": "Copyright © ALIMAMA MUX, powered by alimama THX.",
       "website": "https://www.iconfont.cn/",
       "license": null
-    },
-    {
-      "name": "Stun.Net",
-      "info": "Copyright © Bruce Wayne",
-      "website": "https://github.com/HMBSbige/NatTypeTester",
-      "license": "https://github.com/HMBSbige/NatTypeTester/blob/master/LICENSE"
     },
     {
       "name": "LiteDB",
@@ -96,12 +96,6 @@
       "info": "Copyright © protobuf-net\nLicensed under the Apache-2.0 license.",
       "website": "https://github.com/protobuf-net/protobuf-net",
       "license": "https://github.com/protobuf-net/protobuf-net/blob/main/Licence.txt"
-    },
-    {
-      "name": "Sentry",
-      "info": "Copyright © 2018 Sentry\nLicensed under the MIT license.",
-      "website": "https://sentry.io/",
-      "license": "https://github.com/getsentry/sentry-dotnet/blob/main/LICENSE"
     },
     {
       "name": "LWJGL Unsafe Agent",

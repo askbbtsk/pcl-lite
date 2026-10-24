@@ -200,6 +200,15 @@ public static class ModMcp
 
     private static async Task<object?> LaunchGameAsync(string? instanceName, IReadOnlyList<string> extraArgs)
     {
+        // 额外参数会被拼进 Java 命令行，先在协议层挡掉能在 JVM 里加载外部代码的那类
+        if (!McpLaunchGuards.TryValidate(extraArgs, out var guardError))
+            return new Dictionary<string, object?>
+            {
+                ["ok"] = false,
+                ["error"] = guardError,
+                ["hint"] = "去掉这些参数再试。需要自定义 JVM 参数时，请让用户在「设置 → 启动 → 高级」里添加。"
+            };
+
         var (started, payload) = OnUiThread(() =>
         {
             var instance = string.IsNullOrWhiteSpace(instanceName)
@@ -359,11 +368,22 @@ public static class ModMcp
 
     #region 线程
 
+    /// <summary>等待 UI 线程的上限。启动器正在下载/安装时 UI 线程会被长时间占用。</summary>
+    private static readonly TimeSpan UiThreadTimeout = TimeSpan.FromSeconds(20);
+
     private static T OnUiThread<T>(Func<T> func)
     {
         var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher is null || dispatcher.CheckAccess()) return func();
-        return dispatcher.Invoke(func);
+
+        // Dispatcher.Invoke 会一直等下去：启动器正在下载或安装时，所有 MCP 调用会一起挂死，
+        // 客户端那边只能超时，而模型看不到任何原因。这里给个明确的超时。
+        var operation = dispatcher.InvokeAsync(func);
+        if (!operation.Task.Wait(UiThreadTimeout))
+            throw new TimeoutException(
+                $"启动器界面线程忙（可能正在下载或安装），{UiThreadTimeout.TotalSeconds:0} 秒内没有响应。请稍后重试。");
+
+        return operation.Task.Result;
     }
 
     private static Task<object?> InvokeOnUiAsync(Func<object?> func)

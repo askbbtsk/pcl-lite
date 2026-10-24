@@ -107,7 +107,8 @@ internal static class LauncherTools
                 "按配置键读取启动器的一项设置。\n\n"
                 + "配置键是源码里 `[ConfigItem<T>(\"Key\")]` 括号里那个名字，"
                 + "例如 `UiDarkMode`、`SystemMaxLog`、`LaunchRamType`。\n"
-                + "不确定键名时先调 pcl_config_list 看全部可用键。",
+                + "不确定键名时先调 pcl_config_list 看全部可用键。\n\n"
+                + "**凭据类配置（口令、密钥等）一律读不到**，会直接返回拒绝说明。",
             InputSchema = new McpParams()
                 .Str("key", "配置键名。", required: true)
                 .Build(),
@@ -116,6 +117,12 @@ internal static class LauncherTools
             {
                 var key = args.Str("key", "").Trim();
                 if (key.Length == 0) return Task.FromResult<object?>(McpResults.Error("缺少 key 参数。"));
+
+                // 口令之类的凭据一旦读出来就会原样进对话记录，这里直接拒绝
+                if (McpConfigGuard.IsSecret(key))
+                    return Task.FromResult<object?>(McpResults.Error(
+                        McpConfigGuard.ReadDeniedMessage(key),
+                        "用户可以在「设置 → 启动器 → MCP 服务」里自己查看或重设口令。"));
 
                 if (!ConfigService.TryGetConfigItemNoType(key, out var item))
                     return Task.FromResult<object?>(McpResults.Error(
@@ -179,6 +186,8 @@ internal static class LauncherTools
                 + "支持的类型：布尔（true/false）、整数、字符串、枚举名。\n"
                 + "注意这个工具受「允许修改启动器设置」开关控制，默认是关的——"
                 + "用户需要在设置里显式打开才能用。\n\n"
+                + "**安全相关配置一律改不了**：MCP 自身的开关/端口/口令/权限项，以及启动器的调试与受限功能开关。"
+                + "这些只能由用户在界面里手动调整，工具会直接返回拒绝说明。\n\n"
                 + "改之前建议先 pcl_config_get 看当前值，改完把前后值都告诉用户。",
             InputSchema = new McpParams()
                 .Str("key", "配置键名。", required: true)
@@ -191,6 +200,13 @@ internal static class LauncherTools
                 var raw = args.Str("value");
                 if (key.Length == 0) return Task.FromResult<object?>(McpResults.Error("缺少 key 参数。"));
                 if (raw is null) return Task.FromResult<object?>(McpResults.Error("缺少 value 参数。"));
+
+                // 不允许 MCP 改自己的权限与连接参数，也不允许关掉启动器的安全开关：
+                // 否则「允许修改启动器设置」这一个开关就足以把其余所有限制全部解除。
+                if (McpConfigGuard.IsProtected(key))
+                    return Task.FromResult<object?>(McpResults.Error(
+                        McpConfigGuard.WriteDeniedMessage(key),
+                        "需要改这些设置时，请让用户自己在启动器界面里操作。"));
 
                 if (!ConfigService.TryGetConfigItemNoType(key, out var item))
                     return Task.FromResult<object?>(McpResults.Error(

@@ -34,7 +34,11 @@ public abstract class HttpServer : IDisposable
         var hosts = new List<string>();
         foreach (var address in listenAddr)
         {
-            _server.Prefixes.Add($"http://{address}:{port}/");
+            // IPv6 的地址在 URL 里必须带方括号，否则 http://::1:38765/ 这种前缀是无效的
+            var hostText = address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+                ? $"[{address}]"
+                : address.ToString();
+            _server.Prefixes.Add($"http://{hostText}:{port}/");
             hosts.Add(address.ToString());
         }
         Host = hosts.ToArray();
@@ -142,11 +146,17 @@ public abstract class HttpServer : IDisposable
         }
         catch (Exception ex)
         {
+            // 只回一句通用文案：ex.ToString() 里有绝对路径、内部类型名，
+            // 等于把实现细节白送给调用方。细节写日志。
+            Logging.LogWrapper.Error(ex, "Http", $"处理 {request.HttpMethod} {request.Url?.AbsolutePath} 时出错");
+
             response.StatusCode = (int)HttpStatusCode.InternalServerError;
             response.ContentEncoding = System.Text.Encoding.UTF8;
-            response.ContentType = "text/plain";
-            var errorResponse =
-                HttpRouteResponse.Text($"Internal Server Error:\n{ex}", "text/plain", System.Text.Encoding.UTF8);
+            response.ContentType = "application/json; charset=utf-8";
+            var errorResponse = HttpRouteResponse.Text(
+                "{\"ok\":false,\"error\":\"服务端内部错误，详情见启动器日志。\"}",
+                "application/json; charset=utf-8",
+                System.Text.Encoding.UTF8);
             errorResponse.Pour(response);
         }
     }

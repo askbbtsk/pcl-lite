@@ -12,6 +12,7 @@
 | [BUILD.md](BUILD.md) | 怎么编译、密钥怎么注入、怎么签名、怎么发 Release | 想自己构建一个能用的版本 |
 | [AZURE-LOGIN.md](AZURE-LOGIN.md) | 从零注册 Azure 应用，拿到自己的 `client_id` 走微软正版登录 | 想让正版登录用自己的应用 |
 | [MCP.md](MCP.md) | 内置 MCP 服务，让 AI 客户端直接操作启动器 | 想接 Claude / Cursor / Cherry Studio |
+| [CREDITS.md](CREDITS.md) | 开源项目清单：代码来源、第三方库、资源与各自的许可证 | 想知道哪段代码是谁的、想加新依赖 |
 
 ## 项目速览
 

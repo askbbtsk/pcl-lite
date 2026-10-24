@@ -563,13 +563,17 @@ public static partial class Config
 
         /// <summary>
         /// 允许 MCP 在游戏目录内移动、重命名、删除文件。
+        /// <para>
+        /// 默认关闭：打开 MCP 总开关不等于把删除权限一起交出去。
+        /// 用户需要显式勾选，中间没有「一次性全授权」的捷径。
+        /// </para>
         /// </summary>
-        [ConfigItem<bool>("McpAllowWrite", true, ConfigSource.Local)] public partial bool AllowWrite { get; set; }
+        [ConfigItem<bool>("McpAllowWrite", false, ConfigSource.Local)] public partial bool AllowWrite { get; set; }
 
         /// <summary>
-        /// 允许 MCP 启动或停止 Minecraft。
+        /// 允许 MCP 启动或停止 Minecraft。默认关闭，理由同 <see cref="AllowWrite" />。
         /// </summary>
-        [ConfigItem<bool>("McpAllowGameControl", true, ConfigSource.Local)] public partial bool AllowGameControl { get; set; }
+        [ConfigItem<bool>("McpAllowGameControl", false, ConfigSource.Local)] public partial bool AllowGameControl { get; set; }
 
         /// <summary>
         /// 允许 MCP 修改启动器自身的设置。
@@ -644,6 +648,15 @@ public static partial class Config
         /// 附加游戏参数。
         /// </summary>
         [ConfigItem<string>("LaunchAdvanceGame", "", ConfigSource.Local)] public partial string GameArgs { get; set; }
+
+        /// <summary>
+        /// 额外的基岩版 GDK 便携版目录，多个目录用换行分隔。
+        /// <para>
+        /// 商店版（UWP）由系统注册，能自动发现；便携版是解包出来的独立目录，
+        /// 位置任意，只能由用户自己指定。
+        /// </para>
+        /// </summary>
+        [ConfigItem<string>("BedrockGdkDirectories", "", ConfigSource.Local)] public partial string BedrockGdkDirectories { get; set; }
 
         /// <summary>
         /// 预启动指令。

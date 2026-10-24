@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -30,11 +32,13 @@ public sealed record McpOptions
     /// <summary>访问密码。为空表示不校验（本机使用场景）。</summary>
     public string? Token { get; init; }
 
-    public bool AllowWrite { get; init; } = true;
+    // 三个权限位的默认值都是 false：漏配时宁可直接拒绝，也不要默默放行。
+    // 真正的取值来自用户在设置页里的勾选，见 McpServerService。
+    public bool AllowWrite { get; init; }
 
-    public bool AllowGameControl { get; init; } = true;
+    public bool AllowGameControl { get; init; }
 
-    public bool AllowLauncherConfig { get; init; } = true;
+    public bool AllowLauncherConfig { get; init; }
 
     public bool AuthRequired => !string.IsNullOrWhiteSpace(Token);
 }
@@ -74,8 +78,28 @@ public sealed class McpHost : HttpServer
     private readonly McpServerCatalog _catalog;
     private readonly Func<McpOptions> _optionsProvider;
 
+    /// <summary>请求体上限。JSON-RPC 请求不该有这么大，超过多半是打错或恶意。</summary>
+    private const int MaxBodyBytes = 4 * 1024 * 1024;
+
+    /// <summary>同时处理的请求上限。HttpListener 那边是无界 Task.Run，这里兜住。</summary>
+    private const int MaxConcurrentRequests = 4;
+
+    /// <summary>单个请求的最长处理时间，防止扫描几百个 jar 时一直挂着。</summary>
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(3);
+
+    private readonly SemaphoreSlim _concurrency = new(MaxConcurrentRequests, MaxConcurrentRequests);
+
+    /// <summary>在飞的请求 id → 取消源，供 notifications/cancelled 命中。</summary>
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _inFlight = new(StringComparer.Ordinal);
+
+    private int _requestCount;
+
+    /// <summary>累计处理过的 POST 请求数，设置页用它显示「服务确实在被用」。</summary>
+    public int RequestCount => Volatile.Read(ref _requestCount);
+
     public McpHost(ushort port, McpServerCatalog catalog, Func<McpOptions> optionsProvider)
-        : base([IPAddress.Loopback], port)
+        // 同时绑 v4 与 v6 回环：客户端把 localhost 解析成 ::1 时也能连上
+        : base([IPAddress.Loopback, IPAddress.IPv6Loopback], port)
     {
         _catalog = catalog;
         _optionsProvider = optionsProvider;
@@ -104,6 +128,7 @@ public sealed class McpHost : HttpServer
             ["resources"] = _catalog.Resources.Count,
             ["prompts"] = _catalog.Prompts.Count,
             ["authRequired"] = options.AuthRequired,
+            ["requestCount"] = RequestCount,
             ["endpoint"] = $"http://127.0.0.1:{Port}{McpDefaults.EndpointPath}"
         };
         return Task.FromResult(Json(payload));
@@ -132,9 +157,38 @@ public sealed class McpHost : HttpServer
         if (!Authorize(request))
             return Unauthorized();
 
+        Interlocked.Increment(ref _requestCount);
+
+        if (request.ContentLength64 > MaxBodyBytes)
+            return Json(
+                new Dictionary<string, object?>
+                {
+                    ["ok"] = false,
+                    ["error"] = $"请求体过大（{request.ContentLength64} 字节），上限 {MaxBodyBytes} 字节。"
+                },
+                HttpStatusCode.RequestEntityTooLarge);
+
         string body;
         using (var reader = new StreamReader(request.InputStream, Encoding.UTF8))
-            body = await reader.ReadToEndAsync();
+        {
+            // 分块传输没有 Content-Length，光看头部拦不住，读的时候也要有上限
+            var buffer = new char[MaxBodyBytes];
+            var read = 0;
+            int chunk;
+            while (read < buffer.Length && (chunk = await reader.ReadAsync(buffer, read, buffer.Length - read)) > 0)
+                read += chunk;
+
+            if (read >= buffer.Length && !reader.EndOfStream)
+                return Json(
+                    new Dictionary<string, object?>
+                    {
+                        ["ok"] = false,
+                        ["error"] = $"请求体超过 {MaxBodyBytes} 字节上限，已拒绝。"
+                    },
+                    HttpStatusCode.RequestEntityTooLarge);
+
+            body = new string(buffer, 0, read);
+        }
 
         if (string.IsNullOrWhiteSpace(body))
             return JsonRpcError(null, -32600, "请求体为空。");
@@ -149,32 +203,49 @@ public sealed class McpHost : HttpServer
             return JsonRpcError(null, -32700, $"JSON 解析失败：{ex.Message}");
         }
 
-        var cancellationToken = CancellationToken.None;
+        // 并发闸门：客户端狂发请求时不要把线程池和 UI 线程一起拖死
+        if (!await _concurrency.WaitAsync(TimeSpan.FromSeconds(30)))
+            return Json(
+                new Dictionary<string, object?>
+                {
+                    ["ok"] = false,
+                    ["error"] = "服务正忙：同时处理的请求已达上限，请稍后重试。"
+                },
+                HttpStatusCode.ServiceUnavailable);
 
-        // JSON-RPC 批量请求
-        if (parsed is JsonArray batch)
+        try
         {
-            var responses = new JsonArray();
-            foreach (var item in batch)
+            using var timeout = new CancellationTokenSource(RequestTimeout);
+
+            // JSON-RPC 批量请求
+            if (parsed is JsonArray batch)
             {
-                if (item is not JsonObject obj) continue;
-                var single = await DispatchAsync(obj, cancellationToken);
-                if (single is not null) responses.Add(single);
+                var responses = new JsonArray();
+                foreach (var item in batch)
+                {
+                    if (item is not JsonObject obj) continue;
+                    var single = await DispatchAsync(obj, timeout.Token);
+                    if (single is not null) responses.Add(single);
+                }
+
+                if (responses.Count == 0)
+                    return Empty(HttpStatusCode.Accepted);
+                return Json(responses);
             }
 
-            if (responses.Count == 0)
+            if (parsed is not JsonObject requestObject)
+                return JsonRpcError(null, -32600, "请求必须是 JSON 对象。");
+
+            var response = await DispatchAsync(requestObject, timeout.Token);
+            if (response is null)
+                // 通知：按规范返回 202 且无响应体
                 return Empty(HttpStatusCode.Accepted);
-            return Json(responses);
+            return Json(response);
         }
-
-        if (parsed is not JsonObject requestObject)
-            return JsonRpcError(null, -32600, "请求必须是 JSON 对象。");
-
-        var response = await DispatchAsync(requestObject, cancellationToken);
-        if (response is null)
-            // 通知：按规范返回 202 且无响应体
-            return Empty(HttpStatusCode.Accepted);
-        return Json(response);
+        finally
+        {
+            _concurrency.Release();
+        }
     }
 
     #endregion
@@ -193,49 +264,95 @@ public sealed class McpHost : HttpServer
             return JsonRpcErrorNode(id, -32600, "缺少 method 字段。");
         }
 
-        JsonNode? result;
+        // 登记在飞请求，让 notifications/cancelled 能真的把它中断
+        var idKey = id?.ToString();
+        using var requestCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (idKey is not null) _inFlight[idKey] = requestCts;
+
         try
         {
-            result = method switch
+            JsonNode? result;
+            try
             {
-                "initialize" => HandleInitialize(request),
-                "notifications/initialized" => null,
-                "notifications/cancelled" => null,
-                "ping" => new JsonObject(),
-                "tools/list" => HandleToolsList(),
-                "tools/call" => await HandleToolsCallAsync(request, cancellationToken),
-                "resources/list" => HandleResourcesList(),
-                "resources/read" => await HandleResourcesReadAsync(request, cancellationToken),
-                "prompts/list" => HandlePromptsList(),
-                "prompts/get" => HandlePromptsGet(request),
-                "logging/setLevel" => new JsonObject(),
-                _ => null
+                result = method switch
+                {
+                    "initialize" => HandleInitialize(request),
+                    "notifications/initialized" => null,
+                    "notifications/cancelled" => CancelRequest(request),
+                    "ping" => new JsonObject(),
+                    "tools/list" => HandleToolsList(),
+                    "tools/call" => await HandleToolsCallAsync(request, requestCts.Token),
+                    "resources/list" => HandleResourcesList(),
+                    "resources/read" => await HandleResourcesReadAsync(request, requestCts.Token),
+                    "prompts/list" => HandlePromptsList(),
+                    "prompts/get" => HandlePromptsGet(request),
+                    "logging/setLevel" => new JsonObject(),
+                    _ => null
+                };
+            }
+            catch (McpRpcException rpc)
+            {
+                // 协议级错误：让客户端看到标准的 JSON-RPC error，而不是一个「空资源」
+                if (isNotification) return null;
+                return JsonRpcErrorNode(id, rpc.Code, rpc.Message);
+            }
+            catch (OperationCanceledException)
+            {
+                if (isNotification) return null;
+                return JsonRpcErrorNode(id, -32800, "请求已取消或超时。");
+            }
+            catch (Exception ex)
+            {
+                LogWrapper.Error(ex, "Mcp", $"处理 {method} 失败");
+                if (isNotification) return null;
+                // 不把堆栈或内部路径回给客户端，细节只写日志
+                return JsonRpcErrorNode(id, -32603, "服务端内部错误，详情见启动器日志。");
+            }
+
+            if (method is "notifications/initialized" or "notifications/cancelled")
+                return null;
+
+            if (result is null)
+            {
+                if (isNotification) return null;
+                return JsonRpcErrorNode(id, -32601, $"不支持的方法：{method}");
+            }
+
+            if (isNotification) return null;
+
+            return new JsonObject
+            {
+                ["jsonrpc"] = "2.0",
+                ["id"] = id,
+                ["result"] = result
             };
         }
-        catch (Exception ex)
+        finally
         {
-            LogWrapper.Error(ex, "Mcp", $"处理 {method} 失败");
-            if (isNotification) return null;
-            return JsonRpcErrorNode(id, -32603, $"服务端内部错误：{ex.Message}");
+            if (idKey is not null) _inFlight.TryRemove(idKey, out _);
+        }
+    }
+
+    /// <summary>处理 <c>notifications/cancelled</c>：按 requestId 找到在飞请求并取消。</summary>
+    private JsonNode? CancelRequest(JsonObject request)
+    {
+        var requestId = request["params"]?["requestId"];
+        if (requestId is null) return null;
+
+        var key = requestId.ToString();
+        if (!_inFlight.TryGetValue(key, out var cts)) return null;
+
+        try
+        {
+            cts.Cancel();
+            LogWrapper.Info("Mcp", $"客户端取消了请求 {key}");
+        }
+        catch (ObjectDisposedException)
+        {
+            // 请求刚好已经结束，忽略
         }
 
-        if (method is "notifications/initialized" or "notifications/cancelled")
-            return null;
-
-        if (result is null)
-        {
-            if (isNotification) return null;
-            return JsonRpcErrorNode(id, -32601, $"不支持的方法：{method}");
-        }
-
-        if (isNotification) return null;
-
-        return new JsonObject
-        {
-            ["jsonrpc"] = "2.0",
-            ["id"] = id,
-            ["result"] = result
-        };
+        return null;
     }
 
     private JsonNode HandleInitialize(JsonObject request)
@@ -282,14 +399,10 @@ public sealed class McpHost : HttpServer
 
         var tool = _catalog.Tools.Find(name);
         if (tool is null)
-            return ToolResult(
-                new Dictionary<string, object?>
-                {
-                    ["ok"] = false,
-                    ["error"] = $"未知工具：{name}",
-                    ["available"] = _catalog.Tools.Tools.Select(t => t.Name).ToList()
-                },
-                true);
+            // 工具名不存在属于调用参数错误，按规范走 JSON-RPC -32602，
+            // 而不是包成一个「执行失败」的 tool result——客户端会把它当成工具跑挂了。
+            throw new McpRpcException(-32602,
+                $"未知工具：{name}。可用工具见 tools/list，共 {_catalog.Tools.Count} 个。");
 
         var options = _optionsProvider();
         var denial = CheckCapability(tool, options);
@@ -309,16 +422,32 @@ public sealed class McpHost : HttpServer
         }
 
         object? output;
+        var mutating = (tool.Required & (McpCapability.Write | McpCapability.GameControl | McpCapability.LauncherConfig)) != 0;
+        var auditArguments = mutating ? McpAudit.Summarize(argumentsNode as JsonObject) : null;
         try
         {
             output = await tool.Handler(new McpArguments(argumentsElement), cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            if (mutating) McpAudit.Record(name, auditArguments, false, "请求被取消");
+            throw;
+        }
         catch (Exception ex)
         {
             LogWrapper.Error(ex, "Mcp", $"工具 {name} 执行失败");
+            if (mutating) McpAudit.Record(name, auditArguments, false, ex.Message);
             return ToolResult(
                 new Dictionary<string, object?> { ["ok"] = false, ["error"] = ex.Message, ["tool"] = name },
                 true);
+        }
+
+        if (mutating)
+        {
+            var ok = output is not Dictionary<string, object?> dict
+                     || !dict.TryGetValue("ok", out var flag)
+                     || flag is not false;
+            McpAudit.Record(name, auditArguments, ok, ok ? null : "工具返回 ok=false");
         }
 
         return ToolResult(output ?? new Dictionary<string, object?> { ["ok"] = true }, false);
@@ -343,11 +472,9 @@ public sealed class McpHost : HttpServer
         var uri = request["params"]?["uri"]?.GetValue<string>();
         var resource = uri is null ? null : _catalog.FindResource(uri);
         if (resource is null)
-            return new JsonObject
-            {
-                ["contents"] = new JsonArray(),
-                ["_error"] = $"未找到资源：{uri}"
-            };
+            // 之前返回 contents: [] 加一个自定义 _error 字段，
+            // 客户端只会当成「这个资源是空的」，没人会去读下划线开头的字段。
+            throw new McpRpcException(-32602, $"未找到资源：{uri}。可用资源见 resources/list。");
 
         var text = await resource.Reader(cancellationToken);
         return new JsonObject
@@ -378,11 +505,8 @@ public sealed class McpHost : HttpServer
         var name = parameters?["name"]?.GetValue<string>();
         var prompt = name is null ? null : _catalog.FindPrompt(name);
         if (prompt is null)
-            return new JsonObject
-            {
-                ["description"] = $"未找到提示词：{name}",
-                ["messages"] = new JsonArray()
-            };
+            // 同理：空 messages 会被当成「这个提示词没有内容」，而不是「名字错了」
+            throw new McpRpcException(-32602, $"未找到提示词：{name}。可用提示词见 prompts/list。");
 
         var arguments = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         if (parameters?["arguments"] is JsonObject argsObject)
@@ -435,10 +559,16 @@ public sealed class McpHost : HttpServer
 
         var provided = ExtractToken(request);
         if (string.IsNullOrEmpty(provided)) return false;
-        // 定长比较，避免用 == 泄露前缀匹配长度
-        return CryptographicEquals(provided, options.Token!);
+        return TokenEquals(provided, options.Token!);
     }
 
+    /// <summary>
+    ///     只从请求头取口令。
+    ///     <para>
+    ///         刻意不支持 <c>?token=</c>：查询串会进代理日志、浏览器历史、
+    ///         以及任何会记录 URL 的中间件，等于把口令写在明处。
+    ///     </para>
+    /// </summary>
     private static string? ExtractToken(HttpListenerRequest request)
     {
         var header = request.Headers["Authorization"];
@@ -451,17 +581,23 @@ public sealed class McpHost : HttpServer
         }
 
         var custom = request.Headers["X-Mcp-Token"];
-        if (!string.IsNullOrWhiteSpace(custom)) return custom.Trim();
-
-        return request.QueryString["token"]?.Trim();
+        return string.IsNullOrWhiteSpace(custom) ? null : custom.Trim();
     }
 
-    private static bool CryptographicEquals(string a, string b)
+    /// <summary>
+    ///     定长比较口令。
+    ///     <para>
+    ///         直接比字符串会因为「长度不等就提前返回」泄露口令长度，
+    ///         所以两边都先过一遍 SHA-256，再对固定长度的摘要做定长比较。
+    ///     </para>
+    /// </summary>
+    private static bool TokenEquals(string provided, string expected)
     {
-        if (a.Length != b.Length) return false;
-        var diff = 0;
-        for (var i = 0; i < a.Length; i++) diff |= a[i] ^ b[i];
-        return diff == 0;
+        Span<byte> left = stackalloc byte[32];
+        Span<byte> right = stackalloc byte[32];
+        SHA256.HashData(Encoding.UTF8.GetBytes(provided), left);
+        SHA256.HashData(Encoding.UTF8.GetBytes(expected), right);
+        return CryptographicOperations.FixedTimeEquals(left, right);
     }
 
     private static HttpRouteResponse Empty(HttpStatusCode status) => new()
@@ -475,7 +611,8 @@ public sealed class McpHost : HttpServer
         var body = new Dictionary<string, object?>
         {
             ["ok"] = false,
-            ["error"] = "访问口令不正确。请在请求头带上 Authorization: Bearer <口令>，或用 ?token=<口令> 传参。"
+            ["error"] = "访问口令不正确。请在请求头带上 Authorization: Bearer <口令>，或 X-Mcp-Token。"
+                        + "出于安全考虑，不支持用 ?token= 查询参数传递口令。"
         };
         return Json(body, HttpStatusCode.Unauthorized);
     }
@@ -497,7 +634,7 @@ public sealed class McpHost : HttpServer
     private static JsonNode ToolResult(object? payload, bool isError)
     {
         var text = JsonSerializer.Serialize(payload, PrettyJson);
-        return new JsonObject
+        var node = new JsonObject
         {
             ["content"] = new JsonArray
             {
@@ -505,6 +642,21 @@ public sealed class McpHost : HttpServer
             },
             ["isError"] = isError
         };
+
+        // 支持结构化输出的客户端可以直接取字段，不用再解析那段 text
+        if (JsonSerializer.SerializeToNode(payload, CompactJson) is JsonObject structured)
+            node["structuredContent"] = structured;
+
+        return node;
+    }
+
+    /// <summary>
+    ///     协议级错误。抛出后由 <see cref="DispatchAsync" /> 转成标准的 JSON-RPC error 对象，
+    ///     而不是伪装成一个「内容为空」的正常结果。
+    /// </summary>
+    private sealed class McpRpcException(int code, string message) : Exception(message)
+    {
+        public int Code { get; } = code;
     }
 
     private static HttpRouteResponse Json(object? payload, HttpStatusCode status = HttpStatusCode.OK)

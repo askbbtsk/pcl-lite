@@ -74,6 +74,7 @@ PCL Lite 始终建议使用最新版本的操作系统以获得最佳体验。
 | [构建与发布](docs/BUILD.md) | 编译、密钥注入、签名、发版 |
 | [Azure 登录](docs/AZURE-LOGIN.md) | 从零注册应用，用自己的 client_id 走正版登录 |
 | [MCP](docs/MCP.md) | 让 AI 客户端直接操作启动器 |
+| [开源项目清单](docs/CREDITS.md) | 代码来源、第三方库、各自的许可证 |
 
 ## 🔒 许可证
 

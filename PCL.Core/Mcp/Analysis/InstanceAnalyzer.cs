@@ -308,7 +308,11 @@ public static class InstanceAnalyzer
         if (!int.TryParse(parts[1], out var minor)) return 0;
         var patch = parts.Length > 2 && int.TryParse(parts[2], out var p) ? p : 0;
 
-        if (minor >= 20 && patch >= 5) return 21;
+        // 1.20.5 起要求 Java 21；1.21 及以后同样。
+        // 原来的写法是 minor >= 20 && patch >= 5，导致 1.21 / 1.21.4 落到下面返回 17，
+        // 建议值本身就是错的。
+        if (minor >= 21) return 21;
+        if (minor == 20 && patch >= 5) return 21;
         if (minor >= 18) return 17;
         if (minor == 17) return 16;
         return 8;
@@ -317,6 +321,15 @@ public static class InstanceAnalyzer
     /// <summary>从 Java 路径里猜大版本，猜不到返回 0。</summary>
     public static int ParseJavaMajorFromPath(string javaPath)
     {
+        if (string.IsNullOrWhiteSpace(javaPath)) return 0;
+
+        // 老版命名是 1.8 这种：jre1.8.0_51、jdk1.7.0_80。
+        // 先处理它，否则下面那条正则会抓到 "jre1" 里的 1，落到 5..30 之外直接返回 0，
+        // 于是「Java 8 跑 1.20」这种最该报的问题被整段跳过。
+        var legacy = Regex.Match(javaPath, @"(?:jdk|jre|java)[-_]?1\.(\d+)", RegexOptions.IgnoreCase);
+        if (legacy.Success && int.TryParse(legacy.Groups[1].Value, out var legacyMinor) && legacyMinor <= 8)
+            return legacyMinor == 1 ? 1 : legacyMinor;
+
         var match = Regex.Match(javaPath, @"(?:jdk|jre|java)[-_]?(\d+)", RegexOptions.IgnoreCase);
         if (match.Success && int.TryParse(match.Groups[1].Value, out var major))
             return major is >= 5 and <= 30 ? major : 0;

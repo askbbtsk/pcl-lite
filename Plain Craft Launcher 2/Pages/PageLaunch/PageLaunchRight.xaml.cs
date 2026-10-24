@@ -85,10 +85,10 @@ public partial class PageLaunchRight : IRefreshable
             url = (string)Config.Preference.Homepage.CustomUrl;
             content = LoadFromNetwork(url);
         }
-        else
+        else if (uiCustomType == 3)
         {
-            // PCL Lite 欢迎页：完全由 C# 构造控件树，不加载任何远程 XAML
-            LogWrapper.Info("[Page] 主页数据来源：PCL Lite 欢迎页");
+            // 预设主页：目前只有「PCL Lite 欢迎页」一项，完全由 C# 构造控件树，不加载任何远程 XAML
+            LogWrapper.Info("[Page] 主页数据来源：PCL Lite 欢迎页（预设）");
             Dispatcher.Invoke(() =>
             {
                 if (ModMain.frmWelcome is null)
@@ -96,6 +96,13 @@ public partial class PageLaunchRight : IRefreshable
                 PanCustom.Children.Clear();
                 PanCustom.Children.Add(ModMain.frmWelcome);
             });
+            return;
+        }
+        else
+        {
+            // 空白：什么都不放。以前这里跟预设共用同一个分支，导致选了空白还是显示欢迎页。
+            LogWrapper.Info("[Page] 主页数据来源：空白");
+            ModBase.RunInUi(() => LoadContent(""));
             return;
         }
 

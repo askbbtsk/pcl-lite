@@ -73,7 +73,12 @@ public class ModSetup
 
         // UI - Homepage
         Config.Preference.Homepage.TypeConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
-            e => UiCustomType((int)e.Value!)));
+            e =>
+            {
+                UiCustomType((int)e.Value!);
+                // 改完主页来源立刻反映到主页上，不用等用户手动切回启动页
+                ModMain.frmLaunchRight?.ForceRefresh();
+            }));
 
         // UI - Blur
         Config.Preference.Blur.IsEnabledConfig.Observe(new ConfigObserver(ConfigEvent.Changed,

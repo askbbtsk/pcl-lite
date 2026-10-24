@@ -435,9 +435,13 @@ public static partial class Config
         [ConfigGroup("Homepage")] partial class HomepageConfigGroup
         {
             /// <summary>
-            /// 主页来源类型。
+            /// 主页来源类型。0 = 空白，1 = 本地文件，2 = 联网，3 = 预设。
+            /// <para>
+            /// 默认用 3（预设）而不是 0：预设里第一个就是 PCL Lite 欢迎页，
+            /// 首次启动直接看到欢迎页；用户主动选「空白」才会真的什么都不显示。
+            /// </para>
             /// </summary>
-            [ConfigItem<int>("UiCustomType", 0, ConfigSource.Local)] public partial int Type { get; set; }
+            [ConfigItem<int>("UiCustomType", 3, ConfigSource.Local)] public partial int Type { get; set; }
 
             /// <summary>
             /// 预设选项。

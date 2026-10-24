@@ -115,6 +115,9 @@ public class ModSetup
 
         // === MCP（内置 AI 控制接口，默认关闭） ===
         ModMcp.Initialize();
+
+        // === Discord Rich Presence（默认关闭） ===
+        ModDiscord.Initialize();
     }
 
     /// <summary>

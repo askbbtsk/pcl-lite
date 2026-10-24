@@ -74,6 +74,16 @@ public partial int WindowHue { get; set; }
 `ColorMode`：`Light=0` / `Dark=1` / `System=2`
 `ColorTheme`：`SkyBlue=0` / `CatBlue=1` / `DeathBlue=2` / `HmclBlue=3`
 
+### Discord 状态显示
+
+| 文件键 | 类型 | 默认 | 作用 |
+| --- | --- | --- | --- |
+| `DiscordRpcEnabled` | bool | `false` | 总开关，关着就完全不连 Discord |
+| `DiscordRpcAppId` | string | 内置 ID | 换成自己的应用才需要改 |
+| `DiscordRpcFields` | string | `launcherVersion,launcherMemory,playTime` | 逗号分隔的显示项 |
+
+详见 [DISCORD.md](DISCORD.md)。
+
 ## 五、手动改配置的正确姿势
 
 **必须先关掉启动器。**

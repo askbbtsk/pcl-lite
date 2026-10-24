@@ -270,6 +270,89 @@
                 </StackPanel>
             </local:MyCard>
 
+            <local:MyCard Margin="0,0,0,15" Title="Discord 状态显示（Rich Presence）">
+                <StackPanel Margin="25,38,25,18">
+                    <local:MyCheckBox x:Name="CheckDiscordEnabled"
+                                      Text="在 Discord 个人资料里显示我在做什么"
+                                      ToolTip="开启后，Discord 好友点开你的头像能看到：&#xA;· 你在启动器里，还是在玩 Minecraft&#xA;· 玩的是哪个版本、占多少内存&#xA;· 已经玩了多久&#xA;&#xA;状态直接发给本机 Discord 客户端，不经过任何第三方服务器。默认关闭。"
+                                      Change="DiscordEnabled_Change" />
+
+                    <TextBlock x:Name="LabDiscordDisabledHint" Margin="0,8,0,0" FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource ColorBrushGray2}"
+                               Text="当前已关闭。打开开关就能用，不需要额外配置——应用 ID 已经内置好了。" />
+
+                    <StackPanel x:Name="PanDiscordOptions" Margin="0,14,0,0" Visibility="Collapsed">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Name1" />
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="应用 ID" Margin="0,0,20,0" />
+                            <local:MyTextBox x:Name="TextDiscordAppId" Grid.Column="1"
+                                             HintText="已内置官方应用 ID，一般不用改"
+                                             ToolTip="默认已填好 PCL Lite 自己的 Discord 应用，开箱即用。&#xA;想换成自己的应用就替换成你的 Application ID（不是机器人 Token，填错不会泄露账号）。&#xA;清空则不会连接 Discord。"
+                                             TextChanged="DiscordAppId_TextChanged" />
+                            <local:MyButton Grid.Column="2" Text="开发者门户" TextPadding="3" Margin="10,0,0,0"
+                                            ToolTip="打开 discord.com/developers/applications，点 New Application，名字随意。"
+                                            Click="BtnDiscordPortal_Click" />
+                        </Grid>
+
+                        <TextBlock Margin="0,18,0,8" Text="显示内容（可多选）" />
+                        <WrapPanel>
+                            <local:MyCheckBox x:Name="CheckDiscordLauncherVersion" Margin="0,0,24,8"
+                                              Text="启动器版本"
+                                              ToolTip="未开游戏时，标题行显示 PCL Lite 与版本号。"
+                                              Change="DiscordField_Change" />
+                            <local:MyCheckBox x:Name="CheckDiscordLauncherMemory" Margin="0,0,24,8"
+                                              Text="启动器内存"
+                                              ToolTip="未开游戏时，显示启动器自身占用的内存。"
+                                              Change="DiscordField_Change" />
+                            <local:MyCheckBox x:Name="CheckDiscordGameVersion" Margin="0,0,24,8"
+                                              Text="游戏版本"
+                                              ToolTip="开游戏后，标题行显示实例名（如 1.20.1-Forge）。"
+                                              Change="DiscordField_Change" />
+                            <local:MyCheckBox x:Name="CheckDiscordGameMemory" Margin="0,0,24,8"
+                                              Text="游戏内存"
+                                              ToolTip="开游戏后，显示 Minecraft 进程占用的内存。"
+                                              Change="DiscordField_Change" />
+                            <local:MyCheckBox x:Name="CheckDiscordPlayTime" Margin="0,0,24,8"
+                                              Text="游玩时长"
+                                              ToolTip="开游戏后显示已游玩时长，未开游戏时显示启动器已运行多久。&#xA;时长由 Discord 自己跳动，不会额外增加上报频率。"
+                                              Change="DiscordField_Change" />
+                            <local:MyCheckBox x:Name="CheckDiscordServer" Margin="0,0,24,8"
+                                              Text="服务器地址"
+                                              ToolTip="从游戏日志里读当前连接的服务器地址。&#xA;打开后，任何能看到你 Discord 资料的人都会知道你在哪个服。默认关闭。"
+                                              Change="DiscordField_Change" />
+                        </WrapPanel>
+
+                        <TextBlock x:Name="LabDiscordServerHint" Margin="0,0,0,0" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource ColorBrushGray2}"
+                                   Text="服务器地址默认不显示：打开后好友能直接看到你在哪个服，只在你主动勾选时生效。" />
+
+                        <TextBlock x:Name="LabDiscordStatus" Margin="0,14,0,0" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource ColorBrushGray2}" Text="状态：未启用" />
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                            </Grid.ColumnDefinitions>
+                            <local:MyButton Grid.Column="0" Text="立即刷新" MinWidth="100" Padding="13,0" Margin="0,0,12,0"
+                                            ToolTip="改完设置后如果 Discord 里没反应，点一下强制重发。"
+                                            Click="BtnDiscordRefresh_Click" />
+                            <local:MyButton Grid.Column="1" Text="在 Discord 中清除" MinWidth="130" Padding="13,0"
+                                            ToolTip="立刻把状态从 Discord 上撤下来，但保持连接；之后再改任何设置会自动恢复。"
+                                            Click="BtnDiscordClear_Click" />
+                        </Grid>
+
+                        <TextBlock Margin="0,14,0,0" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource ColorBrushGray2}"
+                                   Text="原理：启动器通过本机命名管道（discord-ipc-0）直接把状态交给 Discord 客户端，不联网、不经中转。&#xA;关掉这个开关会立刻断开并清除状态。" />
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
+
             <local:MyCard x:Name="CardDebug" Margin="0,0,0,15" Title="{DynamicResource Setup.Misc.Debug.Title}" CanSwap="True" IsSwapped="True">
                 <StackPanel Margin="25,40,25,15">
                     <Grid x:Name="PanDebugAnim" Height="22" Margin="0,0,0,10">

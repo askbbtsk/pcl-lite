@@ -66,6 +66,7 @@ PCL Lite 始终建议使用最新版本的操作系统以获得最佳体验。
 | [docs/README.md](docs/README.md) | 索引、项目结构、版本号在哪 |
 | [主题与配色](docs/THEME.md) | 八级色阶怎么算、14 个预设、自定义主题、怎么加新主题 |
 | [配置与数据目录](docs/CONFIG.md) | 配置文件位置、手动改法、迁移逻辑 |
+| [Discord 状态显示](docs/DISCORD.md) | 显示内容、隐私边界、换自己的应用 |
 | [构建与发布](docs/BUILD.md) | 编译、密钥注入、签名、发版 |
 | [Azure 登录](docs/AZURE-LOGIN.md) | 从零注册应用，用自己的 client_id 走正版登录 |
 | [MCP](docs/MCP.md) | 让 AI 客户端直接操作启动器 |

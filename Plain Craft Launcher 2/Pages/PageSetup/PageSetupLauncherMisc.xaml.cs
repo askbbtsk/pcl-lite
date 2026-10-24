@@ -10,6 +10,7 @@ using PCL.Core.App;
 using PCL.Core.App.Configuration;
 using PCL.Core.App.IoC;
 using PCL.Core.IO.Net.Consent;
+using PCL.Core.Link.Discord;
 using PCL.Core.Mcp;
 using PCL.Core.UI;
 using PCL.Core.App.Localization;
@@ -39,6 +40,7 @@ public partial class PageSetupLauncherMisc
         }
 
         Loaded += PageSetupLink_Loaded;
+        Unloaded += (_, _) => _StopDiscordStatusTimer();
         Loaded += (_, _) =>
         {
             ModAnimation.AniControlEnabled += 1;
@@ -101,6 +103,20 @@ public partial class PageSetupLauncherMisc
         CheckMcpAllowGame.Checked = Config.Mcp.AllowGameControl;
         CheckMcpAllowConfig.Checked = Config.Mcp.AllowLauncherConfig;
         UpdateMcpVisibility();
+
+        // Discord 状态显示
+        CheckDiscordEnabled.Checked = Config.Discord.Enabled;
+        TextDiscordAppId.Text = Config.Discord.AppId;
+        var discordFields = (Config.Discord.Fields ?? "")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        CheckDiscordLauncherVersion.Checked = discordFields.Contains(DiscordRpcFields.LauncherVersion);
+        CheckDiscordLauncherMemory.Checked = discordFields.Contains(DiscordRpcFields.LauncherMemory);
+        CheckDiscordGameVersion.Checked = discordFields.Contains(DiscordRpcFields.GameVersion);
+        CheckDiscordGameMemory.Checked = discordFields.Contains(DiscordRpcFields.GameMemory);
+        CheckDiscordPlayTime.Checked = discordFields.Contains(DiscordRpcFields.PlayTime);
+        CheckDiscordServer.Checked = discordFields.Contains(DiscordRpcFields.ServerAddress);
+        UpdateDiscordVisibility();
     }
 
     // 初始化
@@ -565,6 +581,118 @@ public partial class PageSetupLauncherMisc
                 }
             }
         }
+    }
+
+    #endregion
+
+    #region Discord 状态显示
+
+    private System.Windows.Threading.DispatcherTimer? _discordStatusTimer;
+
+    /// <summary>
+    ///     总开关。关掉时把下面的配置项全部收起来。
+    /// </summary>
+    private void DiscordEnabled_Change(object senderRaw, bool user)
+    {
+        if (ModAnimation.AniControlEnabled != 0) return;
+        Config.Discord.Enabled = ((MyCheckBox)senderRaw).Checked == true;
+        UpdateDiscordVisibility();
+        DiscordRichPresenceService.RequestRefresh();
+    }
+
+    private void UpdateDiscordVisibility()
+    {
+        var enabled = Config.Discord.Enabled;
+        PanDiscordOptions.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+        LabDiscordDisabledHint.Visibility = enabled ? Visibility.Collapsed : Visibility.Visible;
+
+        if (!enabled)
+        {
+            _StopDiscordStatusTimer();
+            return;
+        }
+
+        UpdateDiscordStatus();
+        _StartDiscordStatusTimer();
+    }
+
+    private void _StartDiscordStatusTimer()
+    {
+        _discordStatusTimer ??= new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(2)
+        };
+        _discordStatusTimer.Tick -= _DiscordStatusTick;
+        _discordStatusTimer.Tick += _DiscordStatusTick;
+        _discordStatusTimer.Start();
+    }
+
+    private void _StopDiscordStatusTimer()
+    {
+        _discordStatusTimer?.Stop();
+    }
+
+    private void _DiscordStatusTick(object? sender, EventArgs e) => UpdateDiscordStatus();
+
+    /// <summary>
+    ///     状态由后台线程更新，这里只读快照。
+    /// </summary>
+    private void UpdateDiscordStatus()
+    {
+        var text = DiscordRichPresenceService.StatusText;
+        LabDiscordStatus.Text = $"状态：{text}";
+
+        var brush = text.StartsWith("已连接", StringComparison.Ordinal) ? "ColorBrush1"
+            : text.StartsWith("异常", StringComparison.Ordinal) ? "ColorBrushRedLight"
+            : "ColorBrushGray2";
+        LabDiscordStatus.SetResourceReference(TextBlock.ForegroundProperty, brush);
+    }
+
+    private void DiscordAppId_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (ModAnimation.AniControlEnabled != 0) return;
+        var text = TextDiscordAppId.Text.Trim();
+        if (Config.Discord.AppId == text) return;
+        Config.Discord.AppId = text;
+        DiscordRichPresenceService.RequestRefresh();
+    }
+
+    /// <summary>
+    ///     任意一个显示项变化都重算整串配置。
+    /// </summary>
+    private void DiscordField_Change(object senderRaw, bool user)
+    {
+        if (ModAnimation.AniControlEnabled != 0) return;
+
+        var selected = new List<string>(6);
+        if (CheckDiscordLauncherVersion.Checked == true) selected.Add(DiscordRpcFields.LauncherVersion);
+        if (CheckDiscordLauncherMemory.Checked == true) selected.Add(DiscordRpcFields.LauncherMemory);
+        if (CheckDiscordGameVersion.Checked == true) selected.Add(DiscordRpcFields.GameVersion);
+        if (CheckDiscordGameMemory.Checked == true) selected.Add(DiscordRpcFields.GameMemory);
+        if (CheckDiscordPlayTime.Checked == true) selected.Add(DiscordRpcFields.PlayTime);
+        if (CheckDiscordServer.Checked == true) selected.Add(DiscordRpcFields.ServerAddress);
+
+        var value = string.Join(",", selected);
+        if (Config.Discord.Fields == value) return;
+        Config.Discord.Fields = value;
+        DiscordRichPresenceService.RequestRefresh();
+    }
+
+    private void BtnDiscordRefresh_Click(object sender, EventArgs e)
+    {
+        DiscordRichPresenceService.RequestRefresh();
+        UpdateDiscordStatus();
+    }
+
+    private void BtnDiscordClear_Click(object sender, EventArgs e)
+    {
+        DiscordRichPresenceService.ClearActivity();
+        UpdateDiscordStatus();
+    }
+
+    private void BtnDiscordPortal_Click(object sender, EventArgs e)
+    {
+        ModBase.OpenWebsite("https://discord.com/developers/applications");
     }
 
     #endregion

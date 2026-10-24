@@ -2572,6 +2572,8 @@ public static class ModLaunch
 
         loader.output = gameProcess;
         mcLaunchProcess = gameProcess;
+        // 立刻把 Discord 状态切成「正在游玩」，不用等下一次轮询
+        PCL.Core.Link.Discord.DiscordRichPresenceService.NotifyGameStateChanged();
         // 进程优先级处理
         try
         {

@@ -574,6 +574,34 @@ public static partial class Config
     }
 
     /// <summary>
+    /// Discord Rich Presence 配置。
+    /// </summary>
+    [ConfigGroup("Discord")] partial class DiscordConfigGroup
+    {
+        /// <summary>
+        /// 是否启用 Discord 状态显示。默认关闭——这是外联功能，得用户自己开。
+        /// </summary>
+        [ConfigItem<bool>("DiscordRpcEnabled", false, ConfigSource.Local)] public partial bool Enabled { get; set; }
+
+        /// <summary>
+        /// Discord 应用的 Application ID。
+        /// <para>
+        /// 默认值是本项目自建的 Discord 应用，用户开箱即用；填别的值可以换成自己的应用
+        /// （状态卡片上显示的应用名和图标会跟着变）。清空则不连接。
+        /// </para>
+        /// </summary>
+        [ConfigItem<string>("DiscordRpcAppId", "1563608700969689108", ConfigSource.Local)]
+        public partial string AppId { get; set; }
+
+        /// <summary>
+        /// 要展示的内容项，逗号分隔。取值见 <see cref="PCL.Core.Link.Discord.DiscordRpcFields"/>。
+        /// 服务器地址不在默认值里——它会暴露你在玩哪个服。
+        /// </summary>
+        [ConfigItem<string>("DiscordRpcFields", PCL.Core.Link.Discord.DiscordRpcFields.DefaultValue, ConfigSource.Local)]
+        public partial string Fields { get; set; }
+    }
+
+    /// <summary>
     /// 启动配置。
     /// </summary>
     [ConfigGroup("Launch")] partial class LaunchConfigGroup

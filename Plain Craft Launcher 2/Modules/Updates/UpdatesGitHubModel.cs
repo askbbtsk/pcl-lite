@@ -372,6 +372,8 @@ public class UpdatesGitHubModel : IUpdateSource
 
     /// <summary>
     /// 把 tag 规范化成 SemVer。GitHub 上常见 <c>v0.1.0-beta</c> 这种写法，要把 <c>v</c> 去掉。
+    /// 另外有人写 tag 时偷懒只写 <c>v1.0</c> 甚至 <c>v1</c>（缺 minor/patch），
+    /// 这时按 SemVer 惯例补零成 <c>1.0.0</c>，而不是直接报错说版本源不可用。
     /// </summary>
     private static string _NormalizeTag(string? tag)
     {
@@ -381,9 +383,27 @@ public class UpdatesGitHubModel : IUpdateSource
         var value = tag.Trim();
         if (value.StartsWith('v') || value.StartsWith('V')) value = value[1..];
 
-        if (!SemVer.TryParse(value, out _))
+        // 先拆出预发布与构建元数据，它们内部允许带点，不能参与核心版本号的分段
+        var core = value;
+        var suffix = string.Empty;
+        var metaIndex = value.IndexOfAny(['-', '+']);
+        if (metaIndex >= 0)
+        {
+            core = value[..metaIndex];
+            suffix = value[metaIndex..];
+        }
+
+        var parts = core.Split('.');
+        if (parts.Length == 0 || parts.Length > 3 || !parts.All(x => x.All(char.IsAsciiDigit)))
             throw new UpdateSourceException($"Release 的 tag「{tag}」不是合法的 SemVer，无法比较版本。");
 
-        return value;
+        // 缺段补零：1 → 1.0.0，1.0 → 1.0.0
+        while (parts.Length < 3) parts = [.. parts, "0"];
+        var normalized = string.Join('.', parts) + suffix;
+
+        if (!SemVer.TryParse(normalized, out _))
+            throw new UpdateSourceException($"Release 的 tag「{tag}」不是合法的 SemVer，无法比较版本。");
+
+        return normalized;
     }
 }

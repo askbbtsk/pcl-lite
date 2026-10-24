@@ -31,9 +31,6 @@ public enum NetworkPurpose
     /// <summary>加密 DNS 解析。</summary>
     DnsResolve,
 
-    /// <summary>遥测与崩溃上报。</summary>
-    Telemetry,
-
     /// <summary>未登记的目标域名。</summary>
     Unknown
 }
@@ -135,7 +132,7 @@ public static class NetworkPurposeCatalog
             "登录联机大厅账号，并同步房间信息。",
             "Sign in to the lobby account and sync room information.",
             "需要登录的联机大厅", "multiplayer lobbies that require sign-in",
-            ["account.naids.com", "pcl2ce.pysio.online"]
+            ["account.naids.com"]
         ),
         new(
             NetworkPurpose.DnsResolve,
@@ -145,15 +142,6 @@ public static class NetworkPurposeCatalog
             "Resolve domains over DoH so plaintext DNS cannot leak your browsing.",
             "加密 DNS（关闭后改用系统 DNS）", "encrypted DNS (falls back to system DNS)",
             ["doh.pub", "doh.pysio.online", "cloudflare-dns.com"]
-        ),
-        new(
-            NetworkPurpose.Telemetry,
-            "telemetry",
-            "遥测", "Telemetry",
-            "上报崩溃堆栈与设备环境，用于定位问题。",
-            "Report crash traces and device environment to help diagnose issues.",
-            "崩溃上报", "crash reporting",
-            []
         )
     ];
 

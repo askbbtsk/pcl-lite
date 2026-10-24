@@ -129,7 +129,7 @@ public partial class PageWelcome
         var panel = new StackPanel { Margin = new Thickness(25, 38, 25, 18) };
 
         panel.Children.Add(_Text(
-            "默认关闭遥测，不收集任何使用数据；崩溃分析全程在本地完成。" +
+            "没有任何遥测与崩溃上报，不收集任何使用数据；崩溃分析全程在本地完成。" +
             "已安装的版本在断网状态下依然可以启动。",
             13));
 
@@ -171,8 +171,7 @@ public partial class PageWelcome
         if (_privacyStatus is not null)
         {
             var privacy = Config.System.PrivacyMode ? "已开启" : "未开启";
-            var telemetry = Config.System.Telemetry ? "开启" : "关闭";
-            _privacyStatus.Text = $"隐私模式：{privacy}　·　遥测：{telemetry}";
+            _privacyStatus.Text = $"隐私模式：{privacy}　·　遥测：已移除";
         }
     }
 

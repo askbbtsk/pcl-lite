@@ -26,7 +26,7 @@ public partial class PageSetupLauncherMisc
     public PageSetupLauncherMisc()
     {
         // XAML 解析期间控件的默认值会触发 Change 并写回配置（复选框默认勾选），
-        // 这会把「隐私模式」「遥测」等开关在用户没动过的情况下改成开启。
+        // 这会把「隐私模式」等开关在用户没动过的情况下改成开启。
         // 因此整个初始化阶段屏蔽控件回写。
         ModAnimation.AniControlEnabled += 1;
         try
@@ -76,7 +76,6 @@ public partial class PageSetupLauncherMisc
         CheckSystemDisableHardwareAcceleration.Checked = Config.System.DisableHardwareAcceleration;
         SliderAniFPS.Value = Config.System.AnimationFpsLimit;
         SliderMaxLog.Value = Config.System.MaxGameLog;
-        CheckSystemTelemetry.Checked = Config.System.Telemetry;
 
         // 网络
         TextSystemHttpProxy.Text = Config.Network.HttpProxy.CustomAddress;

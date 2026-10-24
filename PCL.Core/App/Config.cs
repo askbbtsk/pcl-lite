@@ -24,11 +24,6 @@ public static partial class Config
         [ConfigItem<bool>("SystemDisableHardwareAcceleration", false)] public partial bool DisableHardwareAcceleration { get; set; }
 
         /// <summary>
-        /// 遥测。
-        /// </summary>
-        [ConfigItem<bool>("SystemTelemetry", false)] public partial bool Telemetry { get; set; }
-
-        /// <summary>
         /// 隐私模式：不弹窗询问，直接拒绝所有未永久授权的网络用途。
         /// </summary>
         [ConfigItem<bool>("SystemPrivacyMode", false)] public partial bool PrivacyMode { get; set; }

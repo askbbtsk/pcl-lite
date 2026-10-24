@@ -54,10 +54,7 @@ public sealed class LobbyController
     /// <returns>Created <see cref="ScaffoldingClientEntity"/>.</returns>
     public async Task<ScaffoldingClientEntity?> LaunchClientAsync(string username, string code, CancellationToken ct = default)
     {
-        if (!await _SendTelemetryAsync(false).ConfigureAwait(false))
-        {
-            return null;
-        }
+        await _RegisterLobbyAsync(false).ConfigureAwait(false);
 
         try
         {
@@ -146,10 +143,7 @@ public sealed class LobbyController
     /// </remarks>
     public async Task<ScaffoldingServerEntity?> LaunchServerAsync(string username, int port)
     {
-        if (!await _SendTelemetryAsync(true).ConfigureAwait(false))
-        {
-            return null;
-        }
+        await _RegisterLobbyAsync(true).ConfigureAwait(false);
 
         try
         {
@@ -212,9 +206,23 @@ public sealed class LobbyController
         return 0;
     }
 
-    private static async Task<bool> _SendTelemetryAsync(bool isHost)
+    /// <summary>
+    /// 把房间登记到联机大厅，让其他人能在列表里看到。
+    /// <para>
+    /// 上游这个方法叫 <c>_SendTelemetryAsync</c>，除了房间信息还会把账号邮箱、最近登录 IP、
+    /// 机器识别码一并上报到 <c>pcl2ce.pysio.online</c>。PCL Lite 只保留房间发现必需的最小字段，
+    /// 并且发送失败不会阻断联机——Scaffolding 与 EasyTier 是 P2P 的，登记只影响房间是否出现在列表里。
+    /// </para>
+    /// </summary>
+    private static async Task _RegisterLobbyAsync(bool isHost)
     {
-        LogWrapper.Info("Link", "开始发送联机数据");
+        var key = EnvironmentInterop.GetSecret("TelemetryKey");
+        if (key is null)
+        {
+            LogWrapper.Warn("Link", "未配置大厅登记密钥，跳过房间登记（联机本身不受影响）");
+            return;
+        }
+
         var servers = Config.Link.CustomRelayServer;
         var serverType = Config.Link.ServerType;
 
@@ -227,13 +235,11 @@ public sealed class LobbyController
             ).Aggregate(servers, (current, relay) => current + $"{relay.Url};");
         }
 
+        // 只上报房间发现所需的字段：不再包含邮箱、最近 IP 与机器识别码
         JsonObject data = new()
         {
             ["Tag"] = "Link",
-            ["Id"] = Identify.LauncherId,
             ["NaidId"] = NaidProfile.Id,
-            ["NaidEmail"] = NaidProfile.Email,
-            ["NaidLastIp"] = NaidProfile.LastIp,
             ["CustomName"] = Config.Link.Username,
             ["Servers"] = servers,
             ["IsHost"] = isHost
@@ -243,64 +249,21 @@ public sealed class LobbyController
         try
         {
             HttpContent httpContent = new StringContent(sendData.ToJsonString(), Encoding.UTF8, "application/json");
-            var key = EnvironmentInterop.GetSecret("TelemetryKey");
-            if (key is null)
-            {
-                if (RequiresLogin)
-                {
-                    LogWrapper.Error("Link", "联机数据发送失败，未设置 TelemetryKey");
-                    return false;
-                }
-                LogWrapper.Warn("Link", "联机数据发送失败，未设置 TelemetryKey，跳过发送");
-            }
-            else
-            {
-                using var response = await HttpRequest
-                    .CreatePost("https://pcl2ce.pysio.online/post")
-                    .WithContent(httpContent)
-                    .WithBearerToken(key)
-                    .SendAsync()
-                    .ConfigureAwait(false);
+            using var response = await HttpRequest
+                .CreatePost("https://pcl2ce.pysio.online/post")
+                .WithContent(httpContent)
+                .WithBearerToken(key)
+                .SendAsync()
+                .ConfigureAwait(false);
 
-                if (!response.IsSuccess)
-                {
-                    if (RequiresLogin)
-                    {
-                        LogWrapper.Error("Link", "联机数据发送失败，响应内容为空");
-                        return false;
-                    }
-                    LogWrapper.Warn("Link", "联机数据发送失败，响应内容为空，跳过发送");
-                }
-                else
-                {
-                    var result = await response.AsStringAsync().ConfigureAwait(false);
-                    if (result.Contains("数据已成功保存"))
-                    {
-                        LogWrapper.Info("Link", "联机数据已发送");
-                    }
-                    else
-                    {
-                        if (RequiresLogin)
-                        {
-                            LogWrapper.Error("Link", "联机数据发送失败，响应内容: " + result);
-                            return false;
-                        }
-                        LogWrapper.Warn("Link", "联机数据发送失败，跳过发送，响应内容: " + result);
-                    }
-                }
-            }
+            if (response.IsSuccess)
+                LogWrapper.Info("Link", "房间登记已提交");
+            else
+                LogWrapper.Warn("Link", "房间登记失败，跳过（联机本身不受影响）");
         }
         catch (Exception ex)
         {
-            if (RequiresLogin)
-            {
-                LogWrapper.Error(ex, "Link",
-                    ex.Message.Contains("429") ? "联机数据发送失败，请求过于频繁" : "联机数据发送失败");
-                return false;
-            }
-            LogWrapper.Warn(ex, "Link", "联机数据发送失败，跳过发送");
+            LogWrapper.Warn(ex, "Link", "房间登记失败，跳过（联机本身不受影响）");
         }
-
-        return true;
     }
 }

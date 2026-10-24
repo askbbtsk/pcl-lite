@@ -122,8 +122,12 @@ public static class UpdateManager
                     SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64, dlTargetPath));
                 loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.Check"), _ =>
                 {
+                    // 更新源给不出官方哈希时 Sha256 是空串（Atom 降级通道、老接口）。
+                    // 这时候必须跳过校验：拿空串去比只会必然失败，把本来能装上的更新拦下来，
+                    // 报错还会写成「应该为 ，实际为 xxx」。
+                    if (string.IsNullOrWhiteSpace(version.Sha256)) return;
                     var curHash = ModBase.GetFileSHA256(dlTargetPath);
-                    if ((curHash ?? "") != (version.Sha256 ?? ""))
+                    if (!string.Equals(curHash, version.Sha256, StringComparison.OrdinalIgnoreCase))
                         throw new Exception(Lang.Text("Update.Error.Sha256Mismatch", version.Sha256, curHash));
                 }));
                 if (type == UpdateEnums.UpdateType.UpdateNow)

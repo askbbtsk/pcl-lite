@@ -255,10 +255,42 @@ public class UpdatesGitHubModel : IUpdateSource
             // GitHub 没有内部版本代号的概念，而 IsLatest 只比较 SemVer，所以这里填 0。
             VersionCode = 0,
             Changelog = release["body"]?.GetValue<string>() ?? string.Empty,
-            // Releases 不提供哈希，下载后不做完整性校验。
-            Sha256 = string.Empty,
+            // 有官方 digest 就带上，没有就留空（调用方会跳过校验）
+            Sha256 = _TryGetSha256(release, arch),
             Source = SourceName
         };
+    }
+
+    /// <summary>
+    ///     取目标附件的 SHA-256。GitHub 现在会在资产上带 <c>digest</c> 字段（<c>sha256:...</c>），
+    ///     有就拿来做完整性校验，没有（Atom 降级通道、老接口）就返回空串让调用方跳过校验。
+    ///     <para>
+    ///         只认 .exe 附件：zip 的 digest 是压缩包本身的，解出来的 exe 哈希对不上。
+    ///     </para>
+    /// </summary>
+    private static string _TryGetSha256(JsonObject release, UpdateArch arch)
+    {
+        if (release["assets"] is not JsonArray assets || assets.Count == 0) return string.Empty;
+        try
+        {
+            var url = _PickAsset(assets, arch);
+            if (!url.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return string.Empty;
+
+            var asset = assets.OfType<JsonObject>().FirstOrDefault(x =>
+                x["browser_download_url"]?.GetValue<string>() == url);
+            var digest = asset?["digest"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(digest)) return string.Empty;
+
+            const string prefix = "sha256:";
+            return digest.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                ? digest[prefix.Length..].Trim().ToLowerInvariant()
+                : string.Empty;
+        }
+        catch (Exception)
+        {
+            // 挑不到附件不该影响「检查更新」本身
+            return string.Empty;
+        }
     }
 
     public bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)

@@ -38,14 +38,7 @@ public partial class PageSetupAbout
             .Replace("%VERSIONCODE%", ModBase.versionCode.ToString()).Replace("%BRANCH%", ModBase.versionBranchName)
             .Replace("%COMMIT_HASH%", ModBase.commitHashShort);
 
-        if (!Lang.IsChineseMainland)
-        {
-            ItemMcmod.Visibility = Visibility.Collapsed;
-            BtnMcmod.Visibility = Visibility.Collapsed;
-            ImgMcmod.Visibility = Visibility.Collapsed;
-            RowMcmod.Height = new GridLength(0);
-        }
-
+        // 特别鸣谢只保留 bangbang93 与 z0z0r4，两者都不随语言区域变化，无需再折叠条目
         LoadContributersAsync();
     }
 

@@ -88,11 +88,6 @@
                 <Grid Margin="21,40,21,16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="45" />
-                        <RowDefinition x:Name="RowMcmod" Height="45" />
-                        <RowDefinition Height="45" />
-                        <RowDefinition Height="45" />
-                        <RowDefinition Height="45" />
-                        <RowDefinition Height="45" />
                         <RowDefinition Height="45" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
@@ -115,83 +110,13 @@
                         local:CustomEventService.EventType="OpenUrl"
                         Text="{DynamicResource Setup.About.SpecialThanks.SponsorMirror}" />
                     <local:MyListItem
-                        x:Name="ItemMcmod"
                         Grid.Row="1"
-                        Grid.Column="1"
-                        Grid.ColumnSpan="2"
-                        Margin="-5,0,0,0"
-                        Info="{DynamicResource Setup.About.SpecialThanks.Info.Mcmod}"
-                        IsHitTestVisible="False"
-                        Title="{DynamicResource Setup.About.SpecialThanks.Name.Mcmod}" />
-                    <local:MyButton
-                        x:Name="BtnMcmod"
-                        Grid.Row="1"
-                        Grid.Column="2"
-                        Height="35"
-                        local:CustomEventService.EventData="https://www.mcmod.cn"
-                        local:CustomEventService.EventType="OpenUrl"
-                        Text="{DynamicResource Setup.About.SpecialThanks.OpenMcmod}" />
-                    <local:MyListItem
-                        Grid.Row="2"
-                        Grid.Column="1"
-                        Grid.ColumnSpan="2"
-                        Margin="-5,0,0,0"
-                        Info="{DynamicResource Setup.About.SpecialThanks.Info.Cloud}"
-                        IsHitTestVisible="False"
-                        Title="{DynamicResource Setup.About.SpecialThanks.Name.Pysio}" />
-                    <local:MyButton
-                        Grid.Row="2"
-                        Grid.Column="2"
-                        Height="35"
-                        local:CustomEventService.EventData="https://www.pysio.online"
-                        local:CustomEventService.EventType="OpenUrl"
-                        Text="{DynamicResource Setup.About.SpecialThanks.GoBlog}" />
-                    <local:MyListItem
-                        Grid.Row="3"
-                        Grid.Column="1"
-                        Grid.ColumnSpan="2"
-                        Margin="-5,0,0,0"
-                        Info="{DynamicResource Setup.About.SpecialThanks.Info.Cloud}"
-                        IsHitTestVisible="False"
-                        Title="{DynamicResource Setup.About.SpecialThanks.Name.Yunmoan}" />
-                    <local:MyButton
-                        Grid.Row="3"
-                        Grid.Column="2"
-                        Height="35"
-                        local:CustomEventService.EventData="https://www.zyghit.cn"
-                        local:CustomEventService.EventType="OpenUrl"
-                        Text="{DynamicResource Setup.About.SpecialThanks.OpenWebsite}" />
-                    <local:MyListItem
-                        Grid.Row="4"
-                        Grid.Column="1"
-                        Grid.ColumnSpan="2"
-                        Margin="-5,0,0,0"
-                        Info="{DynamicResource Setup.About.SpecialThanks.Info.LinkModule}"
-                        IsHitTestVisible="False"
-                        Title="{DynamicResource Setup.About.SpecialThanks.Name.EasyTier}" />
-                    <local:MyButton
-                        Grid.Row="4"
-                        Grid.Column="2"
-                        Height="35"
-                        local:CustomEventService.EventData="https://easytier.cn"
-                        local:CustomEventService.EventType="OpenUrl"
-                        Text="{DynamicResource Setup.About.SpecialThanks.OpenWebsite}" />
-                    <local:MyListItem
-                        Grid.Row="5"
                         Grid.Column="1"
                         Grid.ColumnSpan="2"
                         Margin="-5,0,0,0"
                         Info="{DynamicResource Setup.About.SpecialThanks.Info.Mcim}"
                         IsHitTestVisible="False"
                         Title="{DynamicResource Setup.About.SpecialThanks.Name.Z0z0r4}" />
-                    <local:MyListItem
-                        Grid.Row="6"
-                        Grid.Column="1"
-                        Grid.ColumnSpan="2"
-                        Margin="-5,0,0,0"
-                        Info="{DynamicResource Setup.About.SpecialThanks.Info.IconDesign}"
-                        IsHitTestVisible="False"
-                        Title="{DynamicResource Setup.About.SpecialThanks.Name.Emperormummy}" />
                     <Image
                         Grid.Row="0"
                         Margin="3"
@@ -204,65 +129,9 @@
                         </Image.Clip>
                     </Image>
                     <Image
-                        x:Name="ImgMcmod"
                         Grid.Row="1"
                         Margin="3"
-                        Source="/Plain Craft Launcher 2;component/Images/Heads/wiki.png">
-                        <Image.Clip>
-                            <EllipseGeometry
-                                Center="17 17"
-                                RadiusX="17"
-                                RadiusY="17" />
-                        </Image.Clip>
-                    </Image>
-                    <Image
-                        Grid.Row="2"
-                        Margin="3"
-                        Source="/Plain Craft Launcher 2;component/Images/Heads/Pysio.jpg">
-                        <Image.Clip>
-                            <EllipseGeometry
-                                Center="17 17"
-                                RadiusX="17"
-                                RadiusY="17" />
-                        </Image.Clip>
-                    </Image>
-                    <Image
-                        Grid.Row="3"
-                        Margin="3"
-                        Source="/Plain Craft Launcher 2;component/Images/Heads/Yunmoan.jpg">
-                        <Image.Clip>
-                            <EllipseGeometry
-                                Center="17 17"
-                                RadiusX="17"
-                                RadiusY="17" />
-                        </Image.Clip>
-                    </Image>
-                    <Image
-                        Grid.Row="4"
-                        Margin="3"
-                        Source="/Plain Craft Launcher 2;component/Images/Heads/EasyTier.png">
-                        <Image.Clip>
-                            <EllipseGeometry
-                                Center="17 17"
-                                RadiusX="17"
-                                RadiusY="17" />
-                        </Image.Clip>
-                    </Image>
-                    <Image
-                        Grid.Row="5"
-                        Margin="3"
                         Source="/Plain Craft Launcher 2;component/Images/Heads/z0z0r4.png">
-                        <Image.Clip>
-                            <EllipseGeometry
-                                Center="17 17"
-                                RadiusX="17"
-                                RadiusY="17" />
-                        </Image.Clip>
-                    </Image>
-                    <Image
-                        Grid.Row="6"
-                        Margin="3"
-                        Source="/Plain Craft Launcher 2;component/Images/Heads/Emperormummy.png">
                         <Image.Clip>
                             <EllipseGeometry
                                 Center="17 17"

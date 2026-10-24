@@ -1,0 +1,62 @@
+PCL Lite 许可证
+===============
+
+本项目（PCL Lite）是 PCL（Plain Craft Launcher，作者：龙腾猫跃）的衍生作品。
+PCL 使用 MIT 许可证，本项目同样以 MIT 发布，并附带下列传染性（copyleft）附加条款。
+
+
+MIT License
+-----------
+
+Copyright (c) 2026 PCL Lite
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+附加条款（传染性）
+------------------
+
+1. 传染性
+   任何修改版、衍生版或再分发版，必须同样以本协议（MIT + 本附加条款）分发，
+   不得改用其他许可证。
+
+2. 必须署名
+   必须完整保留本项目的版权声明与作者署名，不得删除或替换。
+
+3. 二次修改须标注 PCL Lite
+   修改后分发时，必须在名称或说明中明确标注本项目为 PCL Lite，
+   不得抹去或替换原有标识。
+
+4. 与 Mojang / Microsoft 无关
+   本项目与 Mojang Studios、Microsoft 及其关联公司没有任何关系，
+   未获其批准、授权或背书。
+
+5. 地域限制
+   中国大陆用户请勿使用。
+
+6. 协议可变
+   本协议可能随时更新，且不提前通知；更新只对之后获取的版本生效，
+   已经 fork 或已经分发的版本不受影响。
+
+
+上游声明
+--------
+
+本项目部分代码源自 Apache License 2.0 授权的项目，该部分的版权与许可条件
+不受本文件影响。完整许可原文见仓库根目录的 LICENSE-APACHE，相关声明应予保留。

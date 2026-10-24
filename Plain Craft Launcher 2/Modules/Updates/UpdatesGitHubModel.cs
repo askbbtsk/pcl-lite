@@ -1,0 +1,389 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Net;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using PCL.Core.App;
+using PCL.Core.App.Localization;
+using PCL.Core.IO.Net.Http;
+using PCL.Core.Utils;
+using PCL.Network;
+using PCL.Network.Loaders;
+
+namespace PCL;
+
+/// <summary>
+/// 从 GitHub Releases 读取更新的更新源。
+/// <para>
+/// 上游用的是自建的 MinIO 格式（<c>apiv2/cache.json</c> + 一堆清单文件），
+/// 从 fork 出来的人一般没有这套服务，所以这里直接用 GitHub 的 Releases API。
+/// </para>
+/// <para>
+/// 通道对应关系：<see cref="UpdateChannel.stable"/> 取第一个非 prerelease 的 Release，
+/// <see cref="UpdateChannel.beta"/> 取第一个（含 prerelease）。
+/// 版本号取 <c>tag_name</c>，会自动去掉 <c>v</c> 前缀。
+/// </para>
+/// </summary>
+public class UpdatesGitHubModel : IUpdateSource
+{
+    private const int PageSize = 20;
+
+    /// <summary>
+    /// GitHub 下载反代。国内直连 github.com 拉大文件经常只有几十 KB/s，
+    /// 这些反代把流量中转一遍通常快一个数量级。按实测速度排序，
+    /// 反代服务时好坏，下载器会按顺序往后换，最后回退直连。
+    /// 失效了改这个列表即可，顺序即优先级。
+    /// </summary>
+    private static readonly string[] DownloadProxies =
+    [
+        "https://cors.isteed.cc/",
+        "https://gh-proxy.com/",
+        "https://gitproxy.click/",
+    ];
+
+    private JsonArray? _releases;
+
+    public UpdatesGitHubModel(string? sourceName = null)
+    {
+        SourceName = sourceName ?? "GitHub Releases";
+    }
+
+    public string SourceName { get; set; }
+
+    public bool IsAvailable() => ProjectLinks.IsConfigured;
+
+    public bool RefreshCache()
+    {
+        _EnsureConfigured();
+
+        try
+        {
+            var json = HttpRequest.Create($"{ProjectLinks.ReleasesApi}?per_page={PageSize}")
+                .WithHeader("Accept", "application/vnd.github+json")
+                .SendAsync()
+                .GetAwaiter()
+                .GetResult()
+                .AsString();
+
+            if (JsonNode.Parse(json) is JsonArray releases)
+            {
+                if (releases.Count == 0)
+                    throw new UpdateSourceException("这个仓库还没有发布任何 Release。");
+
+                _releases = releases;
+                return true;
+            }
+
+            // 返回的是对象而不是数组：403 限流、仓库不存在、令牌失效都在这个分支
+            ModBase.Log($"GitHub Releases API 不可用：{_DescribeBadResponse(json)}", ModBase.LogLevel.Developer);
+        }
+        catch (Exception ex) when (ex is not UpdateSourceException)
+        {
+            ModBase.Log(ex, "GitHub Releases API 请求失败", ModBase.LogLevel.Developer);
+        }
+
+        // API 走不通。最常见的情形是用户挂着代理，出口 IP 把未认证的
+        // 60 次/小时限流打满了（直连反而没事）。这时换 Atom 订阅源：
+        // 它挂在 github.com 下，不走 REST API，不受该限流约束。
+        return _RefreshCacheFromAtom();
+    }
+
+    /// <summary>
+    /// 用 Atom 订阅源（<c>releases.atom</c>）顶替 API 拉取版本列表。
+    /// 不走 REST API，因而不受 60 次/小时的限流约束，是 API 挂掉时的备用通道。
+    /// 局限：不区分 prerelease、不含资产列表（资产改从发布页现抓）。
+    /// </summary>
+    private bool _RefreshCacheFromAtom()
+    {
+        _EnsureConfigured();
+
+        try
+        {
+            var atom = HttpRequest.Create($"{ProjectLinks.Repository}/releases.atom")
+                .SendAsync()
+                .GetAwaiter()
+                .GetResult()
+                .AsString();
+
+            var entries = _ParseAtom(atom);
+            if (entries.Count == 0)
+                throw new UpdateSourceException("Atom 订阅源里没有任何 Release。");
+
+            _releases = entries;
+            ModBase.Log("已降级使用 Atom 订阅源获取版本列表", ModBase.LogLevel.Developer);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            throw new UpdateSourceException(
+                "无法获取版本信息：GitHub API 不可用（挂代理时出口 IP 可能已触发每小时 60 次的限流），" +
+                $"Atom 订阅源也失败了（{ex.Message}）。请稍后再试，或检查网络连接。");
+        }
+    }
+
+    /// <summary>
+    /// 解析 releases.atom，转成和 API 同构的 JsonArray。
+    /// tag 从 entry 的 alternate 链接里取（…/releases/tag/v0.1.0-beta），
+    /// 正文取 content 并剥掉 HTML 标签。
+    /// </summary>
+    private static JsonArray _ParseAtom(string atom)
+    {
+        var doc = XDocument.Parse(atom);
+        var ns = (XNamespace)"http://www.w3.org/2005/Atom";
+        var result = new JsonArray();
+
+        foreach (var entry in doc.Descendants(ns + "entry"))
+        {
+            var link = entry.Element(ns + "link")?.Attribute("href")?.Value;
+            if (string.IsNullOrWhiteSpace(link)) continue;
+
+            var tagIndex = link.LastIndexOf("/tag/", StringComparison.OrdinalIgnoreCase);
+            if (tagIndex < 0) continue;
+            var tag = Uri.UnescapeDataString(link[(tagIndex + 5)..]);
+            if (string.IsNullOrWhiteSpace(tag)) continue;
+
+            var body = _StripHtml(entry.Element(ns + "content")?.Value ?? string.Empty);
+
+            var release = new JsonObject
+            {
+                ["tag_name"] = tag,
+                ["body"] = body,
+                ["draft"] = false,
+                // Atom 不标记 prerelease，降级通道里保守按正式版处理；
+                // 只有 API 挂掉时才会走到这里，此时能更新比报错重要。
+                ["prerelease"] = false,
+            };
+            result.Add(release);
+        }
+
+        return result;
+    }
+
+    /// <summary>把 Atom 的 HTML 正文转成纯文本（保留段落换行）。</summary>
+    private static string _StripHtml(string html)
+    {
+        if (string.IsNullOrEmpty(html)) return string.Empty;
+        var text = Regex.Replace(html, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"</p\s*>", "\n\n", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"<[^>]+>", string.Empty);
+        return WebUtility.HtmlDecode(text).Trim();
+    }
+
+    /// <summary>
+    /// 从发布页的资产列表（expanded_assets）抓附件下载地址。
+    /// Atom 订阅源不含资产，API 又挂的时候靠它拿到下载地址；
+    /// 同样挂在 github.com 下，不受 REST API 限流约束。
+    /// </summary>
+    private static JsonArray _FetchAssetsFromPage(string tag)
+    {
+        var html = HttpRequest.Create($"{ProjectLinks.Repository}/releases/expanded_assets/{tag}")
+            .SendAsync()
+            .GetAwaiter()
+            .GetResult()
+            .AsString();
+
+        var assets = new JsonArray();
+        foreach (Match match in Regex.Matches(html, @"href=""(/[^""]+/releases/download/[^""]+)"""))
+        {
+            var url = "https://github.com" + WebUtility.HtmlDecode(match.Groups[1].Value);
+            if (assets.Any(x => x?["browser_download_url"]?.GetValue<string>() == url)) continue;
+            assets.Add(new JsonObject { ["browser_download_url"] = url });
+        }
+
+        return assets;
+    }
+
+    /// <summary>
+    /// GitHub 出错时返回的是对象而不是数组，最常见的是 403 限流
+    /// （未认证请求按出口 IP 计，每 IP 每小时 60 次，挂代理时很容易被打满）。
+    /// 把原始原因翻成人话，比笼统地说「仓库地址填错了」有用得多。
+    /// </summary>
+    private static string _DescribeBadResponse(string json)
+    {
+        string? apiMessage = null;
+        try
+        {
+            if (JsonNode.Parse(json) is JsonObject obj)
+                apiMessage = obj["message"]?.GetValue<string>();
+        }
+        catch (Exception)
+        {
+            // 压根不是 JSON（例如代理返回的错误页），走下面的兜底文案
+        }
+
+        if (!string.IsNullOrWhiteSpace(apiMessage))
+            return apiMessage.Contains("rate limit", StringComparison.OrdinalIgnoreCase)
+                ? "GitHub 接口触发了限流（403）：同一出口 IP 每小时只能请求 60 次，请稍后再试。"
+                : $"GitHub 返回了错误：{apiMessage}";
+
+        return "GitHub Releases 接口返回了非预期的内容，可能是仓库地址填错了。";
+    }
+
+    public VersionDataModel GetLatestVersion(UpdateChannel channel, UpdateArch arch)
+    {
+        _EnsureConfigured();
+        var release = _PickRelease(channel);
+        return new VersionDataModel
+        {
+            VersionName = _NormalizeTag(release["tag_name"]?.GetValue<string>()),
+            // GitHub 没有内部版本代号的概念，而 IsLatest 只比较 SemVer，所以这里填 0。
+            VersionCode = 0,
+            Changelog = release["body"]?.GetValue<string>() ?? string.Empty,
+            // Releases 不提供哈希，下载后不做完整性校验。
+            Sha256 = string.Empty,
+            Source = SourceName
+        };
+    }
+
+    public bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)
+    {
+        var latest = GetLatestVersion(channel, arch);
+        return currentVersion >= SemVer.Parse(latest.VersionName);
+    }
+
+    public VersionAnnouncementDataModel GetAnnouncementList()
+    {
+        // GitHub Releases 没有公告机制，返回空列表让调用方跳过。
+        return new VersionAnnouncementDataModel { Content = [] };
+    }
+
+    public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
+    {
+        var loaders = new List<ModLoader.LoaderBase>();
+        var tempPath = $@"{ModBase.pathTemp}Cache\Update\Download\";
+
+        loaders.Add(new ModLoader.LoaderTask<int, List<DownloadFile>>(
+            Lang.Text("Update.Task.GetVersionInfo"), load =>
+            {
+                var release = _PickRelease(channel);
+                var assets = release["assets"] as JsonArray;
+                if (assets is null || assets.Count == 0)
+                {
+                    // Atom 降级通道没有资产列表，去发布页现抓
+                    var tag = release["tag_name"]?.GetValue<string>();
+                    if (string.IsNullOrWhiteSpace(tag))
+                        throw new UpdateSourceException("Release 没有 tag，无法定位资产。");
+                    assets = _FetchAssetsFromPage(tag);
+                }
+                if (assets.Count == 0)
+                    throw new UpdateSourceException("这个 Release 没有任何附件。");
+
+                var url = _PickAsset(assets, arch);
+                var fileName = url[(url.LastIndexOf('/') + 1)..];
+                tempPath += fileName;
+
+                // 反代优先、直连兜底：国内直连 GitHub 大文件太慢。
+                // 下载器会按顺序尝试，全挂了才轮到直连。
+                var urls = new List<string>();
+                urls.AddRange(DownloadProxies.Select(proxy => proxy + url));
+                urls.Add(url);
+                load.output = [new DownloadFile(urls.Distinct(), tempPath)];
+            }));
+
+        loaders.Add(new LoaderDownload(Lang.Text("Update.Task.DownloadFile"), []));
+
+        loaders.Add(new ModLoader.LoaderTask<string, int>(
+            Lang.Text("Update.Task.ApplyFile"), _ => _ApplyDownloaded(tempPath, output)));
+
+        return loaders;
+    }
+
+    /// <summary>
+    /// 仓库地址还是占位符时，给一条能直接照着改的提示，
+    /// 而不是让用户看到 GitHub API 返回的 404。
+    /// </summary>
+    private static void _EnsureConfigured()
+    {
+        if (ProjectLinks.IsConfigured) return;
+        throw new UpdateSourceException(
+            "尚未配置更新仓库。请修改 PCL.Core/App/ProjectLinks.cs 中的 " +
+            "GitHubOwner 与 GitHubRepo 两个常量，填入你自己的 GitHub 仓库。");
+    }
+
+    /// <summary>
+    /// 按通道挑一个 Release。跳过草稿；stable 通道还要跳过 prerelease。
+    /// </summary>
+    private JsonObject _PickRelease(UpdateChannel channel)
+    {
+        if (_releases is null) RefreshCache();
+
+        foreach (var item in _releases!)
+        {
+            if (item is not JsonObject release) continue;
+            if (release["draft"]?.GetValue<bool>() == true) continue;
+
+            var isPrerelease = release["prerelease"]?.GetValue<bool>() == true;
+            if (channel == UpdateChannel.stable && isPrerelease) continue;
+
+            return release;
+        }
+
+        throw new UpdateSourceException(channel == UpdateChannel.stable
+            ? "仓库里没有正式版 Release，只有预发布版本。"
+            : "仓库里没有任何可用的 Release。");
+    }
+
+    /// <summary>
+    /// 在附件里挑一个可执行文件。优先匹配架构关键字，其次优先 zip。
+    /// </summary>
+    private static string _PickAsset(JsonArray assets, UpdateArch arch)
+    {
+        var candidates = assets
+            .OfType<JsonObject>()
+            .Select(x => x["browser_download_url"]?.GetValue<string>())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (candidates.Count == 0)
+            throw new UpdateSourceException("这个 Release 的附件里没有 .zip 或 .exe。");
+
+        var archKey = arch == UpdateArch.arm64 ? "arm64" : "x64";
+        var matched = candidates.FirstOrDefault(x =>
+            x.Contains(archKey, StringComparison.OrdinalIgnoreCase));
+        if (matched is not null) return matched;
+
+        // 没标架构就优先用 zip（里面装着 exe），再退到任意一个
+        return candidates.FirstOrDefault(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+               ?? candidates[0];
+    }
+
+    private static void _ApplyDownloaded(string path, string output)
+    {
+        if (path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var zip = new ZipArchive(fs);
+            var entry = zip.Entries
+                            .FirstOrDefault(x => x.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                        ?? throw new Exception(Lang.Text("Update.Error.FileNotFound"));
+            entry.ExtractToFile(output, true);
+            return;
+        }
+
+        File.Copy(path, output, true);
+    }
+
+    /// <summary>
+    /// 把 tag 规范化成 SemVer。GitHub 上常见 <c>v0.1.0-beta</c> 这种写法，要把 <c>v</c> 去掉。
+    /// </summary>
+    private static string _NormalizeTag(string? tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+            throw new UpdateSourceException("Release 没有 tag，无法确定版本号。");
+
+        var value = tag.Trim();
+        if (value.StartsWith('v') || value.StartsWith('V')) value = value[1..];
+
+        if (!SemVer.TryParse(value, out _))
+            throw new UpdateSourceException($"Release 的 tag「{tag}」不是合法的 SemVer，无法比较版本。");
+
+        return value;
+    }
+}

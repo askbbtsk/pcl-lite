@@ -1,0 +1,128 @@
+name: Release publish
+
+permissions:
+  contents: write
+  actions: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: 'Build configuration (Beta is published as prerelease)'
+        required: true
+        default: Beta
+        type: choice
+        options:
+          - Release
+          - Beta
+      version:
+        description: 'Version to release, must be SemVer without leading v (e.g., 0.1.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - configuration: ${{ inputs.configuration }}
+            architecture: x64
+          - configuration: ${{ inputs.configuration }}
+            architecture: ARM64
+      fail-fast: false
+
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      configuration: ${{ matrix.configuration }}
+      architecture: ${{ matrix.architecture }}
+    secrets: inherit
+
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout all
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@e407f7bafb71fd004bc5c2da3032e5470cbb6ef0 # v2.87.24
+        with:
+          tool: git-cliff
+
+      - name: Create local release tag
+        run: git tag -f "v${{ inputs.version }}"
+
+      - name: Generate changelog
+        run: git-cliff --latest -o CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create or update release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          draft: true
+          tag_name: v${{ inputs.version }}
+          name: Release ${{ inputs.version }}
+          body_path: CHANGELOG.md
+          prerelease: ${{ inputs.configuration == 'Beta' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  rename_and_release:
+    needs: [build, changelog]
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - configuration: ${{ inputs.configuration }}
+            architecture: x64
+          - configuration: ${{ inputs.configuration }}
+            architecture: ARM64
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: PCL2_CE_${{ matrix.configuration }}_${{ matrix.architecture }}
+          path: ./artifact
+
+      - name: Rename binaries
+        run: |
+          mv "./artifact/Plain Craft Launcher 2.exe" "PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe"
+
+      - name: Sign the binary
+        uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
+        with:
+          inputs: PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe
+          verify: true
+          # 这里原本写死成上游 PCL-Community/PCL-CE。fork 之后签名证书的颁发对象变成了本仓库，
+          # 写死会导致校验失败、整个 job 直接挂掉，所以改成跟着当前仓库和分支走。
+          verify-cert-identity: https://github.com/${{ github.repository }}/.github/workflows/release-publish.yml@${{ github.ref }}
+          verify-oidc-issuer: https://token.actions.githubusercontent.com
+
+      - name: Upload binary and signature to Release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          draft: true
+          tag_name: v${{ inputs.version }}
+          files: |
+            PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe
+            PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe.sigstore.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish_draft:
+    needs: [rename_and_release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish Draft
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: v${{ inputs.version }}
+
+      # 本项目没有接入 MirrorChyan，上游那两步触发（上传 + 发布说明）已连同
+      # mirrorchyan_*.yml 一起删除。以后真要接入，把工作流与仓库标识补齐再加回来。

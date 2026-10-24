@@ -1,0 +1,22 @@
+﻿<!-- Formatted by xaml-lang-formatter at 2026-06-28T17:16:52. -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xml:space="preserve">
+
+    <!-- Meta -->
+
+    <sys:String x:Key="Meta.Code">es-ES</sys:String>
+    <sys:String x:Key="Meta.Name">Español (España)</sys:String>
+
+    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass">Cristal líquido</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.ToolTip">Añade refracción de borde, dispersión y brillos internos similares al cristal a controles como los botones.&#xA;Solo afecta a los controles, nunca al fondo de la ventana. Desactivado por defecto.</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Highlight">Brillo</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Highlight.ToolTip">Intensidad de los brillos superior y de borde. Un valor mayor hace el cristal más luminoso.</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Refraction">Refracción del borde</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Refraction.ToolTip">Intensidad y anchura de la luz concentrada en el borde del control. Un valor mayor simula un cristal más grueso.</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Dispersion">Dispersión</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Dispersion.ToolTip">Intensidad de la separación de colores en el borde. Un valor mayor muestra capas cálidas y frías más claras.</sys:String>
+
+</ResourceDictionary>

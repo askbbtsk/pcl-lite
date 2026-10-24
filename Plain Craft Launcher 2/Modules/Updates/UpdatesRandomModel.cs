@@ -26,9 +26,9 @@ public class UpdatesRandomModel : IUpdateSource // 社区自己的更新系统�
         return _sources.ElementAt(_randIndex).IsAvailable();
     }
 
-    public bool RefreshCache()
+    public bool RefreshCache(bool force = false)
     {
-        return _sources.ElementAt(_randIndex).RefreshCache();
+        return _sources.ElementAt(_randIndex).RefreshCache(force);
     }
 
     public VersionDataModel GetLatestVersion(UpdateChannel channel, UpdateArch arch)

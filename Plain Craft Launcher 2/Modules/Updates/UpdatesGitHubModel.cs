@@ -47,6 +47,21 @@ public class UpdatesGitHubModel : IUpdateSource
 
     private JsonArray? _releases;
 
+    /// <summary>
+    ///     上次成功拉取版本列表的时间。用来判断缓存是否还有效。
+    /// </summary>
+    private DateTime _fetchedAt = DateTime.MinValue;
+
+    /// <summary>
+    ///     版本列表的缓存有效期。
+    ///     <para>
+    ///     原本这里没有有效期，进程活多久缓存就活多久。结果是：启动器在发版之前就开着的话，
+    ///     之后不管点多少次「重新检查」都只会看到发版前的那份列表，必须重启才认新版本。
+    ///     给个短有效期，让自动检查也能在一个合理时间后自己刷新。
+    ///     </para>
+    /// </summary>
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+
     public UpdatesGitHubModel(string? sourceName = null)
     {
         SourceName = sourceName ?? "GitHub Releases";
@@ -56,9 +71,14 @@ public class UpdatesGitHubModel : IUpdateSource
 
     public bool IsAvailable() => ProjectLinks.IsConfigured;
 
-    public bool RefreshCache()
+    public bool RefreshCache(bool force = false)
     {
         _EnsureConfigured();
+
+        // 缓存还在有效期内就直接用，省一次请求（也省 GitHub 的限流额度）。
+        // force 用于用户主动点「重新检查」，必须真的去问一次。
+        if (!force && _releases is not null && DateTime.UtcNow - _fetchedAt < CacheTtl)
+            return true;
 
         try
         {
@@ -75,6 +95,7 @@ public class UpdatesGitHubModel : IUpdateSource
                     throw new UpdateSourceException("这个仓库还没有发布任何 Release。");
 
                 _releases = releases;
+                _fetchedAt = DateTime.UtcNow;
                 return true;
             }
 
@@ -114,6 +135,7 @@ public class UpdatesGitHubModel : IUpdateSource
                 throw new UpdateSourceException("Atom 订阅源里没有任何 Release。");
 
             _releases = entries;
+            _fetchedAt = DateTime.UtcNow;
             ModBase.Log("已降级使用 Atom 订阅源获取版本列表", ModBase.LogLevel.Developer);
             return true;
         }
@@ -153,9 +175,9 @@ public class UpdatesGitHubModel : IUpdateSource
                 ["tag_name"] = tag,
                 ["body"] = body,
                 ["draft"] = false,
-                // Atom 不标记 prerelease，降级通道里保守按正式版处理；
-                // 只有 API 挂掉时才会走到这里，此时能更新比报错重要。
-                ["prerelease"] = false,
+                // Atom 不提供 prerelease 标记，但 tag 本身就写着：v1.2.1-beta。
+                // 按 tag 猜一下，否则走降级通道时正式版通道会把 beta 当成正式版推给用户。
+                ["prerelease"] = _LooksPrerelease(tag),
             };
             result.Add(release);
         }
@@ -290,6 +312,18 @@ public class UpdatesGitHubModel : IUpdateSource
             Lang.Text("Update.Task.ApplyFile"), _ => _ApplyDownloaded(tempPath, output)));
 
         return loaders;
+    }
+
+    /// <summary>
+    ///     从 tag 猜它是不是预发布版。只用于 Atom 降级通道——那条路拿不到 prerelease 字段。
+    ///     SemVer 里 <c>-</c> 之后就是预发布标识（<c>1.2.1-beta</c>），<c>+</c> 之后是构建元数据。
+    /// </summary>
+    private static bool _LooksPrerelease(string? tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag)) return false;
+        var value = tag.Trim();
+        if (value.StartsWith('v') || value.StartsWith('V')) value = value[1..];
+        return value.Contains('-');
     }
 
     /// <summary>

@@ -62,11 +62,28 @@ public partial class PageSetupUpdate
 
     public async void CheckUpdate()
     {
-        ModBase.Log("[Update] 开始检查更新");
+        await CheckUpdateAsync(false);
+    }
+
+    /// <summary>
+    ///     检查更新。
+    /// </summary>
+    /// <param name="force">
+    ///     是否强制重新拉取版本列表。用户主动点「重新检查」或切换通道时为 true——
+    ///     否则会沿用启动时拉到的缓存，发版前就开着的启动器永远看不到新版本。
+    /// </param>
+    private async Task CheckUpdateAsync(bool force)
+    {
+        ModBase.Log(force ? "[Update] 开始检查更新（强制刷新）" : "[Update] 开始检查更新");
         CardUpdate.Visibility = Visibility.Collapsed;
         CardCheck.Visibility = Visibility.Visible;
         TextCurrentDesc.Text = Lang.Text("Setup.Update.Checking");
         BtnCheckAgain.IsEnabled = false;
+
+        // 强制刷新时先把版本列表换掉，后面取详情才不会拿到旧的那一条
+        if (force)
+            await Task.Run(() => UpdateManager.remoteServer.RefreshCache(true));
+
         switch (await IsLatestAsync())
         {
             case UpdateStatus.Available:
@@ -196,8 +213,6 @@ public partial class PageSetupUpdate
                         Lang.Text("Setup.Update.Channel.Common.Warning.Confirm"),
                         Lang.Text("Common.Action.Cancel"), isWarn: true) == 2)
                     isCancelled = true;
-                else
-                    CheckUpdate();
                 break;
             }
             case 2:
@@ -217,16 +232,13 @@ public partial class PageSetupUpdate
                     Lang.Text("Setup.Update.Channel.Dev.FinalConfirm.Message", confirmText),
                     button1: Lang.Text("Setup.Update.Channel.Dev.FinalConfirm.Submit"),
                     button2: Lang.Text("Common.Action.Cancel"), isWarn: true);
-    
-                if (ret == confirmText)
-                {
-                    CheckUpdate();
-                }
-                else
+
+                if (ret != confirmText)
                 {
                     HintService.Hint(Lang.Text("Setup.Update.Channel.Dev.FinalConfirm.WrongInput"));
                     isCancelled = true;
                 }
+
                 break;
             }
         }
@@ -236,11 +248,13 @@ public partial class PageSetupUpdate
             ModAnimation.AniControlEnabled += 1;
             ComboSystemUpdateChannel.SelectedItem = e.RemovedItems[0];
             ModAnimation.AniControlEnabled -= 1;
+            return;
         }
-        else
-        {
-            Config.Update.UpdateChannel = (Core.App.UpdateChannel)ComboSystemUpdateChannel.SelectedIndex;
-        }
+
+        // 先把通道写进配置，再检查。反过来做的话，切换后的第一次检查用的还是旧通道，
+        // 用户会看到「已是最新」——而那个结论是按旧通道算的。
+        Config.Update.UpdateChannel = (Core.App.UpdateChannel)ComboSystemUpdateChannel.SelectedIndex;
+        _ = CheckUpdateAsync(true);
     }
 
     private void BtnChangelog_Click(object sender, MouseButtonEventArgs e)
@@ -260,7 +274,8 @@ public partial class PageSetupUpdate
 
     private void BtnCheckAgain_OnClick(object sender, MouseButtonEventArgs e)
     {
-        CheckUpdate();
+        // 用户主动点了「重新检查」，就必须真的去问一次服务器，不能拿缓存糊弄
+        _ = CheckUpdateAsync(true);
     }
 
     private enum UpdateStatus

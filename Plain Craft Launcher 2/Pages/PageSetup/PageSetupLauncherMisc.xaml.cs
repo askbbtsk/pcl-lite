@@ -678,19 +678,22 @@ public partial class PageSetupLauncherMisc
         DiscordRichPresenceService.RequestRefresh();
     }
 
-    private void BtnDiscordRefresh_Click(object sender, EventArgs e)
+    // 注意：MyButton.Click 用的是自定义委托 ClickEventHandler(object, MouseButtonEventArgs)，
+    // 不是 WPF 原生的 RoutedEventHandler。写成 EventArgs 编译能过（事件挂接走运行期
+    // Delegate.CreateDelegate），但一点开设置页就会抛 XamlParseException，整个页面加载失败。
+    private void BtnDiscordRefresh_Click(object sender, MouseButtonEventArgs e)
     {
         DiscordRichPresenceService.RequestRefresh();
         UpdateDiscordStatus();
     }
 
-    private void BtnDiscordClear_Click(object sender, EventArgs e)
+    private void BtnDiscordClear_Click(object sender, MouseButtonEventArgs e)
     {
         DiscordRichPresenceService.ClearActivity();
         UpdateDiscordStatus();
     }
 
-    private void BtnDiscordPortal_Click(object sender, EventArgs e)
+    private void BtnDiscordPortal_Click(object sender, MouseButtonEventArgs e)
     {
         ModBase.OpenWebsite("https://discord.com/developers/applications");
     }

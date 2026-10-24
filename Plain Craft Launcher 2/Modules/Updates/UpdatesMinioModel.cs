@@ -31,7 +31,7 @@ public class UpdatesMinioModel : IUpdateSource // 社区自己的更新系统格
         return !string.IsNullOrWhiteSpace(_baseUrl);
     }
 
-    public bool RefreshCache()
+    public bool RefreshCache(bool force = false)
     {
         // 先检查缓存
         var remoteCache =

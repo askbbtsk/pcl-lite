@@ -22,6 +22,17 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
     /// <summary>连接失败后的重试间隔。Discord 没开的时候别每 5 秒折腾一次。</summary>
     private const int ConnectRetryMs = 30000;
 
+    /// <summary>
+    ///     内容没变时也定期重发一次的间隔。
+    ///     <para>
+    ///     Discord 一次只显示一个「正在玩」，别的 RPC 应用（例如各种 Electron 小工具）
+    ///     会把它抢走。原来我们内容不变就不再发，一旦被抢走就再也回不来，用户看到的就是
+    ///     「Discord 里没有 PCL Lite」。定期重发一次就能抢回来。
+    ///     </para>
+    ///     <para>30 秒一次，仍低于 SET_ACTIVITY 的 20 秒 5 次限流。</para>
+    /// </summary>
+    private const int ReassertIntervalMs = 30000;
+
     private static readonly Process _LauncherProcess = Process.GetCurrentProcess();
     private static readonly DateTime _LauncherStart = _GetLauncherStart();
 
@@ -30,6 +41,9 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
     private static LifecycleContext? _context;
     private static DateTime? _gameStart;
     private static string? _lastActivity;
+
+    /// <summary>上次真正发出 SET_ACTIVITY 的时刻，用于定期重发。</summary>
+    private static long _lastSentTicks;
     private static long _nextConnectAttemptTicks;
     private static string _status = "未启用";
 
@@ -192,7 +206,10 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
             _ReadLauncherMemory(),
             Basics.Metadata.Version.BaseName);
 
-        if (activity == _lastActivity) return;
+        // 内容没变就不发，省限流额度；但每隔一段时间必须重发一次，否则被别的
+        // RPC 应用抢走的「正在玩」位置就再也拿不回来了。
+        var unchanged = activity == _lastActivity;
+        if (unchanged && Environment.TickCount64 - _lastSentTicks < ReassertIntervalMs) return;
 
         // 握手成功不代表管道还活着：Discord 对无效的应用 ID 会先回 READY，随后立刻断开。
         // 这里再确认一次，避免把「未连接」当成发送失败报给用户。
@@ -205,6 +222,7 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
         if (_client.SetActivity(activity, out var setError))
         {
             _lastActivity = activity;
+            _lastSentTicks = Environment.TickCount64;
             _SetStatus(game is { Running: true } ? "已连接 · 正在游玩" : "已连接 · 启动器中");
             return;
         }

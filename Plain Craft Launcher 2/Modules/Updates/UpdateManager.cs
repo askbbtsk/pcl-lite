@@ -20,21 +20,37 @@ public static class UpdateManager
         new UpdatesGitHubModel()
     });
 
+    /// <summary>
+    ///     用户选的通道是不是预发布（Beta / Dev）。
+    ///     <para>
+    ///     Dev 也走 beta 通道：本项目没有单独的 Dev 版本源，把 Dev 当正式版处理
+    ///     会让选了 Dev 的人反而收不到任何预发布版本。
+    ///     </para>
+    /// </summary>
+    private static bool _UseBetaChannel =>
+        Config.Update.UpdateChannel != Core.App.UpdateChannel.Release;
+
+    /// <summary>
+    ///     是否应当从预发布通道取版本。当前版本自带 beta 后缀时无条件走 beta，
+    ///     否则跟随用户选的通道。
+    /// </summary>
     public static bool IsCurrentVersionBeta
     {
         get
         {
             if (ModBase.versionBaseName.Contains("beta"))
                 return true;
-            return (int)Config.Update.UpdateChannel == 1;
+            return _UseBetaChannel;
         }
     }
-    
+
     public static UpdateEnums.VersionStatus GetVersionStatus()
     {
         try
         {
-            if (IsCurrentVersionBeta && (int)Config.Update.UpdateChannel != 1)
+            // 当前是 beta 版，但用户把通道选回了正式版：只有正式版和 beta 版都不比
+            // 当前版本新时才算「已是最新」，否则提示更新。
+            if (ModBase.versionBaseName.Contains("beta") && !_UseBetaChannel)
             {
                 var isNewerThanStable = remoteServer.IsLatest(UpdateChannel.stable,
                     SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64, SemVer.Parse(ModBase.versionBaseName),

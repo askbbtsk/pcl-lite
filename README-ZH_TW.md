@@ -9,6 +9,7 @@
 [![Downloads](https://img.shields.io/github/downloads/bedkillerspacex-boop/Pcl-Lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases)
 
 [下載](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases) |
+[文件](docs/) |
 [授權條款](#-授權條款) |
 [提交問題](https://github.com/bedkillerspacex-boop/Pcl-Lite/issues/new)
 
@@ -29,7 +30,8 @@ PCL Lite 是基於 PCL 開放原始碼開發的衍生版本，在上游功能的
 
 | 架構 | 檔案 | 說明 |
 |---|---|---|
-| x64 | `PCL-Lite_Beta_x64.exe` | 單一檔案、免解壓縮 |
+| x64（穩定版） | `PCL-Lite_1.1_x64.exe` | 單一檔案、免解壓縮 |
+| x64（預發布） | `PCL-Lite_1.2.2-beta_x64.exe` | 功能較新，可能不穩定 |
 
 - 需要已安裝 [.NET 10 桌面執行階段](https://dotnet.microsoft.com/download/dotnet/10.0)
 - 啟動器內建自動更新，更新來源指向本儲存庫的 Releases
@@ -57,6 +59,18 @@ PCL Lite 是基於 PCL 開放原始碼開發的衍生版本，在上游功能的
 取決於部分問題的特殊性（如系統不完整），有時你仍然必須升級作業系統以繼續獲得支援。
 PCL Lite 始終建議使用最新版本的作業系統以獲得最佳體驗。
 你仍然可以嘗試在不受支援的系統上使用 PCL Lite，但可能會遇到很多額外問題。
+
+## 📖 文件
+
+| 文件 | 講什麼 |
+| --- | --- |
+| [docs/README.md](docs/README.md) | 索引、專案結構、版本號在哪裡 |
+| [主題與配色](docs/THEME.md) | 八級色階怎麼算、14 個預設、自訂主題、怎麼新增主題 |
+| [設定與資料目錄](docs/CONFIG.md) | 設定檔位置、手動改法、遷移邏輯 |
+| [Discord 狀態顯示](docs/DISCORD.md) | 顯示內容、隱私邊界、換成自己的應用程式 |
+| [建置與發布](docs/BUILD.md) | 編譯、金鑰注入、簽章、發版 |
+| [Azure 登入](docs/AZURE-LOGIN.md) | 從零註冊應用程式，用自己的 client_id 走正版登入 |
+| [MCP](docs/MCP.md) | 讓 AI 用戶端直接操作啟動器 |
 
 ## 🔒 授權條款
 

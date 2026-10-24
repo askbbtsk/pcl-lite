@@ -9,6 +9,7 @@
 [![Downloads](https://img.shields.io/github/downloads/bedkillerspacex-boop/Pcl-Lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases)
 
 [Download](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases) |
+[Documentation](docs/) |
 [License](#-license) |
 [Submit issues](https://github.com/bedkillerspacex-boop/Pcl-Lite/issues/new)
 
@@ -29,7 +30,8 @@ Get the latest build from [Releases](https://github.com/bedkillerspacex-boop/Pcl
 
 | Architecture | File | Notes |
 |---|---|---|
-| x64 | `PCL-Lite_Beta_x64.exe` | Single file, no extraction needed |
+| x64 (stable) | `PCL-Lite_1.1_x64.exe` | Single file, no extraction needed |
+| x64 (pre-release) | `PCL-Lite_1.2.2-beta_x64.exe` | Newer features, may be unstable |
 
 - Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
 - The launcher updates itself from this repository's Releases
@@ -57,6 +59,20 @@ Only the latest version of the launcher is supported.
 Depending on the nature of certain issues (e.g. an incomplete system environment), you may still need to upgrade your OS to keep receiving support.
 PCL Lite always recommends using the latest version of your OS for the best experience.
 You can still try PCL Lite on unsupported systems, but you may run into many additional problems.
+
+## 📖 Documentation
+
+> The documents below are currently written in Simplified Chinese.
+
+| Document | What it covers |
+| --- | --- |
+| [docs/README.md](docs/README.md) | Index, project layout, where the version number actually lives |
+| [Theming & colours](docs/THEME.md) | How the eight-step palette is computed, the 14 presets, custom themes, adding a new preset |
+| [Config & data directories](docs/CONFIG.md) | Where the config files are, editing them by hand, migration logic |
+| [Discord Rich Presence](docs/DISCORD.md) | What is shown, privacy boundaries, switching to your own Discord app |
+| [Build & release](docs/BUILD.md) | Compiling, secret injection, signing, publishing a release |
+| [Azure login](docs/AZURE-LOGIN.md) | Registering an app from scratch to sign in with your own client_id |
+| [MCP](docs/MCP.md) | Letting AI clients drive the launcher directly |
 
 ## 🔒 License
 

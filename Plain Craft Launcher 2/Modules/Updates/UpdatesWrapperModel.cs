@@ -37,12 +37,12 @@ public class UpdatesWrapperModel : IUpdateSource
         return _sources.Any(x => x.IsAvailable());
     }
 
-    public bool RefreshCache()
+    public bool RefreshCache(bool force = false)
     {
         foreach (var item in _sources)
             try
             {
-                item.RefreshCache();
+                item.RefreshCache(force);
                 _versionSource = item;
                 break;
             }

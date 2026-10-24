@@ -41,6 +41,9 @@ public static class DiscordActivityBuilder
 
         var activity = new JsonObject
         {
+            // Discord 的 activity 类型：0 = Playing。不写时 Discord 会默认补 0，
+            // 但显式写出来可以避免以后换客户端版本时行为漂移。
+            ["type"] = 0,
             ["details"] = _Clamp(_BuildDetails(game, fields, isGame, launcherVersion), MaxTextLength),
             // 不让 Discord 显示成「正在玩 XXX」——那不是游戏本体
             ["instance"] = false,

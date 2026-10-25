@@ -30,18 +30,23 @@
 代码里的定义在 `PCL.Core/App/ProjectLinks.cs` 的
 `UpdateManifest` / `UpdateManifestMirror` / `UpdateManifestApi`。
 
-### 实际拉取顺序
+### 实际拉取方式：并发抢答
 
-国内直连 `raw.githubusercontent.com` 基本不通，所以拉清单是一整条通道链，
-前一个失败就自动换下一个，全挂才回退到「直接读仓库的 Releases」：
+国内直连 `raw.githubusercontent.com` 基本不通，所以清单是**同时**向下面这些地址发请求，
+**谁先回来用谁**，拿到就取消其余请求：
 
-1. `raw` 直连
-2. `raw` + 每个 GitHub 反代（复用 `UpdatesGitHubModel.DownloadProxies`，
+1. GitHub Contents API（`api.github.com`，和后面取 Release 同一个域名，常常最快）
+2. `raw` 直连
+3. `raw` + 每个 GitHub 反代（复用 `UpdatesGitHubModel.DownloadProxies`，
    目前是 `cors.isteed.cc` / `gh-proxy.com` / `gitproxy.click`）
-3. jsDelivr CDN
-4. GitHub Contents API
+4. jsDelivr CDN
 
-反代列表只有一处定义，失效时改 `DownloadProxies` 即可，下载和清单同时生效。
+每个通道单独 6 秒超时、不重试。串行试的写法在国内很难受：排在前面的通道一旦被墙，
+要等超时才换下一个，用户看到的就是「检查更新转圈十几秒」。并发抢答的代价只是多发几个
+小请求，换来的是「最快那条通道的延迟」——正常几百毫秒出结果。
+
+全部失败才回退到「直接读当前仓库的 Releases」。反代列表只有一处定义，
+失效时改 `DownloadProxies` 即可，下载和清单同时生效。
 
 > **这个地址一旦发出去就不能再改。** 改它就等于把所有旧版本一起掐断。
 > 真要换地方，得在新地址上放一份内容相同的 json，并让旧地址重定向过去，

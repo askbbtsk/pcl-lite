@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
 using PCL.Core.App;
 using PCL.Core.IO.Net.Http;
 using PCL.Core.Utils;
@@ -102,46 +104,76 @@ public class UpdatesManifestModel : IUpdateSource
     }
 
     /// <summary>
-    /// 拉清单原文，按顺序试一串通道：
-    /// <list type="number">
-    /// <item>raw.githubusercontent 直连——最快，不吃 API 限流</item>
-    /// <item>一串 GitHub 反代 + raw——国内直连 raw 基本不通，反代是主要通道</item>
-    /// <item>jsDelivr CDN</item>
-    /// <item>GitHub Contents API——兜底，api.github.com 的可达性通常最好</item>
-    /// </list>
-    /// 全挂才算这个源不可用（上层会退到直接读当前仓库的 Releases）。
+    /// 单个通道最多等多久。必须给死，否则碰到被墙的域名会一直挂在 TLS 握手上
+    /// （实测 raw.githubusercontent 能挂到一分半还不报错），用户就一直转圈。
+    /// </summary>
+    private static readonly TimeSpan ChannelTimeout = TimeSpan.FromSeconds(6);
+
+    /// <summary>
+    /// 拉清单原文。**所有通道并发发出去，谁先回来用谁**（hedged request）。
+    /// <para>
+    /// 串行试的写法在国内很难受：排在前面的通道一旦被墙，要等到超时才能换下一个，
+    /// 用户看到的就是「检查更新转圈十几秒」。并发抢答的代价只是多发几个小请求，
+    /// 换来的是「最快那条通道的延迟」——正常几百毫秒就出结果。
+    /// </para>
+    /// <para>
+    /// 每个通道单独 6 秒超时、不重试；第一个成功的立刻返回并取消其余请求。
+    /// 全部失败才算这个源不可用（上层会退到直接读当前仓库的 Releases）。
+    /// </para>
     /// </summary>
     private static string _FetchPointer()
     {
-        var errors = new List<string>();
+        return Task.Run(() => _FetchPointerAsync()).GetAwaiter().GetResult();
+    }
+
+    private static async Task<string> _FetchPointerAsync()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var pending = new List<(string Name, Task<string> Task)>
+        {
+            // Contents API 也一起发：它和取 Release 用的是同一个域名，常常是最快的那条
+            ("Contents API", Task.Run(() => _Get(ProjectLinks.UpdateManifestApi, "application/vnd.github.raw", cts.Token), cts.Token))
+        };
 
         foreach (var url in _ManifestUrls())
         {
-            try
-            {
-                var pointer = ExtractPointer(_Get(url));
-                if (string.IsNullOrWhiteSpace(pointer))
-                    throw new UpdateSourceException("清单内容是空的");
-
-                return pointer;
-            }
-            catch (Exception ex)
-            {
-                errors.Add($"{_DescribeChannel(url)} → {ex.Message}");
-                ModBase.Log(ex, $"[Update] 更新清单通道失败：{url}", ModBase.LogLevel.Developer);
-            }
+            var captured = url;
+            pending.Add((_DescribeChannel(captured),
+                Task.Run(() => _Get(captured, null, cts.Token), cts.Token)));
         }
 
+        var errors = new List<string>();
         try
         {
-            var pointer = ExtractPointer(_GetFromContentsApi());
-            if (!string.IsNullOrWhiteSpace(pointer)) return pointer;
-            errors.Add("Contents API → 清单内容是空的");
+            while (pending.Count > 0)
+            {
+                var done = await Task.WhenAny(pending.Select(x => x.Task)).ConfigureAwait(false);
+                var name = pending.First(x => x.Task == done).Name;
+                pending.RemoveAll(x => x.Task == done);
+
+                try
+                {
+                    var pointer = ExtractPointer(await done.ConfigureAwait(false));
+                    if (!string.IsNullOrWhiteSpace(pointer))
+                    {
+                        ModBase.Log($"[Update] 更新清单已从「{name}」取得", ModBase.LogLevel.Developer);
+                        return pointer;
+                    }
+
+                    errors.Add($"{name} → 清单内容是空的");
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"{name} → {ex.Message}");
+                    ModBase.Log(ex, $"[Update] 更新清单通道失败：{name}", ModBase.LogLevel.Developer);
+                }
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            errors.Add($"Contents API → {ex.Message}");
-            ModBase.Log(ex, "[Update] 更新清单通道失败：Contents API", ModBase.LogLevel.Developer);
+            // 赢家已经拿到手，剩下的请求没必要继续占着带宽
+            cts.Cancel();
         }
 
         throw new UpdateSourceException(
@@ -149,8 +181,9 @@ public class UpdatesManifestModel : IUpdateSource
     }
 
     /// <summary>
-    /// 清单的所有候选地址。反代列表直接复用下载用的那份，
+    /// 清单的候选地址（不含 Contents API）。反代列表直接复用下载用的那份，
     /// 这样反代失效时只需要改 <see cref="UpdatesGitHubModel.DownloadProxies"/> 一处。
+    /// <para>既然是并发抢答，顺序只影响日志可读性，不影响速度。</para>
     /// </summary>
     private static IEnumerable<string> _ManifestUrls()
     {
@@ -172,24 +205,33 @@ public class UpdatesManifestModel : IUpdateSource
         return url.StartsWith("https://raw.", StringComparison.OrdinalIgnoreCase) ? "raw" : url.Split('/')[2];
     }
 
-    private static string _Get(string url)
-    {
-        return HttpRequest.Create(url).SendAsync().GetAwaiter().GetResult().AsString();
-    }
-
     /// <summary>
-    /// 走 Contents API 取清单。优先让服务端直接返回原文；
-    /// 万一 Accept 头被忽略，返回的是带 base64 <c>content</c> 的 JSON，这里自己解一次。
+    /// 取一段文本。**每个通道只试一次、6 秒超时**——清单拉不到就赶紧换下一个，
+    /// 不能让用户对着转圈等一分半。
     /// </summary>
-    private static string _GetFromContentsApi()
+    private static string _Get(string url, string? accept = null, CancellationToken outerToken = default)
     {
-        var body = HttpRequest.Create(ProjectLinks.UpdateManifestApi)
-            .WithHeader("Accept", "application/vnd.github.raw")
-            .SendAsync()
+        var request = HttpRequest.Create(url);
+        if (accept is not null) request = request.WithHeader("Accept", accept);
+
+        using var timeoutCts = new CancellationTokenSource(ChannelTimeout);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(outerToken, timeoutCts.Token);
+
+        var body = request
+            .SendAsync(retryTimes: 1, cancellationToken: linked.Token)
             .GetAwaiter()
             .GetResult()
             .AsString();
 
+        return accept is null ? body : _UnwrapContentsApi(body);
+    }
+
+    /// <summary>
+    /// Contents API 正常会按 Accept 直接返回原文；万一头部被忽略，
+    /// 返回的是带 base64 <c>content</c> 的 JSON，这里自己解一次。
+    /// </summary>
+    private static string _UnwrapContentsApi(string body)
+    {
         var trimmed = body.TrimStart();
         if (!trimmed.StartsWith('{')) return body;
 

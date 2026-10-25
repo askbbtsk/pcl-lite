@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 using System.Windows;
@@ -61,6 +62,11 @@ public partial class PageSetupAbout
             ModBase.Log(ex, Lang.Text("Setup.About.Error.LoadContributorsFailed"));
         }
     }
+
+    /// <summary>
+    ///     打开官方 QQ 交流群。没装 QQ 时会退化为复制群号，逻辑在 <see cref="QqGroup"/> 里。
+    /// </summary>
+    private void BtnQqGroup_Click(object sender, EventArgs e) => QqGroup.Open();
 
     private void ImgPCLLogo_Click(object sender, MouseButtonEventArgs e)
     {

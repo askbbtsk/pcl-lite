@@ -1646,6 +1646,11 @@
     <sys:String x:Key="Welcome.Privacy.Mode.On">On</sys:String>
     <sys:String x:Key="Welcome.Privacy.Mode.Off">Off</sys:String>
     <sys:String x:Key="Welcome.Privacy.Status">Privacy mode: {0} · Telemetry: removed</sys:String>
+    <sys:String x:Key="Welcome.Community.Title">Community</sys:String>
+    <sys:String x:Key="Welcome.Community.Desc">Stuck on something, want to report a bug, or just curious what others are doing? Drop by the group.</sys:String>
+    <sys:String x:Key="Community.Qq.Link">QQ Group: 1085542362</sys:String>
+    <sys:String x:Key="Community.Qq.Opening">Opening QQ…</sys:String>
+    <sys:String x:Key="Community.Qq.Copied">Group number {0} copied — search for it in QQ to join.</sys:String>
 
 
     <!-- Launch.Skin -->

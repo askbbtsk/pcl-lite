@@ -192,6 +192,23 @@
                 </Grid>
             </local:MyCard>
 
+            <!--  社区：官方 QQ 交流群（群号只在 QqGroup 里写一份）  -->
+            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Welcome.Community.Title}">
+                <StackPanel Margin="25,39,23,20">
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="{DynamicResource ColorBrushGray2}"
+                        Text="{DynamicResource Welcome.Community.Desc}"
+                        TextWrapping="Wrap" />
+                    <local:MyTextButton
+                        x:Name="BtnQqGroup"
+                        Margin="0,12,0,0"
+                        HorizontalAlignment="Left"
+                        Click="BtnQqGroup_Click"
+                        Text="{DynamicResource Community.Qq.Link}" />
+                </StackPanel>
+            </local:MyCard>
+
             <local:MyCard
                 Margin="0,0,0,15"
                 CanSwap="True"

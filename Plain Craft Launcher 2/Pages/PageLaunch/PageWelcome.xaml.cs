@@ -45,6 +45,7 @@ public partial class PageWelcome
         PanRoot.Children.Add(_BuildHero());
         PanRoot.Children.Add(_BuildNetworkCard());
         PanRoot.Children.Add(_BuildPrivacyCard());
+        PanRoot.Children.Add(_BuildCommunityCard());
         // 主页语言 API：同一父容器下只保留命中当前语言的分支
         HomepageLanguageApi.ApplyToTree(this, LocalizationService.CurrentLanguage.Code);
     }
@@ -184,10 +185,47 @@ public partial class PageWelcome
         return card;
     }
 
+    /// <summary>
+    ///     社区卡片：官方 QQ 交流群。
+    ///     <para>
+    ///         群号只在 <see cref="QqGroup"/> 里写一份，贡献者页复用同一处。
+    ///     </para>
+    /// </summary>
+    private MyCard _BuildCommunityCard()
+    {
+        var card = new MyCard
+        {
+            Margin = new Thickness(0, 15, 0, 0),
+            Title = Lang.Text("Welcome.Community.Title"),
+            CanSwap = false
+        };
+
+        var panel = new StackPanel { Margin = new Thickness(25, 38, 25, 18) };
+
+        var description = new StackPanel();
+        _AddLocalizedText(description, 13, false,
+            ("zh-CN", "遇到问题、想反馈、或者只是想看看别人怎么折腾，都可以来群里。"),
+            ("zh-TW", "遇到問題、想回饋、或者只是想看看別人怎麼折騰，都可以來群裡。"),
+            ("en", "Stuck on something, want to report a bug, or just curious what others are doing? Drop by the group."));
+        panel.Children.Add(description);
+
+        var link = new MyTextButton
+        {
+            Text = Lang.Text("Community.Qq.Link"),
+            FontSize = 13,
+            Margin = new Thickness(0, 14, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        link.Click += (_, _) => QqGroup.Open();
+        panel.Children.Add(link);
+
+        card.Children.Add(panel);
+        return card;
+    }
+
     #endregion
 
     #region 状态
-
     private void RefreshStatus()
     {
         var purposes = NetworkPurposeCatalog.All

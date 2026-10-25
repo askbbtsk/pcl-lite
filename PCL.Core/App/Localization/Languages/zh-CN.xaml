@@ -1691,6 +1691,11 @@
     <sys:String x:Key="Welcome.Privacy.Mode.On">已开启</sys:String>
     <sys:String x:Key="Welcome.Privacy.Mode.Off">未开启</sys:String>
     <sys:String x:Key="Welcome.Privacy.Status">隐私模式：{0}　·　遥测：已移除</sys:String>
+    <sys:String x:Key="Welcome.Community.Title">社区</sys:String>
+    <sys:String x:Key="Welcome.Community.Desc">遇到问题、想反馈、或者只是想看看别人怎么折腾，都可以来群里。</sys:String>
+    <sys:String x:Key="Community.Qq.Link">QQ 交流群：1085542362</sys:String>
+    <sys:String x:Key="Community.Qq.Opening">正在打开 QQ…</sys:String>
+    <sys:String x:Key="Community.Qq.Copied">群号 {0} 已复制，打开 QQ 搜索即可加入</sys:String>
 
 
     <!-- Launch.Skin -->

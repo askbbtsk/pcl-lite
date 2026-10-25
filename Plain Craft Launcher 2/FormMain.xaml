@@ -149,23 +149,13 @@
                                 StrokeThickness="0.2" SnapsToDevicePixels="False" UseLayoutRounding="False" IsHitTestVisible="False" HorizontalAlignment="Left" Height="15" Margin="45,15.5,0,15.5" Stretch="Fill" Stroke="White" Fill="White" Width="52" />
                             <TextBlock Grid.Column="0" x:Name="LabTitleLogo" Visibility="Collapsed" SnapsToDevicePixels="False" UseLayoutRounding="False" IsHitTestVisible="False" HorizontalAlignment="Left" Margin="18,0,0,0" Foreground="White" FontSize="17" VerticalAlignment="Center" />
                             <local:MyImage Grid.Column="0" x:Name="ImageTitleLogo" SnapsToDevicePixels="False" UseLayoutRounding="False" IsHitTestVisible="False" HorizontalAlignment="Left" Margin="7" VerticalAlignment="Center" Visibility="Collapsed" />
-                            <!--  PCL Lite 徽标：纯矢量渲染，不依赖任何图片资源。
-                                  直角终端块 + 左侧强调竖条 + 等宽粗体 LITE，撑满整块高度。  -->
-                            <Border x:Name="CELogo" Grid.Column="1" SnapsToDevicePixels="True" UseLayoutRounding="True" IsHitTestVisible="False"
-                                    HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0"
-                                    Height="18" Background="#F00C0E12">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="2.5" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Rectangle Grid.Column="0" Fill="#FF4CE39A" />
-                                    <TextBlock Grid.Column="1" Text="LITE" VerticalAlignment="Center" Margin="6,0,7,0"
-                                               FontFamily="Cascadia Mono, Consolas, Segoe UI" FontSize="17"
-                                               LineHeight="17" LineStackingStrategy="BlockLineHeight"
-                                               FontWeight="Bold" Foreground="#FFF4F7FA" />
-                                </Grid>
-                            </Border>
+                            <!--  PCL Lite 徽标：纯文字 "Lite"，紧贴 PCL 字标，比 PCL 略粗一点。
+                                  只在默认字标下显示；自定义标题（文本 / 图片）后面不强加。  -->
+                            <TextBlock Grid.Column="1" x:Name="CELogo" Text="Lite"
+                                       VerticalAlignment="Center" HorizontalAlignment="Left"
+                                       Margin="7,0,0,0" FontSize="17" FontWeight="SemiBold"
+                                       Foreground="White" IsHitTestVisible="False"
+                                       SnapsToDevicePixels="True" UseLayoutRounding="True" />
                         </Grid>
                         <StackPanel Grid.Column="1" x:Name="PanTitleSelect" HorizontalAlignment="Left" Height="27"
                                     VerticalAlignment="Center" Orientation="Horizontal" Margin="13,0">

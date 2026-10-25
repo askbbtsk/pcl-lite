@@ -27,6 +27,25 @@ public partial class PageLaunchRight : IRefreshable
         Loaded += (_, _) => Init();
         Loaded += (_, _) => Refresh();
         Unloaded += (_, _) => _DisposeHomepageLiveWatcher();
+        // 切换语言后重新走一遍主页加载，让语言信封与 lang: 标签分支立即生效
+        WeakLanguageChanged.Add(this, static page => ModBase.RunInUi(page._OnLanguageChanged));
+    }
+
+    /// <summary>
+    ///     语言切换后刷新主页。
+    ///     <para>
+    ///         只有正停留在启动页时才原地刷新；否则只清空缓存——切回启动页时
+    ///         <see cref="FormMain.PageChange" /> 会调用 <see cref="IRefreshable.Refresh" /> 重新加载，
+    ///         不会把用户从设置页强行拽回主页。
+    ///     </para>
+    /// </summary>
+    private void _OnLanguageChanged()
+    {
+        if (ModMain.frmMain is null) return;
+        if (ModMain.frmMain.pageCurrent.page == FormMain.PageType.Launch)
+            ForceRefresh();
+        else
+            ClearCache();
     }
 
     private void Init()
@@ -341,12 +360,19 @@ public partial class PageLaunchRight : IRefreshable
             try
             {
                 content = ModMain.ArgumentReplace(content);
+                // 主页语言 API：语言信封在这里换成当前语言的 XAML，原版主页内容原样通过
+                content = HomepageLanguageApi.SelectContent(content, LocalizationService.CurrentLanguage.Code);
                 while (content.Contains("xmlns"))
                     content = content.RegexReplace("xmlns[^\"']*(\"|')[^\"']*(\"|')", "").Replace("xmlns", "");
                 content =
                     $"<StackPanel xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\" xmlns:sys=\"clr-namespace:System;assembly=System.Runtime\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\" xmlns:local=\"clr-namespace:PCL;assembly=Plain Craft Launcher 2\">{content}</StackPanel>";
                 ModBase.Log($"[Page] 实例化：加载主页 UI 开始，最终内容长度：{content.Count()}");
-                PanCustom.Children.Add((UIElement)ModBase.GetObjectFromXML(content, out var sanitizeResult));
+                var homepageRoot = (UIElement)ModBase.GetObjectFromXML(content, out var sanitizeResult);
+                // 主页语言 API：移除未命中当前语言的 lang: 分支，原版主页不含这类标签，一个都不会动
+                var removedBranches = HomepageLanguageApi.ApplyToTree(homepageRoot, LocalizationService.CurrentLanguage.Code);
+                if (removedBranches > 0)
+                    ModBase.Log($"[Page] 已按语言 {LocalizationService.CurrentLanguage.Code} 移除 {removedBranches} 个主页语言分支");
+                PanCustom.Children.Add(homepageRoot);
                 _ShowSanitizeHints(sanitizeResult);
                 _ApplyHomepageLivePatchesFromFile();
             }

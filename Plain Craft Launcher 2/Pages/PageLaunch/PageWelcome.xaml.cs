@@ -11,13 +11,16 @@ namespace PCL;
 /// <summary>
 /// PCL Lite 欢迎页。
 /// <para>
-/// 完全由 C# 构造控件树，不解析任何远程 XAML —— 这正是本项目要消除的机制。
+/// 静态文案按语言分分支存放，加载时由 <see cref="HomepageLanguageApi"/> 按当前 UI 语言过滤——
+/// 与自定义主页（Custom.xaml）走的是同一套语言协议，所以欢迎页本身就是该协议的第一个内置示例。
+/// 卡片标题、按钮与状态行等需要随语言即时刷新的部分沿用 DynamicResource / <see cref="Lang.Text"/>。
+/// </para>
+/// <para>
 /// 只使用内置的 <see cref="MyCard"/> / <see cref="MyButton"/> 等控件，因此视觉与其余页面一致。
 /// </para>
 /// </summary>
 public partial class PageWelcome
 {
-    private bool _built;
     private TextBlock? _networkStatus;
     private TextBlock? _privacyStatus;
 
@@ -25,16 +28,21 @@ public partial class PageWelcome
     {
         InitializeComponent();
         Loaded += (_, _) => Build();
+        // 切换语言后整体重建，让 lang: 分支重新按新语言过滤
+        WeakLanguageChanged.Add(this, static page => ModBase.RunInUi(page.Build));
     }
 
+    /// <summary>
+    ///     构建（或重建）欢迎页内容并应用当前语言的分支过滤。
+    /// </summary>
     private void Build()
     {
-        if (_built) return;
-        _built = true;
-
+        PanRoot.Children.Clear();
         PanRoot.Children.Add(_BuildHero());
         PanRoot.Children.Add(_BuildNetworkCard());
         PanRoot.Children.Add(_BuildPrivacyCard());
+        // 主页语言 API：同一父容器下只保留命中当前语言的分支
+        HomepageLanguageApi.ApplyToTree(this, LocalizationService.CurrentLanguage.Code);
     }
 
     #region 卡片
@@ -71,13 +79,12 @@ public partial class PageWelcome
         titleLine.Children.Add(titleLite);
         panel.Children.Add(titleLine);
 
-        var slogan = new TextBlock
-        {
-            Text = "极客 · 隐私 · 自主",
-            FontSize = 15,
-            Margin = new Thickness(0, 8, 0, 0)
-        };
-        slogan.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray2");
+        // 标语按语言分分支，未命中当前语言时保留全部分支（不会变空白）
+        var slogan = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
+        _AddLocalizedText(slogan, 15, false,
+            ("zh-CN", "极客 · 隐私 · 自主"),
+            ("zh-TW", "極客 · 隱私 · 自主"),
+            ("en", "Geek · Privacy · Autonomy"));
         panel.Children.Add(slogan);
 
         var version = new TextBlock
@@ -95,14 +102,25 @@ public partial class PageWelcome
 
     private MyCard _BuildNetworkCard()
     {
-        var card = new MyCard { Margin = new Thickness(0, 15, 0, 0), Title = "网络自主", CanSwap = false };
+        var card = new MyCard
+        {
+            Margin = new Thickness(0, 15, 0, 0),
+            Title = Lang.Text("Welcome.Network.Title"),
+            CanSwap = false
+        };
 
         var panel = new StackPanel { Margin = new Thickness(25, 38, 25, 18) };
 
-        panel.Children.Add(_Text(
-            "PCL Lite 不会在你不知情时联网。每一次出站连接都会先归入某个「用途」，" +
-            "由你决定是否放行；未登记的目标会被直接拦截，请求不会离开进程。",
-            13));
+        var description = new StackPanel();
+        _AddLocalizedText(description, 13, false,
+            ("zh-CN", "PCL Lite 不会在你不知情时联网。每一次出站连接都会先归入某个「用途」，" +
+                      "由你决定是否放行；未登记的目标会被直接拦截，请求不会离开进程。"),
+            ("zh-TW", "PCL Lite 不會在你不知情時連網。每一次連出連線都會先歸入某個「用途」，" +
+                      "由你決定是否放行；未登記的目標會被直接攔截，請求不會離開行程。"),
+            ("en", "PCL Lite never goes online behind your back. Every outbound connection is first " +
+                   "classified into a purpose that you choose to allow or block; unregistered targets " +
+                   "are dropped before the request ever leaves the process."));
+        panel.Children.Add(description);
 
         _networkStatus = _Text("", 13, bold: true);
         _networkStatus.Margin = new Thickness(0, 12, 0, 0);
@@ -113,7 +131,7 @@ public partial class PageWelcome
             Orientation = Orientation.Horizontal,
             Margin = new Thickness(0, 14, 0, 0)
         };
-        buttons.Children.Add(_Button("管理网络白名单",
+        buttons.Children.Add(_Button(Lang.Text("Welcome.Network.Manage"),
             () => _Navigate(FormMain.PageType.Setup, FormMain.PageSubType.SetupLauncherMisc)));
         panel.Children.Add(buttons);
 
@@ -124,14 +142,25 @@ public partial class PageWelcome
 
     private MyCard _BuildPrivacyCard()
     {
-        var card = new MyCard { Margin = new Thickness(0, 15, 0, 0), Title = "隐私与离线", CanSwap = false };
+        var card = new MyCard
+        {
+            Margin = new Thickness(0, 15, 0, 0),
+            Title = Lang.Text("Welcome.Privacy.Title"),
+            CanSwap = false
+        };
 
         var panel = new StackPanel { Margin = new Thickness(25, 38, 25, 18) };
 
-        panel.Children.Add(_Text(
-            "没有任何遥测与崩溃上报，不收集任何使用数据；崩溃分析全程在本地完成。" +
-            "已安装的版本在断网状态下依然可以启动。",
-            13));
+        var description = new StackPanel();
+        _AddLocalizedText(description, 13, false,
+            ("zh-CN", "没有任何遥测与崩溃上报，不收集任何使用数据；崩溃分析全程在本地完成。" +
+                      "已安装的版本在断网状态下依然可以启动。"),
+            ("zh-TW", "沒有任何遙測與崩潰回報，不收集任何使用資料；崩潰分析全程在本機完成。" +
+                      "已安裝的版本在斷網狀態下依然可以啟動。"),
+            ("en", "No telemetry, no crash reporting, no usage data collection. Crash analysis " +
+                   "happens entirely on your own machine, and installed versions keep launching " +
+                   "while you are offline."));
+        panel.Children.Add(description);
 
         _privacyStatus = _Text("", 13, bold: true);
         _privacyStatus.Margin = new Thickness(0, 12, 0, 0);
@@ -142,7 +171,8 @@ public partial class PageWelcome
             Orientation = Orientation.Horizontal,
             Margin = new Thickness(0, 14, 0, 0)
         };
-        buttons.Children.Add(_Button("打开下载", () => _Navigate(FormMain.PageType.Download)));
+        buttons.Children.Add(_Button(Lang.Text("Welcome.Privacy.OpenDownload"),
+            () => _Navigate(FormMain.PageType.Download)));
         panel.Children.Add(buttons);
 
         card.Children.Add(panel);
@@ -164,14 +194,16 @@ public partial class PageWelcome
         if (_networkStatus is not null)
         {
             _networkStatus.Text = NetworkConsentService.AllowAll
-                ? $"已授权全部连接（{purposes.Length} 项网络用途）"
-                : $"已授权 {allowed} / {purposes.Length} 个网络用途";
+                ? Lang.Text("Welcome.Network.Status.All", purposes.Length)
+                : Lang.Text("Welcome.Network.Status.Partial", allowed, purposes.Length);
         }
 
         if (_privacyStatus is not null)
         {
-            var privacy = Config.System.PrivacyMode ? "已开启" : "未开启";
-            _privacyStatus.Text = $"隐私模式：{privacy}　·　遥测：已移除";
+            var privacy = Config.System.PrivacyMode
+                ? Lang.Text("Welcome.Privacy.Mode.On")
+                : Lang.Text("Welcome.Privacy.Mode.Off");
+            _privacyStatus.Text = Lang.Text("Welcome.Privacy.Status", privacy);
         }
     }
 
@@ -179,7 +211,18 @@ public partial class PageWelcome
 
     #region 构造辅助
 
-    private static TextBlock _Text(string text, double size, bool bold = false)
+    /// <summary>
+    ///     添加一组按语言分分支的文本，每个分支一个 <see cref="TextBlock"/>，
+    ///     由 <see cref="HomepageLanguageApi"/> 在加载时保留命中当前语言的那个。
+    /// </summary>
+    private static void _AddLocalizedText(StackPanel panel, double size, bool bold,
+        params (string Code, string Text)[] branches)
+    {
+        foreach (var (code, text) in branches)
+            panel.Children.Add(_Text(text, size, bold, HomepageLanguageApi.LanguageTagPrefix + code));
+    }
+
+    private static TextBlock _Text(string text, double size, bool bold = false, string? tag = null)
     {
         var block = new TextBlock
         {
@@ -188,6 +231,7 @@ public partial class PageWelcome
             TextWrapping = TextWrapping.Wrap,
             FontWeight = bold ? FontWeights.Bold : FontWeights.Normal
         };
+        if (tag is not null) block.Tag = tag;
         block.SetResourceReference(TextBlock.ForegroundProperty, bold ? "ColorBrush1" : "ColorBrushGray2");
         return block;
     }

@@ -1635,6 +1635,19 @@
     <sys:String x:Key="Launch.Homepage.SlowWarning">The homepage is loading too slowly ({0} seconds). Please report this issue to the homepage author, or temporarily stop using this homepage.</sys:String>
     <sys:String x:Key="Launch.Homepage.Task.Download">Download homepage</sys:String>
 
+    <!-- Welcome -->
+
+    <sys:String x:Key="Welcome.Network.Title">Network autonomy</sys:String>
+    <sys:String x:Key="Welcome.Network.Manage">Manage network allowlist</sys:String>
+    <sys:String x:Key="Welcome.Network.Status.All">All connections allowed ({0} network purposes)</sys:String>
+    <sys:String x:Key="Welcome.Network.Status.Partial">{0} of {1} network purposes allowed</sys:String>
+    <sys:String x:Key="Welcome.Privacy.Title">Privacy and offline</sys:String>
+    <sys:String x:Key="Welcome.Privacy.OpenDownload">Open downloads</sys:String>
+    <sys:String x:Key="Welcome.Privacy.Mode.On">On</sys:String>
+    <sys:String x:Key="Welcome.Privacy.Mode.Off">Off</sys:String>
+    <sys:String x:Key="Welcome.Privacy.Status">Privacy mode: {0} · Telemetry: removed</sys:String>
+
+
     <!-- Launch.Skin -->
 
     <sys:String x:Key="Launch.Skin.ChangeCape">Change cape</sys:String>
@@ -2634,9 +2647,8 @@
     <sys:String x:Key="Setup.Language.Banner.TitlePrefix">Let</sys:String>
     <sys:String x:Key="Setup.Language.Banner.TitleSuffix">Go Internationalised.</sys:String>
     <sys:String x:Key="Setup.Language.Banner.DescriptionLine1">With the support of the community, PCL Lite is entering a new chapter in its journey towards internationalisation.</sys:String>
-    <sys:String x:Key="Setup.Language.Banner.DescriptionLine2">You can help shape that journey by contributing on our translation platform or submitting pull requests to our GitHub repository, making PCL Lite more accessible to users around the world.</sys:String>
+    <sys:String x:Key="Setup.Language.Banner.DescriptionLine2">You can help shape that journey by submitting pull requests to our GitHub repository, making PCL Lite more accessible to users around the world.</sys:String>
     <sys:String x:Key="Setup.Language.Banner.DescriptionLine3">Thank you to everyone who contributes translations, reviews, and improvements—your support makes PCL Lite better for everyone.</sys:String>
-    <sys:String x:Key="Setup.Language.Banner.TranslateWebsite">Visit translation platform</sys:String>
     <sys:String x:Key="Setup.Language.Banner.SubmitPullRequest">Submit pull request</sys:String>
     <sys:String x:Key="Setup.Language.Reset.Success">Language page settings initialised!</sys:String>
     <sys:String x:Key="Setup.Language.Title">Language</sys:String>

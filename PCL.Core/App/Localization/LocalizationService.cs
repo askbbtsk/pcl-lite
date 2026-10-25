@@ -56,16 +56,17 @@ public sealed partial class LocalizationService
 
     /// <summary>
     ///     受支持的 UI 语言。
+    ///     <para>
+    ///         只保留简体中文、繁體中文与英文（en-US / en-GB）：这三个语种的翻译是完整的，
+    ///         其余语种长期只有机翻残页，留在列表里只会让人点到一半翻译的界面。
+    ///     </para>
     /// </summary>
     public static IReadOnlyList<LocalizationLanguage> SupportedLanguages { get; } =
     [
         _DefaultLanguage,
         new("zh-TW", "繁體中文（台灣）", "zh-TW", LocalizationFontProfile.TraditionalChinese),
         new("en-US", "English (US)", "en-US", LocalizationFontProfile.English),
-        new("en-GB", "English (United Kingdom)", "en-GB", LocalizationFontProfile.English),
-        new("ja-JP", "日本語（日本）", "ja-JP", LocalizationFontProfile.Japanese),
-        new("fr-FR", "Français (France)", "fr-FR", LocalizationFontProfile.Other),
-        new("es-ES", "Español (España)", "es-ES", LocalizationFontProfile.Other)
+        new("en-GB", "English (United Kingdom)", "en-GB", LocalizationFontProfile.English)
     ];
 
     [RegisterConfigEvent]

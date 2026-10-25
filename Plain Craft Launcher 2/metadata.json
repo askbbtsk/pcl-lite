@@ -1,15 +1,15 @@
 {
   "name": "PCL Lite",
   "version": {
-    "base": "1.2.5",
+    "base": "1.2.6",
     "upstream": "2.12.1",
     "suffix": "beta",
-    "code": 7
+    "code": 8
   },
   "licenses": [
     {
       "name": "PCL-Symbio-Edition",
-      "info": "Copyright © Hydrogen-Peroxide\n基岩版检测与启动逻辑移植自此项目，Licensed under the Apache-2.0 License.",
+      "info": "Copyright © Hydrogen-Peroxide\n基岩版下载、安装与启动逻辑移植自此项目，Licensed under the Apache-2.0 License.",
       "website": "https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition",
       "license": "https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition/blob/main/LICENSE"
     },

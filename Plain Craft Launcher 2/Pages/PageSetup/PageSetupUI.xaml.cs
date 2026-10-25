@@ -1086,9 +1086,11 @@ public partial class PageSetupUI
                 ModMain.frmMain.BtnTitleSelect1.Visibility = !HiddenForceShow && conf.PageDownload
                     ? Visibility.Collapsed
                     : Visibility.Visible;
-                ModMain.frmMain.BtnTitleSelect2.Visibility =
-                    !HiddenForceShow && conf.PageSetup ? Visibility.Collapsed : Visibility.Visible;
+                // 基岩版没有「隐藏页面」开关，始终显示
+                ModMain.frmMain.BtnTitleSelect2.Visibility = Visibility.Visible;
                 ModMain.frmMain.BtnTitleSelect3.Visibility =
+                    !HiddenForceShow && conf.PageSetup ? Visibility.Collapsed : Visibility.Visible;
+                ModMain.frmMain.BtnTitleSelect4.Visibility =
                     !HiddenForceShow && conf.PageTools ? Visibility.Collapsed : Visibility.Visible;
             }
 

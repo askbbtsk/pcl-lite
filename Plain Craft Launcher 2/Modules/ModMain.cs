@@ -37,7 +37,9 @@ public static class ModMain
     public static PageToolsLeft? frmToolsLeft;
     public static PageToolsGameLink? frmToolsGameLink;
     public static PageToolsTest? frmToolsTest;
-    public static PageToolsBedrock? frmToolsBedrock;
+    public static PageBedrockLeft? frmBedrockLeft;
+    public static PageBedrockDownload? frmBedrockDownload;
+    public static PageBedrockLaunch? frmBedrockLaunch;
     public static PageDownloadLeft? frmDownloadLeft;
     public static PageDownloadInstall? frmDownloadInstall;
     public static PageDownloadClient? frmDownloadClient;

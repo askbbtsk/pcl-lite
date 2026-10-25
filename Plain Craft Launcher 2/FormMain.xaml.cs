@@ -320,14 +320,6 @@ public partial class FormMain
         if ((int)Config.Launch.GameWindowMode == 5)
             Config.Launch.GameWindowMode = GameWindowSizeMode.Default;
 
-        // 更新后展示社区版提示（每个版本只展示一次）
-#if !DEBUG
-        if (States.System.CommunityNoticeVersion < ModBase.versionCode)
-        {
-            States.System.CommunityNoticeVersion = ModBase.versionCode;
-            UpdateManager.ShowCEAnnounce();
-        }
-#endif
         // 输出更新日志
         if (lastVersionCode <= 0)
             return;
@@ -1359,14 +1351,19 @@ public partial class FormMain
         Download = 1,
 
         /// <summary>
-        ///     联机。
+        ///     基岩版（下载 + 启动）。与导航栏 <c>PanTitleSelect</c> 中的下标一致，紧跟在「下载」右侧。
         /// </summary>
-        Tools = 3,
+        Bedrock = 2,
 
         /// <summary>
         ///     设置。
         /// </summary>
-        Setup = 2,
+        Setup = 3,
+
+        /// <summary>
+        ///     联机。
+        /// </summary>
+        Tools = 4,
 
         /// <summary>
         ///     实例选择。这是一个副页面。
@@ -1443,7 +1440,9 @@ public partial class FormMain
 
         ToolsGameLink = 1,
         ToolsTest = 3,
-        ToolsBedrock = 4,
+
+        BedrockDownload = 0,
+        BedrockLaunch = 1,
 
         VersionOverall = 0,
         VersionSetup = 1,
@@ -1553,6 +1552,13 @@ public partial class FormMain
                     if (ModMain.frmSetupLeft is null)
                         ModMain.frmSetupLeft = new PageSetupLeft();
                     return ModMain.frmSetupLeft.pageID;
+                }
+
+                case PageType.Bedrock:
+                {
+                    if (ModMain.frmBedrockLeft is null)
+                        ModMain.frmBedrockLeft = new PageBedrockLeft();
+                    return ModMain.frmBedrockLeft.pageID;
                 }
 
                 case PageType.InstanceSetup:
@@ -1686,6 +1692,20 @@ public partial class FormMain
                     if (ModMain.frmSetupLeft is null)
                         ModMain.frmSetupLeft = new PageSetupLeft();
                     foreach (var item in ModMain.frmSetupLeft.PanItem.Children)
+                        if (item is MyListItem listItem &&
+                            ModBase.Val(listItem.Tag) == (double)subType)
+                        {
+                            listItem.SetChecked(true, true, stack == pageCurrent);
+                            break;
+                        }
+
+                    break;
+                }
+                case PageType.Bedrock:
+                {
+                    if (ModMain.frmBedrockLeft is null)
+                        ModMain.frmBedrockLeft = new PageBedrockLeft();
+                    foreach (var item in ModMain.frmBedrockLeft.PanItem.Children)
                         if (item is MyListItem listItem &&
                             ModBase.Val(listItem.Tag) == (double)subType)
                         {
@@ -1853,6 +1873,17 @@ public partial class FormMain
                         ModMain.frmToolsLeft ??= new PageToolsLeft();
                         subType = ModMain.frmToolsLeft.pageID;
                         PageChangeAnim(ModMain.frmToolsLeft, (FrameworkElement)ModMain.frmToolsLeft.PageGet(subType));
+                        break;
+                    }
+                case PageType.Bedrock: // 基岩版
+                    {
+                        ModMain.frmBedrockLeft ??= new PageBedrockLeft();
+                        if (subType != PageSubType.Default)
+                            ModMain.frmBedrockLeft.pageID = subType;
+                        else
+                            subType = ModMain.frmBedrockLeft.pageID;
+                        PageChangeAnim(ModMain.frmBedrockLeft,
+                            (FrameworkElement)ModMain.frmBedrockLeft.PageGet(subType));
                         break;
                     }
                 case PageType.Setup: // 设置

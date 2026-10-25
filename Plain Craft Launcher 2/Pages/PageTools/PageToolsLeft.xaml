@@ -37,14 +37,6 @@
 
         <TextBlock Text="{DynamicResource Tools.Left.Utilities}" Margin="13,5,5,3" Opacity="0.6" FontSize="12"
                    x:Name="TextToolsCategory" />
-        <local:MyListItem x:Name="ItemBedrock"
-                          IsScaleAnimationEnabled="False"
-                          Type="RadioBox" Tag="4"
-                          MinPaddingRight="35" Height="36"
-                          VerticalAlignment="Top"
-                          Title="{DynamicResource Tools.Left.Bedrock}" Check="PageCheck"
-                          LogoScale="0.9"
-                          SvgIcon="lucide/box" />
         <local:MyListItem x:Name="ItemTest"
                           IsScaleAnimationEnabled="False"
                           Type="RadioBox" Tag="3"

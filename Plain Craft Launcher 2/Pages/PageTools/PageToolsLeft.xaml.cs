@@ -105,12 +105,6 @@ public partial class PageToolsLeft
                     ModMain.frmToolsTest = new PageToolsTest();
                 return ModMain.frmToolsTest;
             }
-            case FormMain.PageSubType.ToolsBedrock:
-            {
-                if (ModMain.frmToolsBedrock is null)
-                    ModMain.frmToolsBedrock = new PageToolsBedrock();
-                return ModMain.frmToolsBedrock;
-            }
             default:
             {
                 throw new Exception("未知的更多子页面种类：" + (int)id);

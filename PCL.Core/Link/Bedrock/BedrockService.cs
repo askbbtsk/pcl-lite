@@ -50,9 +50,9 @@ public sealed record BedrockInstall
 ///     基岩版（Bedrock Edition）检测与启动。
 ///     <para>
 ///         移植自 <see href="https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition">PCL-Symbio-Edition</see>
-///         （Apache-2.0）的 <c>ModBedrockUwp</c> / <c>ModBedrockGdk</c> 启动部分，按 PCL Lite 的结构重写：
-///         只保留「找出已安装的基岩版并启动」，不含商店包下载、清单改写与 .msixvc 解包
-///         （后者需要微软的内容密钥，不适合随源码分发）。
+///         （Apache-2.0）的检测与启动部分，按 PCL Lite 的结构重写。
+///         下载与安装不在这里：商店包由 <c>ModBedrockUwp</c> / <c>ModBedrockInstaller</c> 处理，
+///         GDK 包由 <c>ModBedrockGdk</c> 解包，版本列表由 <see cref="BedrockVersionCatalog" /> 提供。
 ///     </para>
 /// </summary>
 public static class BedrockService
@@ -91,6 +91,43 @@ public static class BedrockService
 
         result.AddRange(DetectPortable(extraDirectories));
         return result;
+    }
+
+    /// <summary>
+    ///     检测启动器自己下载并解包出来的 GDK 版本（<c>Bedrock/versions/&lt;版本号&gt;/</c>）。
+    ///     这些版本不向系统注册，靠目录区分，所以只能由启动器自己记着。
+    /// </summary>
+    public static IReadOnlyList<BedrockInstall> DetectDownloaded(string versionsDirectory)
+    {
+        var list = new List<BedrockInstall>();
+        if (string.IsNullOrWhiteSpace(versionsDirectory) || !Directory.Exists(versionsDirectory)) return list;
+
+        string[] children;
+        try
+        {
+            children = Directory.GetDirectories(versionsDirectory);
+        }
+        catch (Exception)
+        {
+            return list;
+        }
+
+        foreach (var child in children)
+        {
+            var exe = FindExecutable(child);
+            if (exe is null) continue;
+
+            list.Add(new BedrockInstall
+            {
+                Id = "downloaded:" + child,
+                DisplayName = $"Minecraft {new DirectoryInfo(child).Name}（已下载）",
+                Kind = BedrockKind.GdkPortable,
+                Version = ReadFileVersion(exe),
+                ExecutablePath = exe
+            });
+        }
+
+        return list;
     }
 
     /// <summary>

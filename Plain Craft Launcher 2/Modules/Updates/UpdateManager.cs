@@ -296,15 +296,4 @@ public static class UpdateManager
                 return;
         }
     }
-
-    /// <summary>
-    ///     展示社区版提示
-    /// </summary>
-    /// <param name="IsUpdate">是否为更新时启动</param>
-    public static void ShowCEAnnounce()
-    {
-        ModMain.MyMsgBox(Lang.Text("Update.CommunityNotice.Body"),
-            Lang.Text("Update.CommunityNotice.Title"),
-            Lang.Text("Update.CommunityNotice.Confirm"));
-    }
 }

@@ -1,3 +1,4 @@
+using System;
 using PCL.Core.Utils.Exts;
 using PCL.Core.Utils.OS;
 
@@ -40,4 +41,31 @@ public static class Secrets
     /// 当前版本的 Git 提交 SHA
     /// </summary>
     public static string CommitHash { get; } = EnvironmentInterop.GetSecret("GITHUB_SHA", readEnvDebugOnly: true).ReplaceNullOrEmpty();
+
+    /// <summary>
+    ///     基岩版 GDK 正式版安装包的内容密钥（CIK）。
+    ///     <para>
+    ///         GDK 版下发的是加密的 <c>.msixvc</c>（XVC 容器），没有这个密钥解不开。
+    ///         密钥是商店分发凭据，不写进源码：构建时设环境变量 <c>PCL_BEDROCK_RELEASE_CIK</c>
+    ///         （十六进制）即可注入。没配时下载页会明确提示无法解包，而不是静默失败。
+    ///     </para>
+    /// </summary>
+    public static byte[]? BedrockReleaseCik { get; } = ParseCik(EnvironmentInterop.GetSecret("BEDROCK_RELEASE_CIK", readEnvDebugOnly: true));
+
+    /// <summary>基岩版 GDK 预览版安装包的内容密钥（CIK），说明见 <see cref="BedrockReleaseCik" />。</summary>
+    public static byte[]? BedrockPreviewCik { get; } = ParseCik(EnvironmentInterop.GetSecret("BEDROCK_PREVIEW_CIK", readEnvDebugOnly: true));
+
+    private static byte[]? ParseCik(string? hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return null;
+        try
+        {
+            var bytes = Convert.FromHexString(hex.Trim());
+            return bytes.Length >= 48 ? bytes : null;
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
 }

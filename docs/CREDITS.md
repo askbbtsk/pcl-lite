@@ -27,17 +27,24 @@ PCL Lite 站在很多人的肩膀上。这份清单列出直接借用了代码�
 - 作者：Hydrogen-Peroxide
 - 许可证：Apache-2.0
 - 仓库：<https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition>
-- 关系：**基岩版启动**部分移植自此项目。
+- 关系：**基岩版（下载 + 安装 + 启动）** 部分移植自此项目。
 
-  具体范围：`PCL.Core/Link/Bedrock/BedrockService.cs` 的「检测已安装的基岩版」与
-  「启动基岩版」两条路径，参考了上游 `ModBedrockUwp` / `ModBedrockGdk` 的实现思路
-  （商店版走 `shell:appsFolder\<PackageFamilyName>!<AppId>`、GDK 便携版直接运行目录内的
-  `Minecraft.Windows.exe`、进程名 `Minecraft.Windows` / `Minecraft.Win10.DX11`、
-  存档目录 `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\...`）。
+  具体范围：
+  - `PCL.Core/Link/Bedrock/BedrockService.cs` —— 检测已安装的基岩版并启动
+    （商店版走 `shell:appsFolder\<PackageFamilyName>!<AppId>`、GDK 便携版直接运行目录内的
+    `Minecraft.Windows.exe`、进程名 `Minecraft.Windows` / `Minecraft.Win10.DX11`、
+    存档目录 `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\...`）。
+  - `Plain Craft Launcher 2/Modules/Minecraft/ModBedrockUwp.cs` —— 商店包的 FE3 下载地址解析、
+    清单改写、开发者模式检测、依赖补全、`Add-AppxPackage` 注册。
+  - `Plain Craft Launcher 2/Modules/Minecraft/ModBedrockGdk.cs` —— `.msixvc`（XVC 容器）的
+    解密与解包。
+  - `Plain Craft Launcher 2/Modules/Minecraft/ModBedrockDownload.cs` /
+    `ModBedrockInstaller.cs` —— 下载与安装编排，按 PCL Lite 的结构重写。
 
-  按 PCL Lite 的结构重写为不依赖 WPF 的静态服务类，可独立单测；**没有**移植上游的
-  `.msixvc` 解包与商店包下载（那部分需要微软内容密钥 CIK，不适合随源码分发，
-  也与「启动器只负责启动」的定位不符）。
+  与上游的差异：GDK 版**不做 DLL 注入**（不移植 `ModBedrockLoader` / `ModBedrockMods`），
+  解包后直接运行主程序；内容密钥（CIK）不写进源码，构建时通过环境变量
+  `PCL_BEDROCK_RELEASE_CIK` / `PCL_BEDROCK_PREVIEW_CIK` 注入（见 `docs/BUILD.md`），
+  未注入时下载页会明确提示「无法解包」，而不是静默失败。
 
   依据 Apache-2.0 第 4 条，此移植部分仍受 Apache-2.0 约束；本项目整体许可证不变。
 

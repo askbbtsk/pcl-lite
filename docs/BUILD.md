@@ -64,6 +64,22 @@ dotnet publish "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" `
 也可以只在运行时给：`Secrets` 会回退读环境变量 `PCL_MS_CLIENT_ID`，这样不用重编译。
 但**发布给别人时别依赖这个**，用户机器上没有这个变量。
 
+### 基岩版 GDK 内容密钥（CIK）
+
+基岩版的 GDK 包（`.msixvc`）是加密的 XVC 容器，解包需要微软商店分发的内容密钥。
+密钥同样**不写进源码**，编译时一起注入：
+
+```powershell
+$env:PCL_WRITE_SECRET = "1"
+$env:PCL_BEDROCK_RELEASE_CIK = "<正式版 CIK 的十六进制串>"   # 至少 48 字节
+$env:PCL_BEDROCK_PREVIEW_CIK = "<预览版 CIK 的十六进制串>"
+```
+
+`Secrets.BedrockReleaseCik` / `BedrockPreviewCik` 会校验长度（不足 48 字节按未配置处理）。
+**没注入时启动器照常工作**：基岩版下载页能列出、能下载版本，只有点安装 GDK 包时
+才会明确提示「当前构建未包含基岩版 GDK 内容密钥（CIK），无法解包这个安装包」。
+UWP（商店包）的下载与安装不需要 CIK。
+
 ### ⚠️ 改密钥后必须重启编译服务器
 
 **这是最容易白干半小时的坑。**

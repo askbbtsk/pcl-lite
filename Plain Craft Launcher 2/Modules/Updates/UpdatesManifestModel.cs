@@ -141,17 +141,15 @@ public class UpdatesManifestModel : IUpdateSource
     {
         using var cts = new CancellationTokenSource();
 
-        var pending = new List<(string Name, Task<string> Task)>
-        {
-            // Contents API 也一起发：它和取 Release 用的是同一个域名，常常是最快的那条
-            ("Contents API", Task.Run(() => _Get(ProjectLinks.UpdateManifestApi, "application/vnd.github.raw", cts.Token), cts.Token))
-        };
+        var pending = new List<(string Name, Task<string> Task)>();
 
-        foreach (var url in _ManifestUrls())
+        // 所有锚点的所有通道一起发出去，谁先回来用谁。
+        foreach (var (name, url, isApi) in _ManifestChannels())
         {
-            var captured = url;
-            pending.Add((_DescribeChannel(captured),
-                Task.Run(() => _Get(captured, null, cts.Token), cts.Token)));
+            var capturedUrl = url;
+            // Contents API 要 Accept 头才会直接回原文，否则回来的是带 base64 的 JSON
+            var accept = isApi ? "application/vnd.github.raw" : null;
+            pending.Add((name, Task.Run(() => _Get(capturedUrl, accept, cts.Token), cts.Token)));
         }
 
         var failures = new List<(string Channel, string Reason)>();
@@ -209,29 +207,40 @@ public class UpdatesManifestModel : IUpdateSource
     }
 
     /// <summary>
-    /// 清单的候选地址（不含 Contents API）。反代列表直接复用下载用的那份，
-    /// 这样反代失效时只需要改 <see cref="UpdatesGitHubModel.DownloadProxies"/> 一处。
-    /// <para>既然是并发抢答，顺序只影响日志可读性，不影响速度。</para>
+    /// 清单的全部候选通道：每个锚点 × {Contents API, raw 直连, raw+各反代, jsDelivr}。
+    /// <para>
+    /// 反代列表直接复用下载用的那份，这样反代失效时只需要改
+    /// <see cref="UpdatesGitHubModel.DownloadProxies"/> 一处，下载和清单同时生效。
+    /// </para>
+    /// <para>
+    /// 既然是并发抢答，顺序只影响日志可读性，不影响速度。
+    /// 多个锚点时通道名前面会带上 <c>owner/repo</c>，否则日志里分不清是哪个锚点回来的。
+    /// </para>
     /// </summary>
-    private static IEnumerable<string> _ManifestUrls()
+    private static IEnumerable<(string Name, string Url, bool IsApi)> _ManifestChannels()
     {
-        var raw = ProjectLinks.UpdateManifest;
+        var anchors = ProjectLinks.ServiceAnchors();
+        var multiAnchor = anchors.Count > 1;
 
-        yield return raw;
+        foreach (var (owner, repo) in anchors)
+        {
+            var tag = multiAnchor ? $"{owner}/{repo} " : string.Empty;
+            var raw = ProjectLinks.ManifestRaw(owner, repo);
 
-        foreach (var proxy in UpdatesGitHubModel.DownloadProxies)
-            yield return proxy + raw;
+            // Contents API 和取 Release 用同一个域名，常常是最快的那条
+            yield return ($"{tag}Contents API", ProjectLinks.ManifestApi(owner, repo), true);
+            yield return ($"{tag}raw 直连", raw, false);
 
-        yield return ProjectLinks.UpdateManifestMirror;
+            foreach (var proxy in UpdatesGitHubModel.DownloadProxies)
+                yield return ($"{tag}{_ProxyName(proxy)}", proxy + raw, false);
+
+            yield return ($"{tag}jsDelivr", ProjectLinks.ManifestMirror(owner, repo), false);
+        }
     }
 
-    /// <summary>日志里只说通道名，不要把整条带反代的长 URL 糊上去。</summary>
-    private static string _DescribeChannel(string url)
-    {
-        if (url.Equals(ProjectLinks.UpdateManifest, StringComparison.Ordinal)) return "raw 直连";
-        if (url.Equals(ProjectLinks.UpdateManifestMirror, StringComparison.Ordinal)) return "jsDelivr";
-        return url.StartsWith("https://raw.", StringComparison.OrdinalIgnoreCase) ? "raw" : url.Split('/')[2];
-    }
+    /// <summary>日志里只说通道名（域名），不要把整条带反代的长 URL 糊上去。</summary>
+    private static string _ProxyName(string proxy) =>
+        Uri.TryCreate(proxy, UriKind.Absolute, out var uri) ? uri.Host : proxy;
 
     /// <summary>
     /// 取一段文本。**每个通道只试一次、6 秒超时**——清单拉不到就赶紧换下一个，

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace PCL.Core.App;
 
@@ -29,8 +30,13 @@ public static class ProjectLinks
     /// <summary>
     /// 更新清单所在的组织。与 <see cref="GitHubOwner"/> 刻意分开：这份清单的作用
     /// 就是在仓库搬家之后还能把老客户端指到新地址，所以它必须留在原地不动。
+    /// <para>
+    /// 2026-10 从 <c>Pcl-Lite</c> 组织迁到这里：那个组织被 GitHub 标记隐藏，
+    /// 组织下所有仓库对匿名访问全部 404，清单和 Release 一起失联。
+    /// 个人账号下的仓库不会因为「组织被标记」而整片消失。
+    /// </para>
     /// </summary>
-    public const string ServiceOwner = "Pcl-Lite";
+    public const string ServiceOwner = "bedkillerspacex-boop";
 
     /// <summary>更新清单所在的仓库。</summary>
     public const string ServiceRepo = "Pcl-Lite-service";
@@ -106,4 +112,58 @@ public static class ProjectLinks
 
     /// <summary>更新清单仓库的网页地址，用于报错时告诉用户去哪儿看。</summary>
     public static string ServiceRepository => $"https://github.com/{ServiceOwner}/{ServiceRepo}";
+
+    // ─────────────────────────────────────────────────────────────
+    //  备用锚点：让「锚点本身没了」也有救
+    // ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 额外的清单锚点，每项写 <c>owner/repo</c>（该仓库根目录下也要有一份内容相同的 <c>update.json</c>）。
+    /// <para>
+    /// 为什么需要这个：锚点解决了「发布仓库搬家」，但解决不了「托管锚点的账号整体出事」。
+    /// 2026-10 就发生过一次——组织被 GitHub 标记隐藏，组织下所有仓库对匿名访问全部 404，
+    /// 清单的六条通道和 Releases 兜底源一起断，客户端没有任何退路。
+    /// </para>
+    /// <para>
+    /// 这里可以再挂一份放在<b>另一个账号</b>下的清单：只要两份里有一份活着，
+    /// 更新链路就还通。留空表示只用主锚点（默认行为，零额外请求）。
+    /// </para>
+    /// <para>
+    /// <b>注意</b>：备用锚点只对「包含这段代码的版本」有效，
+    /// 已经装在别人电脑上的旧版本只认主锚点——救不了它们，只能靠把主锚点恢复。
+    /// </para>
+    /// </summary>
+    public static readonly string[] ExtraServiceAnchors = [];
+
+    /// <summary>某个锚点的清单原始地址。</summary>
+    public static string ManifestRaw(string owner, string repo) =>
+        $"https://raw.githubusercontent.com/{owner}/{repo}/main/update.json";
+
+    /// <summary>某个锚点的 jsDelivr 镜像地址。</summary>
+    public static string ManifestMirror(string owner, string repo) =>
+        $"https://cdn.jsdelivr.net/gh/{owner}/{repo}@main/update.json";
+
+    /// <summary>某个锚点的 Contents API 地址。</summary>
+    public static string ManifestApi(string owner, string repo) =>
+        $"https://api.github.com/repos/{owner}/{repo}/contents/update.json";
+
+    /// <summary>
+    /// 所有锚点（主锚点在前，随后是 <see cref="ExtraServiceAnchors"/>）。
+    /// 解析不了的行直接跳过，不让一处手误拖垮整个更新。
+    /// </summary>
+    public static IReadOnlyList<(string Owner, string Repo)> ServiceAnchors()
+    {
+        var list = new List<(string Owner, string Repo)> { (ServiceOwner, ServiceRepo) };
+
+        foreach (var entry in ExtraServiceAnchors)
+        {
+            var parts = (entry ?? string.Empty).Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2) continue;
+            if (parts[0].Contains(':') || parts[1].Contains(':')) continue;
+            if (list.Contains((parts[0], parts[1]))) continue;
+            list.Add((parts[0], parts[1]));
+        }
+
+        return list;
+    }
 }

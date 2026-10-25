@@ -11,8 +11,8 @@
 
 ```
 客户端（写死，永不改变）
-    └──> Pcl-Lite/Pcl-Lite-service 的 update.json   ← 唯一锚点，只有一行指针
-             └──> 当前发布仓库 / releases/latest    ← 随时可以改
+    └──> bedkillerspacex-boop/PCL-Lite-service 的 update.json   ← 唯一锚点，只有一行指针
+             └──> 当前发布仓库 / releases/latest                ← 随时可以改
                       └──> Release 自己提供版本号、资产、直链、SHA-256
 ```
 
@@ -23,9 +23,14 @@
 
 | 用途 | 地址 |
 | --- | --- |
-| 主通道 | `https://raw.githubusercontent.com/Pcl-Lite/Pcl-Lite-service/main/update.json` |
-| 镜像通道 | `https://cdn.jsdelivr.net/gh/Pcl-Lite/Pcl-Lite-service@main/update.json` |
-| API 通道 | `https://api.github.com/repos/Pcl-Lite/Pcl-Lite-service/contents/update.json` |
+| 主通道 | `https://raw.githubusercontent.com/bedkillerspacex-boop/PCL-Lite-service/main/update.json` |
+| 镜像通道 | `https://cdn.jsdelivr.net/gh/bedkillerspacex-boop/PCL-Lite-service@main/update.json` |
+| API 通道 | `https://api.github.com/repos/bedkillerspacex-boop/PCL-Lite-service/contents/update.json` |
+
+> **2026-10 迁址记录**：锚点原在 `Pcl-Lite` 组织下（`Pcl-Lite/Pcl-Lite-service`）。
+> 该组织被 GitHub 标记隐藏后，组织下所有仓库对匿名访问全部 404，
+> 锚点和 Release 同时失联。锚点已迁到个人账号 `bedkillerspacex-boop`。
+> 已经发出去的 1.3.1 里写死的是旧地址，无法远程修正，必须重发一版。
 
 代码里的定义在 `PCL.Core/App/ProjectLinks.cs` 的
 `UpdateManifest` / `UpdateManifestMirror` / `UpdateManifestApi`。
@@ -88,7 +93,25 @@
    客户端也只能报 404。
 
 这也是为什么清单要放在**独立仓库**：至少发布仓库搬家时不用动它。
-但它不能防「整个组织没了」，那种情况只能靠人把组织恢复。
+
+### 已经做的缓解：多锚点
+
+`ProjectLinks.ExtraServiceAnchors` 可以再挂一份放在**另一个账号**下的清单，
+主锚点挂了还有第二条路：
+
+```csharp
+public static readonly string[] ExtraServiceAnchors = ["AnotherAccount/PCL-Lite-service"];
+```
+
+留空（默认）表示只用主锚点，零额外请求。
+
+> **加备用锚点前想清楚一件事**：抢答是「谁快用谁」，不看顺序。
+> 如果备用锚点里的指针指向一个**已经死掉**的仓库，它可能抢在主锚点前面返回，
+> 于是客户端拿到一个坏指针——比没有备用锚点更糟。
+> 所以备用锚点必须和主锚点**内容一致**，要么就别加。
+
+另外，备用锚点只对「包含这段代码的版本」有效。已经装在用户电脑上的旧版本
+只认主锚点，救不了它们——那种情况只能靠把主锚点恢复。
 
 ## 内容
 
@@ -96,7 +119,7 @@
 
 ```json
 {
-  "update": "Pcl-Lite/Pcl-lite/releases/latest"
+  "update": "bedkillerspacex-boop/PCL-Lite/releases/latest"
 }
 ```
 
@@ -108,13 +131,16 @@
 解析器很宽容，下面几种都认，手改的时候多写一对括号不会把更新搞挂：
 
 ```jsonc
-"Pcl-Lite/Pcl-lite/releases/latest"                     // 裸字符串
-{ "update": "Pcl-Lite/Pcl-lite/releases/latest" }       // 单字段对象
-{ "repository": "Pcl-Lite/Pcl-lite" }                   // 换个别名
-Pcl-Lite/Pcl-lite/releases/latest                       // 干脆不是 JSON 的纯文本
-"https://github.com/Pcl-Lite/Pcl-lite/releases/latest"  // 完整 URL
-"Pcl-Lite/Pcl-lite"                                     // 不带 releases/latest
+"bedkillerspacex-boop/PCL-Lite/releases/latest"                     // 裸字符串
+{ "update": "bedkillerspacex-boop/PCL-Lite/releases/latest" }       // 单字段对象
+{ "repository": "bedkillerspacex-boop/PCL-Lite" }                   // 换个别名
+bedkillerspacex-boop/PCL-Lite/releases/latest                       // 干脆不是 JSON 的纯文本
+"https://github.com/bedkillerspacex-boop/PCL-Lite/releases/latest"  // 完整 URL
+"bedkillerspacex-boop/PCL-Lite"                                     // 不带 releases/latest
 ```
+
+宽容归宽容，**形状校验是硬的**：不含空白、不含 `<>{}\`?#`、前两段不含冒号，
+否则整条通道判失败（见上文「什么算这条通道失败」）。
 
 指针里 `owner/repo` 之后的部分（`releases/latest`）只是给人看的，
 程序不依赖它：**取哪一版由 Release 自己的 `prerelease` 标记决定**——
@@ -142,14 +168,14 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 
 ## 换发布仓库的步骤
 
-假设以后要从 `Pcl-Lite/Pcl-lite` 搬到 `SomeoneElse/PCL-Lite-Next`：
+假设以后要从 `bedkillerspacex-boop/PCL-Lite` 搬到 `SomeoneElse/PCL-Lite-Next`：
 
 1. 新仓库把代码、tag、Release 全部搬过去，确认 `releases/latest` 能打开
 2. 把 `update.json` 改成：
    ```json
    { "update": "SomeoneElse/PCL-Lite-Next/releases/latest" }
    ```
-3. 推送到 `Pcl-Lite/Pcl-Lite-service` 的 `main`
+3. 推送到 `bedkillerspacex-boop/PCL-Lite-service` 的 `main`
 4. 等 1～2 分钟（raw / jsDelivr 有缓存），开一个旧版本验证能看到更新
 
 **客户端代码一行都不用改，也不需要发版。** 所有旧版本下次检查更新时

@@ -17,10 +17,10 @@ public static class ProjectLinks
     // ─────────────────────────────────────────────────────────────
 
     /// <summary>GitHub 用户名或组织名。</summary>
-    public const string GitHubOwner = "bedkillerspacex-boop";
+    public const string GitHubOwner = "Pcl-Lite";
 
     /// <summary>仓库名。</summary>
-    public const string GitHubRepo = "Pcl-Lite";
+    public const string GitHubRepo = "Pcl-lite";
 
     // ─────────────────────────────────────────────────────────────
     //  以下由上面两个常量推导，一般不用改

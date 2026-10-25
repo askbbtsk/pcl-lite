@@ -8,7 +8,7 @@ import json
 import subprocess
 import sys
 
-OWNER = "bedkillerspacex-boop"
+OWNER = "Pcl-Lite"
 REPO = "Pcl-Lite"
 BRANCH = "main"
 MESSAGE = "docs: 加入许可证并重写 README"

@@ -18,7 +18,7 @@ public static class DiscordActivityBuilder
     private const int MaxTextLength = 128;
 
     /// <summary>项目主页，作为状态卡片上的按钮。</summary>
-    private const string HomepageUrl = "https://github.com/bedkillerspacex-boop/Pcl-Lite";
+    private const string HomepageUrl = "https://github.com/Pcl-Lite/Pcl-lite";
 
     /// <param name="game">游戏快照；<see langword="null"/> 或 <c>Running=false</c> 表示未开游戏。</param>
     /// <param name="fields">要展示的项，取值见 <see cref="DiscordRpcFields"/>。</param>

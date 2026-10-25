@@ -6,14 +6,14 @@
 
 Preface: PCL and its guard squad keep saying we "touched the cake", and hand out labels while they're at it. I'd like to know — does this hat factory have some grudge against the bakery? How come the hat factory is the one always touching the cake?
 
-[![Stars](https://img.shields.io/github/stars/bedkillerspacex-boop/Pcl-Lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/bedkillerspacex-boop/Pcl-Lite/stargazers)
-[![Release](https://img.shields.io/github/v/release/bedkillerspacex-boop/Pcl-Lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases)
-[![Downloads](https://img.shields.io/github/downloads/bedkillerspacex-boop/Pcl-Lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases)
+[![Stars](https://img.shields.io/github/stars/Pcl-Lite/Pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/Pcl-Lite/Pcl-lite/stargazers)
+[![Release](https://img.shields.io/github/v/release/Pcl-Lite/Pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/Pcl-Lite/Pcl-lite/releases)
+[![Downloads](https://img.shields.io/github/downloads/Pcl-Lite/Pcl-lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/Pcl-Lite/Pcl-lite/releases)
 
-[Download](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases) |
+[Download](https://github.com/Pcl-Lite/Pcl-lite/releases) |
 [Documentation](docs/) |
 [License](#-license) |
-[Submit issues](https://github.com/bedkillerspacex-boop/Pcl-Lite/issues/new)
+[Submit issues](https://github.com/Pcl-Lite/Pcl-lite/issues/new)
 
 </div>
 
@@ -28,7 +28,7 @@ This project is released under the **MIT License** with additional copyleft term
 
 ## 📦 Download
 
-Get the latest build from [Releases](https://github.com/bedkillerspacex-boop/Pcl-Lite/releases).
+Get the latest build from [Releases](https://github.com/Pcl-Lite/Pcl-lite/releases).
 
 | Architecture | File | Notes |
 |---|---|---|

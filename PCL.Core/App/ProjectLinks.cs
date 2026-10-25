@@ -23,6 +23,19 @@ public static class ProjectLinks
     public const string GitHubRepo = "Pcl-lite";
 
     // ─────────────────────────────────────────────────────────────
+    //  更新清单仓库（迁移锚点）
+    // ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 更新清单所在的组织。与 <see cref="GitHubOwner"/> 刻意分开：这份清单的作用
+    /// 就是在仓库搬家之后还能把老客户端指到新地址，所以它必须留在原地不动。
+    /// </summary>
+    public const string ServiceOwner = "Pcl-Lite";
+
+    /// <summary>更新清单所在的仓库。</summary>
+    public const string ServiceRepo = "Pcl-Lite-service";
+
+    // ─────────────────────────────────────────────────────────────
     //  以下由上面两个常量推导，一般不用改
     // ─────────────────────────────────────────────────────────────
 
@@ -61,4 +74,26 @@ public static class ProjectLinks
 
     /// <summary>GitHub API：贡献者列表。</summary>
     public static string ContributorsApi => $"https://api.github.com/repos/{GitHubOwner}/{GitHubRepo}/contributors";
+
+    // ─────────────────────────────────────────────────────────────
+    //  更新清单：唯一入口，发布仓库换了也只改这里指向的 json
+    // ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 更新清单的原始地址（raw.githubusercontent，走 CDN，不吃 API 限流）。
+    /// <para>
+    /// 老客户端把这个地址硬编码在心里，所以它<b>永远不能变</b>。
+    /// 以后要换发布仓库、换组织、换下载通道，都只改这份 json 里的内容，
+    /// 老版本依旧能顺着它找到新版本，不会因为仓库搬家而失联。
+    /// </para>
+    /// </summary>
+    public static string UpdateManifest =>
+        $"https://raw.githubusercontent.com/{ServiceOwner}/{ServiceRepo}/main/update.json";
+
+    /// <summary>更新清单的镜像地址（jsDelivr）。raw.githubusercontent 在国内经常连不上。</summary>
+    public static string UpdateManifestMirror =>
+        $"https://cdn.jsdelivr.net/gh/{ServiceOwner}/{ServiceRepo}@main/update.json";
+
+    /// <summary>更新清单仓库的网页地址，用于报错时告诉用户去哪儿看。</summary>
+    public static string ServiceRepository => $"https://github.com/{ServiceOwner}/{ServiceRepo}";
 }

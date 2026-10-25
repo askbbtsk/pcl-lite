@@ -14,9 +14,14 @@ public static class UpdateManager
 
     public static UpdatesWrapperModel remoteServer = new(new List<IUpdateSource>
     {
-        // 只用自己的 GitHub Releases。上游那三个源（Pysio 的 S3、Naids 的静态站、
-        // PCL2_CE_Server 的 raw）拉的是 PCL-CE 的版本清单，留着会把本项目的 exe
-        // 自动更新成 CE 官方版。仓库地址见 ProjectLinks。
+        // 第一优先：Pcl-Lite-service 仓库里的 update.json。
+        // 它才是「当前该去哪个仓库拿版本」的唯一真源——发布仓库搬家后只改这份 json，
+        // 所有还在跑老版本的机器照样能找到新版本，不会失联。
+        new UpdatesManifestModel(),
+        // 兜底：直接读当前仓库的 GitHub Releases。
+        // 清单仓库挂了、或者清单还没跟上发版节奏时靠它。
+        // 注意不要加回上游那三个源（Pysio 的 S3、Naids 的静态站、PCL2_CE_Server 的 raw），
+        // 它们拉的是 PCL-CE 的版本清单，留着会把本项目的 exe 自动更新成 CE 官方版。
         new UpdatesGitHubModel()
     });
 

@@ -38,7 +38,7 @@ public class UpdatesGitHubModel : IUpdateSource
     /// 反代服务时好坏，下载器会按顺序往后换，最后回退直连。
     /// 失效了改这个列表即可，顺序即优先级。
     /// </summary>
-    private static readonly string[] DownloadProxies =
+    internal static readonly string[] DownloadProxies =
     [
         "https://cors.isteed.cc/",
         "https://gh-proxy.com/",

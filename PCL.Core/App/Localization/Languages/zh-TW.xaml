@@ -3169,9 +3169,13 @@
     <sys:String x:Key="Setup.Update.Auto.DownloadAndNotify.ToolTip">啟動器將會自動檢查並下載可用更新，並在完成後提示你安裝更新。</sys:String>
     <sys:String x:Key="Setup.Update.Auto.NotifyOnly">提示更新</sys:String>
     <sys:String x:Key="Setup.Update.Auto.NotifyOnly.ToolTip">啟動器將會自動檢查可用更新，然後提示你下載並安裝更新。</sys:String>
-    <sys:String x:Key="Setup.Update.Auto.Title">自動更新設定</sys:String>
-
+    <sys:String x:Key="Setup.Update.Auto.Title">自動更新</sys:String>
+    <sys:String x:Key="Setup.Update.Auto.Enable">啟動時自動檢查更新</sys:String>
+    <sys:String x:Key="Setup.Update.Auto.Enable.ToolTip">開啟後，啟動器會在啟動時連網檢查新版本。關掉之後只有你自己點「檢查更新」才會去查，平時不會連網。</sys:String>
+    <sys:String x:Key="Setup.Update.Auto.Mode.Title">更新方式</sys:String>
     <!-- Setup.Update.Channel -->
+    <sys:String x:Key="Setup.Update.Channel.Stable">穩定版</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Stable.ToolTip">只推送正式版，一條預發布都不收。最省心的一檔，適合大多數人。</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Preview">預覽體驗</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Preview.ToolTip">三個通道裡最穩的一檔。收正式版，以及正式版之前的預覽版（pre / beta）。適合想提前看到下個版本、但不想天天踩坑的使用者。</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Snapshot">快照嘗鮮</sys:String>

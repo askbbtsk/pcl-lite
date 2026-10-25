@@ -91,7 +91,7 @@ public partial class Application
             if (updateBranchCfg.IsDefault())
             {
                 // 默认通道跟着「当前装的是哪个等级的版本」走：
-                // 正式版给最保守的预览体验，snapshot 给快照尝鲜，nightly 给始终最新。
+                // 正式版落在稳定版，snapshot 给快照尝鲜，nightly 给始终最新。
                 // 这样从哪儿装来的就继续收哪一档，不会莫名其妙开始收更不稳定的包。
                 var level = UpdateChannelLevels.FromVersionName(ModBase.versionBaseName);
                 updateBranchCfg.SetValue((Core.App.UpdateChannel)Math.Min(level, (int)Core.App.UpdateChannel.Latest));

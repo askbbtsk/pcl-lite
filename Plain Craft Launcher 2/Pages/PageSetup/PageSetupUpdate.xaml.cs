@@ -22,17 +22,41 @@ public partial class PageSetupUpdate
     {
         ModAnimation.AniControlEnabled += 1;
 
-        // 静默更新已移除：老配置若还停在 DownloadAndInstall，就地改成「下载并提示」，
-        // 否则下拉框会选中一个已经被隐藏的项，显示成空白。
-        if (Config.Update.UpdateMode == LauncherAutoUpdateBehavior.DownloadAndInstall)
+        // 老配置迁移：
+        // - DownloadAndInstall（静默更新）已移除，改成「下载并提示」
+        // - Disable（旧下拉里的「不自动检查」）现在由上面的开关表达，统一收成「仅提示」+ 关开关
+        if (Config.Update.UpdateMode is LauncherAutoUpdateBehavior.DownloadAndInstall
+            or LauncherAutoUpdateBehavior.Disable)
+        {
             Config.Update.UpdateMode = LauncherAutoUpdateBehavior.DownloadAndAnnounce;
+        }
 
+        CheckAutoUpdate.Checked = Config.Update.AutoUpdate;
         ComboSystemUpdateChannel.SelectedIndex = (int)Config.Update.UpdateChannel;
         ComboSystemUpdateMode.SelectedIndex = (int)Config.Update.UpdateMode;
+        _RefreshUpdateModeEnabled();
 
         TextCurrentVersion.Text = "PCL Lite " + VersionNameFormat(ModBase.versionBaseName);
         ModAnimation.AniControlEnabled -= 1;
         CheckUpdate();
+    }
+
+    /// <summary>
+    ///     没勾自动更新时，「更新方式」下拉没有意义，置灰。
+    /// </summary>
+    private void _RefreshUpdateModeEnabled()
+    {
+        var on = Config.Update.AutoUpdate;
+        ComboSystemUpdateMode.IsEnabled = on;
+        ComboSystemUpdateMode.Opacity = on ? 1 : 0.4;
+        TextUpdateModeTitle.Opacity = on ? 1 : 0.4;
+    }
+
+    private void CheckAutoUpdate_Change(object sender, bool user)
+    {
+        if (ModAnimation.AniControlEnabled != 0) return;
+        Config.Update.AutoUpdate = CheckAutoUpdate.Checked == true;
+        _RefreshUpdateModeEnabled();
     }
 
     private async Task<UpdateStatus> IsLatestAsync()
@@ -202,16 +226,17 @@ public partial class PageSetupUpdate
         if (ModAnimation.AniControlEnabled != 0)
             return;
 
-        // 三档都是包含式的，越往下越激进：0 预览体验（正式 + pre）、
-        // 1 快照尝鲜（+ snapshot）、2 始终最新（+ nightly）。只有后两档需要警告。
+        // 四档都是包含式的，越往下越激进：0 稳定版（只正式）、1 预览体验（+ pre）、
+        // 2 快照尝鲜（+ snapshot）、3 始终最新（+ nightly）。只有后两档需要警告。
         var isCancelled = false;
         switch (ComboSystemUpdateChannel.SelectedIndex)
         {
             case 0:
+            case 1:
             {
                 break;
             }
-            case 1:
+            case 2:
             {
                 if (ModMain.MyMsgBox(Lang.Text("Setup.Update.Channel.Snapshot.Warning.Message"),
                         Lang.Text("Setup.Update.Channel.Common.Warning.Title"),
@@ -220,7 +245,7 @@ public partial class PageSetupUpdate
                     isCancelled = true;
                 break;
             }
-            case 2:
+            case 3:
             {
                 if (ModMain.MyMsgBox(Lang.Text("Setup.Update.Channel.Latest.Warning.Message"),
                         Lang.Text("Setup.Update.Channel.Common.Warning.Title"),

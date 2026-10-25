@@ -20,13 +20,19 @@
                             <RowDefinition Height="28" />
                             <RowDefinition Height="7" />
                             <RowDefinition Height="28" />
+                            <RowDefinition Height="7" />
+                            <RowDefinition Height="28" />
                         </Grid.RowDefinitions>
+
+                        <!--  更新通道  -->
                         <TextBlock Text="{DynamicResource Setup.Update.Channel.Title}" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Left"
                                    Margin="0,0,25,0" />
                         <local:MyComboBox x:Name="ComboSystemUpdateChannel" Tag="SystemUpdateChannel" Grid.Column="1"
                                           Grid.ColumnSpan="3" Grid.Row="0"
                                           SelectionChanged="ComboSystemUpdateBranch_SelectionChanged">
-                            <!--  三个通道都是包含式的：越往下越激进，但都包含上面的稳定版本  -->
+                            <!--  四档都是包含式的：越往下越激进，但都包含上面的稳定版本  -->
+                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Stable}"
+                                                  ToolTip="{DynamicResource Setup.Update.Channel.Stable.ToolTip}" />
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Preview}"
                                                   ToolTip="{DynamicResource Setup.Update.Channel.Preview.ToolTip}" />
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Snapshot}"
@@ -34,16 +40,26 @@
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Latest}"
                                                   ToolTip="{DynamicResource Setup.Update.Channel.Latest.ToolTip}" />
                         </local:MyComboBox>
+
+                        <!--  自动更新总开关：默认关闭，不勾就完全不联网  -->
                         <TextBlock Text="{DynamicResource Setup.Update.Auto.Title}" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Left"
                                    Margin="0,0,25,0" />
+                        <local:MyCheckBox x:Name="CheckAutoUpdate" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="2"
+                                          Text="{DynamicResource Setup.Update.Auto.Enable}"
+                                          ToolTip="{DynamicResource Setup.Update.Auto.Enable.ToolTip}"
+                                          Change="CheckAutoUpdate_Change" />
+
+                        <!--  更新方式：只有勾了自动更新才有意义  -->
+                        <TextBlock x:Name="TextUpdateModeTitle" Text="{DynamicResource Setup.Update.Auto.Mode.Title}" Grid.Row="4" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                   Margin="0,0,25,0" />
                         <local:MyComboBox x:Name="ComboSystemUpdateMode" Tag="SystemUpdateMode" Grid.Column="1"
-                                          Grid.ColumnSpan="3" Grid.Row="2"
+                                          Grid.ColumnSpan="3" Grid.Row="4"
                                           SelectionChanged="ComboSystemUpdateMode_SelectionChanged">
-                            <!--  静默更新已移除：更新必须让用户看见，这里只保留「下载并提示 / 仅提示 / 关闭」  -->
+                            <!--  静默更新已移除：更新必须让用户看见，这里只保留「下载并提示 / 仅提示」  -->
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.DownloadAndInstall}" ToolTip="{DynamicResource Setup.Update.Auto.DownloadAndInstall.ToolTip}" Visibility="Collapsed" />
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.DownloadAndNotify}" ToolTip="{DynamicResource Setup.Update.Auto.DownloadAndNotify.ToolTip}" />
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.NotifyOnly}" ToolTip="{DynamicResource Setup.Update.Auto.NotifyOnly.ToolTip}" />
-                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.Disabled}" ToolTip="{DynamicResource Setup.Update.Auto.Disabled.ToolTip}" />
+                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.Disabled}" ToolTip="{DynamicResource Setup.Update.Auto.Disabled.ToolTip}" Visibility="Collapsed" />
                         </local:MyComboBox>
                     </Grid>
                 </StackPanel>

@@ -261,6 +261,14 @@ public static class UpdateManager
 
     private static void ScheduleBasedOnConfig()
     {
+        // 总开关：没勾「自动更新」就完全不碰网络，只有用户手动点检查更新才会去查。
+        // 默认就是关的——装完不联网、不占带宽，也不在用户没同意的时候换掉自己的 exe。
+        if (!Config.Update.AutoUpdate)
+        {
+            ModBase.Log("[Update] 未开启自动更新，跳过自动检查");
+            return;
+        }
+
         // 静默更新已经移除：不再存在「悄悄下完直接替换」的路径。
         // 老配置里选了 DownloadAndInstall 的用户在这里被就地降级成「下载并提示」，
         // 下载完成后会亮出重启按钮并弹提示，用户不点就不替换。
@@ -281,7 +289,7 @@ public static class UpdateManager
                 UpdateStart(UpdateEnums.UpdateType.PromptOnly);
                 break;
             default:
-                ModBase.Log("[Update] 更新设置: 不自动检查更新");
+                ModBase.Log("[Update] 更新设置: 不自动检查更新（已选「关闭」）");
                 return;
         }
     }

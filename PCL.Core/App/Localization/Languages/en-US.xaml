@@ -3226,9 +3226,13 @@
     <sys:String x:Key="Setup.Update.Auto.DownloadAndNotify.ToolTip">The launcher will automatically check for and download available updates, then prompt you to install.</sys:String>
     <sys:String x:Key="Setup.Update.Auto.NotifyOnly">Prompt for update</sys:String>
     <sys:String x:Key="Setup.Update.Auto.NotifyOnly.ToolTip">The launcher will automatically check for available updates, then prompt you to download and install.</sys:String>
-    <sys:String x:Key="Setup.Update.Auto.Title">Auto update settings</sys:String>
-
+    <sys:String x:Key="Setup.Update.Auto.Title">Auto update</sys:String>
+    <sys:String x:Key="Setup.Update.Auto.Enable">Check for updates on startup</sys:String>
+    <sys:String x:Key="Setup.Update.Auto.Enable.ToolTip">When on, the launcher checks for new versions at startup. When off, it only checks when you press Check for updates yourself.</sys:String>
+    <sys:String x:Key="Setup.Update.Auto.Mode.Title">Update mode</sys:String>
     <!-- Setup.Update.Channel -->
+    <sys:String x:Key="Setup.Update.Channel.Stable">Stable</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Stable.ToolTip">Stable releases only — no previews, snapshots or nightlies. The most hands-off option.</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Preview">Preview</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Preview.ToolTip">The most conservative of the three. Receives stable releases plus previews (pre / beta) that come before them. For people who want an early look without living on the edge.</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Snapshot">Snapshot</sys:String>

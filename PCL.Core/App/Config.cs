@@ -137,14 +137,20 @@ public static partial class Config
     [ConfigGroup("Update")] partial class UpdateConfigGroup
     {
         /// <summary>
-        /// 自动更新行为。
+        /// <summary>
+        /// 自动更新总开关。默认关闭：装完不会自己联网查版本，只有用户手动点检查才会去查。
+        /// </summary>
+        [ConfigItem<bool>("SystemAutoUpdate", false, ConfigSource.Local)] public partial bool AutoUpdate { get; set; }
+
+        /// <summary>
+        /// 自动更新行为。只在 <see cref="AutoUpdate"/> 打开时生效。
         /// </summary>
         [ConfigItem<LauncherAutoUpdateBehavior>("SystemSystemUpdate", LauncherAutoUpdateBehavior.DownloadAndAnnounce, ConfigSource.Local)] public partial LauncherAutoUpdateBehavior UpdateMode { get; set; }
 
         /// <summary>
         /// 更新分支。
         /// </summary>
-        [ConfigItem<UpdateChannel>("SystemUpdateChannel", UpdateChannel.Preview, ConfigSource.Local)] public partial UpdateChannel UpdateChannel { get; set; }
+        [ConfigItem<UpdateChannel>("SystemUpdateChannel", UpdateChannel.Stable, ConfigSource.Local)] public partial UpdateChannel UpdateChannel { get; set; }
     }
 
     /// <summary>

@@ -125,24 +125,24 @@ public class UpdateManifestPointerTest
     public void ParseShouldSplitOwnerAndRepo()
     {
         var (owner, repo) = UpdateManifestPointer.Parse("askbbtsk/pcl-lite/releases/latest");
-        Assert.AreEqual("Pcl-Lite", owner);
-        Assert.AreEqual("Pcl-lite", repo);
+        Assert.AreEqual("askbbtsk", owner);
+        Assert.AreEqual("pcl-lite", repo);
     }
 
     [TestMethod]
     public void ParseShouldHandleFullUrl()
     {
         var (owner, repo) = UpdateManifestPointer.Parse("https://github.com/askbbtsk/pcl-lite/releases/latest");
-        Assert.AreEqual("Pcl-Lite", owner);
-        Assert.AreEqual("Pcl-lite", repo);
+        Assert.AreEqual("askbbtsk", owner);
+        Assert.AreEqual("pcl-lite", repo);
     }
 
     [TestMethod]
     public void ParseShouldStripGitSuffixAndQuotes()
     {
         var (owner, repo) = UpdateManifestPointer.Parse("\"https://github.com/askbbtsk/pcl-lite.git\"");
-        Assert.AreEqual("Pcl-Lite", owner);
-        Assert.AreEqual("Pcl-lite", repo);
+        Assert.AreEqual("askbbtsk", owner);
+        Assert.AreEqual("pcl-lite", repo);
     }
 
     [TestMethod]

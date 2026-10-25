@@ -37,10 +37,15 @@ public enum UpdateArch
 /// </summary>
 public static class UpdateChannelMapping
 {
-    public static UpdateChannel ToChannel(Core.App.UpdateChannel channel) => channel switch
+    /// <summary>
+    ///     用户选项与取版本通道一一对应（Stable=0 / Preview=1 / Snapshot=2 / Latest=3），
+    ///     直接强转即可；越界值夹回两端，避免手改配置文件写出 9 这种值时行为诡异。
+    /// </summary>
+    public static UpdateChannel ToChannel(Core.App.UpdateChannel channel)
     {
-        Core.App.UpdateChannel.Latest => UpdateChannel.latest,
-        Core.App.UpdateChannel.Snapshot => UpdateChannel.snapshot,
-        _ => UpdateChannel.preview
-    };
+        var value = (int)channel;
+        if (value <= (int)UpdateChannel.stable) return UpdateChannel.stable;
+        if (value >= (int)UpdateChannel.latest) return UpdateChannel.latest;
+        return (UpdateChannel)value;
+    }
 }

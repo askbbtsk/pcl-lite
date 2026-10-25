@@ -25,8 +25,23 @@
 | --- | --- |
 | 主通道 | `https://raw.githubusercontent.com/Pcl-Lite/Pcl-Lite-service/main/update.json` |
 | 镜像通道 | `https://cdn.jsdelivr.net/gh/Pcl-Lite/Pcl-Lite-service@main/update.json` |
+| API 通道 | `https://api.github.com/repos/Pcl-Lite/Pcl-Lite-service/contents/update.json` |
 
-代码里的定义在 `PCL.Core/App/ProjectLinks.cs` 的 `UpdateManifest` / `UpdateManifestMirror`。
+代码里的定义在 `PCL.Core/App/ProjectLinks.cs` 的
+`UpdateManifest` / `UpdateManifestMirror` / `UpdateManifestApi`。
+
+### 实际拉取顺序
+
+国内直连 `raw.githubusercontent.com` 基本不通，所以拉清单是一整条通道链，
+前一个失败就自动换下一个，全挂才回退到「直接读仓库的 Releases」：
+
+1. `raw` 直连
+2. `raw` + 每个 GitHub 反代（复用 `UpdatesGitHubModel.DownloadProxies`，
+   目前是 `cors.isteed.cc` / `gh-proxy.com` / `gitproxy.click`）
+3. jsDelivr CDN
+4. GitHub Contents API
+
+反代列表只有一处定义，失效时改 `DownloadProxies` 即可，下载和清单同时生效。
 
 > **这个地址一旦发出去就不能再改。** 改它就等于把所有旧版本一起掐断。
 > 真要换地方，得在新地址上放一份内容相同的 json，并让旧地址重定向过去，

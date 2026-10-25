@@ -119,7 +119,7 @@ public static readonly string[] ExtraServiceAnchors = ["AnotherAccount/PCL-Lite-
 
 ```json
 {
-  "update": "bedkillerspacex-boop/PCL-Lite/releases/latest"
+  "update": "askbbtsk/pcl-lite/releases/latest"
 }
 ```
 
@@ -131,12 +131,12 @@ public static readonly string[] ExtraServiceAnchors = ["AnotherAccount/PCL-Lite-
 解析器很宽容，下面几种都认，手改的时候多写一对括号不会把更新搞挂：
 
 ```jsonc
-"bedkillerspacex-boop/PCL-Lite/releases/latest"                     // 裸字符串
-{ "update": "bedkillerspacex-boop/PCL-Lite/releases/latest" }       // 单字段对象
-{ "repository": "bedkillerspacex-boop/PCL-Lite" }                   // 换个别名
-bedkillerspacex-boop/PCL-Lite/releases/latest                       // 干脆不是 JSON 的纯文本
-"https://github.com/bedkillerspacex-boop/PCL-Lite/releases/latest"  // 完整 URL
-"bedkillerspacex-boop/PCL-Lite"                                     // 不带 releases/latest
+"askbbtsk/pcl-lite/releases/latest"                     // 裸字符串
+{ "update": "askbbtsk/pcl-lite/releases/latest" }       // 单字段对象
+{ "repository": "askbbtsk/pcl-lite" }                   // 换个别名
+askbbtsk/pcl-lite/releases/latest                       // 干脆不是 JSON 的纯文本
+"https://github.com/askbbtsk/pcl-lite/releases/latest"  // 完整 URL
+"askbbtsk/pcl-lite"                                     // 不带 releases/latest
 ```
 
 宽容归宽容，**形状校验是硬的**：不含空白、不含 `<>{}\`?#`、前两段不含冒号，
@@ -168,7 +168,7 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 
 ## 换发布仓库的步骤
 
-假设以后要从 `bedkillerspacex-boop/PCL-Lite` 搬到 `SomeoneElse/PCL-Lite-Next`：
+假设以后要从 `askbbtsk/pcl-lite` 搬到 `SomeoneElse/PCL-Lite-Next`：
 
 1. 新仓库把代码、tag、Release 全部搬过去，确认 `releases/latest` 能打开
 2. 把 `update.json` 改成：

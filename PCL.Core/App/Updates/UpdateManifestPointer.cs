@@ -8,7 +8,7 @@ namespace PCL.Core.App.Updates;
 /// <summary>
 /// 更新清单（<c>update.json</c>）里那行「仓库指针」的解析与校验。
 /// <para>
-/// 指针长这样：<c>Pcl-Lite/Pcl-lite/releases/latest</c>。
+/// 指针长这样：<c>askbbtsk/pcl-lite/releases/latest</c>。
 /// 这段逻辑被单独拎出来是为了能被单元测试覆盖——它曾经在实战里翻过车：
 /// 反代返回 HTTP 404 时响应体是 <c>404: Not Found</c>，被当成「纯文本指针」原样接受，
 /// 于是日志里冒出「仓库地址『404: Not Found』看不懂」，把真正的问题（通道挂了）掩盖掉了。
@@ -33,8 +33,8 @@ public static class UpdateManifestPointer
     /// 从清单原文里取出指针。
     /// <para>
     /// 兼容四种写法，免得以后手改 json 时因为多写一对括号就全线报错：
-    /// 裸字符串 <c>"Pcl-Lite/Pcl-lite/releases/latest"</c>、
-    /// 单字段对象 <c>{"update": "Pcl-Lite/Pcl-lite/releases/latest"}</c>、
+    /// 裸字符串 <c>"askbbtsk/pcl-lite/releases/latest"</c>、
+    /// 单字段对象 <c>{"update": "askbbtsk/pcl-lite/releases/latest"}</c>、
     /// 以及干脆没写 JSON 的纯文本。
     /// </para>
     /// </summary>
@@ -81,7 +81,7 @@ public static class UpdateManifestPointer
 
         if (!LooksLikePointer(candidate))
             throw new FormatException(
-                $"清单内容「{_Preview(candidate)}」不是仓库指针，应该写成 owner/repo，例如 Pcl-Lite/Pcl-lite。");
+                $"清单内容「{_Preview(candidate)}」不是仓库指针，应该写成 owner/repo，例如 askbbtsk/pcl-lite。");
 
         return candidate;
     }
@@ -129,7 +129,7 @@ public static class UpdateManifestPointer
     }
 
     /// <summary>
-    /// 把 <c>Pcl-Lite/Pcl-lite/releases/latest</c> 拆成 owner 与 repo。
+    /// 把 <c>askbbtsk/pcl-lite/releases/latest</c> 拆成 owner 与 repo。
     /// <para>
     /// 后面那段 <c>releases/latest</c> 只是给人看的，程序不依赖它——
     /// 具体取哪一版由 Release 自己的 prerelease 标记决定。
@@ -155,7 +155,7 @@ public static class UpdateManifestPointer
         var parts = text.Split('/', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 2)
             throw new FormatException(
-                $"仓库地址「{_Preview(text)}」看不懂，应该写成 owner/repo，例如 Pcl-Lite/Pcl-lite。");
+                $"仓库地址「{_Preview(text)}」看不懂，应该写成 owner/repo，例如 askbbtsk/pcl-lite。");
 
         var owner = parts[0].Trim();
         var repo = parts[1].Trim();
@@ -165,7 +165,7 @@ public static class UpdateManifestPointer
 
         if (owner.Length == 0 || repo.Length == 0)
             throw new FormatException(
-                $"仓库地址「{_Preview(text)}」看不懂，应该写成 owner/repo，例如 Pcl-Lite/Pcl-lite。");
+                $"仓库地址「{_Preview(text)}」看不懂，应该写成 owner/repo，例如 askbbtsk/pcl-lite。");
 
         return (owner, repo);
     }

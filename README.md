@@ -5,16 +5,16 @@
 # PCL Lite
 
 前言：pcl和它的护卫队天天说动了蛋糕，顺手扣帽子，我想知道pcl这个帽子工厂和烘焙店是有仇吗 怎么帽子工厂天天动蛋糕？
-https://github.com/Pcl-Lite/Pcl-lite/readmedlc
+https://github.com/askbbtsk/pcl-lite/readmedlc
 
-[![Stars](https://img.shields.io/github/stars/Pcl-Lite/Pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/Pcl-Lite/Pcl-lite/stargazers)
-[![Release](https://img.shields.io/github/v/release/Pcl-Lite/Pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/Pcl-Lite/Pcl-lite/releases)
-[![Downloads](https://img.shields.io/github/downloads/Pcl-Lite/Pcl-lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/Pcl-Lite/Pcl-lite/releases)
+[![Stars](https://img.shields.io/github/stars/askbbtsk/pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/askbbtsk/pcl-lite/stargazers)
+[![Release](https://img.shields.io/github/v/release/askbbtsk/pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/askbbtsk/pcl-lite/releases)
+[![Downloads](https://img.shields.io/github/downloads/askbbtsk/pcl-lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/askbbtsk/pcl-lite/releases)
 
-[下载](https://github.com/Pcl-Lite/Pcl-lite/releases) |
+[下载](https://github.com/askbbtsk/pcl-lite/releases) |
 [文档](docs/) |
 [许可证](#-许可证) |
-[提交问题](https://github.com/Pcl-Lite/Pcl-lite/issues/new)
+[提交问题](https://github.com/askbbtsk/pcl-lite/issues/new)
 
 </div>
 
@@ -29,7 +29,7 @@ PCL Lite 是基于 PCL 开源代码开发的衍生版本，在上游功能的基
 
 ## 📦 下载
 
-前往 [Releases](https://github.com/Pcl-Lite/Pcl-lite/releases) 下载最新版本。
+前往 [Releases](https://github.com/askbbtsk/pcl-lite/releases) 下载最新版本。
 
 | 架构 | 文件 | 说明 |
 |---|---|---|

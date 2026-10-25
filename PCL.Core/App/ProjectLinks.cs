@@ -18,10 +18,10 @@ public static class ProjectLinks
     // ─────────────────────────────────────────────────────────────
 
     /// <summary>GitHub 用户名或组织名。</summary>
-    public const string GitHubOwner = "Pcl-Lite";
+    public const string GitHubOwner = "askbbtsk";
 
     /// <summary>仓库名。</summary>
-    public const string GitHubRepo = "Pcl-lite";
+    public const string GitHubRepo = "pcl-lite";
 
     // ─────────────────────────────────────────────────────────────
     //  更新清单仓库（迁移锚点）

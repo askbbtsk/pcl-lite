@@ -6,14 +6,14 @@
 
 前言：pcl 和它的護衛隊天天說動了蛋糕，順手扣帽子，我想知道 pcl 這個帽子工廠和烘焙店是有仇嗎 怎麼帽子工廠天天動蛋糕？
 
-[![Stars](https://img.shields.io/github/stars/Pcl-Lite/Pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/Pcl-Lite/Pcl-lite/stargazers)
-[![Release](https://img.shields.io/github/v/release/Pcl-Lite/Pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/Pcl-Lite/Pcl-lite/releases)
-[![Downloads](https://img.shields.io/github/downloads/Pcl-Lite/Pcl-lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/Pcl-Lite/Pcl-lite/releases)
+[![Stars](https://img.shields.io/github/stars/askbbtsk/pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/askbbtsk/pcl-lite/stargazers)
+[![Release](https://img.shields.io/github/v/release/askbbtsk/pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/askbbtsk/pcl-lite/releases)
+[![Downloads](https://img.shields.io/github/downloads/askbbtsk/pcl-lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/askbbtsk/pcl-lite/releases)
 
-[下載](https://github.com/Pcl-Lite/Pcl-lite/releases) |
+[下載](https://github.com/askbbtsk/pcl-lite/releases) |
 [文件](docs/) |
 [授權條款](#-授權條款) |
-[提交問題](https://github.com/Pcl-Lite/Pcl-lite/issues/new)
+[提交問題](https://github.com/askbbtsk/pcl-lite/issues/new)
 
 </div>
 
@@ -28,7 +28,7 @@ PCL Lite 是基於 PCL 開放原始碼開發的衍生版本，在上游功能的
 
 ## 📦 下載
 
-前往 [Releases](https://github.com/Pcl-Lite/Pcl-lite/releases) 下載最新版本。
+前往 [Releases](https://github.com/askbbtsk/pcl-lite/releases) 下載最新版本。
 
 | 架構 | 檔案 | 說明 |
 |---|---|---|

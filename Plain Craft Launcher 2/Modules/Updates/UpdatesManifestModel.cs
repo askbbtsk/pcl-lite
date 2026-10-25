@@ -20,7 +20,7 @@ namespace PCL;
 /// 客户端里写死的不是「哪个仓库有 Release」，而是这份清单的地址；
 /// 清单里只有一行指针，指向当前的发布仓库：
 /// </para>
-/// <code>Pcl-Lite/Pcl-lite/releases/latest</code>
+/// <code>askbbtsk/pcl-lite/releases/latest</code>
 /// <para>
 /// 版本号、tag、资产直链、SHA-256 全部由那个仓库的 Release 自己提供——
 /// 清单不重复这些数据，所以<b>发版时根本不用改它</b>，只有仓库搬家时才需要改一行。

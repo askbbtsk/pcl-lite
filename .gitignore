@@ -20,6 +20,13 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+
+# 仓库根目录的 release/ 是发布说明（notes-*.md），不是编译输出，单独放行
+!/release/
+!/release/**
+# 但 release/ 里的历史安装包不入库（体积大，资产只放 Release）
+release/*.exe
+release/*.zip
 x64/
 x86/
 [Aa][Rr][Mm]/

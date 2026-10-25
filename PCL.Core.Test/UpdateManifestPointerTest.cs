@@ -19,46 +19,46 @@ public class UpdateManifestPointerTest
     public void ExtractShouldReadSingleLineJson()
     {
         Assert.AreEqual(
-            "Pcl-Lite/Pcl-lite/releases/latest",
-            UpdateManifestPointer.Extract("{\"update\": \"Pcl-Lite/Pcl-lite/releases/latest\"}"));
+            "askbbtsk/pcl-lite/releases/latest",
+            UpdateManifestPointer.Extract("{\"update\": \"askbbtsk/pcl-lite/releases/latest\"}"));
     }
 
     [TestMethod]
     public void ExtractShouldReadBareJsonString()
     {
         Assert.AreEqual(
-            "Pcl-Lite/Pcl-lite/releases/latest",
-            UpdateManifestPointer.Extract("\"Pcl-Lite/Pcl-lite/releases/latest\""));
+            "askbbtsk/pcl-lite/releases/latest",
+            UpdateManifestPointer.Extract("\"askbbtsk/pcl-lite/releases/latest\""));
     }
 
     [TestMethod]
     public void ExtractShouldReadPlainText()
     {
         Assert.AreEqual(
-            "Pcl-Lite/Pcl-lite/releases/latest",
-            UpdateManifestPointer.Extract("Pcl-Lite/Pcl-lite/releases/latest"));
+            "askbbtsk/pcl-lite/releases/latest",
+            UpdateManifestPointer.Extract("askbbtsk/pcl-lite/releases/latest"));
     }
 
     [TestMethod]
     public void ExtractShouldReadShortForm()
     {
-        Assert.AreEqual("Pcl-Lite/Pcl-lite", UpdateManifestPointer.Extract("Pcl-Lite/Pcl-lite"));
+        Assert.AreEqual("askbbtsk/pcl-lite", UpdateManifestPointer.Extract("askbbtsk/pcl-lite"));
     }
 
     [TestMethod]
     public void ExtractShouldTolerateBomAndNewline()
     {
         Assert.AreEqual(
-            "Pcl-Lite/Pcl-lite/releases/latest",
-            UpdateManifestPointer.Extract("\uFEFF{\"update\":\"Pcl-Lite/Pcl-lite/releases/latest\"}\n"));
+            "askbbtsk/pcl-lite/releases/latest",
+            UpdateManifestPointer.Extract("\uFEFF{\"update\":\"askbbtsk/pcl-lite/releases/latest\"}\n"));
     }
 
     [TestMethod]
     public void ExtractShouldFallBackToSoleStringValue()
     {
         Assert.AreEqual(
-            "Pcl-Lite/Pcl-lite",
-            UpdateManifestPointer.Extract("{\"whatever\": \"Pcl-Lite/Pcl-lite\"}"));
+            "askbbtsk/pcl-lite",
+            UpdateManifestPointer.Extract("{\"whatever\": \"askbbtsk/pcl-lite\"}"));
     }
 
     /// <summary>实战 bug：反代 404 的响应体被当成了指针。</summary>
@@ -88,7 +88,7 @@ public class UpdateManifestPointerTest
     {
         Assert.ThrowsExactly<FormatException>(() => UpdateManifestPointer.Extract("{\"update\": \"\"}"));
         Assert.ThrowsExactly<FormatException>(
-            () => UpdateManifestPointer.Extract("{\"a\": \"Pcl-Lite/Pcl-lite\", \"b\": \"Pcl-Lite/Pcl-lite-service\"}"));
+            () => UpdateManifestPointer.Extract("{\"a\": \"askbbtsk/pcl-lite\", \"b\": \"askbbtsk/pcl-lite-service\"}"));
     }
 
     [TestMethod]
@@ -100,11 +100,11 @@ public class UpdateManifestPointerTest
     [TestMethod]
     public void LooksLikePointerShouldAcceptOwnerRepoForms()
     {
-        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("Pcl-Lite/Pcl-lite"));
-        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("Pcl-Lite/Pcl-lite/releases/latest"));
-        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("/Pcl-Lite/Pcl-lite/"));
-        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("https://github.com/Pcl-Lite/Pcl-lite"));
-        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("github.com/Pcl-Lite/Pcl-lite"));
+        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("askbbtsk/pcl-lite"));
+        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("askbbtsk/pcl-lite/releases/latest"));
+        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("/askbbtsk/pcl-lite/"));
+        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("https://github.com/askbbtsk/pcl-lite"));
+        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("github.com/askbbtsk/pcl-lite"));
     }
 
     [TestMethod]
@@ -117,14 +117,14 @@ public class UpdateManifestPointerTest
         Assert.IsFalse(UpdateManifestPointer.LooksLikePointer("Pcl-Lite"));
         Assert.IsFalse(UpdateManifestPointer.LooksLikePointer("Pcl-Lite / Pcl-lite"));
         Assert.IsFalse(UpdateManifestPointer.LooksLikePointer("<html>"));
-        Assert.IsFalse(UpdateManifestPointer.LooksLikePointer("{\"update\":\"Pcl-Lite/Pcl-lite\"}"));
+        Assert.IsFalse(UpdateManifestPointer.LooksLikePointer("{\"update\":\"askbbtsk/pcl-lite\"}"));
         Assert.IsFalse(UpdateManifestPointer.LooksLikePointer(new string('a', 300) + "/b"));
     }
 
     [TestMethod]
     public void ParseShouldSplitOwnerAndRepo()
     {
-        var (owner, repo) = UpdateManifestPointer.Parse("Pcl-Lite/Pcl-lite/releases/latest");
+        var (owner, repo) = UpdateManifestPointer.Parse("askbbtsk/pcl-lite/releases/latest");
         Assert.AreEqual("Pcl-Lite", owner);
         Assert.AreEqual("Pcl-lite", repo);
     }
@@ -132,7 +132,7 @@ public class UpdateManifestPointerTest
     [TestMethod]
     public void ParseShouldHandleFullUrl()
     {
-        var (owner, repo) = UpdateManifestPointer.Parse("https://github.com/Pcl-Lite/Pcl-lite/releases/latest");
+        var (owner, repo) = UpdateManifestPointer.Parse("https://github.com/askbbtsk/pcl-lite/releases/latest");
         Assert.AreEqual("Pcl-Lite", owner);
         Assert.AreEqual("Pcl-lite", repo);
     }
@@ -140,7 +140,7 @@ public class UpdateManifestPointerTest
     [TestMethod]
     public void ParseShouldStripGitSuffixAndQuotes()
     {
-        var (owner, repo) = UpdateManifestPointer.Parse("\"https://github.com/Pcl-Lite/Pcl-lite.git\"");
+        var (owner, repo) = UpdateManifestPointer.Parse("\"https://github.com/askbbtsk/pcl-lite.git\"");
         Assert.AreEqual("Pcl-Lite", owner);
         Assert.AreEqual("Pcl-lite", repo);
     }

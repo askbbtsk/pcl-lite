@@ -74,7 +74,7 @@ https://qm.qq.com/q/BmreYx71rq
 
 单文件、免解压。**需要已安装 [.NET 10 桌面运行时](https://dotnet.microsoft.com/download/dotnet/10.0)**。
 
-SHA-256：`__SHA256__`
+SHA-256：`30bc84898c730f74dc2d49682cc21ab45fc3aa444c70fcd7148acf43442a5e3a`
 
 ## 从 1.3.1 升级
 

@@ -172,6 +172,7 @@ publish/
 # PCL Lite: 本地发布输出，构建时注入了 OAuth 凭据，禁止入库
 publish-x64/
 publish-upstream/
+publish-test/
 
 # Publish Web Output
 *.[Pp]ublish.xml

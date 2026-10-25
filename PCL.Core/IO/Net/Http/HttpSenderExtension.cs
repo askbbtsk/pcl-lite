@@ -52,7 +52,10 @@ public static class HttpSenderExtension
                                 .ConfigureAwait(false);
                         }catch(Exception ex)
                         {
-                            LogWrapper.Debug(ex, "Request", $"Try attempt failed (id = {requestId})");
+                            // 只在开启日志时记录：抢答式请求会主动取消落后的通道，
+                            // 那是预期行为，不该在日志里留下一堆 TaskCanceledException 堆栈。
+                            if (enableLogging)
+                                LogWrapper.Debug(ex, "Request", $"Try attempt failed (id = {requestId})");
                             throw;
                         }
                     },cancellationToken

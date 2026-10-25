@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.App;
+using PCL.Core.App.Updates;
 using PCL.Core.IO.Net.Http;
 using PCL.Core.Utils;
 
@@ -93,7 +95,16 @@ public class UpdatesManifestModel : IUpdateSource
         var pointer = _FetchPointer();
         if (_inner is null || !pointer.Equals(_pointer, StringComparison.OrdinalIgnoreCase))
         {
-            var (owner, repo) = ParsePointer(pointer);
+            string owner, repo;
+            try
+            {
+                (owner, repo) = UpdateManifestPointer.Parse(pointer);
+            }
+            catch (FormatException ex)
+            {
+                throw new UpdateSourceException($"更新清单里的仓库地址有问题：{ex.Message}", ex);
+            }
+
             _inner = new UpdatesGitHubModel($"更新清单 → {owner}/{repo}", owner, repo);
             _pointer = pointer;
             ModBase.Log($"[Update] 更新清单指向 {owner}/{repo}");
@@ -143,7 +154,7 @@ public class UpdatesManifestModel : IUpdateSource
                 Task.Run(() => _Get(captured, null, cts.Token), cts.Token)));
         }
 
-        var errors = new List<string>();
+        var failures = new List<(string Channel, string Reason)>();
         try
         {
             while (pending.Count > 0)
@@ -154,18 +165,24 @@ public class UpdatesManifestModel : IUpdateSource
 
                 try
                 {
-                    var pointer = ExtractPointer(await done.ConfigureAwait(false));
-                    if (!string.IsNullOrWhiteSpace(pointer))
-                    {
-                        ModBase.Log($"[Update] 更新清单已从「{name}」取得", ModBase.LogLevel.Developer);
-                        return pointer;
-                    }
-
-                    errors.Add($"{name} → 清单内容是空的");
+                    var pointer = UpdateManifestPointer.Extract(await done.ConfigureAwait(false));
+                    ModBase.Log($"[Update] 更新清单已从「{name}」取得", ModBase.LogLevel.Developer);
+                    return pointer;
+                }
+                catch (OperationCanceledException) when (cts.IsCancellationRequested)
+                {
+                    // 已经被别的通道抢答成功，剩下的请求被取消是预期行为，不算错误、不写日志
+                    failures.Add((name, "已被更快的通道取代"));
+                }
+                catch (FormatException ex)
+                {
+                    // 清单内容不对（比如反代回了 404 正文）：这条通道算失败，换下一条
+                    failures.Add((name, ex.Message));
+                    ModBase.Log($"[Update] 更新清单通道失败：{name} → {ex.Message}", ModBase.LogLevel.Developer);
                 }
                 catch (Exception ex)
                 {
-                    errors.Add($"{name} → {ex.Message}");
+                    failures.Add((name, ex.Message));
                     ModBase.Log(ex, $"[Update] 更新清单通道失败：{name}", ModBase.LogLevel.Developer);
                 }
             }
@@ -174,10 +191,21 @@ public class UpdatesManifestModel : IUpdateSource
         {
             // 赢家已经拿到手，剩下的请求没必要继续占着带宽
             cts.Cancel();
+
+            // 被取消的请求会抛 OperationCanceledException，而它们已经不在 await 链上了。
+            // 不接住就变成「未观察的异常」，等 GC 时被 TaskScheduler 记一笔，白白脏日志。
+            foreach (var (_, task) in pending)
+                _ = task.ContinueWith(static t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
         }
 
+        // 所有通道往往死在同一个原因上（比如仓库被隐藏 → 全是 HTTP 404）。
+        // 按原因归并，日志里一句话就能看出「是整条链路的问题，不是某条通道抽风」。
+        var grouped = failures
+            .GroupBy(f => f.Reason)
+            .Select(g => $"{g.Key}（{string.Join("、", g.Select(f => f.Channel))}）");
+
         throw new UpdateSourceException(
-            $"无法获取更新清单（{ProjectLinks.ServiceRepository}）：{string.Join("；", errors)}");
+            $"无法获取更新清单（{ProjectLinks.ServiceRepository}）：{string.Join("；", grouped)}");
     }
 
     /// <summary>
@@ -217,13 +245,34 @@ public class UpdatesManifestModel : IUpdateSource
         using var timeoutCts = new CancellationTokenSource(ChannelTimeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(outerToken, timeoutCts.Token);
 
-        var body = request
-            .SendAsync(retryTimes: 1, cancellationToken: linked.Token)
-            .GetAwaiter()
-            .GetResult()
-            .AsString();
+        HttpResponseMessage response;
+        try
+        {
+            // enableLogging: false —— 抢答会一次发六七条请求，逐条打「Send / Try / End」太吵；
+            // 更关键的是被赢家取消的那几条本来就不该在日志里留下异常堆栈。
+            response = request
+                .SendAsync(retryTimes: 1, enableLogging: false, cancellationToken: linked.Token)
+                .GetAwaiter()
+                .GetResult();
+        }
+        catch (OperationCanceledException)
+        {
+            // 区分「被赢家取消」和「自己超时」：前者是预期行为，原样抛出去由上层静默忽略
+            if (outerToken.IsCancellationRequested) throw;
+            throw new TimeoutException($"{ChannelTimeout.TotalSeconds:0} 秒内没有响应");
+        }
 
-        return accept is null ? body : _UnwrapContentsApi(body);
+        using (response)
+        {
+            // 反代挂了会回 404 / 502，响应体往往是「404: Not Found」这种纯文本。
+            // 不看状态码就往下走的话，这段文本会被当成指针，
+            // 日志里就变成「清单里的仓库地址看不懂」——把真正的原因（通道挂了）掩盖掉了。
+            if (!response.IsSuccess)
+                throw new UpdateSourceException($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}".TrimEnd());
+
+            var body = response.AsString();
+            return accept is null ? body : _UnwrapContentsApi(body);
+        }
     }
 
     /// <summary>
@@ -249,101 +298,6 @@ public class UpdatesManifestModel : IUpdateSource
         return body;
     }
 
-    /// <summary>
-    /// 从清单原文里取出指针。
-    /// <para>
-    /// 兼容三种写法，免得以后手改 json 时因为多写一对括号就全线报错：
-    /// 裸字符串 <c>"Pcl-Lite/Pcl-lite/releases/latest"</c>、
-    /// 单字段对象 <c>{"update": "Pcl-Lite/Pcl-lite/releases/latest"}</c>、
-    /// 以及干脆没写 JSON 的纯文本。
-    /// </para>
-    /// </summary>
-    internal static string ExtractPointer(string body)
-    {
-        var text = body.Trim().TrimStart('\uFEFF').Trim();
-        if (text.Length == 0) return string.Empty;
-
-        // 纯文本（不是 JSON）：整段就是一个指针
-        if (text[0] is not ('{' or '[' or '"'))
-            return text;
-
-        JsonNode? node;
-        try
-        {
-            node = JsonNode.Parse(text);
-        }
-        catch (Exception ex)
-        {
-            throw new UpdateSourceException(
-                "更新清单不是合法的 JSON。请确认 Pcl-Lite-service 仓库是公开的，且 main 分支下存在 update.json。", ex);
-        }
-
-        switch (node)
-        {
-            case JsonValue value when value.TryGetValue<string>(out var direct):
-                return direct?.Trim() ?? string.Empty;
-
-            case JsonObject obj:
-            {
-                // 常见键名优先；都没有就取唯一那个字符串值
-                foreach (var key in new[] { "update", "repository", "repo", "target", "url", "latest" })
-                    if (obj[key] is JsonValue v && v.TryGetValue<string>(out var s) && !string.IsNullOrWhiteSpace(s))
-                        return s.Trim();
-
-                var strings = obj
-                    .Select(pair => pair.Value)
-                    .OfType<JsonValue>()
-                    .Select(v => v.TryGetValue<string>(out var s) ? s : null)
-                    .Where(s => !string.IsNullOrWhiteSpace(s))
-                    .ToList();
-
-                return strings.Count == 1 ? strings[0]!.Trim() : string.Empty;
-            }
-
-            default:
-                return string.Empty;
-        }
-    }
-
-    /// <summary>
-    /// 把 <c>Pcl-Lite/Pcl-lite/releases/latest</c> 拆成 owner 与 repo。
-    /// <para>
-    /// 后面那段 <c>releases/latest</c> 只是给人看的，程序不依赖它——
-    /// 具体取哪一版由 Release 自己的 prerelease 标记决定。
-    /// 完整 URL 形式 <c>https://github.com/…</c> 也一并支持。
-    /// </para>
-    /// </summary>
-    internal static (string Owner, string Repo) ParsePointer(string pointer)
-    {
-        var text = pointer.Trim().Trim('"', '\'').Trim();
-        if (text.Length == 0)
-            throw new UpdateSourceException("更新清单里没有写仓库地址。");
-
-        // 去掉协议与域名，只留路径
-        if (text.StartsWith("http", StringComparison.OrdinalIgnoreCase) &&
-            Uri.TryCreate(text, UriKind.Absolute, out var uri))
-            text = uri.AbsolutePath;
-
-        text = text.Trim('/');
-        // 去掉可能带的 github.com 前缀
-        if (text.StartsWith("github.com/", StringComparison.OrdinalIgnoreCase))
-            text = text["github.com/".Length..];
-
-        var parts = text.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 2)
-            throw new UpdateSourceException(
-                $"更新清单里的仓库地址「{pointer}」看不懂，应该写成 owner/repo，例如 Pcl-Lite/Pcl-lite。");
-
-        var owner = parts[0].Trim();
-        var repo = parts[1].Trim();
-
-        if (repo.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-            repo = repo[..^4];
-
-        if (owner.Length == 0 || repo.Length == 0)
-            throw new UpdateSourceException(
-                $"更新清单里的仓库地址「{pointer}」看不懂，应该写成 owner/repo，例如 Pcl-Lite/Pcl-lite。");
-
-        return (owner, repo);
-    }
+    // 指针的解析与校验在 PCL.Core 里（UpdateManifestPointer），
+    // 那份逻辑被单元测试盯着——它曾经把反代返回的「404: Not Found」当成有效指针。
 }

@@ -137,8 +137,6 @@ public static class UpdateManager
                 }));
                 if (type == UpdateEnums.UpdateType.UpdateNow)
                     loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.Install"), _ => UpdateRestart(true)));
-                else if (type == UpdateEnums.UpdateType.Silent)
-                    loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.Prepare"), _ => isUpdateWaitingRestart = true));
                 else if (type == UpdateEnums.UpdateType.DownloadAndPrompt)
                     loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.ShowButton"), _ =>
                     {
@@ -281,13 +279,17 @@ public static class UpdateManager
 
     private static void ScheduleBasedOnConfig()
     {
+        // 静默更新已经移除：不再存在「悄悄下完直接替换」的路径。
+        // 老配置里选了 DownloadAndInstall 的用户在这里被就地降级成「下载并提示」，
+        // 下载完成后会亮出重启按钮并弹提示，用户不点就不替换。
+        if (Config.Update.UpdateMode == LauncherAutoUpdateBehavior.DownloadAndInstall)
+        {
+            ModBase.Log("[Update] 静默更新已移除，更新设置自动改为「自动下载并提示更新」");
+            Config.Update.UpdateMode = LauncherAutoUpdateBehavior.DownloadAndAnnounce;
+        }
+
         switch (Config.Update.UpdateMode)
         {
-            case LauncherAutoUpdateBehavior.DownloadAndInstall:
-                ModBase.Log("[Update] 更新设置: 自动下载并安装更新");
-                if (GetVersionStatus() != UpdateEnums.VersionStatus.Latest)
-                    UpdateStart(UpdateEnums.UpdateType.Silent);
-                break;
             case LauncherAutoUpdateBehavior.DownloadAndAnnounce:
                 ModBase.Log("[Update] 更新设置: 自动下载并提示更新");
                 UpdateStart(UpdateEnums.UpdateType.DownloadAndPrompt);

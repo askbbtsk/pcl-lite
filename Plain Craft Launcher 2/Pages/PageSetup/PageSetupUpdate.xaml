@@ -39,7 +39,8 @@
                         <local:MyComboBox x:Name="ComboSystemUpdateMode" Tag="SystemUpdateMode" Grid.Column="1"
                                           Grid.ColumnSpan="3" Grid.Row="2"
                                           SelectionChanged="ComboSystemUpdateMode_SelectionChanged">
-                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.DownloadAndInstall}" ToolTip="{DynamicResource Setup.Update.Auto.DownloadAndInstall.ToolTip}" />
+                            <!--  静默更新已移除：更新必须让用户看见，这里只保留「下载并提示 / 仅提示 / 关闭」  -->
+                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.DownloadAndInstall}" ToolTip="{DynamicResource Setup.Update.Auto.DownloadAndInstall.ToolTip}" Visibility="Collapsed" />
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.DownloadAndNotify}" ToolTip="{DynamicResource Setup.Update.Auto.DownloadAndNotify.ToolTip}" />
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.NotifyOnly}" ToolTip="{DynamicResource Setup.Update.Auto.NotifyOnly.ToolTip}" />
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Auto.Disabled}" ToolTip="{DynamicResource Setup.Update.Auto.Disabled.ToolTip}" />

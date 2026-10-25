@@ -22,6 +22,11 @@ public partial class PageSetupUpdate
     {
         ModAnimation.AniControlEnabled += 1;
 
+        // 静默更新已移除：老配置若还停在 DownloadAndInstall，就地改成「下载并提示」，
+        // 否则下拉框会选中一个已经被隐藏的项，显示成空白。
+        if (Config.Update.UpdateMode == LauncherAutoUpdateBehavior.DownloadAndInstall)
+            Config.Update.UpdateMode = LauncherAutoUpdateBehavior.DownloadAndAnnounce;
+
         ComboSystemUpdateChannel.SelectedIndex = (int)Config.Update.UpdateChannel;
         ComboSystemUpdateMode.SelectedIndex = (int)Config.Update.UpdateMode;
 

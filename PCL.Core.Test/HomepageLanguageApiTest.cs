@@ -389,4 +389,75 @@ public class HomepageLanguageApiTest
     }
 
     #endregion
+
+    #region 双端兼容写法（非默认分支预先 Collapsed）
+
+    /// <summary>
+    /// 按双端兼容写法搭一棵树：非默认分支都带 Visibility=Collapsed，
+    /// 这样原版 PCL 只会看到 default 分支。
+    /// </summary>
+    private static StackPanel BuildCompatTree()
+    {
+        var root = new StackPanel();
+        root.Children.Add(new TextBlock
+            { Text = "English", Tag = "lang:en", Visibility = Visibility.Collapsed });
+        root.Children.Add(new TextBlock
+            { Text = "繁體", Tag = "lang:zh-TW", Visibility = Visibility.Collapsed });
+        root.Children.Add(new TextBlock { Text = "简体兜底", Tag = "lang:default" });
+        return root;
+    }
+
+    [TestMethod]
+    public void ApplyToTreeShouldRevealCollapsedMatchingBranch()
+    {
+        RunInSta(() =>
+        {
+            var root = BuildCompatTree();
+
+            var removed = HomepageLanguageApi.ApplyToTree(root, "en-US", out var revealed);
+
+            Assert.AreEqual(2, removed, "应当移除 zh-TW 与 default 两个分支");
+            Assert.AreEqual(1, revealed, "命中的 en 分支应当从 Collapsed 改回 Visible");
+
+            Assert.AreEqual(1, root.Children.Count);
+            var winner = (TextBlock)root.Children[0];
+            Assert.AreEqual("English", winner.Text);
+            Assert.AreEqual(Visibility.Visible, winner.Visibility);
+        });
+    }
+
+    [TestMethod]
+    public void ApplyToTreeShouldKeepDefaultVisibleWhenNoBranchMatches()
+    {
+        RunInSta(() =>
+        {
+            var root = BuildCompatTree();
+
+            var removed = HomepageLanguageApi.ApplyToTree(root, "zh-CN", out var revealed);
+
+            // zh-CN 只命中 default，en 与 zh-TW 都被移除，不需要 reveal（default 本来就是可见的）
+            Assert.AreEqual(2, removed);
+            Assert.AreEqual(0, revealed);
+
+            Assert.AreEqual(1, root.Children.Count);
+            Assert.AreEqual("简体兜底", ((TextBlock)root.Children[0]).Text);
+        });
+    }
+
+    [TestMethod]
+    public void ApplyToTreeShouldNotReportRevealForAlreadyVisibleWinner()
+    {
+        RunInSta(() =>
+        {
+            var root = new StackPanel();
+            root.Children.Add(new TextBlock { Text = "English", Tag = "lang:en" });
+            root.Children.Add(new TextBlock { Text = "兜底", Tag = "lang:default" });
+
+            HomepageLanguageApi.ApplyToTree(root, "en-US", out var revealed);
+
+            Assert.AreEqual(0, revealed, "本来就可见的分支不该计入 reveal");
+        });
+    }
+
+    #endregion
 }

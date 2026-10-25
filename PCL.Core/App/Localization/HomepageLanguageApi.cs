@@ -180,18 +180,33 @@ public static class HomepageLanguageApi
     /// 才会移除未命中的分支；否则保留全部分支，避免主页因为漏翻而变成空白。
     /// 不含任何语言标签的子树完全不受影响。
     /// </para>
+    /// <para>
+    /// 命中分支如果被作者写成 <c>Visibility="Collapsed"</c>（双端兼容写法：原版 PCL 只会显示
+    /// <c>lang:default</c> 分支，PCL Lite 把命中的分支重新露出来），这里会把它设为可见。
+    /// </para>
     /// </summary>
     /// <param name="root">可视化树根节点。</param>
     /// <param name="languageCode">当前 UI 语言代码，例如 <c>zh-CN</c>。</param>
     public static int ApplyToTree(DependencyObject? root, string languageCode)
     {
+        return ApplyToTree(root, languageCode, out _);
+    }
+
+    /// <summary>
+    /// 同 <see cref="ApplyToTree(DependencyObject?, string)"/>，并额外给出被重新设为可见的分支数量。
+    /// </summary>
+    /// <param name="revealed">被从 Collapsed 改回 Visible 的元素数量（双端兼容写法会用到）。</param>
+    public static int ApplyToTree(DependencyObject? root, string languageCode, out int revealed)
+    {
+        revealed = 0;
         if (root is null) return 0;
         var removed = 0;
-        _ProcessChildren(root, languageCode, ref removed);
+        _ProcessChildren(root, languageCode, ref removed, ref revealed);
         return removed;
     }
 
-    private static void _ProcessChildren(DependencyObject parent, string languageCode, ref int removed)
+    private static void _ProcessChildren(DependencyObject parent, string languageCode, ref int removed,
+        ref int revealed)
     {
         var children = _GetChildren(parent).OfType<FrameworkElement>().ToArray();
         if (children.Length == 0) return;
@@ -202,6 +217,11 @@ public static class HomepageLanguageApi
             var matched = tagged.Where(child => IsLanguageTagMatch(child.Tag, languageCode)).ToArray();
             var fallback = tagged.Where(child => IsDefaultLanguageTag(child.Tag)).ToArray();
             var winners = matched.Length > 0 ? matched : fallback;
+
+            // 双端兼容写法：非默认分支在 XAML 里预先 Collapsed，原版 PCL 只会显示 default 分支；
+            // 到了这里，命中当前语言的那一支要重新露出来。
+            foreach (var winner in winners)
+                if (_Reveal(winner)) revealed++;
 
             foreach (var child in tagged)
             {
@@ -219,8 +239,15 @@ public static class HomepageLanguageApi
         foreach (var child in children)
         {
             if (!_IsStillAttached(parent, child)) continue;
-            _ProcessChildren(child, languageCode, ref removed);
+            _ProcessChildren(child, languageCode, ref removed, ref revealed);
         }
+    }
+
+    private static bool _Reveal(FrameworkElement element)
+    {
+        if (element.Visibility == Visibility.Visible) return false;
+        element.Visibility = Visibility.Visible;
+        return true;
     }
 
     private static IEnumerable<DependencyObject> _GetChildren(DependencyObject parent)

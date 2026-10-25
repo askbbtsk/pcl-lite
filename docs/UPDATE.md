@@ -169,6 +169,25 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 
 发版真正要改的只有一处：`Plain Craft Launcher 2/metadata.json` 里的版本号。见下节。
 
+## 发版后怎么验
+
+两个脚本，都只读线上数据、不改任何东西：
+
+```bash
+# 链路能不能走通：锚点 -> latest -> 挑资产 -> 下载 -> 比对 SHA-256
+python tools/verify-update-chain.py
+
+# 四档通道对着线上 Release 列表挑出来的版本对不对
+python tools/verify-channels.py
+```
+
+`verify-channels.py` 会把线上每条 Release 的通道等级打出来，再断言
+「1.3.2 用户走稳定版通道能看到新版本」「1.3.3 用户走任何通道都已是最新」这类结论。
+发预发布包之后跑一次，能立刻发现「通道过滤把正式版挡掉了」这种自己卡死自己的问题。
+
+网络需要代理时加环境变量：`PCL_TEST_PROXY=http://127.0.0.1:7890`。
+
+
 ## 版本号只有一个真源：metadata.json
 
 `Plain Craft Launcher 2/metadata.json`：
@@ -176,10 +195,10 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 ```json
 {
   "version": {
-    "base": "1.3.2",
+    "base": "1.3.3",
     "upstream": "2.12.1",
     "suffix": "",
-    "code": 11
+    "code": 12
   }
 }
 ```

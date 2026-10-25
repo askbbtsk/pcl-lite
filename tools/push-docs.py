@@ -1,4 +1,4 @@
-"""把 LICENSE / LICENSE-APACHE / 三个 README 作为单个提交推到 Pcl-Lite 的 main。
+"""把 LICENSE / LICENSE-APACHE / 三个 README 作为单个提交推到主仓库的 main。
 
 刻意不使用 git push：本地仓库的 origin 指向上游，且工作区有 66 个源码改动，
 push 会把整份源码历史一起推上去。这里只走 Git Data API，只影响这 5 个文件。
@@ -8,8 +8,8 @@ import json
 import subprocess
 import sys
 
-OWNER = "Pcl-Lite"
-REPO = "Pcl-Lite"
+OWNER = "askbbtsk"
+REPO = "pcl-lite"
 BRANCH = "main"
 MESSAGE = "docs: 加入许可证并重写 README"
 

@@ -1652,7 +1652,6 @@
     <sys:String x:Key="Community.Qq.Opening">正在瀏覽器中開啟加群連結…</sys:String>
     <sys:String x:Key="Community.Qq.Copied">群號 {0} 已複製，開啟 QQ 搜尋即可加入</sys:String>
 
-
     <!-- Launch.Skin -->
 
     <sys:String x:Key="Launch.Skin.ChangeCape">更換披風</sys:String>
@@ -1767,10 +1766,6 @@
     <sys:String x:Key="Link.Quality.NormalDescription">目前網路環境可能會影響您的連線體驗</sys:String>
     <sys:String x:Key="Link.Quality.Poor">較差</sys:String>
     <sys:String x:Key="Link.Quality.PoorDescription">部分路由器和防火牆設定可能會影響您的連線體驗</sys:String>
-
-
-
-
 
     <!-- Link.Nat -->
 
@@ -2549,10 +2544,6 @@
     <sys:String x:Key="Setup.Feedback.Status.Waiting">等待</sys:String>
     <sys:String x:Key="Setup.Feedback.Status.WaitingProcess">等待處理</sys:String>
 
-
-
-
-
     <!-- Setup.GameManage -->
 
     <sys:String x:Key="Setup.GameManage.Error.InitFailed">初始化其他頁設定失敗</sys:String>
@@ -3181,27 +3172,24 @@
     <sys:String x:Key="Setup.Update.Auto.Title">自動更新設定</sys:String>
 
     <!-- Setup.Update.Channel -->
+    <sys:String x:Key="Setup.Update.Channel.Preview">預覽體驗</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Preview.ToolTip">三個通道裡最穩的一檔。收正式版，以及正式版之前的預覽版（pre / beta）。適合想提前看到下個版本、但不想天天踩坑的使用者。</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Snapshot">快照嘗鮮</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Snapshot.ToolTip">比預覽體驗激進一檔。額外收快照版（snapshot）——開發過程中的中間建置，功能可能是半成品。</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Snapshot.Warning.Message">你正在把更新通道切到「快照嘗鮮」。&#xA;該通道除了正式版和預覽版，還會收到快照版（snapshot）。它們是開發過程中的中間建置，功能可能不完整、可能隨時出問題。&#xA;&#xA;正式版發布後你仍然會正常升到正式版。如果你在製作整合包，請用「預覽體驗」或直接下正式版！</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest">始終最新</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.ToolTip">最激進的一檔。正式版、預覽版、快照版、不穩定版（nightly）全都收，隨時可能遇到半成品功能。</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.Warning.Message">你正在把更新通道切到「始終最新」。&#xA;該通道會收到全部版本，包括不穩定版（nightly）——直接來自最新提交的建置，可能完全無法啟動。&#xA;&#xA;正式版發布後你仍然會正常升到正式版。該選項僅推薦願意幫忙排查問題的使用者選擇。</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Title">最終確認</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Message">確定要切到「始終最新」嗎？&#xA;你會收到 nightly 建置，它們可能完全無法使用。&#xA;&#xA;請輸入 '{0}' 以確認。</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.ExpectedInput">我確認切換到此通道並已知曉風險</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Submit">提交</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.WrongInput">你輸入了錯誤的內容...</sys:String>
 
-    <sys:String x:Key="Setup.Update.Channel.Beta">測試版 / Beta</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Beta.ToolTip">可能不穩定的測試版本，將會進行功能的早期測試，適合希望幫助測試且有一定技術能力的使用者使用。</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Beta.Warning.Message">你正在切換啟動器更新通道到測試版。&#xA;測試版可以提供下個版本更新內容的預覽，但可能會包含未經充分測試的功能，穩定性欠佳。&#xA;&#xA;在升級到測試版後，你需要等待下一個正式版釋出，或是手動重新下載啟動器來切換到正式版。&#xA;該選項僅推薦具有一定基礎知識和能力的使用者選擇。如果你正在製作模組包，請使用正式版！</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Common.Warning.Confirm">我已知曉</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Common.Warning.Title">繼續之前...</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Release">正式版 / Release</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Release.ToolTip">較為穩定的版本，僅推送修復性更新與部分內建資源更新，適合大多數使用者使用。</sys:String>
+
     <sys:String x:Key="Setup.Update.Channel.Title">更新通道</sys:String>
-
-    <!-- Setup.Update.Channel.Dev -->
-
-    <sys:String x:Key="Setup.Update.Channel.Dev">開發版 / Dev</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.ExpectedInput">我確認切換到此分支並已知曉風險</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.Message">你確認要切換到開發版通道嗎？&#xA;開發版可能存在嚴重問題，甚至無法啟動！&#xA;&#xA;在升級到開發版後，將無法切換回其他任何更新通道，只能手動重新下載啟動器來切換回正式版或測試版。&#xA;&#xA;該選項僅推薦高階使用者選擇。如果你正在製作模組包，請使用正式版！&#xA;請輸入 '{0}' 以確認。</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.Submit">提交</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.Title">最終確認</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.WrongInput">你輸入了錯誤的內容...</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.ToolTip">可能極不穩定的開發版本，直接從最新原始碼建置，適合高度技術性使用者。&#xA;可能需要具備較好的網際網路連線品質才能順利取得此通道更新。</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.Warning.Message">你正在切換啟動器更新通道到開發版。&#xA;該通道可第一時間取得基於最新程式碼建置的開發版本，但可能極不穩定，甚至直接無法啟動。&#xA;&#xA;在升級到開發版後，只能手動重新下載啟動器來切換回正式版或測試版。&#xA;該選項僅推薦高階使用者選擇。如果你正在製作模組包，請使用正式版！</sys:String>
-
     <!-- Speed -->
 
     <sys:String x:Key="Speed.Error.ClickToCopy">點擊複製錯誤詳情</sys:String>
@@ -3338,14 +3326,6 @@
     <sys:String x:Key="Tools.Error.OperationFailed">工具頁操作失敗。請檢視錯誤詳情。</sys:String>
     <sys:String x:Key="Tools.Left.Utilities">奇妙小工具</sys:String>
     <sys:String x:Key="Tools.Left.Utilities.Title">百寶箱</sys:String>
-
-
-
-
-
-
-
-
 
     <!-- Tools.ServerQuery -->
 

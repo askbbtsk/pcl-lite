@@ -42,7 +42,7 @@ public partial class PageSetupUpdate
             // 修复：使用 dynamic 绕过命名空间重名导致的编译期类型冲突，
             // 或者你可以尝试替换为 PCL.Core.App.SemVer.Parse(ModBase.versionBaseName)
             if (await UpdateManager.remoteServer.IsLatestAsync(
-                    UpdateManager.IsCurrentVersionBeta ? UpdateChannel.beta : UpdateChannel.stable,
+                    UpdateManager.TargetChannel,
                     SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64,
                     SemVer.Parse(ModBase.versionBaseName),
                     ModBase.versionCode))
@@ -97,9 +97,7 @@ public partial class PageSetupUpdate
                 try
                 {
                     updateInfo = UpdateManager.remoteServer.GetLatestVersion(
-                        UpdateManager.IsCurrentVersionBeta
-                            ? UpdateChannel.beta
-                            : UpdateChannel.stable, SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64);
+                        UpdateManager.TargetChannel, SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64);
                     TextUpdateName.Text = "PCL Lite " + VersionNameFormat(updateInfo.VersionName);
                     var summary = updateInfo.Changelog.Between("<summary>", "</summary>");
                     if (!updateInfo.Changelog.Contains("<summary>") || string.IsNullOrWhiteSpace(summary.Trim()))
@@ -204,6 +202,8 @@ public partial class PageSetupUpdate
         if (ModAnimation.AniControlEnabled != 0)
             return;
 
+        // 三档都是包含式的，越往下越激进：0 预览体验（正式 + pre）、
+        // 1 快照尝鲜（+ snapshot）、2 始终最新（+ nightly）。只有后两档需要警告。
         var isCancelled = false;
         switch (ComboSystemUpdateChannel.SelectedIndex)
         {
@@ -213,7 +213,7 @@ public partial class PageSetupUpdate
             }
             case 1:
             {
-                if (ModMain.MyMsgBox(Lang.Text("Setup.Update.Channel.Beta.Warning.Message"),
+                if (ModMain.MyMsgBox(Lang.Text("Setup.Update.Channel.Snapshot.Warning.Message"),
                         Lang.Text("Setup.Update.Channel.Common.Warning.Title"),
                         Lang.Text("Setup.Update.Channel.Common.Warning.Confirm"),
                         Lang.Text("Common.Action.Cancel"), isWarn: true) == 2)
@@ -222,7 +222,7 @@ public partial class PageSetupUpdate
             }
             case 2:
             {
-                if (ModMain.MyMsgBox(Lang.Text("Setup.Update.Channel.Dev.Warning.Message"),
+                if (ModMain.MyMsgBox(Lang.Text("Setup.Update.Channel.Latest.Warning.Message"),
                         Lang.Text("Setup.Update.Channel.Common.Warning.Title"),
                         Lang.Text("Setup.Update.Channel.Common.Warning.Confirm"),
                         Lang.Text("Common.Action.Cancel"), isWarn: true) == 2)
@@ -231,16 +231,16 @@ public partial class PageSetupUpdate
                     break;
                 }
 
-                var confirmText = Lang.Text("Setup.Update.Channel.Dev.FinalConfirm.ExpectedInput");
+                var confirmText = Lang.Text("Setup.Update.Channel.Latest.FinalConfirm.ExpectedInput");
                 var ret = ModMain.MyMsgBoxInput(
-                    Lang.Text("Setup.Update.Channel.Dev.FinalConfirm.Title"),
-                    Lang.Text("Setup.Update.Channel.Dev.FinalConfirm.Message", confirmText),
-                    button1: Lang.Text("Setup.Update.Channel.Dev.FinalConfirm.Submit"),
+                    Lang.Text("Setup.Update.Channel.Latest.FinalConfirm.Title"),
+                    Lang.Text("Setup.Update.Channel.Latest.FinalConfirm.Message", confirmText),
+                    button1: Lang.Text("Setup.Update.Channel.Latest.FinalConfirm.Submit"),
                     button2: Lang.Text("Common.Action.Cancel"), isWarn: true);
 
                 if (ret != confirmText)
                 {
-                    HintService.Hint(Lang.Text("Setup.Update.Channel.Dev.FinalConfirm.WrongInput"));
+                    HintService.Hint(Lang.Text("Setup.Update.Channel.Latest.FinalConfirm.WrongInput"));
                     isCancelled = true;
                 }
 

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
+using PCL.Core.App.Updates;
 using PCL.Core.Utils;
 using PCL.Core.Utils.OS;
 
@@ -26,51 +27,32 @@ public static class UpdateManager
     });
 
     /// <summary>
-    ///     用户选的通道是不是预发布（Beta / Dev）。
-    ///     <para>
-    ///     Dev 也走 beta 通道：本项目没有单独的 Dev 版本源，把 Dev 当正式版处理
-    ///     会让选了 Dev 的人反而收不到任何预发布版本。
-    ///     </para>
+    ///     当前系统架构。
     /// </summary>
-    private static bool _UseBetaChannel =>
-        Config.Update.UpdateChannel != Core.App.UpdateChannel.Release;
+    private static UpdateArch CurrentArch => SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64;
 
     /// <summary>
-    ///     是否应当从预发布通道取版本。当前版本自带 beta 后缀时无条件走 beta，
-    ///     否则跟随用户选的通道。
+    ///     当前用户通道对应的取版本通道。
+    ///     <para>
+    ///         三个通道都是**包含式**的：预览体验收正式版 + pre，快照尝鲜再加快照，
+    ///         始终最新全收。所以激进通道的用户在正式版发布后照样能升上去，
+    ///         不会因为手里是 nightly 就永远等不到「更新的」预发布。
+    ///     </para>
     /// </summary>
-    public static bool IsCurrentVersionBeta
-    {
-        get
-        {
-            if (ModBase.versionBaseName.Contains("beta"))
-                return true;
-            return _UseBetaChannel;
-        }
-    }
+    public static UpdateChannel TargetChannel => UpdateChannelMapping.ToChannel(Config.Update.UpdateChannel);
+
+    /// <summary>
+    ///     当前版本自身的不稳定等级。用于日志与「通道比当前版本更保守」时的提示。
+    /// </summary>
+    public static int CurrentVersionLevel => UpdateChannelLevels.FromVersionName(ModBase.versionBaseName);
 
     public static UpdateEnums.VersionStatus GetVersionStatus()
     {
         try
         {
-            // 当前是 beta 版，但用户把通道选回了正式版：只有正式版和 beta 版都不比
-            // 当前版本新时才算「已是最新」，否则提示更新。
-            if (ModBase.versionBaseName.Contains("beta") && !_UseBetaChannel)
-            {
-                var isNewerThanStable = remoteServer.IsLatest(UpdateChannel.stable,
-                    SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64, SemVer.Parse(ModBase.versionBaseName),
-                    ModBase.versionCode);
-                var isBetaLatest = remoteServer.IsLatest(UpdateChannel.beta,
-                    SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64, SemVer.Parse(ModBase.versionBaseName),
-                    ModBase.versionCode);
-                return isNewerThanStable && isBetaLatest
-                    ? UpdateEnums.VersionStatus.Latest
-                    : UpdateEnums.VersionStatus.NotLatest;
-            }
-
-            return remoteServer.IsLatest(
-                IsCurrentVersionBeta ? UpdateChannel.beta : UpdateChannel.stable,
-                SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64, SemVer.Parse(ModBase.versionBaseName),
+            // 包含式通道 + SemVer 比较已经覆盖了「从激进通道切回保守通道」的情形：
+            // 手里的 nightly 比当前通道最新版还新时 IsLatest 自然为 true，不会提示降级。
+            return remoteServer.IsLatest(TargetChannel, CurrentArch, SemVer.Parse(ModBase.versionBaseName),
                 ModBase.versionCode)
                 ? UpdateEnums.VersionStatus.Latest
                 : UpdateEnums.VersionStatus.NotLatest;
@@ -96,8 +78,8 @@ public static class UpdateManager
             try
             {
                 var version = remoteServer.GetLatestVersion(
-                    IsCurrentVersionBeta ? UpdateChannel.beta : UpdateChannel.stable,
-                    SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64
+                    TargetChannel,
+                    CurrentArch
                 );
 
                 ModBase.WriteFile($"{ModBase.pathTemp}CEUpdateLog.md", version.Changelog);
@@ -123,8 +105,8 @@ public static class UpdateManager
                 var loaders = new List<ModLoader.LoaderBase>();
                 // 下载
                 loaders.AddRange(remoteServer.GetDownloadLoader(
-                    IsCurrentVersionBeta ? UpdateChannel.beta : UpdateChannel.stable,
-                    SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64, dlTargetPath));
+                    TargetChannel,
+                    CurrentArch, dlTargetPath));
                 loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.Check"), _ =>
                 {
                     // 更新源给不出官方哈希时 Sha256 是空串（Atom 降级通道、老接口）。
@@ -244,7 +226,7 @@ public static class UpdateManager
         // 注意：如果要自行实现这个功能，请换用另一个文件路径，以免与官方版本冲突
         var latestPCLPath = Path.Combine(ModBase.pathTemp, "CE-Latest.exe");
         var target = remoteServer.GetLatestVersion(UpdateChannel.stable,
-            SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64);
+            CurrentArch);
         if (target is null)
             throw new Exception(Lang.Text("Update.Error.UnableToGetUpdate"));
         if (File.Exists(latestPCLPath) && (ModBase.GetFileSHA256(latestPCLPath) ?? "") == (target.Sha256 ?? ""))
@@ -260,7 +242,7 @@ public static class UpdateManager
         }
 
         var loaders = remoteServer.GetDownloadLoader(UpdateChannel.stable,
-            SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64, latestPCLPath);
+            CurrentArch, latestPCLPath);
         var loader = new ModLoader.LoaderCombo<int>(Lang.Text("Update.Task.DownloadLatestStable"), loaders);
         loader.Start();
         loader.WaitForExit();

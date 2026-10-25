@@ -125,7 +125,7 @@ PCL Lite 会把命中当前语言的那一支重新设为可见，原版 PCL 则
 { "update": "askbbtsk/pcl-lite/releases/latest" }
 ```
 
-清单地址固定在 `Pcl-Lite/Pcl-Lite-service`，**以后换发布仓库只改这一行**，
+清单地址固定在 `bedkillerspacex-boop/PCL-Lite-service`，**以后换发布仓库只改这一行**，
 所有已经装出去的旧版本下次检查更新时会自动走到新地址，不需要发版、不需要重装。
 版本号、直链、SHA-256 全部由 Release 自己提供，因此发版也不用再手改清单，
 不存在「忘了改哈希导致所有人更新失败」这种坑。

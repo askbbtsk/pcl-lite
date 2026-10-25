@@ -163,8 +163,81 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 **不用。** 这是这套设计最重要的性质：
 
 - 发新版 → 只要推 Release，客户端自动看到
-- 发预发布 → 标上 prerelease，走预发布通道的用户自动看到
+- 发预发布 → tag 带上对应的后缀（`-pre` / `-snapshot` / `-nightly`），
+  选了对等或更激进通道的用户自动看到
 - 换仓库 → 改 `update.json` 那一行（唯一需要动手的场景）
+
+发版真正要改的只有一处：`Plain Craft Launcher 2/metadata.json` 里的版本号。见下节。
+
+## 版本号只有一个真源：metadata.json
+
+`Plain Craft Launcher 2/metadata.json`：
+
+```json
+{
+  "version": {
+    "base": "1.3.2",
+    "upstream": "2.12.1",
+    "suffix": "",
+    "code": 11
+  }
+}
+```
+
+两个 csproj 的 `AssemblyVersion` / `FileVersion` / `InformationalVersion`
+**都在构建时从这份 json 读**，csproj 里不再写版本号。
+
+> **这不是洁癖，是 1.3.1 → 1.3.2 那次翻车换来的。**
+> 当时只改了 csproj、忘了改 json，结果装完仍然自报 1.3.1：
+> 检查更新永远说「有新版本」，点更新下载替换重启，回来还是 1.3.1，死循环。
+> 版本号有两个真源，就一定会有一边被漏掉。
+
+| 字段 | 含义 |
+| --- | --- |
+| `base` | 核心版本号，纯 `x.y.z`；`AssemblyVersion` = `base.0` |
+| `suffix` | 不稳定后缀，决定这个版本进哪个通道 |
+| `code` | 内部版本代号，只增不减 |
+
+### suffix 的四种取值
+
+| suffix | 版本名示例 | 叫法 | 等级 |
+| --- | --- | --- | --- |
+| （空） | `1.3.2` | 正式版 | 0 |
+| `pre` | `1.3.3-pre` | 预览版 | 1 |
+| `snapshot` | `1.3.3-snapshot` | 快照版 | 2 |
+| `nightly` | `1.3.3-nightly` | 不稳定版 | 3 |
+
+`beta` / `alpha` / `rc` 也归预览级——分得再细也没有对应通道，归成一档反而不会漏收。
+
+### 三个通道都是包含式的
+
+| 通道 | 收哪些 | 说明 |
+| --- | --- | --- |
+| 预览体验 | 正式 + pre | 三档里最稳 |
+| 快照尝鲜 | 正式 + pre + snapshot | |
+| 始终最新 | 正式 + pre + snapshot + nightly | 最激进 |
+
+判定只有一句：`版本等级 <= 通道等级`。
+
+**包含式是硬要求。** 假如「始终最新」只收 nightly，用户拿到 `1.3.2-nightly` 之后，
+正式版 `1.3.2` 发布时按 SemVer 本来就该升（`1.3.2 > 1.3.2-nightly`），
+但只要通道把正式版过滤掉了，这条升级路径就被掐断，用户会一直卡在 nightly 上，
+直到下一个 nightly 出现。反过来，从激进通道切回保守通道也一样：
+手里的 nightly 比保守通道的最新版还新，`IsLatest` 直接判 true，不会提示降级。
+
+### tag 规则
+
+tag 必须和 `metadata.json` 的 `base` + `suffix` 对上：
+
+| metadata.json | tag |
+| --- | --- |
+| `base: 1.3.2`, `suffix: ""` | `v1.3.2` |
+| `base: 1.3.3`, `suffix: "pre"` | `v1.3.3-pre` |
+| `base: 1.3.3`, `suffix: "nightly"` | `v1.3.3-nightly` |
+
+客户端从 **tag** 反推等级（`UpdateChannelLevels.FromVersionName`），不读 `prerelease` 标记。
+那个标记只作兜底：tag 里没写后缀却被标成 prerelease 的，按预览级处理，
+免得把预发布包推给只想要稳定版的用户。
 
 ## 换发布仓库的步骤
 
@@ -187,10 +260,12 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 | --- | --- |
 | `Modules/Updates/UpdatesManifestModel.cs` | 并发拉清单、把仓库交给内层源、把通道失败归并成一句人话 |
 | `PCL.Core/App/Updates/UpdateManifestPointer.cs` | 指针的解析与**形状校验**（纯函数，被单元测试盯着） |
+| `PCL.Core/App/Updates/UpdateChannelLevels.cs` | 后缀 → 不稳定等级、通道包含判定（纯函数，被单元测试盯着） |
 | `Modules/Updates/UpdatesGitHubModel.cs` | 真正取版本：读 Release 列表、挑资产、读 `digest`、下载 |
 | `Modules/Updates/UpdatesWrapperModel.cs` | 按顺序试各个源，第一个成功的就是本次的版本源 |
 | `Modules/Updates/UpdateManager.cs` | 源列表就在这里，清单源排第一 |
 | `PCL.Core.Test/UpdateManifestPointerTest.cs` | 17 个用例，含「反代回 404 正文」「回 HTML」这些实战翻车场景 |
+| `PCL.Core.Test/UpdateChannelLevelsTest.cs` | 37 个用例，钉死后缀分类与通道包含关系 |
 
 失败行为：清单拉不到（墙、仓库私有、json 写坏）→ 自动换 `UpdatesGitHubModel`，
 行为与加清单之前完全一致。两个都失败才报「获取版本信息失败」。

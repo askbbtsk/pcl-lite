@@ -203,15 +203,11 @@ public class UpdatesMinioModel : IUpdateSource // 社区自己的更新系统格
                 channelName += "sr";
                 break;
             }
-            case UpdateChannel.beta:
-            {
-                channelName += "fr";
-                break;
-            }
-
             default:
             {
-                channelName += "sr";
+                // 预览 / 快照 / 最新都走预发布通道。
+                // 这个源是上游 PCL-CE 的 S3 静态站，本项目没启用，只为编译保留。
+                channelName += "fr";
                 break;
             }
         }

@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using PCL.Core.App;
+using PCL.Core.App.Updates;
 using PCL.Core.App.Essentials;
 using PCL.Core.App.IoC;
 using PCL.Core.App.Localization;
@@ -88,9 +89,13 @@ public partial class Application
             _ = Config.Preference.Font;
             var updateBranchCfg = Config.Update.UpdateChannelConfig;
             if (updateBranchCfg.IsDefault())
-                updateBranchCfg.SetValue(ModBase.versionBaseName.Contains("beta")
-                    ? Core.App.UpdateChannel.Beta
-                    : Core.App.UpdateChannel.Release);
+            {
+                // 默认通道跟着「当前装的是哪个等级的版本」走：
+                // 正式版给最保守的预览体验，snapshot 给快照尝鲜，nightly 给始终最新。
+                // 这样从哪儿装来的就继续收哪一档，不会莫名其妙开始收更不稳定的包。
+                var level = UpdateChannelLevels.FromVersionName(ModBase.versionBaseName);
+                updateBranchCfg.SetValue((Core.App.UpdateChannel)Math.Min(level, (int)Core.App.UpdateChannel.Latest));
+            }
 
             // 删除旧日志
             for (var i = 1; i <= 5; i++)

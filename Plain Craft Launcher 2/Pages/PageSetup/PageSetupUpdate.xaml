@@ -26,13 +26,13 @@
                         <local:MyComboBox x:Name="ComboSystemUpdateChannel" Tag="SystemUpdateChannel" Grid.Column="1"
                                           Grid.ColumnSpan="3" Grid.Row="0"
                                           SelectionChanged="ComboSystemUpdateBranch_SelectionChanged">
-                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Release}"
-                                                  ToolTip="{DynamicResource Setup.Update.Channel.Release.ToolTip}" />
-                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Beta}"
-                                                  ToolTip="{DynamicResource Setup.Update.Channel.Beta.ToolTip}" />
-                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Dev}"
-                                                  ToolTip="{DynamicResource Setup.Update.Channel.Dev.ToolTip}"
-                                                  Visibility="Collapsed" />
+                            <!--  三个通道都是包含式的：越往下越激进，但都包含上面的稳定版本  -->
+                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Preview}"
+                                                  ToolTip="{DynamicResource Setup.Update.Channel.Preview.ToolTip}" />
+                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Snapshot}"
+                                                  ToolTip="{DynamicResource Setup.Update.Channel.Snapshot.ToolTip}" />
+                            <local:MyComboBoxItem Content="{DynamicResource Setup.Update.Channel.Latest}"
+                                                  ToolTip="{DynamicResource Setup.Update.Channel.Latest.ToolTip}" />
                         </local:MyComboBox>
                         <TextBlock Text="{DynamicResource Setup.Update.Auto.Title}" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Left"
                                    Margin="0,0,25,0" />

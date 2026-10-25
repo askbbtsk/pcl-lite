@@ -41,13 +41,26 @@ public enum ColorTheme
 }
 
 /// <summary>
-/// 更新通道
+/// 更新通道。
+/// <para>
+/// 三个选项都是**包含式**的：越往下越激进，但依然收上面所有更稳定的版本。
+/// 这样「始终最新」的用户在正式版发布后也能升到正式版，不会因为手里的
+/// 预发布版本号比新正式版大而卡死。
+/// </para>
+/// <para>
+/// 数值与旧的 Release / Beta / Dev 一一对应，老配置不需要迁移。
+/// </para>
 /// </summary>
 public enum UpdateChannel
 {
-    Release = 0,
-    Beta = 1,
-    Dev = 2
+    /// <summary>预览体验：正式版 + 预览版（pre / beta）。</summary>
+    Preview = 0,
+
+    /// <summary>快照尝鲜：在预览体验基础上再加快照版（snapshot）。</summary>
+    Snapshot = 1,
+
+    /// <summary>始终最新：全部，含不稳定版（nightly）。</summary>
+    Latest = 2
 }
 
 /// <summary>

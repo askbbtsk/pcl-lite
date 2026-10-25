@@ -7,8 +7,19 @@
         <Company>PCL Community</Company>
         <Product>PCL.Core</Product>
         <Copyright>Copyright © PCL Community</Copyright>
-        <AssemblyVersion>1.3.2.0</AssemblyVersion>
-        <FileVersion>1.3.2.0</FileVersion>
+        <!--
+            版本号唯一真源是 metadata.json，这里不再手写。
+            以前两处各写一份，发版时漏改其中一处就会出现「装完还是旧版本号、
+            更新检查永远认为有新版本」的死循环（1.3.1 -> 1.3.2 就是这么翻的车）。
+        -->
+        <PclMetadataFile>$(MSBuildProjectDirectory)\..\Plain Craft Launcher 2\metadata.json</PclMetadataFile>
+        <PclMetadataJson>$([System.IO.File]::ReadAllText('$(PclMetadataFile)'))</PclMetadataJson>
+        <PclVersionBase>$([System.Text.RegularExpressions.Regex]::Match($(PclMetadataJson), '(?&lt;="base"\s*:\s*")[^"]+'))</PclVersionBase>
+        <PclVersionSuffix>$([System.Text.RegularExpressions.Regex]::Match($(PclMetadataJson), '(?&lt;="suffix"\s*:\s*")[^"]*'))</PclVersionSuffix>
+        <AssemblyVersion>$(PclVersionBase).0</AssemblyVersion>
+        <FileVersion>$(PclVersionBase).0</FileVersion>
+        <InformationalVersion Condition="'$(PclVersionSuffix)' == ''">$(PclVersionBase)</InformationalVersion>
+        <InformationalVersion Condition="'$(PclVersionSuffix)' != ''">$(PclVersionBase)-$(PclVersionSuffix)</InformationalVersion>
     </PropertyGroup>
     <PropertyGroup>
         <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>

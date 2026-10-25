@@ -1697,7 +1697,6 @@
     <sys:String x:Key="Community.Qq.Opening">Opening the invite link in your browser…</sys:String>
     <sys:String x:Key="Community.Qq.Copied">Group number {0} copied — search for it in QQ to join.</sys:String>
 
-
     <!-- Launch.Skin -->
 
     <sys:String x:Key="Launch.Skin.ChangeCape">Change cape</sys:String>
@@ -1815,10 +1814,6 @@
     <sys:String x:Key="Link.Quality.NormalDescription">The current network environment may affect your connection experience.</sys:String>
     <sys:String x:Key="Link.Quality.Poor">Poor</sys:String>
     <sys:String x:Key="Link.Quality.PoorDescription">Some router and firewall settings may affect your connection experience.</sys:String>
-
-
-
-
 
     <!-- Link.Nat -->
 
@@ -2597,10 +2592,6 @@
     <sys:String x:Key="Setup.Feedback.Status.Waiting">Waiting</sys:String>
     <sys:String x:Key="Setup.Feedback.Status.WaitingProcess">Awaiting processing</sys:String>
 
-
-
-
-
     <!-- Setup.GameManage -->
 
     <sys:String x:Key="Setup.GameManage.Error.InitFailed">Failed to initialize game management settings</sys:String>
@@ -3238,27 +3229,24 @@
     <sys:String x:Key="Setup.Update.Auto.Title">Auto update settings</sys:String>
 
     <!-- Setup.Update.Channel -->
+    <sys:String x:Key="Setup.Update.Channel.Preview">Preview</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Preview.ToolTip">The most conservative of the three. Receives stable releases plus previews (pre / beta) that come before them. For people who want an early look without living on the edge.</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Snapshot">Snapshot</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Snapshot.ToolTip">One step more aggressive than Preview. Also receives snapshots — intermediate builds from development, which may be half-finished.</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Snapshot.Warning.Message">You are switching the update channel to Snapshot.&#xA;Besides stable and preview builds, this channel also receives snapshots: intermediate builds from ongoing development that may be incomplete or broken.&#xA;&#xA;You will still be upgraded to stable releases when they ship. If you are building a modpack, use Preview or a stable build instead!</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest">Always latest</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.ToolTip">The most aggressive option. Everything is delivered: stable, preview, snapshot and nightly builds. Half-finished features may show up at any time.</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.Warning.Message">You are switching the update channel to Always latest.&#xA;This channel delivers everything, including nightly builds made straight from the newest commits. They may fail to start at all.&#xA;&#xA;You will still be upgraded to stable releases when they ship. Only pick this if you are willing to help track down problems.</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Title">Final confirmation</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Message">Switch to Always latest?&#xA;You will receive nightly builds that may be completely unusable.&#xA;&#xA;Type '{0}' to confirm.</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.ExpectedInput">I understand the risks and want to switch</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Submit">Submit</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.WrongInput">That does not match what was asked...</sys:String>
 
-    <sys:String x:Key="Setup.Update.Channel.Beta">Beta</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Beta.ToolTip">Potentially unstable beta versions for early feature testing. Suitable for users who want to help test and have some technical ability.</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Beta.Warning.Message">You are switching the launcher update channel to Beta.&#xA;Beta versions provide previews of upcoming updates, but may include insufficiently tested features and have reduced stability.&#xA;&#xA;After upgrading to Beta, you will need to wait for the next Release version or manually re-download the launcher to switch back to Release.&#xA;This option is only recommended for users with some basic knowledge and ability. If you are creating a modpack, please use the Release version!</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Common.Warning.Confirm">I understand</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Common.Warning.Title">Before continuing...</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Release">Release</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Release.ToolTip">A relatively stable version that only receives bug fixes and some built-in resource updates. Suitable for most users.</sys:String>
+
     <sys:String x:Key="Setup.Update.Channel.Title">Update channel</sys:String>
-
-    <!-- Setup.Update.Channel.Dev -->
-
-    <sys:String x:Key="Setup.Update.Channel.Dev">Dev</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.ExpectedInput">I confirm switching to this branch and am aware of the risks</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.Message">Are you sure you want to switch to the Dev channel?&#xA;Dev versions may have serious issues or even fail to launch!&#xA;&#xA;After upgrading to Dev, you will not be able to switch back to any other update channel without manually re-downloading the launcher.&#xA;&#xA;This option is only recommended for advanced users. If you are creating a modpack, please use the Release version!&#xA;Please enter "{0}" to confirm.</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.Submit">Submit</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.Title">Final confirmation</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.FinalConfirm.WrongInput">The content you entered is incorrect...</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.ToolTip">Potentially highly unstable development versions built directly from the latest source code. Suitable for highly technical users.&#xA;Good internet connectivity may be required to download updates from this channel.</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Dev.Warning.Message">You are switching the launcher update channel to Dev.&#xA;This channel provides early access to development builds from the latest code, but may be extremely unstable or even fail to launch.&#xA;&#xA;After upgrading to Dev, you can only manually re-download the launcher to switch back to Release or Beta.&#xA;This option is only recommended for advanced users. If you are creating a modpack, please use the Release version!</sys:String>
-
     <!-- Speed -->
 
     <sys:String x:Key="Speed.Error.ClickToCopy">Click to copy error details</sys:String>
@@ -3395,14 +3383,6 @@
     <sys:String x:Key="Tools.Error.OperationFailed">A utilities operation failed. See the details below.</sys:String>
     <sys:String x:Key="Tools.Left.Utilities">Utilities</sys:String>
     <sys:String x:Key="Tools.Left.Utilities.Title">Toolbox</sys:String>
-
-
-
-
-
-
-
-
 
     <!-- Tools.ServerQuery -->
 

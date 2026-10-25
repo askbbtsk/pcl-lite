@@ -144,7 +144,7 @@ public static partial class Config
         /// <summary>
         /// 更新分支。
         /// </summary>
-        [ConfigItem<UpdateChannel>("SystemUpdateChannel", UpdateChannel.Release, ConfigSource.Local)] public partial UpdateChannel UpdateChannel { get; set; }
+        [ConfigItem<UpdateChannel>("SystemUpdateChannel", UpdateChannel.Preview, ConfigSource.Local)] public partial UpdateChannel UpdateChannel { get; set; }
     }
 
     /// <summary>

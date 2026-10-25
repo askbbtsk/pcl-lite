@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using PCL.Core.App;
+using PCL.Core.App.Updates;
 using PCL.Core.App.Localization;
 using PCL.Core.IO.Net.Http;
 using PCL.Core.Utils;
@@ -23,8 +24,8 @@ namespace PCL;
 /// 从 fork 出来的人一般没有这套服务，所以这里直接用 GitHub 的 Releases API。
 /// </para>
 /// <para>
-/// 通道对应关系：<see cref="UpdateChannel.stable"/> 取第一个非 prerelease 的 Release，
-/// <see cref="UpdateChannel.beta"/> 取第一个（含 prerelease）。
+/// 通道对应关系：按版本后缀算出不稳定等级（正式 0 / pre 1 / snapshot 2 / nightly 3），
+/// 取「等级 &lt;= 通道等级」里版本号最大的那个。通道是包含式的，激进通道也收稳定版。
 /// 版本号取 <c>tag_name</c>，会自动去掉 <c>v</c> 前缀。
 /// </para>
 /// </summary>
@@ -388,24 +389,60 @@ public class UpdatesGitHubModel : IUpdateSource
     /// <summary>
     /// 按通道挑一个 Release。跳过草稿；stable 通道还要跳过 prerelease。
     /// </summary>
+    /// <summary>
+    ///     在缓存里挑出当前通道能收到的最新一版。
+    ///     <para>
+    ///         判定条件是「版本等级 &lt;= 通道等级」，所以激进通道**也包含**稳定版：
+    ///         选了「始终最新」的人不会因为手里是 nightly 就收不到新发的正式版。
+    ///     </para>
+    ///     <para>
+    ///         排序按 SemVer 降序，不用 API 返回顺序——GitHub 是按创建时间倒序给的，
+    ///         补发一个旧版本的预发布包就会把顺序搞乱，进而把旧版当成最新推出去。
+    ///     </para>
+    /// </summary>
     private JsonObject _PickRelease(UpdateChannel channel)
     {
         if (_releases is null) RefreshCache();
 
+        var candidates = new List<(SemVer Version, JsonObject Release)>();
         foreach (var item in _releases!)
         {
             if (item is not JsonObject release) continue;
             if (release["draft"]?.GetValue<bool>() == true) continue;
 
-            var isPrerelease = release["prerelease"]?.GetValue<bool>() == true;
-            if (channel == UpdateChannel.stable && isPrerelease) continue;
+            var tag = release["tag_name"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(tag)) continue;
 
-            return release;
+            string versionName;
+            int level;
+            try
+            {
+                versionName = _NormalizeTag(tag);
+                level = UpdateChannelLevels.FromVersionName(versionName);
+            }
+            catch (Exception)
+            {
+                // tag 解析不了就跳过这一条，不要因为一个脏 tag 让整次检查更新失败
+                continue;
+            }
+
+            // tag 里没写后缀、但被标成 prerelease 的，按预览级处理：
+            // 宁可少收，也不要把预发布包当正式版推给只想要稳定版的用户。
+            if (level == UpdateChannelLevels.Stable && release["prerelease"]?.GetValue<bool>() == true)
+                level = UpdateChannelLevels.Preview;
+
+            if (level > (int)channel) continue;
+            if (!SemVer.TryParse(versionName, out var semVer) || semVer is null) continue;
+
+            candidates.Add((semVer, release));
         }
 
-        throw new UpdateSourceException(channel == UpdateChannel.stable
-            ? "仓库里没有正式版 Release，只有预发布版本。"
-            : "仓库里没有任何可用的 Release。");
+        if (candidates.Count == 0)
+            throw new UpdateSourceException(channel == UpdateChannel.stable
+                ? "仓库里没有正式版 Release，只有预发布版本。"
+                : "仓库里没有任何符合当前更新通道的 Release。");
+
+        return candidates.OrderByDescending(x => x.Version).First().Release;
     }
 
     /// <summary>

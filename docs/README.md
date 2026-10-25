@@ -12,6 +12,7 @@
 | [BUILD.md](BUILD.md) | 怎么编译、密钥怎么注入、怎么签名、怎么发 Release | 想自己构建一个能用的版本 |
 | [AZURE-LOGIN.md](AZURE-LOGIN.md) | 从零注册 Azure 应用，拿到自己的 `client_id` 走微软正版登录 | 想让正版登录用自己的应用 |
 | [MCP.md](MCP.md) | 内置 MCP 服务，让 AI 客户端直接操作启动器 | 想接 Claude / Cursor / Cherry Studio |
+| [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md) | 主页语言 API：同一份主页内容按语言展示不同内容，兼容原版主页协议 | 想写多语言主页、想给页面加语言分支 |
 | [CREDITS.md](CREDITS.md) | 开源项目清单：代码来源、第三方库、资源与各自的许可证 | 想知道哪段代码是谁的、想加新依赖 |
 
 ## 项目速览
@@ -50,5 +51,7 @@ PCL-CE/
   所以仓库里搜不到任何 client_id，这是设计如此，不是漏了。
 - **语言文件**在 `PCL.Core/App/Localization/Languages/*.xaml`，四种语言：zh-CN / zh-TW / en-US / en-GB。
   加文案要四个一起加，缺了会回退到 zh-CN。
+- **主页语言分支**不走语言文件，而是 `lang:` 标签 + 语言信封，见
+  [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md)。想让主页按语言显示不同内容时用那套，不要往语言文件里塞整段 XAML。
 - **上游代码**在 `Plain Craft Launcher 2/` 与 `PCL.Core/` 里混合，改之前先用 `git log` 看这行是谁写的，
   避免把上游的修复覆盖掉。

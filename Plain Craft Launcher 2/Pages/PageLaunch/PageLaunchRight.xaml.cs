@@ -27,9 +27,13 @@ public partial class PageLaunchRight : IRefreshable
         Loaded += (_, _) => Init();
         Loaded += (_, _) => Refresh();
         Unloaded += (_, _) => _DisposeHomepageLiveWatcher();
-        // 切换语言后重新走一遍主页加载，让语言信封与 lang: 标签分支立即生效
-        WeakLanguageChanged.Add(this, static page => ModBase.RunInUi(page._OnLanguageChanged));
+        // 切换语言后重新走一遍主页加载，让语言信封与 lang: 标签分支立即生效。
+        // 注意：必须用静态方法组而不是 static lambda——lambda 里做方法组转换会产生带 Target
+        // 的委托，WeakLanguageChanged 会直接抛 ArgumentException（主窗体启动失败、白屏）。
+        WeakLanguageChanged.Add(this, OnLanguageChanged);
     }
+
+    private static void OnLanguageChanged(PageLaunchRight page) => ModBase.RunInUi(page._OnLanguageChanged);
 
     /// <summary>
     ///     语言切换后刷新主页。

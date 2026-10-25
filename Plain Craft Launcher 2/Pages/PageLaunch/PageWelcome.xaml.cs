@@ -28,9 +28,13 @@ public partial class PageWelcome
     {
         InitializeComponent();
         Loaded += (_, _) => Build();
-        // 切换语言后整体重建，让 lang: 分支重新按新语言过滤
-        WeakLanguageChanged.Add(this, static page => ModBase.RunInUi(page.Build));
+        // 切换语言后整体重建，让 lang: 分支重新按新语言过滤。
+        // 注意：必须用静态方法组而不是 static lambda，否则 WeakLanguageChanged 会因
+        // 委托带有 Target 而抛 ArgumentException（详见 WeakLanguageChanged.Add 的注释）。
+        WeakLanguageChanged.Add(this, OnLanguageChanged);
     }
+
+    private static void OnLanguageChanged(PageWelcome page) => ModBase.RunInUi(page.Build);
 
     /// <summary>
     ///     构建（或重建）欢迎页内容并应用当前语言的分支过滤。

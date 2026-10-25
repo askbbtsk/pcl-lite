@@ -137,7 +137,6 @@ public static partial class Config
     [ConfigGroup("Update")] partial class UpdateConfigGroup
     {
         /// <summary>
-        /// <summary>
         /// 自动更新总开关。默认关闭：装完不会自己联网查版本，只有用户手动点检查才会去查。
         /// </summary>
         [ConfigItem<bool>("SystemAutoUpdate", false, ConfigSource.Local)] public partial bool AutoUpdate { get; set; }

@@ -65,7 +65,7 @@ PCL Lite 1.3.3 正式版。
 
 单文件、免解压。**需要已安装 [.NET 10 桌面运行时](https://dotnet.microsoft.com/download/dotnet/10.0)**。
 
-SHA-256：`__SHA256__`
+SHA-256：`D29D2BA715792F50ED332032F1AC4164510603298CFE5DBE07D474772E232E25`
 
 ## 已知问题
 

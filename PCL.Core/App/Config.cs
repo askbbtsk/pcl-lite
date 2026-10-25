@@ -509,13 +509,11 @@ public static partial class Config
             [ConfigItem<bool>("UiHiddenSetupGameManage", false, ConfigSource.Local)] public partial bool SetupGameManage { get; set; }
             [ConfigItem<bool>("UiHiddenSetupJava", false, ConfigSource.Local)] public partial bool SetupJava { get; set; }
             [ConfigItem<bool>("UiHiddenSetupUpdate", false, ConfigSource.Local)] public partial bool SetupUpdate { get; set; }
-            [ConfigItem<bool>("UiHiddenSetupGameLink", false, ConfigSource.Local)] public partial bool SetupGameLink { get; set; } // 新增
             [ConfigItem<bool>("UiHiddenSetupAbout", false, ConfigSource.Local)] public partial bool SetupAbout { get; set; } // 修正名称
             [ConfigItem<bool>("UiHiddenSetupFeedback", false, ConfigSource.Local)] public partial bool SetupFeedback { get; set; } // 修正名称
             [ConfigItem<bool>("UiHiddenSetupLog", false, ConfigSource.Local)] public partial bool SetupLog { get; set; } // 修正名称
 
             // 子页面 工具
-            [ConfigItem<bool>("UiHiddenToolsGameLink", false, ConfigSource.Local)] public partial bool ToolsGameLink { get; set; } // 新增
             [ConfigItem<bool>("UiHiddenToolsTest", false, ConfigSource.Local)] public partial bool ToolsTest { get; set; } // 新增
 
             // 子页面 实例设置
@@ -657,6 +655,28 @@ public static partial class Config
         /// </para>
         /// </summary>
         [ConfigItem<string>("BedrockGdkDirectories", "", ConfigSource.Local)] public partial string BedrockGdkDirectories { get; set; }
+
+        /// <summary>
+        /// 基岩版下载目录，留空表示用默认的 <c>%LOCALAPPDATA%\PCLCE\Bedrock</c>。
+        /// <para>
+        /// GDK 包解包后动辄 2 GB，放在系统盘容易撑爆，所以允许用户换到别的盘。
+        /// 安装包（<c>packages</c>）与解包产物（<c>versions</c>）都跟着这个根目录走。
+        /// </para>
+        /// </summary>
+        [ConfigItem<string>("BedrockDownloadDirectory", "", ConfigSource.Local)] public partial string BedrockDownloadDirectory { get; set; }
+
+        /// <summary>
+        ///     基岩版 GDK 正式版安装包的内容密钥（CIK，十六进制）。
+        ///     <para>
+        ///         GDK 版下发的是加密的 <c>.msixvc</c>（XVC 容器），没有这个密钥解不开。
+        ///         密钥属于商店分发凭据，不随启动器分发，由用户自己填写（或在构建时用
+        ///         <c>PCL_BEDROCK_RELEASE_CIK</c> 环境变量注入）。留空时 GDK 包只能下载、不能解包。
+        ///     </para>
+        /// </summary>
+        [ConfigItem<string>("BedrockReleaseCik", "", ConfigSource.Local)] public partial string BedrockReleaseCik { get; set; }
+
+        /// <summary>基岩版 GDK 预览版安装包的内容密钥（CIK，十六进制），说明见 <see cref="BedrockReleaseCik" />。</summary>
+        [ConfigItem<string>("BedrockPreviewCik", "", ConfigSource.Local)] public partial string BedrockPreviewCik { get; set; }
 
         /// <summary>
         /// 预启动指令。

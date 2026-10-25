@@ -119,7 +119,7 @@ public static class ModBedrockInstaller
 
     /// <summary>解包 GDK 包到独立目录，返回版本目录。没有配置内容密钥时会抛出明确异常。</summary>
     public static string InstallGdk(string packagePath, string versionId,
-        Action<string, int, int>? progress = null, CancellationToken token = default)
+        Action<string, int, int>? progress = null, CancellationToken token = default, bool preview = false)
     {
         var target = ModBedrockUwp.GetVersionDirectory(ModBedrockDownload.VersionsDirectory, versionId);
 
@@ -129,7 +129,26 @@ public static class ModBedrockInstaller
         if (Directory.Exists(target)) Directory.Delete(target, true);
         Directory.CreateDirectory(target);
 
-        ModBedrockGdk.Extract(packagePath, target, progress, token);
+        try
+        {
+            ModBedrockGdk.Extract(packagePath, target, progress, token, preview);
+        }
+        catch
+        {
+            // 解包中途失败（密钥不匹配、磁盘满、用户取消）时不要留下半个目录，
+            // 否则启动页会把这个半成品当成可启动版本列出来，点进去直接报错。
+            try
+            {
+                if (Directory.Exists(target)) Directory.Delete(target, true);
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, $"[Bedrock] 清理失败的解包目录 {target} 时出错", ModBase.LogLevel.Normal);
+            }
+
+            throw;
+        }
+
         ModBase.Log($"[Bedrock] 已解包 GDK 版 {versionId} 到 {target}");
         return target;
     }

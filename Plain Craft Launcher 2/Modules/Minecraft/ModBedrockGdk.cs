@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
@@ -30,10 +31,31 @@ public static class ModBedrockGdk
                ext.Equals(".xvc", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>目录内是否已有可运行的 GDK 版（存在 Minecraft.Windows.exe）。</summary>
+    /// <summary>目录内是否已有可运行的 GDK 版（存在主程序，且 DLL 不是解坏的）。</summary>
     public static bool IsInstalled(string directory)
     {
-        return FindExecutable(directory) is not null;
+        if (FindExecutable(directory) is null) return false;
+
+        // 主程序位于 XVC 的明文区，密钥错了它也是好的；但同目录的 DLL 在加密区，
+        // 密钥不匹配时会解成随机数据。所以只检查主程序不够，还要抽查根目录的 DLL。
+        try
+        {
+            var sawAny = false;
+            foreach (var dll in Directory.EnumerateFiles(directory, "*.dll"))
+            {
+                sawAny = true;
+                using var stream = File.OpenRead(dll);
+                Span<byte> head = stackalloc byte[2];
+                if (stream.Read(head) == 2 && head[0] == (byte)'M' && head[1] == (byte)'Z') return true;
+            }
+
+            // 一个 DLL 都没有的目录无从判断，交给主程序存在性兜底
+            return !sawAny;
+        }
+        catch (Exception)
+        {
+            return true;
+        }
     }
 
     /// <summary>在解包目录中查找游戏主程序。</summary>
@@ -60,21 +82,76 @@ public static class ModBedrockGdk
     /// <param name="targetDirectory">解包目标目录</param>
     /// <param name="onProgress">进度回调：文件名、当前序号、总文件数</param>
     /// <param name="token">取消标记</param>
+    /// <param name="preview">是否为预览版通道；传 null 时按文件名猜（含 preview/beta）</param>
     public static void Extract(string packagePath, string targetDirectory,
-        Action<string, int, int>? onProgress = null, CancellationToken token = default)
+        Action<string, int, int>? onProgress = null, CancellationToken token = default, bool? preview = null)
     {
-        var keyBytes = packagePath.Contains("preview", StringComparison.OrdinalIgnoreCase) ||
-                       packagePath.Contains("beta", StringComparison.OrdinalIgnoreCase)
-            ? Secrets.BedrockPreviewCik
-            : Secrets.BedrockReleaseCik;
-        if (keyBytes is not { Length: >= 48 })
+        var isPreview = preview ?? (packagePath.Contains("preview", StringComparison.OrdinalIgnoreCase) ||
+                                    packagePath.Contains("beta", StringComparison.OrdinalIgnoreCase));
+        var keyBytes = ModBedrockCik.Resolve(isPreview);
+        if (keyBytes is not { Length: >= ModBedrockCik.MinLength })
             throw new InvalidOperationException(Lang.Text("Bedrock.Install.CikMissing"));
 
         var key = new XvcContentKey(keyBytes);
 
         using var container = new XvcContainer(packagePath);
         container.Parse();
+
+        // 包里的 XvcInfo 明写了「需要哪把密钥」。GUID 对不上就必然解出乱码，
+        // 与其花二十秒解完再验 PE，不如在这里立刻拦住，并把该包的 GUID 报给用户。
+        if (container.KeyIds.Count > 0 &&
+            !container.KeyIds.Any(id => string.Equals(id, key.KeyIdHex, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException(
+                Lang.Text("Bedrock.Install.KeyMismatch", string.Join(", ", container.KeyIds), key.KeyIdHex));
+
         container.Extract(targetDirectory, key, onProgress, token);
+
+        // 解包完立刻验一遍。XVC 里部分区域是加密的（KeyId != 0xFFFF），一旦密钥与该通道
+        // 不匹配，这些区域解出来就是随机数据——文件大小看着正常，但 PE 头是乱的，
+        // 用户要等到启动时才会看到「损坏的映像 0xc000012f」。
+        // 在这里拦住，能省掉「下载 2 GB + 解包 20 秒 + 启动失败」的整轮白折腾。
+        var broken = CountBrokenExecutables(targetDirectory);
+        if (broken > 0)
+            throw new InvalidOperationException(Lang.Text("Bedrock.Install.VerifyFailed", broken));
+    }
+
+    /// <summary>
+    ///     统计解包目录里 PE 头无效的可执行文件数量。
+    ///     <para>正常解包出来一定是 <c>MZ</c> 开头；不是就说明那段数据没被正确解密。</para>
+    /// </summary>
+    private static int CountBrokenExecutables(string directory)
+    {
+        var broken = 0;
+        IEnumerable<string> files;
+        try
+        {
+            files = Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories);
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+
+        foreach (var path in files)
+        {
+            var ext = Path.GetExtension(path);
+            if (!ext.Equals(".dll", StringComparison.OrdinalIgnoreCase) &&
+                !ext.Equals(".exe", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            try
+            {
+                using var stream = File.OpenRead(path);
+                Span<byte> head = stackalloc byte[2];
+                if (stream.Read(head) < 2 || head[0] != (byte)'M' || head[1] != (byte)'Z') broken++;
+            }
+            catch (Exception)
+            {
+                broken++;
+            }
+        }
+
+        return broken;
     }
 
     /// <summary>
@@ -132,14 +209,27 @@ public static class ModBedrockGdk
 
 internal sealed class XvcContentKey
 {
+    /// <summary>
+    ///     密钥自身的 GUID，即 <c>.cik</c> 文件的前 16 字节。
+    ///     <para>
+    ///         它必须与包内 <c>XvcInfo.EncryptionKeyIds</c> 声明的某个 GUID 相同，否则解密必然失败。
+    ///         每个 GDK 包各自一把：实测 26.52 是 <c>91e7b9bd…</c>，26.70.21 是 <c>3fd6491f…</c>。
+    ///     </para>
+    /// </summary>
+    public readonly byte[] KeyId;
+
     public readonly byte[] TweakKey;
     public readonly byte[] DataKey;
 
     public XvcContentKey(byte[] bytes)
     {
+        KeyId = bytes[..16];
         TweakKey = bytes[16..32];
         DataKey = bytes[32..48];
     }
+
+    /// <summary>密钥 GUID 的小写十六进制形式，用于和包内声明比对、以及写进报错信息。</summary>
+    public string KeyIdHex => Convert.ToHexString(KeyId).ToLowerInvariant();
 }
 
 internal sealed class XvcContainer : IDisposable
@@ -175,6 +265,15 @@ internal sealed class XvcContainer : IDisposable
     private MsiXvdHeader Header { get; set; }
 
     public bool IsEncrypted { get; private set; }
+
+    /// <summary>
+    ///     包内声明的内容密钥 GUID（小写十六进制）。
+    ///     <para>
+    ///         来自 <c>XvcInfo.EncryptionKeyIds</c> 的前 <c>KeyCount</c> 项。为空表示这个包没有需要
+    ///         密钥的区域，任何密钥都能解。非空时，使用的密钥 GUID 必须命中其中之一。
+    ///     </para>
+    /// </summary>
+    public IReadOnlyList<string> KeyIds { get; private set; } = [];
 
     public XvcContainer(string filePath)
     {
@@ -266,8 +365,14 @@ internal sealed class XvcContainer : IDisposable
         ReadFully(_stream, data);
         using var reader = new BinaryReader(new MemoryStream(data));
 
-        _xvcInfo = ReadStruct<XvcInfo>(reader.ReadBytes(Marshal.SizeOf<XvcInfo>()));
+        var infoSize = Marshal.SizeOf<XvcInfo>();
+        var infoBytes = reader.ReadBytes(infoSize);
+        _xvcInfo = ReadStruct<XvcInfo>(infoBytes);
         if (_xvcInfo.Version < 1) return;
+
+        // EncryptionKeyIds 是「结构体数组，每个结构体里又嵌了 byte[16]」，这种双层 ByValArray
+        // 交给 PtrToStructure 不保证能填好，所以按布局偏移直接切字节更稳妥。
+        KeyIds = ReadKeyIds(infoBytes);
 
         var regionSize = Marshal.SizeOf<XvcRegionHeader>();
         _xvcRegions = ReadStructs<XvcRegionHeader>(
@@ -276,6 +381,50 @@ internal sealed class XvcContainer : IDisposable
         var updateSize = Marshal.SizeOf<XvcUpdateSegment>();
         _xvcUpdateSegments = ReadStructs<XvcUpdateSegment>(
             reader.ReadBytes(updateSize * (int)_xvcInfo.UpdateSegmentCount), (int)_xvcInfo.UpdateSegmentCount);
+    }
+
+    /// <summary>
+    ///     从 <see cref="XvcInfo" /> 的原始字节里取出密钥 GUID 列表。
+    ///     <para>
+    ///         只取前 <c>KeyCount</c> 项，并跳过全零槽位（包里没用到的位置都是零）。
+    ///         偏移量用 <see cref="Marshal.OffsetOf{T}" /> 取，不硬编码，结构改动后不会悄悄错位。
+    ///     </para>
+    /// </summary>
+    private static IReadOnlyList<string> ReadKeyIds(byte[] infoBytes)
+    {
+        var ids = new List<string>();
+        try
+        {
+            var idsOffset = (int)Marshal.OffsetOf<XvcInfo>(nameof(XvcInfo.EncryptionKeyIds));
+            var countOffset = (int)Marshal.OffsetOf<XvcInfo>(nameof(XvcInfo.KeyCount));
+            var slotSize = Marshal.SizeOf<XvcEncryptionKeyId>();
+
+            var keyCount = BitConverter.ToUInt16(infoBytes, countOffset);
+            var limit = Math.Min((int)keyCount, 192);
+            for (var i = 0; i < limit; i++)
+            {
+                var start = idsOffset + i * slotSize;
+                if (start + 16 > infoBytes.Length) break;
+
+                var span = infoBytes.AsSpan(start, 16);
+                var allZero = true;
+                foreach (var b in span)
+                {
+                    if (b == 0) continue;
+                    allZero = false;
+                    break;
+                }
+
+                if (allZero) continue;
+                ids.Add(Convert.ToHexString(span).ToLowerInvariant());
+            }
+        }
+        catch (Exception)
+        {
+            // 解析失败就当作「包没声明密钥」，让后续按明文流程走，不要因此拦住安装
+        }
+
+        return ids;
     }
 
     public void Extract(string outputDirectory, XvcContentKey key,

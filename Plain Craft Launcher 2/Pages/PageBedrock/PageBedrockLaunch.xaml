@@ -6,54 +6,67 @@
     <local:MyScrollViewer x:Name="PanBack" HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">
         <StackPanel x:Name="PanMain" Margin="25,10">
-            <local:MyCard Margin="0,15" Title="{DynamicResource Bedrock.Launch.Title}">
-                <StackPanel Margin="25,40,25,20">
-                    <TextBlock Text="{DynamicResource Bedrock.Launch.Description}" TextWrapping="Wrap"
-                               LineHeight="20" />
-                    <WrapPanel Margin="0,15,0,0" ItemHeight="35">
-                        <local:MyButton x:Name="BtnRefresh" MinWidth="120" Margin="0,0,12,0"
-                                        Text="{DynamicResource Bedrock.Launch.Refresh}" Click="BtnRefresh_Click" />
-                        <local:MyButton x:Name="BtnStop" MinWidth="130" Margin="0,0,12,0"
-                                        Text="{DynamicResource Bedrock.Launch.Stop}" Click="BtnStop_Click" />
-                        <local:MyButton x:Name="BtnAddFolder" MinWidth="130" Margin="0,0,12,0"
-                                        Text="{DynamicResource Bedrock.Launch.AddFolder}" Click="BtnAddFolder_Click" />
-                        <local:MyButton x:Name="BtnOpenSaves" MinWidth="130"
-                                        Text="{DynamicResource Bedrock.Launch.OpenSaves}" Click="BtnOpenSaves_Click" />
-                    </WrapPanel>
-                    <TextBlock x:Name="LabStatus" Margin="0,14,0,0" FontSize="12" TextWrapping="Wrap" Opacity="0.7" />
-                </StackPanel>
-            </local:MyCard>
-
-            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Bedrock.Launch.List.Title}">
+            <local:MyCard Margin="0,15" Title="{DynamicResource Bedrock.Launch.List.Title}">
                 <StackPanel Margin="20,40,20,15">
+                    <TextBlock Text="{DynamicResource Bedrock.Launch.Description}" TextWrapping="Wrap"
+                               LineHeight="20" Margin="6,0,6,12" Opacity="0.8" />
+
                     <ItemsControl x:Name="ListInstalls">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Height="54">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Margin="6,0,12,0" VerticalAlignment="Center">
-                                        <TextBlock FontSize="14" FontWeight="Bold" Text="{Binding DisplayName}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Margin="0,3,0,0" FontSize="11.5" Opacity="0.65"
-                                                   Text="{Binding Info}" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                    <local:MyButton Grid.Column="1" Width="90" Height="30" Margin="0,0,10,0"
-                                                    VerticalAlignment="Center" Text="{DynamicResource Bedrock.Launch.OpenFolder}"
-                                                    Tag="{Binding Install}" Click="BtnOpenInstallFolder_Click" />
-                                    <local:MyButton Grid.Column="2" Width="90" Height="30" VerticalAlignment="Center"
-                                                    ColorType="Highlight"
-                                                    Text="{DynamicResource Bedrock.Launch.Launch}"
-                                                    Tag="{Binding Install}" Click="BtnLaunch_Click" />
-                                </Grid>
+                                <!-- 点行本身 = 选中，左下角的启动按钮跟着切换目标 -->
+                                <Border CornerRadius="5" Padding="8,6" Margin="0,2" Cursor="Hand"
+                                        MouseLeftButtonUp="Row_MouseLeftButtonUp">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                    <Setter Property="Background"
+                                                            Value="{DynamicResource ColorBrushTransparentBackground}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid Height="46">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="2,0,12,0" VerticalAlignment="Center">
+                                            <TextBlock FontSize="14" FontWeight="Bold" Text="{Binding DisplayName}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Margin="0,3,0,0" FontSize="11.5" Opacity="0.65"
+                                                       Text="{Binding Info}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <local:MyButton Grid.Column="1" Width="90" Height="30" Margin="0,0,10,0"
+                                                        VerticalAlignment="Center"
+                                                        Text="{DynamicResource Bedrock.Launch.OpenFolder}"
+                                                        Tag="{Binding Install}" Click="BtnOpenInstallFolder_Click" />
+                                        <local:MyButton Grid.Column="2" Width="90" Height="30"
+                                                        VerticalAlignment="Center" ColorType="Highlight"
+                                                        Text="{DynamicResource Bedrock.Launch.Launch}"
+                                                        Tag="{Binding Install}" Click="BtnLaunch_Click" />
+                                    </Grid>
+                                </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+
                     <TextBlock x:Name="LabEmpty" Margin="6,10" Opacity="0.7" TextWrapping="Wrap"
                                Text="{DynamicResource Bedrock.Launch.Empty}" Visibility="Collapsed" />
+
+                    <WrapPanel Margin="0,14,0,0">
+                        <local:MyButton x:Name="BtnRefresh" Height="35" MinWidth="120" Margin="0,0,12,0"
+                                        Text="{DynamicResource Bedrock.Launch.Refresh}" Click="BtnRefresh_Click" />
+                        <local:MyButton x:Name="BtnStop" Height="35" MinWidth="130" Margin="0,0,12,0"
+                                        Text="{DynamicResource Bedrock.Launch.Stop}" Click="BtnStop_Click" />
+                        <local:MyButton x:Name="BtnAddFolder" Height="35" MinWidth="130" Margin="0,0,12,0"
+                                        Text="{DynamicResource Bedrock.Launch.AddFolder}" Click="BtnAddFolder_Click" />
+                        <local:MyButton x:Name="BtnOpenSaves" Height="35" MinWidth="130"
+                                        Text="{DynamicResource Bedrock.Launch.OpenSaves}" Click="BtnOpenSaves_Click" />
+                    </WrapPanel>
                 </StackPanel>
             </local:MyCard>
         </StackPanel>

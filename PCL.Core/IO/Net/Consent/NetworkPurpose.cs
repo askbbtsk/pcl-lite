@@ -22,12 +22,6 @@ public enum NetworkPurpose
     /// <summary>模组与整合包仓库（Modrinth / CurseForge）。</summary>
     ModRepository,
 
-    /// <summary>EasyTier 联机中继与节点发现。</summary>
-    EasyTier,
-
-    /// <summary>联机大厅账号。</summary>
-    LobbyAccount,
-
     /// <summary>加密 DNS 解析。</summary>
     DnsResolve,
 
@@ -115,24 +109,6 @@ public static class NetworkPurposeCatalog
                 "api.modrinth.com", "api.curseforge.com", "cdn.modrinth.com",
                 "edge.forgecdn.net", "mediafilez.forgecdn.net", "mod.mcimirror.top"
             ]
-        ),
-        new(
-            NetworkPurpose.EasyTier,
-            "easytier",
-            "EasyTier 联机", "EasyTier multiplayer",
-            "连接 P2P 中继节点、获取可用节点列表，并下载 EasyTier 运行文件。",
-            "Connect to P2P relays, fetch available node lists, and download the EasyTier runtime.",
-            "联机功能", "multiplayer",
-            ["etnode.zkitefly.eu.org", "uptime.easytier.cn", "staticassets.naids.com"]
-        ),
-        new(
-            NetworkPurpose.LobbyAccount,
-            "lobby-account",
-            "联机账号", "Lobby account",
-            "登录联机大厅账号，并同步房间信息。",
-            "Sign in to the lobby account and sync room information.",
-            "需要登录的联机大厅", "multiplayer lobbies that require sign-in",
-            ["account.naids.com"]
         ),
         new(
             NetworkPurpose.DnsResolve,

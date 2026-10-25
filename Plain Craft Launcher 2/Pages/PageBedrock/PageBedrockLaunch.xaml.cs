@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using PCL.Core.App;
@@ -13,102 +14,118 @@ using PCL.Core.UI;
 namespace PCL;
 
 /// <summary>
-///     基岩版启动页：列出本机所有可启动的基岩版（商店版、手动指定的 GDK 目录、以及下载页解包出来的版本）。
+///     基岩版启动页：列出本机所有可启动的基岩版（商店版、手动指定的 GDK 目录、下载页解包出来的版本）。
 ///     <para>
-///         检测与启动逻辑在 <see cref="BedrockService" />，移植自 PCL-Symbio-Edition（Apache-2.0）。
+///         这个列表只是 <see cref="ModBedrockRuntime" /> 的一份视图：点某一行就把它设为当前版本，
+///         左下角「启动基岩版」按钮启动的就是它。检测与启动逻辑在 <see cref="BedrockService" />。
 ///     </para>
 /// </summary>
 public partial class PageBedrockLaunch
 {
-    private bool _detecting;
+    /// <summary>
+    ///     列表数据源必须是可观察集合。
+    ///     <para>
+    ///         原来用 <c>List&lt;T&gt;</c> 并在刷新时清空重填：集合内容变了，但
+    ///         <c>ItemsSource</c> 拿到的还是同一个对象引用，WPF 判定「没变化」不会重画，
+    ///         于是解包完成后新版本永远不出现在列表里。换成可观察集合才会真正通知到界面。
+    ///     </para>
+    /// </summary>
+    private readonly ObservableCollection<BedrockItemView> _items = [];
+
+    /// <summary>已绑定的 <see cref="ModBedrockRuntime.Revision" />，相同就不重建列表。</summary>
+    private int _boundRevision = -1;
+
+    private bool _subscribed;
 
     public PageBedrockLaunch()
     {
         InitializeComponent();
-        Loaded += (_, _) => Reload();
-    }
+        ListInstalls.ItemsSource = _items;
 
-    /// <summary>重新检测并刷新列表。</summary>
-    public void Reload()
-    {
-        if (_detecting) return;
-        _detecting = true;
-
-        LabStatus.Text = Lang.Text("Bedrock.Launch.Detecting");
-        BtnRefresh.IsEnabled = false;
-
-        var directories = GetConfiguredDirectories();
-        Task.Run(() =>
+        Loaded += (_, _) =>
         {
-            var installs = BedrockService.Detect(directories, out var error);
-            // 下载页解包出来的 GDK 版本不向系统注册，只能由启动器自己扫目录
-            var downloaded = BedrockService.DetectDownloaded(ModBedrockDownload.VersionsDirectory);
-            var merged = installs
-                .Concat(downloaded)
-                .GroupBy(i => i.Id, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
-                .ToList();
-
-            ModBase.RunInUi(() =>
+            if (!_subscribed)
             {
-                _detecting = false;
-                BtnRefresh.IsEnabled = true;
-                Bind(merged, error);
-            });
-        });
+                _subscribed = true;
+                ModBedrockRuntime.StateChanged += OnStateChanged;
+            }
+
+            Bind(force: true);
+            ModBedrockRuntime.Refresh();
+        };
+        Unloaded += (_, _) =>
+        {
+            if (!_subscribed) return;
+            _subscribed = false;
+            ModBedrockRuntime.StateChanged -= OnStateChanged;
+        };
     }
 
-    private void Bind(IReadOnlyList<BedrockInstall> installs, string? error)
+    private void OnStateChanged()
     {
-        var items = installs.Select(install => new BedrockItemView(install)).ToList();
-        ListInstalls.ItemsSource = items;
-        LabEmpty.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (!IsLoaded) return;
+        Bind();
+    }
 
-        if (!string.IsNullOrWhiteSpace(error))
+    /// <summary>把共享状态摊平成列表项。列表内容没变时只更新选中态，不重建行。</summary>
+    /// <param name="force">忽略版本号，强制重建。</param>
+    private void Bind(bool force = false)
+    {
+        if (force || _boundRevision != ModBedrockRuntime.Revision)
         {
-            LabStatus.Text = Lang.Text("Bedrock.Launch.DetectFailed", error);
-            return;
+            _boundRevision = ModBedrockRuntime.Revision;
+
+            _items.Clear();
+            foreach (var install in ModBedrockRuntime.Installs) _items.Add(new BedrockItemView(install));
+
+            LabEmpty.Visibility = _items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        LabStatus.Text = BedrockService.IsRunning()
-            ? Lang.Text("Bedrock.Launch.Running")
-            : Lang.Text("Bedrock.Launch.NotRunning");
+        var currentId = ModBedrockRuntime.Current?.Id;
+        foreach (var item in _items)
+            item.IsCurrent = string.Equals(item.Install.Id, currentId, StringComparison.OrdinalIgnoreCase);
+
+        BtnRefresh.IsEnabled = !ModBedrockRuntime.IsBusy;
+    }
+
+    private void Row_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: BedrockItemView item }) return;
+        Select(item);
+        e.Handled = true;
+    }
+
+    private void Select(BedrockItemView item)
+    {
+        ModBedrockRuntime.Select(item.Install);
+        foreach (var view in _items) view.IsCurrent = ReferenceEquals(view, item);
     }
 
     private void BtnRefresh_Click(object sender, MouseButtonEventArgs e)
     {
-        Reload();
+        ModBedrockRuntime.Refresh();
     }
 
     private void BtnLaunch_Click(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: BedrockInstall install }) return;
+        // 阻止冒泡到行，否则点「启动」会顺带把选中项切过去
+        e.Handled = true;
 
-        if (BedrockService.Launch(install, out var error))
-        {
-            HintService.Hint(Lang.Text("Bedrock.Launch.Launched", install.DisplayName), HintType.Success);
-            LabStatus.Text = Lang.Text("Bedrock.Launch.Running");
-            return;
-        }
+        var view = _items.FirstOrDefault(i => ReferenceEquals(i.Install, install));
+        if (view is not null) Select(view);
 
-        ModBase.Log($"[Bedrock] 启动失败（{install.DisplayName}）：{error}", ModBase.LogLevel.Msgbox,
-            userSummary: Lang.Text("Bedrock.Launch.LaunchFailed", error ?? ""));
+        ModBedrockRuntime.Launch();
     }
 
     private void BtnStop_Click(object sender, MouseButtonEventArgs e)
     {
-        var count = BedrockService.StopAll();
-        HintService.Hint(count > 0
-            ? Lang.Text("Bedrock.Launch.Stopped", count)
-            : Lang.Text("Bedrock.Launch.NoneRunning"));
-
-        LabStatus.Text = BedrockService.IsRunning()
-            ? Lang.Text("Bedrock.Launch.Running")
-            : Lang.Text("Bedrock.Launch.NotRunning");
+        ModBedrockRuntime.Stop();
     }
 
     private void BtnOpenInstallFolder_Click(object sender, MouseButtonEventArgs e)
     {
+        e.Handled = true;
         if (sender is not FrameworkElement { Tag: BedrockInstall install }) return;
 
         // 商店版的程序目录在 WindowsApps 下，普通权限打不开，直接提示去看存档
@@ -134,7 +151,7 @@ public partial class PageBedrockLaunch
         if (string.IsNullOrWhiteSpace(folder)) return;
 
         folder = folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        var directories = GetConfiguredDirectories();
+        var directories = ModBedrockRuntime.GetConfiguredDirectories();
         if (directories.Any(x => string.Equals(x, folder, StringComparison.OrdinalIgnoreCase)))
         {
             HintService.Hint(Lang.Text("Bedrock.Launch.AlreadyAdded"));
@@ -143,7 +160,7 @@ public partial class PageBedrockLaunch
 
         directories.Add(folder);
         Config.Launch.BedrockGdkDirectories = string.Join("\n", directories);
-        Reload();
+        ModBedrockRuntime.Refresh();
     }
 
     private void BtnOpenSaves_Click(object sender, MouseButtonEventArgs e)
@@ -158,20 +175,11 @@ public partial class PageBedrockLaunch
         ModBase.OpenExplorer(path);
     }
 
-    private static List<string> GetConfiguredDirectories()
+    /// <summary>列表项：把安装信息摊平成可直接绑定的字符串。</summary>
+    public sealed class BedrockItemView : INotifyPropertyChanged
     {
-        var raw = Config.Launch.BedrockGdkDirectories;
-        if (string.IsNullOrWhiteSpace(raw)) return [];
+        private bool _isCurrent;
 
-        return raw
-            .Split(['\n', '\r', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    /// <summary>列表项：把安装信息摊平成可直接绑定的两个字符串。</summary>
-    public sealed class BedrockItemView
-    {
         public BedrockItemView(BedrockInstall install)
         {
             Install = install;
@@ -191,5 +199,19 @@ public partial class PageBedrockLaunch
         public BedrockInstall Install { get; }
         public string DisplayName => Install.DisplayName;
         public string Info { get; }
+
+        /// <summary>是否是左下角启动按钮当前指向的那个版本。</summary>
+        public bool IsCurrent
+        {
+            get => _isCurrent;
+            set
+            {
+                if (_isCurrent == value) return;
+                _isCurrent = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCurrent)));
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

@@ -1791,10 +1791,6 @@
     <sys:String x:Key="Link.Connection.P2P">P2P</sys:String>
     <sys:String x:Key="Link.Connection.Relay">中继</sys:String>
     <sys:String x:Key="Link.Connection.Unknown">未知</sys:String>
-    <sys:String x:Key="Link.Natayark.TokenFetchEmpty">获取 AccessToken 与 RefreshToken 失败，返回内容为空</sys:String>
-    <sys:String x:Key="Link.Natayark.TokenParseFailed">获取 AccessToken 与 RefreshToken 失败，解析返回内容失败</sys:String>
-    <sys:String x:Key="Link.Natayark.UserInfoFetchEmpty">获取 Natayark 用户信息失败，返回内容为空</sys:String>
-    <sys:String x:Key="Link.Natayark.UserInfoParseFailed">获取 Natayark 用户信息失败，解析返回内容失败</sys:String>
     <sys:String x:Key="Link.Quality.Good">优秀</sys:String>
     <sys:String x:Key="Link.Quality.GoodDescription">当前网络环境不会影响联机体验&#xA;该网络环境适合作为大厅创建者</sys:String>
     <sys:String x:Key="Link.Quality.Normal">一般</sys:String>
@@ -1802,41 +1798,9 @@
     <sys:String x:Key="Link.Quality.Poor">较差</sys:String>
     <sys:String x:Key="Link.Quality.PoorDescription">部分路由器和防火墙设置可能会影响您的联机体验</sys:String>
 
-    <!-- Link.Lobby -->
 
-    <sys:String x:Key="Link.Lobby.CreateLobbyFailed">创建大厅失败，请检查日志或向开发者反馈。</sys:String>
-    <sys:String x:Key="Link.Lobby.CreateRoomFailed">在创建房间的时候遇到了问题，请查看日志并将此问题反馈给开发者！</sys:String>
-    <sys:String x:Key="Link.Lobby.InitFailed">大厅服务初始化失败，请检查网络连接。</sys:String>
-    <sys:String x:Key="Link.Lobby.InvalidCodeFormat">大厅编号格式不正确，请检查后再试！</sys:String>
-    <sys:String x:Key="Link.Lobby.JoinFailed">加入大厅失败，可能是大厅不存在或已被解散</sys:String>
-    <sys:String x:Key="Link.Lobby.LoginRequired">请先登录 Natayark ID 再使用大厅！</sys:String>
-    <sys:String x:Key="Link.Lobby.MotdDesc"> - {0}</sys:String>
-    <sys:String x:Key="Link.Lobby.MotdFormat">PCL Lite 大厅{0}</sys:String>
-    <sys:String x:Key="Link.Lobby.UnsupportedType">不支持的大厅类型: {0}</sys:String>
-    <sys:String x:Key="Link.Lobby.WorldNameFormat">{0} / {1} ({2})</sys:String>
 
-    <!-- Link.Mod -->
 
-    <sys:String x:Key="Link.Mod.AccountBanned">你的 Natayark Network 账号状态异常，可能已被封禁！</sys:String>
-    <sys:String x:Key="Link.Mod.DownloadComplete">联机组件下载完成！</sys:String>
-    <sys:String x:Key="Link.Mod.DownloadEasyTierFailed">下载 EasyTier 依赖文件失败，请检查网络连接</sys:String>
-    <sys:String x:Key="Link.Mod.DownloadingDeps">正在下载联机依赖组件，请稍后...</sys:String>
-    <sys:String x:Key="Link.Mod.DownloadingEasyTier">正在下载 EasyTier，请稍后...</sys:String>
-    <sys:String x:Key="Link.Mod.EasyTierNotReady">EasyTier 尚未下载完成，请等待其下载完成后再试！</sys:String>
-    <sys:String x:Key="Link.Mod.InvalidPlayerId">MC 玩家 ID 不可包含分隔符 (|) ！</sys:String>
-    <sys:String x:Key="Link.Mod.LobbyUnavailable">大厅功能暂不可用，请稍后再试</sys:String>
-    <sys:String x:Key="Link.Mod.LoginFirst">请先前往联机设置并登录至 Natayark Network 再进行联机！</sys:String>
-    <sys:String x:Key="Link.Mod.NaidFetchFailed">尝试获取 Natayark ID 信息失败</sys:String>
-    <sys:String x:Key="Link.Mod.ReLoginRequired">请重新登录 Natayark Network 账号再试！</sys:String>
-    <sys:String x:Key="Link.Mod.RealNameRequired">请先前往 Natayark 账户中心进行实名验证再尝试操作！</sys:String>
-    <sys:String x:Key="Link.Mod.Task.CleanCache">清理缓存与冗余组件</sys:String>
-    <sys:String x:Key="Link.Mod.Task.DownloadEasyTier">下载 EasyTier</sys:String>
-    <sys:String x:Key="Link.Mod.Task.ExtractFiles">解压文件</sys:String>
-    <sys:String x:Key="Link.Mod.Task.FetchAnnouncement">大厅公告获取</sys:String>
-    <sys:String x:Key="Link.Mod.Task.InitLobby">大厅初始化</sys:String>
-    <sys:String x:Key="Link.Mod.Task.InitLobbyUi">大厅界面初始化</sys:String>
-    <sys:String x:Key="Link.Mod.Task.RefreshUi">刷新界面</sys:String>
-    <sys:String x:Key="Link.Mod.UsernameOrLogin">请先前往设置输入一个用户名，或登录至 Natayark Network 再进行联机！</sys:String>
 
     <!-- Link.Nat -->
 
@@ -2554,10 +2518,8 @@
 
     <!-- Setup.About.Legal -->
 
-    <sys:String x:Key="Setup.About.Legal.CommunityLobbyPrivacy">PCL Lite 联机大厅隐私政策</sys:String>
     <sys:String x:Key="Setup.About.Legal.CommunitySource">PCL Lite 开源代码</sys:String>
     <sys:String x:Key="Setup.About.Legal.CopyrightText">非 MINECRAFT 官方产品。未经 MOJANG 或 MICROSOFT 批准，也不与 MOJANG 或 MICROSOFT 关联。</sys:String>
-    <sys:String x:Key="Setup.About.Legal.NatayarkTerms">Natayark OpenID 服务条款</sys:String>
     <sys:String x:Key="Setup.About.Legal.OtherInfo">其他信息</sys:String>
     <sys:String x:Key="Setup.About.Legal.PrivacyNotice">隐私说明</sys:String>
     <sys:String x:Key="Setup.About.Legal.PrivacyText">本软件的 User Agent 中包含启动器的版本号，以统计各版本的用户数量。&#xD;除此之外，本软件不会向开发者上传任何其他信息。&#xD;* 联机与软硬件调查相关功能遵循其自身的隐私政策，与上述说明不通用。</sys:String>
@@ -2569,11 +2531,9 @@
     <sys:String x:Key="Setup.About.SpecialThanks.Info.Bmclapi">提供 BMCLAPI 镜像源和 Forge 安装工具，详见 https://bmclapi.bangbang93.com</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Info.Cloud">提供了 PCL Lite 的相关云服务</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Info.IconDesign">设计并制作了 PCL Lite 的图标</sys:String>
-    <sys:String x:Key="Setup.About.SpecialThanks.Info.LinkModule">提供了联机模块</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Info.Mcim">提供了 MCIM 中国模组下载镜像源和帮助库图床！</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Info.Mcmod">提供了模组名称的中文翻译和更多相关信息！</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Name.Bangbang93">bangbang93</sys:String>
-    <sys:String x:Key="Setup.About.SpecialThanks.Name.EasyTier">EasyTier</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Name.Emperormummy">Emperormummy</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Name.Mcmod">MC 百科</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Name.Pysio">Pysio @ Akaere Network</sys:String>
@@ -2619,43 +2579,9 @@
     <sys:String x:Key="Setup.Feedback.Status.Waiting">等待</sys:String>
     <sys:String x:Key="Setup.Feedback.Status.WaitingProcess">等待处理</sys:String>
 
-    <!-- Setup.GameLink -->
 
-    <sys:String x:Key="Setup.GameLink.CliDebugOutput">在日志中输出 Cli 信息以用于调试</sys:String>
-    <sys:String x:Key="Setup.GameLink.CliDebugOutput.ToolTip">在启动器日志中每 30s 输出一次 EasyTier Cli 信息以便于开发者和社区支持调查。&#xA;该选项仅用于调试目的，不推荐一直开启。</sys:String>
-    <sys:String x:Key="Setup.GameLink.EnableIPv6">允许使用 IPv6 通信</sys:String>
-    <sys:String x:Key="Setup.GameLink.EnableIPv6.ToolTip">IPv6 相比于 IPv4 更加容易进行 P2P 通信，能极大改善联机体验，除有特殊原因外不建议关闭。</sys:String>
-    <sys:String x:Key="Setup.GameLink.Error.ConfigChangeFailed">改变配置项失败</sys:String>
-    <sys:String x:Key="Setup.GameLink.Error.InitFailed">初始化联机页设置失败</sys:String>
-    <sys:String x:Key="Setup.GameLink.Error.NetworkTestFailed">获取网络测试结果失败。请查看错误详情。</sys:String>
-    <sys:String x:Key="Setup.GameLink.Initialized">已初始化联机页设置！</sys:String>
-    <sys:String x:Key="Setup.GameLink.LatencyFirstMode">选择最低延迟路径而不是最短路径</sys:String>
-    <sys:String x:Key="Setup.GameLink.LatencyFirstMode.ToolTip">启用后，EasyTier 将在通信时选择延迟最低的路径，而不是路由跳数最少的路径。&#xA;启用此选项在部分情况下能降低联机时的延迟，但可能会提高丢包率。</sys:String>
-    <sys:String x:Key="Setup.GameLink.PortGuessNat">对对称型 NAT 进行端口猜测</sys:String>
-    <sys:String x:Key="Setup.GameLink.PortGuessNat.ToolTip">让 EasyTier 尝试对对称型 NAT 进行端口猜测（生日悖论）。&#xA;这也许可以改善联机体验，但在部分情况下也可能导致一些问题。&#xA;一般保持开启即可。</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Preference">协议偏好</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Tcp">TCP</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Tcp.ToolTip">让 EasyTier 优先使用 TCP 进行通信，TCP 通常能带来更好的稳定性</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Udp">UDP</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Udp.ToolTip">让 EasyTier 优先使用 UDP 进行通信，UDP 通常能带来更低的通信时延</sys:String>
-    <sys:String x:Key="Setup.GameLink.RestartRequired">修改此处的设置后，需要重新启动大厅以使设置生效。</sys:String>
-    <sys:String x:Key="Setup.GameLink.Username">用户名</sys:String>
-    <sys:String x:Key="Setup.GameLink.Username.ToolTip">PCL Lite 会尽可能使用此处的用户名用于大厅信息展示。&#xA;若留空，则使用 Natayark ID 的用户名。&#xA;&#xA;部分情况下可能始终展示 Natayark ID 用户名，而非此处设置的名称。</sys:String>
 
-    <!-- Setup.GameLink.NetworkTest -->
 
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Ipv6Status">IPv6: {0}</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Ipv6Status.NotTested">IPv6: 尚未检测</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.NotTested">尚未检测</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Start">开始测试</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Supported">支持</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.TcpNatType">TCP NAT 类型: {0}</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.TcpNatType.NotTested">TCP NAT 类型: 尚未检测</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Testing">正在测试</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Title">网络测试</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.UdpNatType">UDP NAT 类型: {0}</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.UdpNatType.NotTested">UDP NAT 类型: 尚未检测</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Unsupported">不支持</sys:String>
 
     <!-- Setup.GameManage -->
 
@@ -2898,13 +2824,11 @@
     <sys:String x:Key="Setup.Left.Category.About">关于</sys:String>
     <sys:String x:Key="Setup.Left.Category.Game">游戏</sys:String>
     <sys:String x:Key="Setup.Left.Category.Launcher">启动器</sys:String>
-    <sys:String x:Key="Setup.Left.Category.Tools">工具</sys:String>
     <sys:String x:Key="Setup.Left.Feedback.Message">在提交新反馈前，建议先搜索反馈列表，以避免重复提交。&#xA;如果无法打开该网页，请尝试使用加速器或 VPN。</sys:String>
     <sys:String x:Key="Setup.Left.Feedback.SubmitNew">提交新反馈</sys:String>
     <sys:String x:Key="Setup.Left.Feedback.Title">反馈</sys:String>
     <sys:String x:Key="Setup.Left.Feedback.ViewList">查看反馈列表</sys:String>
     <sys:String x:Key="Setup.Left.Refreshing">正在刷新……</sys:String>
-    <sys:String x:Key="Setup.Left.Reset.GameLink.Message">是否要初始化 工具-联机 页面的所有设置？该操作不可撤销。</sys:String>
     <sys:String x:Key="Setup.Left.Reset.GameManage.Message">是否要初始化 游戏-管理 页面的所有设置？该操作不可撤销。</sys:String>
     <sys:String x:Key="Setup.Left.Reset.Language.Message">是否要初始化 启动器-语言 页面的所有设置？该操作不可撤销。</sys:String>
     <sys:String x:Key="Setup.Left.Reset.Launch.Message">是否要初始化 游戏-启动 页面的所有设置？该操作不可撤销。</sys:String>
@@ -2916,7 +2840,6 @@
 
     <sys:String x:Key="Setup.Left.Item.About">软件信息</sys:String>
     <sys:String x:Key="Setup.Left.Item.Feedback">反馈</sys:String>
-    <sys:String x:Key="Setup.Left.Item.GameLink">联机</sys:String>
     <sys:String x:Key="Setup.Left.Item.GameManage">管理</sys:String>
     <sys:String x:Key="Setup.Left.Item.Java">Java</sys:String>
     <sys:String x:Key="Setup.Left.Item.Launch">启动</sys:String>
@@ -3007,7 +2930,7 @@
     <sys:String x:Key="Setup.Misc.System.StopUsingPclCe">停止使用 PCL Lite</sys:String>
     <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.ContinueAndRemove">继续并清理实例文件夹</sys:String>
     <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.Message.Final">你确定要继续操作吗？这是最后警告！&#xA;与 PCL Lite 有关的一切数据将被永久消除！（真的很久！）</sys:String>
-    <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.Message">即将删除此电脑上与 PCL Lite 有关的全部配置、缓存、已保存的账户信息及其他相关数据，并撤销已接受的许可协议。完成后，软件将自动关闭。&#xA;&#xA;但请注意，以下内容无法自动删除或注销：&#xA;- 此电脑上其他 PCL Lite 实例的本地数据&#xA;- Natayark 账户&#xA;&#xA;如需同时删除 Minecraft 实例中的 PCL Lite 配置文件，请选择“继续并清理实例文件夹”，这不会影响你的游戏配置、模组、存档，以及其他数据。&#xA;&#xA;此操作无法撤销。您确定要继续吗？</sys:String>
+    <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.Message">即将删除此电脑上与 PCL Lite 有关的全部配置、缓存、已保存的账户信息及其他相关数据，并撤销已接受的许可协议。完成后，软件将自动关闭。&#xA;&#xA;但请注意，以下内容无法自动删除或注销：&#xA;- 此电脑上其他 PCL Lite 实例的本地数据&#xA;&#xA;如需同时删除 Minecraft 实例中的 PCL Lite 配置文件，请选择“继续并清理实例文件夹”，这不会影响你的游戏配置、模组、存档，以及其他数据。&#xA;&#xA;此操作无法撤销。您确定要继续吗？</sys:String>
     <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.Title">停止使用 PCL Lite？</sys:String>
     <sys:String x:Key="Setup.Misc.System.Title">系统</sys:String>
 
@@ -3122,14 +3045,12 @@
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.FeatureHide">功能隐藏</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.FeatureHide.ToolTip">仅隐藏本选项卡，设置的禁用内容依然有效。&#xA;可以在保留个性化设置页面的情况下避免隐藏设置被修改。</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Feedback">反馈</sys:String>
-    <sys:String x:Key="Setup.Ui.FeatureHide.Item.GameLink">联机</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.GameManage">管理</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.InstanceSelect">实例管理</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.InstanceSelect.ToolTip">隐藏启动按钮下方的实例选择与实例设置入口。</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Java">Java</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Language">语言</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Launch">启动</sys:String>
-    <sys:String x:Key="Setup.Ui.FeatureHide.Item.Lobby">联机</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Log">查看日志</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Misc">杂项</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Mod">模组</sys:String>
@@ -3370,6 +3291,9 @@
     <sys:String x:Key="Bedrock.Download.Description">这里列出微软商店已发布的基岩版安装包，包含正式版、预览版与 Beta。选中版本后点右侧按钮，PCL Lite 会把官方原包下载到本地并装好：商店包（UWP）会注册进系统，需要开发者模式；GDK 包会解包到启动器自己的目录里，多个版本可以同时存在。</sys:String>
     <sys:String x:Key="Bedrock.Download.Refresh">刷新列表</sys:String>
     <sys:String x:Key="Bedrock.Download.OpenFolder">打开下载目录</sys:String>
+    <sys:String x:Key="Bedrock.Download.ChooseDir">选择下载目录</sys:String>
+    <sys:String x:Key="Bedrock.Download.Directory">下载目录：{0}</sys:String>
+    <sys:String x:Key="Bedrock.Download.DirChanged">下载目录已改为：{0}</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode">开发者模式</sys:String>
     <sys:String x:Key="Bedrock.Download.List.Title">可用版本</sys:String>
     <sys:String x:Key="Bedrock.Download.Empty">当前筛选条件下没有版本。换个筛选条件，或者点「刷新列表」重新拉取。</sys:String>
@@ -3391,7 +3315,8 @@
     <sys:String x:Key="Bedrock.Download.Status.DownloadingUnknown">正在下载：{0:0.0} MB</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Verifying">正在校验文件…</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Installing">正在安装…</sys:String>
-    <sys:String x:Key="Bedrock.Download.Status.Extracting">正在解包：{0:0.0}%（{1}）</sys:String>
+    <sys:String x:Key="Bedrock.Download.Status.Extracting">正在解包：{0:0.0}%</sys:String>
+    <sys:String x:Key="Bedrock.Download.Status.ExtractingFile">当前文件：{0}</sys:String>
     <sys:String x:Key="Bedrock.Download.State.NotInstalled">未下载</sys:String>
     <sys:String x:Key="Bedrock.Download.State.Downloaded">已下载</sys:String>
     <sys:String x:Key="Bedrock.Download.State.Installed">已安装</sys:String>
@@ -3401,6 +3326,17 @@
     <sys:String x:Key="Bedrock.Download.DeveloperMode.Off">开发者模式未开启，商店包装不上。点「开发者模式」按钮试试（需要管理员权限）。</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode.Enabled">开发者模式已开启。</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode.Failed">开启开发者模式失败，请手动在系统设置的「开发者选项」里打开。</sys:String>
+    <sys:String x:Key="Bedrock.Download.Cik">内容密钥</sys:String>
+    <sys:String x:Key="Bedrock.Download.State.NeedCik">需内容密钥</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Title">GDK 内容密钥</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Description">GDK 版安装包是加密的 .msixvc，解包需要商店下发的内容密钥（CIK）。密钥不随启动器分发，这里填你自己手上那把即可（十六进制，至少 48 字节）。留空表示暂时不填，此时 GDK 版本只能下载、不能安装；商店包（UWP）不受影响。</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Hint">十六进制串，可含空格或短横线</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Invalid">密钥格式不对：需要至少 {0} 字节的十六进制串。</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Saved">内容密钥已保存。</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Skipped">没有内容密钥，已取消安装。商店包（UWP）不需要密钥。</sys:String>
+    <sys:String x:Key="Bedrock.Cik.PreviewTitle">预览版 GDK 内容密钥</sys:String>
+    <sys:String x:Key="Bedrock.Cik.PreviewDescription">预览版（Beta）的 GDK 安装包用的是与正式版不同的内容密钥，正式版的密钥解不开它。&#10;这里请填写预览版通道对应的密钥（十六进制，至少 48 字节）。留空表示暂时不填，此时预览版只能下载、不能安装；正式版 GDK 与商店包都不受影响。</sys:String>
+    <sys:String x:Key="Bedrock.Cik.PreviewSkipped">没有预览版内容密钥，已取消安装。正式版 GDK 与商店包不受影响。</sys:String>
     <sys:String x:Key="Bedrock.Install.Extracting">正在解压安装包…</sys:String>
     <sys:String x:Key="Bedrock.Install.ExtractFailed">解压安装包失败：{0}</sys:String>
     <sys:String x:Key="Bedrock.Install.ManifestMissing">安装包里找不到 AppxManifest.xml，可能不是有效的商店包。</sys:String>
@@ -3409,6 +3345,8 @@
     <sys:String x:Key="Bedrock.Install.DeveloperModeRequired">安装商店包需要开启开发者模式（旁加载）。请到「设置 → 系统 → 开发者选项」里打开后重试。</sys:String>
     <sys:String x:Key="Bedrock.Install.Failed">注册应用失败：{0}</sys:String>
     <sys:String x:Key="Bedrock.Install.CikMissing">当前构建未包含基岩版 GDK 内容密钥（CIK），无法解包这个安装包。</sys:String>
+    <sys:String x:Key="Bedrock.Install.VerifyFailed">解包结果校验失败：{0} 个可执行文件无效。&#10;通常是内容密钥与该版本通道不匹配——预览版（Beta）和正式版用的是不同的密钥。&#10;请改用正式版，或填写该通道对应的预览密钥。</sys:String>
+    <sys:String x:Key="Bedrock.Install.KeyMismatch">内容密钥与这个安装包不匹配，用它解出来的文件会是乱码。&#10;这个包需要：{0}&#10;当前密钥是：{1}&#10;每个 GDK 包各自一把密钥（按 GUID 区分），不同版本之间、正式版与预览版之间都不通用。</sys:String>
     <sys:String x:Key="Bedrock.Launch.Title">启动基岩版</sys:String>
     <sys:String x:Key="Bedrock.Launch.Description">这里列出本机所有可启动的基岩版：商店里装的正式版与预览版、下载页解包出来的版本、以及你手动添加的 GDK 目录。选中后点「启动」即可，不需要管理员权限。</sys:String>
     <sys:String x:Key="Bedrock.Launch.List.Title">可启动的基岩版</sys:String>
@@ -3430,128 +3368,24 @@
     <sys:String x:Key="Bedrock.Launch.SavesNotFound">没有找到基岩版存档目录，可能还没有启动过游戏。</sys:String>
     <sys:String x:Key="Bedrock.Launch.AlreadyAdded">这个目录已经在列表里了。</sys:String>
     <sys:String x:Key="Bedrock.Launch.NoFolder">商店版的程序目录受系统保护，打不开。要改存档请用「打开存档目录」。</sys:String>
+    <sys:String x:Key="Bedrock.Status.Title">基岩版状态</sys:String>
+    <sys:String x:Key="Bedrock.Status.Ready">已就绪</sys:String>
+    <sys:String x:Key="Bedrock.Status.Launching">正在启动基岩版…</sys:String>
+    <sys:String x:Key="Bedrock.Status.NotFound">未检测到基岩版</sys:String>
 
     <!-- Tools -->
 
     <sys:String x:Key="Tools.Error.OperationFailed">工具页操作失败。请查看错误详情。</sys:String>
-    <sys:String x:Key="Tools.Left.Lobby">大厅</sys:String>
-    <sys:String x:Key="Tools.Left.Multiplayer">联机</sys:String>
     <sys:String x:Key="Tools.Left.Utilities">奇妙小工具</sys:String>
     <sys:String x:Key="Tools.Left.Utilities.Title">百宝箱</sys:String>
 
-    <!-- Tools.GameLink -->
 
-    <sys:String x:Key="Tools.GameLink.Announcement.Format">[{0}] {1}</sys:String>
-    <sys:String x:Key="Tools.GameLink.Announcement.Important">重要</sys:String>
-    <sys:String x:Key="Tools.GameLink.Announcement.Notice">提示</sys:String>
-    <sys:String x:Key="Tools.GameLink.Announcement.Warning">注意</sys:String>
-    <sys:String x:Key="Tools.GameLink.CopyIp.Back">返回</sys:String>
-    <sys:String x:Key="Tools.GameLink.CopyIp.Message">大厅创建者的游戏地址：{0}&#xA;注意：仅推荐在 MC 多人游戏列表不显示大厅广播时使用 IP 连接！通过 IP 连接将可能要求使用正版档案。</sys:String>
-    <sys:String x:Key="Tools.GameLink.CopyIp.Title">复制 IP</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.Action">创建</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.Description">1、进入世界后，在游戏菜单中选择【对局域网开放】&#xA;2、在下方选择此游戏实例，单击【创建】&#xA;3、成功创建大厅后，复制大厅编号并发送给你的朋友</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.EnterPort">请输入端口</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.ManualInput">手动输入</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.NoWorld">请先选择一个要联机的世界！</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.NotMcPort">这似乎不是个 MC 服务端口...</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.Title">创建大厅</sys:String>
-    <sys:String x:Key="Tools.GameLink.EasyTierVersion">联机双方目前使用的启动器版本不同，这可能会导致一些连接问题&#xA;强烈建议双方升级到最新版本后再继续联机</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.ConnectFailed">无法连接到大厅服务器</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.NetworkTestFailed">获取网络测试结果失败。请查看错误详情。</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.ServerExit">在服务器退出时发生了错误！</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.ServerMessage">与大厅服务器的连接出现错误。&#xA;&#xA;原始错误信息：&#xA;{0}</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.UpdateRequired">请更新到最新版 PCL Lite 以使用大厅</sys:String>
-    <sys:String x:Key="Tools.GameLink.Eula.Disabled">联机功能已停用！</sys:String>
-    <sys:String x:Key="Tools.GameLink.Eula.RevokeConfirm">你确定要撤销联机协议授权吗？</sys:String>
-    <sys:String x:Key="Tools.GameLink.Eula.RevokeTitle">撤销授权确认</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.ConfirmMessage">你确定要退出大厅吗？</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.ConfirmMessageWithHost">你确定要退出大厅吗？&#xA;由于你是大厅创建者，退出后此大厅将会自动解散。</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.ConfirmTitle">确认退出</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.Disbanded">由于你关闭了联机中的 MC 实例，大厅已自动解散。</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.DisbandedTitle">大厅已解散</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.HostWarning">由于你是大厅创建者，退出后此大厅将会自动解散。</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Action">加入</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Clear">清除</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Description">1、在下方输入朋友发送给你的大厅编号，单击【加入】&#xA;2、启动游戏，选择【多人游戏】，在局域网游戏中加入大厅</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.IdHint">编号应该长得像这样：U/NNNN-AAAA-SSSS-EEEE</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.InvalidText">大厅编号不正确，请检查后重新输入</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Paste">粘贴</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Title">加入大厅</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Disable">停用联机功能</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.EasyTier">EasyTier 工具官网</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Friends">友情链接：</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Privacy">大厅隐私协议</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Report">违法违规举报</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Terms">Natayark Network 用户协议与隐私政策</sys:String>
-    <sys:String x:Key="Tools.GameLink.Loading.ConnectingServer">正在连接到大厅服务器...</sys:String>
-    <sys:String x:Key="Tools.GameLink.Loading.Creating">正在创建大厅</sys:String>
-    <sys:String x:Key="Tools.GameLink.Loading.DownloadingModule">下载联机模块中……</sys:String>
-    <sys:String x:Key="Tools.GameLink.Member.ListCount">大厅成员列表（共 {0} 人）</sys:String>
-    <sys:String x:Key="Tools.GameLink.Member.ListLoading">大厅成员列表（正在获取信息）</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Failed">测试失败</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Result">UDP: {0}, TCP: {1}</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Test">点击测试</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Testing">正在测试</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Title">NAT 类型</sys:String>
-    <sys:String x:Key="Tools.GameLink.Player.Details">{0} {1}</sys:String>
-    <sys:String x:Key="Tools.GameLink.Player.Host">[主机]</sys:String>
-    <sys:String x:Key="Tools.GameLink.Player.InfoMessage">用户名：{0}&#xA;联机协议客户端标识：{1}&#xA;&#xA;此处数据仅供参考，请以实际游玩体验为准。&#xA;&#xA;若想了解 NAT 类型与其如何影响联机体验，请前往界面左侧的常见问题一栏。</sys:String>
-    <sys:String x:Key="Tools.GameLink.Player.InfoTitle">玩家 {0} 的详细信息</sys:String>
 
-    <!-- Tools.GameLink.Agreement -->
 
-    <sys:String x:Key="Tools.GameLink.Agreement.Accept">我已阅读并同意</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.Body">使用大厅功能即代表你同意下列条款：&#xA;&#xA;我承诺严格遵守中国大陆相关法律法规，不会将大厅功能用于违法违规用途。&#xA;我承诺使用大厅功能带来的一切风险自行承担。&#xA;我已知晓并同意 PCL Lite 收集经处理的本机识别码、Natayark ID 与其他信息并在必要时提供给执法部门。&#xA;为保护未成年人个人信息，使用联机大厅前，我确认我已满十四周岁。&#xA;&#xA;另外，你还需要同意 PCL Lite 大厅相关隐私政策及《Natayark OpenID 服务条款》。</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.Description">此处列出了 PCL Lite 大厅使用的相关服务文档及介绍</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.NatayarkTerms">Natayark OpenID 服务条款</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.NatayarkTermsInfo">查看 Natayark OpenID 服务条款</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.PrivacyPolicy">PCL Lite 大厅相关隐私政策</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.PrivacyPolicyInfo">了解 PCL Lite 如何处理您的个人信息</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.Title">PCL Lite 联机大厅说明与条款</sys:String>
 
-    <!-- Tools.GameLink.Finish -->
 
-    <sys:String x:Key="Tools.GameLink.Finish.Actions">大厅操作</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Checking">检测中</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.CloseLobby">关闭大厅</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Connected">已连接</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Connecting">连接中</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.ConnectionStatus">连接状况</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.ConnectionType">连接方式</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.CopyLobbyId">复制大厅编号</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.CopyVirtualIp">复制虚拟 IP</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Exit">退出大厅</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Guest">加入者</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Host">创建者</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.InfoTitle">大厅信息</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.LobbyId">大厅编号</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.PingMs">{0}ms</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.PingToHost">与大厅创建者的延迟</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Unavailable">暂不可用</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.UserName">用户名</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.UserType">用户类型</sys:String>
 
-    <!-- Tools.GameLink.Natayark -->
 
-    <sys:String x:Key="Tools.GameLink.Natayark.Abnormal">（异常）</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.Account">Natayark 账户</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.AccountExpired">Natayark 账号信息已过期，请前往设置重新登录！</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.BrowserContinue">请在浏览器中继续...</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.Continue">继续</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.FetchFailed">获取信息失败</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.InvalidAuthCode">Naid 验证代码无效</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.Loading">正在加载...</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.Login">点击登录 Natayark 账户</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LoginComplete">已完成登录操作</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LoginFailed">Naid 登录失败，请尝试前往设置重新登录</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LoginPrompt">PCL Lite 将会打开一个登录页面，请在浏览器中完成登录操作，然后回到启动器继续操作。</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LoginTitle">登录至 Natayark Network</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LogoutComplete">已退出登录！</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LogoutConfirm">你确定要退出登录吗？</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LogoutTitle">退出登录</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.ProfileLoadFailed">获取 Natayark 用户数据失败，请尝试前往设置重新登录</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.TokenExpired">Natayark ID 令牌已过期，请重新登录</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.TokenInvalid">Naid Access Token 无效，尝试刷新登录</sys:String>
 
     <!-- Tools.ServerQuery -->
 

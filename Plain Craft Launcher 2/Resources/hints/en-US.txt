@@ -1022,8 +1022,6 @@ PCL Lite allows modifying save game difficulty, command permission, and difficul
 
 PCL Lite supports translating mod descriptions.
 
-PCL Lite's multiplayer feature uses EasyTier for P2P hole punching.
-
 PCL Lite can upgrade a game instance's Authlib during installation to fix Minecraft 1.16.5's multiplayer issues.
 
 Press F12 to temporarily re-display hidden settings.

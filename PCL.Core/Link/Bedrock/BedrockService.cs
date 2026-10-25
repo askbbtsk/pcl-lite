@@ -117,6 +117,10 @@ public static class BedrockService
             var exe = FindExecutable(child);
             if (exe is null) continue;
 
+            // 解包中断或密钥不匹配时，目录里主程序是好的、DLL 全是乱码。
+            // 这种半成品不能当成可启动版本列出来，否则用户点进去只会看到「损坏的映像」。
+            if (!LooksRunnable(child)) continue;
+
             list.Add(new BedrockInstall
             {
                 Id = "downloaded:" + child,
@@ -128,6 +132,31 @@ public static class BedrockService
         }
 
         return list;
+    }
+
+    /// <summary>
+    ///     粗判一个解包目录是否真的能跑：抽查根目录的 DLL 头部。
+    ///     <para>GDK 的 DLL 全在主程序同级目录，正常解包一定是 <c>MZ</c> 开头。</para>
+    /// </summary>
+    private static bool LooksRunnable(string directory)
+    {
+        try
+        {
+            var sawAny = false;
+            foreach (var dll in Directory.EnumerateFiles(directory, "*.dll", SearchOption.TopDirectoryOnly))
+            {
+                sawAny = true;
+                using var stream = File.OpenRead(dll);
+                Span<byte> head = stackalloc byte[2];
+                if (stream.Read(head) == 2 && head[0] == (byte)'M' && head[1] == (byte)'Z') return true;
+            }
+
+            return !sawAny;
+        }
+        catch (Exception)
+        {
+            return true;
+        }
     }
 
     /// <summary>

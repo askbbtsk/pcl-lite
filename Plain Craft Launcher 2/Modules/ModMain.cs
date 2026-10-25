@@ -35,7 +35,6 @@ public static class ModMain
     public static PageSpeedLeft? frmSpeedLeft;
     public static PageSpeedRight? frmSpeedRight;
     public static PageToolsLeft? frmToolsLeft;
-    public static PageToolsGameLink? frmToolsGameLink;
     public static PageToolsTest? frmToolsTest;
     public static PageBedrockLeft? frmBedrockLeft;
     public static PageBedrockDownload? frmBedrockDownload;
@@ -67,7 +66,6 @@ public static class ModMain
     public static PageSetupAbout? frmSetupAbout;
     public static PageSetupLog? frmSetupLog;
     public static PageSetupFeedback? frmSetupFeedback;
-    public static PageSetupGameLink? frmSetupGameLink;
     public static PageSetupLauncherLanguage? frmSetupLauncherLanguage;
     public static PageSetupLauncherMisc? frmSetupLauncherMisc;
     public static PageLoginAuth? frmLoginAuth;

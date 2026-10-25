@@ -13,9 +13,13 @@ namespace PCL;
 /// <summary>
 ///     基岩版安装包的下载与本地存放。
 ///     <para>
-///         目录结构（都在启动器数据目录下，删启动器时一起走）：
+///         目录结构（默认在启动器数据目录下，删启动器时一起走）：
 ///         <c>Bedrock/packages</c> 存下载到的原包，<c>Bedrock/versions</c> 存解包后的 GDK 版本，
 ///         <c>Bedrock/extracted</c> 存 UWP 包解出来的、等待注册的目录。
+///     </para>
+///     <para>
+///         根目录可以用 <c>Config.Launch.BedrockDownloadDirectory</c> 换位置
+///         （GDK 解包后 2 GB 起，放系统盘容易撑爆），留空时用 <c>%LOCALAPPDATA%\PCLCE\Bedrock</c>。
 ///     </para>
 /// </summary>
 public static class ModBedrockDownload
@@ -27,7 +31,16 @@ public static class ModBedrockDownload
 
     private static IReadOnlyList<BedrockVersionEntry> _cache = [];
 
-    public static string RootDirectory => Path.Combine(Paths.SharedLocalData, "Bedrock");
+    public static string RootDirectory
+    {
+        get
+        {
+            var custom = Config.Launch.BedrockDownloadDirectory;
+            return string.IsNullOrWhiteSpace(custom)
+                ? Path.Combine(Paths.SharedLocalData, "Bedrock")
+                : custom.Trim();
+        }
+    }
     public static string PackagesDirectory => Path.Combine(RootDirectory, "packages");
     public static string VersionsDirectory => Path.Combine(RootDirectory, "versions");
     public static string ExtractedDirectory => Path.Combine(RootDirectory, "extracted");

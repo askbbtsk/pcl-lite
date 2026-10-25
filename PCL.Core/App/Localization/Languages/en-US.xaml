@@ -1791,10 +1791,6 @@
     <sys:String x:Key="Link.Connection.P2P">P2P</sys:String>
     <sys:String x:Key="Link.Connection.Relay">Relay</sys:String>
     <sys:String x:Key="Link.Connection.Unknown">Unknown</sys:String>
-    <sys:String x:Key="Link.Natayark.TokenFetchEmpty">Failed to get AccessToken and RefreshToken: response is empty</sys:String>
-    <sys:String x:Key="Link.Natayark.TokenParseFailed">Failed to get AccessToken and RefreshToken: unable to parse response</sys:String>
-    <sys:String x:Key="Link.Natayark.UserInfoFetchEmpty">Failed to get Natayark user information: response is empty</sys:String>
-    <sys:String x:Key="Link.Natayark.UserInfoParseFailed">Failed to get Natayark user information: unable to parse response</sys:String>
     <sys:String x:Key="Link.Quality.Good">Good</sys:String>
     <sys:String x:Key="Link.Quality.GoodDescription">The current network environment should not affect connection experience.&#xA;This environment is suitable as the lobby host.</sys:String>
     <sys:String x:Key="Link.Quality.Normal">Normal</sys:String>
@@ -1802,41 +1798,9 @@
     <sys:String x:Key="Link.Quality.Poor">Poor</sys:String>
     <sys:String x:Key="Link.Quality.PoorDescription">Some router and firewall settings may affect your connection experience.</sys:String>
 
-    <!-- Link.Lobby -->
 
-    <sys:String x:Key="Link.Lobby.CreateLobbyFailed">Failed to create lobby. Please check logs or report to the developer.</sys:String>
-    <sys:String x:Key="Link.Lobby.CreateRoomFailed">An error occurred while creating the room. Please check the logs and report this to the developer!</sys:String>
-    <sys:String x:Key="Link.Lobby.InitFailed">Lobby service initialization failed. Please check your network.</sys:String>
-    <sys:String x:Key="Link.Lobby.InvalidCodeFormat">Invalid lobby code format. Please check and try again!</sys:String>
-    <sys:String x:Key="Link.Lobby.JoinFailed">Failed to join lobby. It may not exist or may have been disbanded.</sys:String>
-    <sys:String x:Key="Link.Lobby.LoginRequired">Please log in to Natayark ID first!</sys:String>
-    <sys:String x:Key="Link.Lobby.MotdDesc"> - {0}</sys:String>
-    <sys:String x:Key="Link.Lobby.MotdFormat">PCL Lite Lobby{0}</sys:String>
-    <sys:String x:Key="Link.Lobby.UnsupportedType">Unsupported lobby type: {0}</sys:String>
-    <sys:String x:Key="Link.Lobby.WorldNameFormat">{0} / {1} ({2})</sys:String>
 
-    <!-- Link.Mod -->
 
-    <sys:String x:Key="Link.Mod.AccountBanned">Your Natayark Network account status is abnormal and may be banned!</sys:String>
-    <sys:String x:Key="Link.Mod.DownloadComplete">Multiplayer components downloaded!</sys:String>
-    <sys:String x:Key="Link.Mod.DownloadEasyTierFailed">Failed to download EasyTier dependencies. Please check your network.</sys:String>
-    <sys:String x:Key="Link.Mod.DownloadingDeps">Downloading multiplayer dependencies. Please wait...</sys:String>
-    <sys:String x:Key="Link.Mod.DownloadingEasyTier">Downloading EasyTier. Please wait...</sys:String>
-    <sys:String x:Key="Link.Mod.EasyTierNotReady">EasyTier has not finished downloading. Please wait and try again!</sys:String>
-    <sys:String x:Key="Link.Mod.InvalidPlayerId">Minecraft player ID cannot contain separators (|)!</sys:String>
-    <sys:String x:Key="Link.Mod.LobbyUnavailable">Lobby is currently unavailable. Please try again later.</sys:String>
-    <sys:String x:Key="Link.Mod.LoginFirst">Please go to multiplayer settings and log in to Natayark Network first!</sys:String>
-    <sys:String x:Key="Link.Mod.NaidFetchFailed">Failed to fetch Natayark ID information</sys:String>
-    <sys:String x:Key="Link.Mod.ReLoginRequired">Please log in to your Natayark Network account again and try again!</sys:String>
-    <sys:String x:Key="Link.Mod.RealNameRequired">Please complete real-name verification at the Natayark Account Center first!</sys:String>
-    <sys:String x:Key="Link.Mod.Task.CleanCache">Clean caches and redundant components</sys:String>
-    <sys:String x:Key="Link.Mod.Task.DownloadEasyTier">Download EasyTier</sys:String>
-    <sys:String x:Key="Link.Mod.Task.ExtractFiles">Extract files</sys:String>
-    <sys:String x:Key="Link.Mod.Task.FetchAnnouncement">Fetch lobby announcement</sys:String>
-    <sys:String x:Key="Link.Mod.Task.InitLobby">Initialize lobby</sys:String>
-    <sys:String x:Key="Link.Mod.Task.InitLobbyUi">Initialize lobby UI</sys:String>
-    <sys:String x:Key="Link.Mod.Task.RefreshUi">Refresh UI</sys:String>
-    <sys:String x:Key="Link.Mod.UsernameOrLogin">Please set a username in Settings, or log in to Natayark Network first!</sys:String>
 
     <!-- Link.Nat -->
 
@@ -2554,10 +2518,8 @@
 
     <!-- Setup.About.Legal -->
 
-    <sys:String x:Key="Setup.About.Legal.CommunityLobbyPrivacy">Community lobby privacy policy</sys:String>
     <sys:String x:Key="Setup.About.Legal.CommunitySource">PCL Lite source code</sys:String>
     <sys:String x:Key="Setup.About.Legal.CopyrightText">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</sys:String>
-    <sys:String x:Key="Setup.About.Legal.NatayarkTerms">Natayark OpenID ToS</sys:String>
     <sys:String x:Key="Setup.About.Legal.OtherInfo">Other information</sys:String>
     <sys:String x:Key="Setup.About.Legal.PrivacyNotice">Privacy statement</sys:String>
     <sys:String x:Key="Setup.About.Legal.PrivacyText">The User Agent of this software includes the launcher version number to count the number of users on each version.&#xD;Other than this, this software will not upload any other information to the developers.&#xD;* Online and hardware/software survey features follow their own privacy policies, which are separate from this notice.</sys:String>
@@ -2569,11 +2531,9 @@
     <sys:String x:Key="Setup.About.SpecialThanks.Info.Bmclapi">Provided BMCLAPI mirror and Forge installation tool. Details at https://bmclapi.bangbang93.com</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Info.Cloud">Provided cloud services for PCL Lite.</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Info.IconDesign">Designed and created the PCL Lite icon.</sys:String>
-    <sys:String x:Key="Setup.About.SpecialThanks.Info.LinkModule">Provided the multiplayer module!</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Info.Mcim">Provided MCIM community resource mirrors and image hosting services for the help center!</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Info.Mcmod">Provided Chinese translation of mods and more related information!</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Name.Bangbang93">bangbang93</sys:String>
-    <sys:String x:Key="Setup.About.SpecialThanks.Name.EasyTier">EasyTier</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Name.Emperormummy">Emperormummy</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Name.Mcmod">MCMod (MC 百科)</sys:String>
     <sys:String x:Key="Setup.About.SpecialThanks.Name.Pysio">Pysio @ Akaere Network</sys:String>
@@ -2619,43 +2579,9 @@
     <sys:String x:Key="Setup.Feedback.Status.Waiting">Waiting</sys:String>
     <sys:String x:Key="Setup.Feedback.Status.WaitingProcess">Awaiting processing</sys:String>
 
-    <!-- Setup.GameLink -->
 
-    <sys:String x:Key="Setup.GameLink.CliDebugOutput">Output CLI information to logs for debugging</sys:String>
-    <sys:String x:Key="Setup.GameLink.CliDebugOutput.ToolTip">Output EasyTier CLI information to the launcher log every 30 seconds for developer and community support investigation.&#xA;This option is for debugging only and is not recommended to keep enabled.</sys:String>
-    <sys:String x:Key="Setup.GameLink.EnableIPv6">Allow IPv6 communication</sys:String>
-    <sys:String x:Key="Setup.GameLink.EnableIPv6.ToolTip">Compared with IPv4, IPv6 makes P2P communication easier and can greatly improve the multiplayer experience. Do not disable it unless you have a specific reason.</sys:String>
-    <sys:String x:Key="Setup.GameLink.Error.ConfigChangeFailed">Failed to change configuration item.</sys:String>
-    <sys:String x:Key="Setup.GameLink.Error.InitFailed">Failed to initialize multiplayer settings</sys:String>
-    <sys:String x:Key="Setup.GameLink.Error.NetworkTestFailed">Failed to get network test results. See the details below.</sys:String>
-    <sys:String x:Key="Setup.GameLink.Initialized">Multiplayer settings have been initialized!</sys:String>
-    <sys:String x:Key="Setup.GameLink.LatencyFirstMode">Select the lowest-latency path instead of the shortest path</sys:String>
-    <sys:String x:Key="Setup.GameLink.LatencyFirstMode.ToolTip">When enabled, EasyTier will choose the path with the lowest latency rather than the path with the fewest routing hops.&#xA;Enabling this may reduce latency in some cases, but may increase packet loss.</sys:String>
-    <sys:String x:Key="Setup.GameLink.PortGuessNat">Perform port guessing for symmetric NAT</sys:String>
-    <sys:String x:Key="Setup.GameLink.PortGuessNat.ToolTip">Let EasyTier attempt port guessing for symmetric NAT (birthday paradox).&#xA;This may improve the multiplayer experience, but it may also cause issues in some cases.&#xA;Generally, keep it enabled.</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Preference">Protocol preference</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Tcp">TCP</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Tcp.ToolTip">Let EasyTier prefer TCP communication, which usually provides better stability.</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Udp">UDP</sys:String>
-    <sys:String x:Key="Setup.GameLink.Protocol.Udp.ToolTip">Let EasyTier prefer UDP communication, which usually provides lower latency.</sys:String>
-    <sys:String x:Key="Setup.GameLink.RestartRequired">A lobby restart is required for changes on this page to take effect.</sys:String>
-    <sys:String x:Key="Setup.GameLink.Username">Username</sys:String>
-    <sys:String x:Key="Setup.GameLink.Username.ToolTip">PCL Lite will try to use this username for lobby display.&#xA;If left blank, the Natayark ID username will be used.&#xA;&#xA;In some cases, the Natayark ID username may still be displayed instead of the name set here.</sys:String>
 
-    <!-- Setup.GameLink.NetworkTest -->
 
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Ipv6Status">IPv6 status: {0}</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Ipv6Status.NotTested">IPv6: Not tested</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.NotTested">Not tested</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Start">Start test</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Supported">Supported</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.TcpNatType">TCP NAT type: {0}</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.TcpNatType.NotTested">TCP NAT type: Not tested</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Testing">Testing...</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Title">Network test</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.UdpNatType">UDP NAT type: {0}</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.UdpNatType.NotTested">UDP NAT type: Not tested</sys:String>
-    <sys:String x:Key="Setup.GameLink.NetworkTest.Unsupported">Unsupported</sys:String>
 
     <!-- Setup.GameManage -->
 
@@ -2898,13 +2824,11 @@
     <sys:String x:Key="Setup.Left.Category.About">About</sys:String>
     <sys:String x:Key="Setup.Left.Category.Game">Game</sys:String>
     <sys:String x:Key="Setup.Left.Category.Launcher">Launcher</sys:String>
-    <sys:String x:Key="Setup.Left.Category.Tools">Tools</sys:String>
     <sys:String x:Key="Setup.Left.Feedback.Message">Please check the feedback list for similar issues before submitting new feedback to avoid duplicate submissions.</sys:String>
     <sys:String x:Key="Setup.Left.Feedback.SubmitNew">New feedback</sys:String>
     <sys:String x:Key="Setup.Left.Feedback.Title">Feedback</sys:String>
     <sys:String x:Key="Setup.Left.Feedback.ViewList">Feedback list</sys:String>
     <sys:String x:Key="Setup.Left.Refreshing">Refreshing...</sys:String>
-    <sys:String x:Key="Setup.Left.Reset.GameLink.Message">Do you want to initialize all settings on the Tools – Multiplayer page? This action cannot be undone.</sys:String>
     <sys:String x:Key="Setup.Left.Reset.GameManage.Message">Do you want to initialize all settings on the Game – Management page? This action cannot be undone.</sys:String>
     <sys:String x:Key="Setup.Left.Reset.Language.Message">Do you want to initialize all settings on the Launcher – Language page? This action cannot be undone.</sys:String>
     <sys:String x:Key="Setup.Left.Reset.Launch.Message">Do you want to initialize all settings on the Game – Launch page? This action cannot be undone.</sys:String>
@@ -2916,7 +2840,6 @@
 
     <sys:String x:Key="Setup.Left.Item.About">About</sys:String>
     <sys:String x:Key="Setup.Left.Item.Feedback">Feedback</sys:String>
-    <sys:String x:Key="Setup.Left.Item.GameLink">Multiplayer</sys:String>
     <sys:String x:Key="Setup.Left.Item.GameManage">Management</sys:String>
     <sys:String x:Key="Setup.Left.Item.Java">Java</sys:String>
     <sys:String x:Key="Setup.Left.Item.Launch">Launch</sys:String>
@@ -3006,7 +2929,7 @@
     <sys:String x:Key="Setup.Misc.System.MaxLogLines.Unlimited">Unlimited</sys:String>
     <sys:String x:Key="Setup.Misc.System.StopUsingPclCe">Stop using PCL Lite</sys:String>
     <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.ContinueAndRemove">Continue and remove instance configs</sys:String>
-    <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.Message">This will delete all PCL Lite settings, cached data, saved account information, and other related data from this computer. Your acceptance of any license agreements will also be revoked. PCL Lite will close automatically when the process is complete.&#xA;&#xA;The following cannot be removed automatically:&#xA;- Local data from other PCL Lite installations on this computer&#xA;- Your Natayark account&#xA;&#xA;To also remove PCL Lite configuration files from Minecraft instances, choose "Continue and remove instance configs". This will not affect Minecraft settings, mods, saves, or other game data.&#xA;&#xA;This action cannot be undone. Are you sure you want to continue?</sys:String>
+    <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.Message">This will delete all PCL Lite settings, cached data, saved account information, and other related data from this computer. Your acceptance of any license agreements will also be revoked. PCL Lite will close automatically when the process is complete.&#xA;&#xA;The following cannot be removed automatically:&#xA;- Local data from other PCL Lite installations on this computer&#xA;&#xA;To also remove PCL Lite configuration files from Minecraft instances, choose "Continue and remove instance configs". This will not affect Minecraft settings, mods, saves, or other game data.&#xA;&#xA;This action cannot be undone. Are you sure you want to continue?</sys:String>
     <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.Message.Final">This is the final warning! Are you sure you want to continue?&#xA;All PCL Lite data on this computer will be lost forever! (A long time!)</sys:String>
     <sys:String x:Key="Setup.Misc.System.StopUsingPclCe.Title">Stop using PCL Lite?</sys:String>
     <sys:String x:Key="Setup.Misc.System.Title">System</sys:String>
@@ -3122,14 +3045,12 @@
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.FeatureHide">Feature hiding</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.FeatureHide.ToolTip">Only this tab will be hidden. Disabled content settings are still valid.&#xA;This can avoid feature hiding being changed while keeping the Personalization page.</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Feedback">Feedback</sys:String>
-    <sys:String x:Key="Setup.Ui.FeatureHide.Item.GameLink">Multiplayer</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.GameManage">Management</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.InstanceSelect">Selection</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.InstanceSelect.ToolTip">Hide the selection and properties buttons below the Launch button.</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Java">Java</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Language">Language</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Launch">Launch</sys:String>
-    <sys:String x:Key="Setup.Ui.FeatureHide.Item.Lobby">Lobby</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Log">Logs</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Misc">Miscellaneous</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.Item.Mod">Mod</sys:String>
@@ -3370,6 +3291,9 @@
     <sys:String x:Key="Bedrock.Download.Description">Every Bedrock package published to the Microsoft Store is listed here, including Release, Preview and Beta builds. Pick a version and click the button on the right: PCL Lite downloads the official package and installs it. Store packages (UWP) are registered with Windows and need Developer Mode; GDK packages are extracted into the launcher's own folder, so several versions can coexist.</sys:String>
     <sys:String x:Key="Bedrock.Download.Refresh">Refresh list</sys:String>
     <sys:String x:Key="Bedrock.Download.OpenFolder">Open download folder</sys:String>
+    <sys:String x:Key="Bedrock.Download.ChooseDir">Choose download folder</sys:String>
+    <sys:String x:Key="Bedrock.Download.Directory">Download folder: {0}</sys:String>
+    <sys:String x:Key="Bedrock.Download.DirChanged">Download folder changed to: {0}</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode">Developer Mode</sys:String>
     <sys:String x:Key="Bedrock.Download.List.Title">Available versions</sys:String>
     <sys:String x:Key="Bedrock.Download.Empty">No version matches the current filters. Change the filters or click Refresh list.</sys:String>
@@ -3391,7 +3315,8 @@
     <sys:String x:Key="Bedrock.Download.Status.DownloadingUnknown">Downloading: {0:0.0} MB</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Verifying">Verifying the file…</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Installing">Installing…</sys:String>
-    <sys:String x:Key="Bedrock.Download.Status.Extracting">Extracting: {0:0.0}% ({1})</sys:String>
+    <sys:String x:Key="Bedrock.Download.Status.Extracting">Extracting: {0:0.0}%</sys:String>
+    <sys:String x:Key="Bedrock.Download.Status.ExtractingFile">Current file: {0}</sys:String>
     <sys:String x:Key="Bedrock.Download.State.NotInstalled">Not downloaded</sys:String>
     <sys:String x:Key="Bedrock.Download.State.Downloaded">Downloaded</sys:String>
     <sys:String x:Key="Bedrock.Download.State.Installed">Installed</sys:String>
@@ -3401,6 +3326,17 @@
     <sys:String x:Key="Bedrock.Download.DeveloperMode.Off">Developer Mode is off, store packages cannot be installed. Click Developer Mode to try enabling it (requires administrator rights).</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode.Enabled">Developer Mode enabled.</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode.Failed">Could not enable Developer Mode. Turn it on manually under Settings → System → For developers.</sys:String>
+    <sys:String x:Key="Bedrock.Download.Cik">Content key</sys:String>
+    <sys:String x:Key="Bedrock.Download.State.NeedCik">Needs content key</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Title">GDK content key</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Description">GDK packages are encrypted .msixvc containers; extracting them needs the content key (CIK) delivered by the Store. The key is not shipped with the launcher — paste the one you already have (hexadecimal, at least 48 bytes). Leave it empty to skip: GDK versions can then be downloaded but not installed. Store packages (UWP) are unaffected.</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Hint">Hex string, spaces and dashes allowed</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Invalid">Invalid key format: expected at least {0} bytes of hexadecimal.</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Saved">Content key saved.</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Skipped">No content key, install cancelled. Store packages (UWP) do not need one.</sys:String>
+    <sys:String x:Key="Bedrock.Cik.PreviewTitle">Preview GDK content key</sys:String>
+    <sys:String x:Key="Bedrock.Cik.PreviewDescription">Preview (Beta) GDK packages are encrypted with a different content key than Release, so the Release key cannot decrypt them.&#10;Enter the key for the Preview channel (hex, at least 48 bytes). Leave it empty to skip: Preview builds can then be downloaded but not installed. Release GDK and Store packages are unaffected.</sys:String>
+    <sys:String x:Key="Bedrock.Cik.PreviewSkipped">No Preview content key; installation cancelled. Release GDK and Store packages are unaffected.</sys:String>
     <sys:String x:Key="Bedrock.Install.Extracting">Extracting the package…</sys:String>
     <sys:String x:Key="Bedrock.Install.ExtractFailed">Failed to extract the package: {0}</sys:String>
     <sys:String x:Key="Bedrock.Install.ManifestMissing">AppxManifest.xml is missing from the package, so it is probably not a valid store package.</sys:String>
@@ -3409,6 +3345,8 @@
     <sys:String x:Key="Bedrock.Install.DeveloperModeRequired">Installing a store package requires Developer Mode (sideloading). Enable it under Settings → System → For developers and try again.</sys:String>
     <sys:String x:Key="Bedrock.Install.Failed">Failed to register the app: {0}</sys:String>
     <sys:String x:Key="Bedrock.Install.CikMissing">This build does not include the Bedrock GDK content key (CIK), so the package cannot be extracted.</sys:String>
+    <sys:String x:Key="Bedrock.Install.VerifyFailed">Extraction verification failed: {0} executable file(s) are invalid.&#10;This usually means the content key does not match this release channel - Preview/Beta uses a different key from Release.&#10;Use a Release build instead, or provide the Preview key for this channel.</sys:String>
+    <sys:String x:Key="Bedrock.Install.KeyMismatch">The content key does not match this package; extracting with it would produce garbage files.&#10;This package requires: {0}&#10;Current key: {1}&#10;Each GDK package has its own key (identified by GUID). Keys are not shared between versions, nor between Release and Preview.</sys:String>
     <sys:String x:Key="Bedrock.Launch.Title">Launch Bedrock</sys:String>
     <sys:String x:Key="Bedrock.Launch.Description">Every launchable Bedrock installation on this PC is listed here: the Release and Preview builds from the Store, versions extracted on the Download page, and any GDK folders you added manually. Select one and click Launch; no administrator rights needed.</sys:String>
     <sys:String x:Key="Bedrock.Launch.List.Title">Launchable installations</sys:String>
@@ -3430,128 +3368,24 @@
     <sys:String x:Key="Bedrock.Launch.SavesNotFound">The Bedrock saves folder was not found. The game may never have been started.</sys:String>
     <sys:String x:Key="Bedrock.Launch.AlreadyAdded">That folder is already in the list.</sys:String>
     <sys:String x:Key="Bedrock.Launch.NoFolder">The program folder of a store install is protected by Windows and cannot be opened. Use Open saves folder to edit worlds.</sys:String>
+    <sys:String x:Key="Bedrock.Status.Title">Bedrock status</sys:String>
+    <sys:String x:Key="Bedrock.Status.Ready">Ready</sys:String>
+    <sys:String x:Key="Bedrock.Status.Launching">Launching Bedrock…</sys:String>
+    <sys:String x:Key="Bedrock.Status.NotFound">No Bedrock installation found</sys:String>
 
     <!-- Tools -->
 
     <sys:String x:Key="Tools.Error.OperationFailed">A utilities operation failed. See the details below.</sys:String>
-    <sys:String x:Key="Tools.Left.Lobby">Lobby</sys:String>
-    <sys:String x:Key="Tools.Left.Multiplayer">Multiplayer</sys:String>
     <sys:String x:Key="Tools.Left.Utilities">Utilities</sys:String>
     <sys:String x:Key="Tools.Left.Utilities.Title">Toolbox</sys:String>
 
-    <!-- Tools.GameLink -->
 
-    <sys:String x:Key="Tools.GameLink.Announcement.Format">[{0}] {1}</sys:String>
-    <sys:String x:Key="Tools.GameLink.Announcement.Important">Important</sys:String>
-    <sys:String x:Key="Tools.GameLink.Announcement.Notice">Notice</sys:String>
-    <sys:String x:Key="Tools.GameLink.Announcement.Warning">Warning</sys:String>
-    <sys:String x:Key="Tools.GameLink.CopyIp.Back">Back</sys:String>
-    <sys:String x:Key="Tools.GameLink.CopyIp.Message">Lobby host's game address: {0}&#xA;Note: IP connection is only recommended when the lobby broadcast does not appear in the Minecraft multiplayer list. IP connection may require a licensed account.</sys:String>
-    <sys:String x:Key="Tools.GameLink.CopyIp.Title">Copy IP</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.Action">Create</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.Description">1. After entering a world, select "Open to LAN" in the game menu&#xA;2. Select this game instance below and click "Create"&#xA;3. After the lobby is created, copy the lobby ID and send it to your friend</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.EnterPort">Enter port</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.ManualInput">Manual input</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.NoWorld">Please select a world to play together!</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.NotMcPort">This doesn't seem to be a Minecraft service port...</sys:String>
-    <sys:String x:Key="Tools.GameLink.Create.Title">Create lobby</sys:String>
-    <sys:String x:Key="Tools.GameLink.EasyTierVersion">Both sides are using different launcher versions, which may cause connection issues.&#xA;We strongly recommend that both sides upgrade to the latest version before continuing.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.ConnectFailed">Failed to connect to the lobby server</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.NetworkTestFailed">Failed to get network test results. See the details below.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.ServerExit">An error occurred while exiting the server!</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.ServerMessage">A lobby server error occurred.&#xA;&#xA;Original error:&#xA;{0}</sys:String>
-    <sys:String x:Key="Tools.GameLink.Error.UpdateRequired">Please update to the latest PCL Lite to use lobby features.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Eula.Disabled">Lobby feature disabled!</sys:String>
-    <sys:String x:Key="Tools.GameLink.Eula.RevokeConfirm">Are you sure you want to revoke the lobby agreement authorization?</sys:String>
-    <sys:String x:Key="Tools.GameLink.Eula.RevokeTitle">Revoke authorization</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.ConfirmMessage">Are you sure you want to exit the lobby?</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.ConfirmMessageWithHost">Are you sure you want to exit the lobby?&#xA;Since you are the lobby host, exiting will automatically disband this lobby.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.ConfirmTitle">Confirm exit</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.Disbanded">The lobby has been automatically disbanded because you closed the Minecraft instance in the lobby.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.DisbandedTitle">Lobby disbanded</sys:String>
-    <sys:String x:Key="Tools.GameLink.Exit.HostWarning">Since you are the lobby host, exiting will automatically disband this lobby.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Action">Join</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Clear">Clear</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Description">1. Enter the lobby ID sent by your friend below and click "Join"&#xA;2. Launch the game, select "Multiplayer", and join the lobby in LAN games</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.IdHint">ID should look like: U/NNNN-AAAA-SSSS-EEEE</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.InvalidText">Invalid lobby ID. Please check and enter it again.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Paste">Paste</sys:String>
-    <sys:String x:Key="Tools.GameLink.Join.Title">Join lobby</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Disable">Disable lobby</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.EasyTier">EasyTier official website</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Friends">Links: </sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Privacy">Lobby Privacy Policy</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Report">Report violation</sys:String>
-    <sys:String x:Key="Tools.GameLink.Link.Terms">Natayark OpenID ToS</sys:String>
-    <sys:String x:Key="Tools.GameLink.Loading.ConnectingServer">Connecting to lobby server...</sys:String>
-    <sys:String x:Key="Tools.GameLink.Loading.Creating">Creating lobby</sys:String>
-    <sys:String x:Key="Tools.GameLink.Loading.DownloadingModule">Downloading lobby module</sys:String>
-    <sys:String x:Key="Tools.GameLink.Member.ListCount">Lobby members ({0} total)</sys:String>
-    <sys:String x:Key="Tools.GameLink.Member.ListLoading">Lobby members (retrieving information)</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Failed">Test failed</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Result">UDP: {0}, TCP: {1}</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Test">Click to test</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Testing">Testing</sys:String>
-    <sys:String x:Key="Tools.GameLink.Nat.Title">NAT type</sys:String>
-    <sys:String x:Key="Tools.GameLink.Player.Details">{0} {1}</sys:String>
-    <sys:String x:Key="Tools.GameLink.Player.Host">[Host]</sys:String>
-    <sys:String x:Key="Tools.GameLink.Player.InfoMessage">Username: {0}&#xA;Client identifier: {1}&#xA;&#xA;This data is for reference only. Actual gameplay may vary.&#xA;&#xA;To learn about NAT types and how they affect your lobby experience, see the FAQ section on the left.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Player.InfoTitle">Player {0} details</sys:String>
 
-    <!-- Tools.GameLink.Agreement -->
 
-    <sys:String x:Key="Tools.GameLink.Agreement.Accept">I have read and agree</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.Body">By using the lobby feature, you agree to the following terms:&#xA;&#xA;I agree to comply with applicable laws and regulations and will not use the lobby feature for illegal or prohibited purposes.&#xA;I agree to bear all risks associated with using the lobby feature.&#xA;I acknowledge and agree that PCL Lite collects processed device identifiers, Natayark ID, and other information, and may provide them to law enforcement when necessary.&#xA;To protect minors' personal information, I confirm that I am at least 14 years old before using the lobby.&#xA;&#xA;Additionally, you must also agree to the PCL Lite lobby privacy policy and the Natayark OpenID terms of service.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.Description">Service documents and introductions used by PCL Lite Lobby are listed below.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.NatayarkTerms">Natayark OpenID ToS</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.NatayarkTermsInfo">View Natayark OpenID terms of service.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.PrivacyPolicy">PCL Lite Lobby Privacy Policy</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.PrivacyPolicyInfo">Learn how PCL Lite handles your personal information.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Agreement.Title">PCL Lite Lobby Terms &amp; Conditions</sys:String>
 
-    <!-- Tools.GameLink.Finish -->
 
-    <sys:String x:Key="Tools.GameLink.Finish.Actions">Lobby actions</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Checking">Checking</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.CloseLobby">Close lobby</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Connected">Connected</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Connecting">Connecting</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.ConnectionStatus">Connection status</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.ConnectionType">Connection type</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.CopyLobbyId">Copy lobby ID</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.CopyVirtualIp">Copy virtual IP</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Exit">Exit lobby</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Guest">Guest</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Host">Host</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.InfoTitle">Lobby information</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.LobbyId">Lobby ID</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.PingMs">{0}ms</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.PingToHost">Ping to lobby host</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.Unavailable">Unavailable</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.UserName">Username</sys:String>
-    <sys:String x:Key="Tools.GameLink.Finish.UserType">User type</sys:String>
 
-    <!-- Tools.GameLink.Natayark -->
 
-    <sys:String x:Key="Tools.GameLink.Natayark.Abnormal">(Abnormal)</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.Account">Natayark account</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.AccountExpired">Natayark account information has expired. Please log in again in Settings!</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.BrowserContinue">Please continue in your browser...</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.Continue">Continue</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.FetchFailed">Failed to fetch information</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.InvalidAuthCode">NAID authorization code is invalid.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.Loading">Loading...</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.Login">Log in to Natayark</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LoginComplete">Login completed</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LoginFailed">NAID login failed. Please log in again in Settings.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LoginPrompt">PCL Lite will open a login page. Please complete the login in your browser, then return to the launcher to continue.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LoginTitle">Log in to Natayark Network</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LogoutComplete">Logged out!</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LogoutConfirm">Are you sure you want to log out?</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.LogoutTitle">Log out</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.ProfileLoadFailed">Failed to load Natayark user data. Please log in again in Settings.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.TokenExpired">Natayark ID token has expired. Please log in again.</sys:String>
-    <sys:String x:Key="Tools.GameLink.Natayark.TokenInvalid">NAID access token is invalid. Try refreshing your login.</sys:String>
 
     <!-- Tools.ServerQuery -->
 

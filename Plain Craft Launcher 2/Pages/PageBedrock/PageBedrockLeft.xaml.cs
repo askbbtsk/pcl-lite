@@ -1,19 +1,26 @@
 using System;
 using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
 using PCL.Core.App.Localization;
 
 namespace PCL;
 
 /// <summary>
-///     基岩版板块的左栏：下载 / 启动。
+///     基岩版板块的左栏：下载 / 启动切换、状态卡片，以及左下角的启动按钮。
 ///     <para>
 ///         骨架照 <see cref="PageToolsLeft" /> 写，区别是没有「隐藏子页面」的配置项，
-///         所以 Loaded 时直接选中第一项。
+///         所以 Loaded 时直接选中第一项。状态卡片与启动按钮的数据来自
+///         <see cref="ModBedrockRuntime" />，右栏的版本列表读写的是同一份状态。
 ///     </para>
 /// </summary>
 public partial class PageBedrockLeft
 {
     private bool _isLoad;
+
+    /// <summary>状态圆点的两种画刷，缓存下来免得每次刷新都查一遍资源字典。</summary>
+    private Brush? _brushReady;
+    private Brush? _brushIdle;
 
     public PageBedrockLeft()
     {
@@ -29,11 +36,38 @@ public partial class PageBedrockLeft
         if (_isLoad) return;
         _isLoad = true;
         ItemDownload.SetChecked(true, false, false);
+
+        ModBedrockRuntime.StateChanged += RefreshStatus;
+        RefreshStatus();
+        ModBedrockRuntime.Refresh();
     }
 
     private void PageBedrockLeft_Unloaded(object sender, RoutedEventArgs e)
     {
         _isLoad = false;
+        ModBedrockRuntime.StateChanged -= RefreshStatus;
+    }
+
+    /// <summary>把共享状态画到状态卡片与左下角启动按钮上。</summary>
+    private void RefreshStatus()
+    {
+        if (!IsLoaded) return;
+
+        LabStatus.Text = ModBedrockRuntime.StatusText;
+        // 详情行始终占位：隐藏 / 显示会让状态卡片的高度反复变化，整块左栏跟着抖
+        LabDetail.Text = ModBedrockRuntime.DetailText;
+
+        var ready = ModBedrockRuntime.Current is not null;
+        _brushReady ??= (Brush)FindResource("ColorBrush3");
+        _brushIdle ??= (Brush)FindResource("ColorBrushGray4");
+        ShapeStatusDot.Fill = ready ? _brushReady : _brushIdle;
+        LabVersionText.Text = ModBedrockRuntime.Current?.DisplayName ?? "";
+        BtnLaunch.IsEnabled = !ModBedrockRuntime.IsBusy;
+    }
+
+    private void BtnLaunch_Click(object sender, MouseButtonEventArgs e)
+    {
+        ModBedrockRuntime.Launch();
     }
 
     #region 页面切换

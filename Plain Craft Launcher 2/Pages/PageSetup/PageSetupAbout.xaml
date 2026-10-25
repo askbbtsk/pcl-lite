@@ -229,18 +229,6 @@
                             local:CustomEventService.EventType="OpenUrl"
                             Padding="13,0"
                             Text="{DynamicResource Setup.About.Legal.CommunitySource}" />
-                        <local:MyButton
-                            Margin="0,0,20,0"
-                            local:CustomEventService.EventData="https://www.pclc.cc/privacy/personal-info-brief.html"
-                            local:CustomEventService.EventType="OpenUrl"
-                            Padding="13,0"
-                            Text="{DynamicResource Setup.About.Legal.CommunityLobbyPrivacy}" />
-                        <local:MyButton
-                            Margin="0,0,20,0"
-                            local:CustomEventService.EventData="https://account.naids.com/policy"
-                            local:CustomEventService.EventType="OpenUrl"
-                            Padding="13,0"
-                            Text="{DynamicResource Setup.About.Legal.NatayarkTerms}" />
                     </StackPanel>
                 </StackPanel>
             </local:MyCard>

@@ -195,10 +195,10 @@ python tools/verify-channels.py
 ```json
 {
   "version": {
-    "base": "1.3.3",
+    "base": "1.3.4",
     "upstream": "2.12.1",
     "suffix": "",
-    "code": 12
+    "code": 13
   }
 }
 ```

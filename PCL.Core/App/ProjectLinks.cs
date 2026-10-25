@@ -94,6 +94,16 @@ public static class ProjectLinks
     public static string UpdateManifestMirror =>
         $"https://cdn.jsdelivr.net/gh/{ServiceOwner}/{ServiceRepo}@main/update.json";
 
+    /// <summary>
+    /// 更新清单的第三条通道：GitHub Contents API。
+    /// <para>
+    /// raw 与 jsDelivr 都挂的时候靠它——api.github.com 的可达性通常比 raw 好得多，
+    /// 代价是吃每小时 60 次的匿名限流额度。只读一个小文件，够用。
+    /// </para>
+    /// </summary>
+    public static string UpdateManifestApi =>
+        $"https://api.github.com/repos/{ServiceOwner}/{ServiceRepo}/contents/update.json";
+
     /// <summary>更新清单仓库的网页地址，用于报错时告诉用户去哪儿看。</summary>
     public static string ServiceRepository => $"https://github.com/{ServiceOwner}/{ServiceRepo}";
 }

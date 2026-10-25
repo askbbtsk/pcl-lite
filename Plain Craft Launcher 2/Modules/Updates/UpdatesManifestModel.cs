@@ -1,40 +1,46 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Text.Json.Nodes;
 using PCL.Core.App;
-using PCL.Core.App.Localization;
 using PCL.Core.IO.Net.Http;
 using PCL.Core.Utils;
-using PCL.Network;
-using PCL.Network.Loaders;
 
 namespace PCL;
 
 /// <summary>
-/// 从 <c>Pcl-Lite-service</c> 仓库的 <c>update.json</c> 读取更新的更新源。
+/// 从 <c>Pcl-Lite-service</c> 仓库的 <c>update.json</c> 读取「当前发布仓库在哪儿」的更新源。
 /// <para>
-/// 存在的意义只有一个：<b>发布仓库可以搬家，老客户端不会失联</b>。
-/// 客户端的代码里写死的不是「哪个仓库有 Release」，而是这份清单的地址；
-/// 清单里再写当前该去哪个仓库、哪个 tag、哪个直链、什么哈希。
-/// 以后无论换组织、换仓库名、换下载通道，只要改 json，所有还在跑老版本的机器
-/// 都能顺着它找到新版本。
+/// 存在的意义只有一个：<b>发布仓库可以搬家，已经装出去的旧版本不会失联</b>。
+/// 客户端里写死的不是「哪个仓库有 Release」，而是这份清单的地址；
+/// 清单里只有一行指针，指向当前的发布仓库：
+/// </para>
+/// <code>Pcl-Lite/Pcl-lite/releases/latest</code>
+/// <para>
+/// 版本号、tag、资产直链、SHA-256 全部由那个仓库的 Release 自己提供——
+/// 清单不重复这些数据，所以<b>发版时根本不用改它</b>，只有仓库搬家时才需要改一行。
 /// </para>
 /// <para>
-/// 顺带解决了 GitHub Releases 源的两个毛病：不消耗 API 限流额度（清单走 raw / CDN），
-/// 也不依赖「按时间挑第一个 Release」这种脆弱的推断——版本号、通道、架构全部显式声明。
+/// 解析出仓库后，真正的取版本工作交给 <see cref="UpdatesGitHubModel"/>：
+/// 它本来就会读 Release 资产上的 <c>digest</c> 拿哈希、按架构挑附件、
+/// 并在 API 限流时降级到 Atom 订阅源。
 /// </para>
 /// </summary>
 public class UpdatesManifestModel : IUpdateSource
 {
-    /// <summary>清单缓存有效期。太短会让每次检查更新都发请求，太长又看不到刚发的版本。</summary>
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+    /// <summary>
+    /// 清单自身的缓存有效期。比内层 Release 缓存长一些：
+    /// 清单只有仓库搬家时才会变，没必要频繁问。
+    /// </summary>
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
 
     private DateTime _fetchedAt = DateTime.MinValue;
 
-    private JsonObject? _manifest;
+    private UpdatesGitHubModel? _inner;
+
+    /// <summary>上次解析出的指针原文，用来判断清单有没有变。</summary>
+    private string _pointer = string.Empty;
 
     public UpdatesManifestModel(string? sourceName = null)
     {
@@ -44,40 +50,98 @@ public class UpdatesManifestModel : IUpdateSource
     public string SourceName { get; set; }
 
     /// <summary>
-    /// 清单地址是编译期写死的常量，不依赖任何用户配置，所以永远「可用」。
+    /// 清单地址是编译期写死的常量，不依赖用户配置，所以永远「可用」。
     /// 真连不上时由 <see cref="RefreshCache"/> 抛异常，交给上层换下一个源。
     /// </summary>
     public bool IsAvailable() => true;
 
     public bool RefreshCache(bool force = false)
     {
-        if (!force && _manifest is not null && DateTime.UtcNow - _fetchedAt < CacheTtl)
-            return true;
+        return _EnsureInner(force).RefreshCache(force);
+    }
 
-        // raw.githubusercontent 在国内被墙得很彻底，jsDelivr 通常还能通。
-        // 两个都失败才算这个源挂了。
+    public VersionDataModel GetLatestVersion(UpdateChannel channel, UpdateArch arch)
+    {
+        return _EnsureInner(false).GetLatestVersion(channel, arch);
+    }
+
+    public bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)
+    {
+        return _EnsureInner(false).IsLatest(channel, arch, currentVersion, currentVersionCode);
+    }
+
+    public VersionAnnouncementDataModel GetAnnouncementList()
+    {
+        return _EnsureInner(false).GetAnnouncementList();
+    }
+
+    public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
+    {
+        return _EnsureInner(false).GetDownloadLoader(channel, arch, output);
+    }
+
+    /// <summary>
+    /// 拿到（必要时重建）内层源。清单没变就复用，变了就按新仓库重建。
+    /// </summary>
+    private UpdatesGitHubModel _EnsureInner(bool force)
+    {
+        if (!force && _inner is not null && DateTime.UtcNow - _fetchedAt < CacheTtl)
+            return _inner;
+
+        var pointer = _FetchPointer();
+        if (_inner is null || !pointer.Equals(_pointer, StringComparison.OrdinalIgnoreCase))
+        {
+            var (owner, repo) = ParsePointer(pointer);
+            _inner = new UpdatesGitHubModel($"更新清单 → {owner}/{repo}", owner, repo);
+            _pointer = pointer;
+            ModBase.Log($"[Update] 更新清单指向 {owner}/{repo}");
+        }
+
+        _fetchedAt = DateTime.UtcNow;
+        return _inner;
+    }
+
+    /// <summary>
+    /// 拉清单原文，按顺序试一串通道：
+    /// <list type="number">
+    /// <item>raw.githubusercontent 直连——最快，不吃 API 限流</item>
+    /// <item>一串 GitHub 反代 + raw——国内直连 raw 基本不通，反代是主要通道</item>
+    /// <item>jsDelivr CDN</item>
+    /// <item>GitHub Contents API——兜底，api.github.com 的可达性通常最好</item>
+    /// </list>
+    /// 全挂才算这个源不可用（上层会退到直接读当前仓库的 Releases）。
+    /// </summary>
+    private static string _FetchPointer()
+    {
         var errors = new List<string>();
-        foreach (var url in new[] { ProjectLinks.UpdateManifest, ProjectLinks.UpdateManifestMirror })
+
+        foreach (var url in _ManifestUrls())
         {
             try
             {
-                var json = HttpRequest.Create(url)
-                    .SendAsync()
-                    .GetAwaiter()
-                    .GetResult()
-                    .AsString();
+                var pointer = ExtractPointer(_Get(url));
+                if (string.IsNullOrWhiteSpace(pointer))
+                    throw new UpdateSourceException("清单内容是空的");
 
-                var parsed = _ParseManifest(json);
-                _manifest = parsed;
-                _fetchedAt = DateTime.UtcNow;
-                ModBase.Log($"[Update] 更新清单已加载：{url}", ModBase.LogLevel.Developer);
-                return true;
+                return pointer;
             }
-            catch (Exception ex) when (ex is not UpdateSourceException)
+            catch (Exception ex)
             {
-                errors.Add($"{url} → {ex.Message}");
-                ModBase.Log(ex, $"[Update] 更新清单拉取失败：{url}", ModBase.LogLevel.Developer);
+                errors.Add($"{_DescribeChannel(url)} → {ex.Message}");
+                ModBase.Log(ex, $"[Update] 更新清单通道失败：{url}", ModBase.LogLevel.Developer);
             }
+        }
+
+        try
+        {
+            var pointer = ExtractPointer(_GetFromContentsApi());
+            if (!string.IsNullOrWhiteSpace(pointer)) return pointer;
+            errors.Add("Contents API → 清单内容是空的");
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"Contents API → {ex.Message}");
+            ModBase.Log(ex, "[Update] 更新清单通道失败：Contents API", ModBase.LogLevel.Developer);
         }
 
         throw new UpdateSourceException(
@@ -85,165 +149,159 @@ public class UpdatesManifestModel : IUpdateSource
     }
 
     /// <summary>
-    /// 校验并解析清单。格式不对时给一句能照着改的提示，而不是让用户看到 JsonException。
+    /// 清单的所有候选地址。反代列表直接复用下载用的那份，
+    /// 这样反代失效时只需要改 <see cref="UpdatesGitHubModel.DownloadProxies"/> 一处。
     /// </summary>
-    private static JsonObject _ParseManifest(string json)
+    private static IEnumerable<string> _ManifestUrls()
     {
+        var raw = ProjectLinks.UpdateManifest;
+
+        yield return raw;
+
+        foreach (var proxy in UpdatesGitHubModel.DownloadProxies)
+            yield return proxy + raw;
+
+        yield return ProjectLinks.UpdateManifestMirror;
+    }
+
+    /// <summary>日志里只说通道名，不要把整条带反代的长 URL 糊上去。</summary>
+    private static string _DescribeChannel(string url)
+    {
+        if (url.Equals(ProjectLinks.UpdateManifest, StringComparison.Ordinal)) return "raw 直连";
+        if (url.Equals(ProjectLinks.UpdateManifestMirror, StringComparison.Ordinal)) return "jsDelivr";
+        return url.StartsWith("https://raw.", StringComparison.OrdinalIgnoreCase) ? "raw" : url.Split('/')[2];
+    }
+
+    private static string _Get(string url)
+    {
+        return HttpRequest.Create(url).SendAsync().GetAwaiter().GetResult().AsString();
+    }
+
+    /// <summary>
+    /// 走 Contents API 取清单。优先让服务端直接返回原文；
+    /// 万一 Accept 头被忽略，返回的是带 base64 <c>content</c> 的 JSON，这里自己解一次。
+    /// </summary>
+    private static string _GetFromContentsApi()
+    {
+        var body = HttpRequest.Create(ProjectLinks.UpdateManifestApi)
+            .WithHeader("Accept", "application/vnd.github.raw")
+            .SendAsync()
+            .GetAwaiter()
+            .GetResult()
+            .AsString();
+
+        var trimmed = body.TrimStart();
+        if (!trimmed.StartsWith('{')) return body;
+
+        try
+        {
+            if (JsonNode.Parse(trimmed) is JsonObject obj &&
+                obj["content"]?.GetValue<string>() is { Length: > 0 } base64)
+                return Encoding.UTF8.GetString(Convert.FromBase64String(base64.Replace("\n", "").Replace("\r", "")));
+        }
+        catch (Exception)
+        {
+            // 解析不出来就按原文返回，让上层的 ExtractPointer 去判空
+        }
+
+        return body;
+    }
+
+    /// <summary>
+    /// 从清单原文里取出指针。
+    /// <para>
+    /// 兼容三种写法，免得以后手改 json 时因为多写一对括号就全线报错：
+    /// 裸字符串 <c>"Pcl-Lite/Pcl-lite/releases/latest"</c>、
+    /// 单字段对象 <c>{"update": "Pcl-Lite/Pcl-lite/releases/latest"}</c>、
+    /// 以及干脆没写 JSON 的纯文本。
+    /// </para>
+    /// </summary>
+    internal static string ExtractPointer(string body)
+    {
+        var text = body.Trim().TrimStart('\uFEFF').Trim();
+        if (text.Length == 0) return string.Empty;
+
+        // 纯文本（不是 JSON）：整段就是一个指针
+        if (text[0] is not ('{' or '[' or '"'))
+            return text;
+
         JsonNode? node;
         try
         {
-            node = JsonNode.Parse(json);
+            node = JsonNode.Parse(text);
         }
         catch (Exception ex)
         {
-            // 最常见的坑：仓库私有、路径写错时 raw 返回的是 404 页面而不是 json
             throw new UpdateSourceException(
                 "更新清单不是合法的 JSON。请确认 Pcl-Lite-service 仓库是公开的，且 main 分支下存在 update.json。", ex);
         }
 
-        if (node is not JsonObject root)
-            throw new UpdateSourceException("更新清单的根节点必须是一个对象。");
+        switch (node)
+        {
+            case JsonValue value when value.TryGetValue<string>(out var direct):
+                return direct?.Trim() ?? string.Empty;
 
-        var format = root["format"]?.GetValue<string>();
-        if (!string.IsNullOrWhiteSpace(format) && !format.Equals("pcl-lite-update", StringComparison.OrdinalIgnoreCase))
-            throw new UpdateSourceException($"更新清单的 format 是「{format}」，不认识这个格式。");
+            case JsonObject obj:
+            {
+                // 常见键名优先；都没有就取唯一那个字符串值
+                foreach (var key in new[] { "update", "repository", "repo", "target", "url", "latest" })
+                    if (obj[key] is JsonValue v && v.TryGetValue<string>(out var s) && !string.IsNullOrWhiteSpace(s))
+                        return s.Trim();
 
-        if (root["channels"] is not JsonObject)
-            throw new UpdateSourceException("更新清单缺少 channels 字段。");
+                var strings = obj
+                    .Select(pair => pair.Value)
+                    .OfType<JsonValue>()
+                    .Select(v => v.TryGetValue<string>(out var s) ? s : null)
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .ToList();
 
-        return root;
+                return strings.Count == 1 ? strings[0]!.Trim() : string.Empty;
+            }
+
+            default:
+                return string.Empty;
+        }
     }
 
     /// <summary>
-    /// 取指定通道的节点。
+    /// 把 <c>Pcl-Lite/Pcl-lite/releases/latest</c> 拆成 owner 与 repo。
     /// <para>
-    /// beta 通道没写时回退到 stable：预发布通道本来就该至少能看到正式版，
-    /// 否则选了 Beta 的用户会在没有预发布版本的日子里收到「没有任何可用版本」。
+    /// 后面那段 <c>releases/latest</c> 只是给人看的，程序不依赖它——
+    /// 具体取哪一版由 Release 自己的 prerelease 标记决定。
+    /// 完整 URL 形式 <c>https://github.com/…</c> 也一并支持。
     /// </para>
     /// </summary>
-    private JsonObject _PickChannel(UpdateChannel channel)
+    internal static (string Owner, string Repo) ParsePointer(string pointer)
     {
-        if (_manifest is null) RefreshCache();
+        var text = pointer.Trim().Trim('"', '\'').Trim();
+        if (text.Length == 0)
+            throw new UpdateSourceException("更新清单里没有写仓库地址。");
 
-        var channels = _manifest!["channels"] as JsonObject
-                       ?? throw new UpdateSourceException("更新清单缺少 channels 字段。");
+        // 去掉协议与域名，只留路径
+        if (text.StartsWith("http", StringComparison.OrdinalIgnoreCase) &&
+            Uri.TryCreate(text, UriKind.Absolute, out var uri))
+            text = uri.AbsolutePath;
 
-        var wanted = channel == UpdateChannel.stable ? "stable" : "beta";
-        if (channels[wanted] is JsonObject node) return node;
+        text = text.Trim('/');
+        // 去掉可能带的 github.com 前缀
+        if (text.StartsWith("github.com/", StringComparison.OrdinalIgnoreCase))
+            text = text["github.com/".Length..];
 
-        if (wanted == "beta" && channels["stable"] is JsonObject stable)
-        {
-            ModBase.Log("[Update] 更新清单没有 beta 通道，回退到 stable", ModBase.LogLevel.Developer);
-            return stable;
-        }
+        var parts = text.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2)
+            throw new UpdateSourceException(
+                $"更新清单里的仓库地址「{pointer}」看不懂，应该写成 owner/repo，例如 Pcl-Lite/Pcl-lite。");
 
-        throw new UpdateSourceException(wanted == "stable"
-            ? "更新清单里没有 stable 通道，无法检查正式版更新。"
-            : "更新清单里既没有 beta 也没有 stable 通道。");
-    }
+        var owner = parts[0].Trim();
+        var repo = parts[1].Trim();
 
-    /// <summary>
-    /// 取指定架构的资产节点。没有对应架构时退到唯一存在的那一个，
-    /// 这样只发 x64 的时候 arm64 用户至少还能装上（x64 版在 ARM 上能靠模拟跑）。
-    /// </summary>
-    private static JsonObject _PickAsset(JsonObject channelNode, UpdateArch arch)
-    {
-        if (channelNode["assets"] is not JsonObject assets || assets.Count == 0)
-            throw new UpdateSourceException("更新清单里这一版没有 assets。");
+        if (repo.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
+            repo = repo[..^4];
 
-        var key = arch == UpdateArch.arm64 ? "arm64" : "x64";
-        if (assets[key] is JsonObject exact) return exact;
+        if (owner.Length == 0 || repo.Length == 0)
+            throw new UpdateSourceException(
+                $"更新清单里的仓库地址「{pointer}」看不懂，应该写成 owner/repo，例如 Pcl-Lite/Pcl-lite。");
 
-        var first = assets.FirstOrDefault();
-        if (first.Value is JsonObject fallback)
-        {
-            ModBase.Log($"[Update] 更新清单没有 {key} 资产，回退到 {first.Key}", ModBase.LogLevel.Developer);
-            return fallback;
-        }
-
-        throw new UpdateSourceException("更新清单的 assets 结构不对。");
-    }
-
-    public VersionDataModel GetLatestVersion(UpdateChannel channel, UpdateArch arch)
-    {
-        var node = _PickChannel(channel);
-        var asset = _PickAsset(node, arch);
-
-        var version = node["version"]?.GetValue<string>();
-        if (string.IsNullOrWhiteSpace(version))
-            throw new UpdateSourceException("更新清单里这一版没有写 version。");
-
-        var url = asset["url"]?.GetValue<string>();
-        if (string.IsNullOrWhiteSpace(url))
-            throw new UpdateSourceException("更新清单里这一版没有写下载地址。");
-
-        return new VersionDataModel
-        {
-            VersionName = version.Trim(),
-            VersionCode = node["version_code"]?.GetValue<int>() ?? 0,
-            Changelog = node["changelog"]?.GetValue<string>() ?? string.Empty,
-            Sha256 = (asset["sha256"]?.GetValue<string>() ?? string.Empty).Trim().ToLowerInvariant(),
-            Source = SourceName
-        };
-    }
-
-    public bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)
-    {
-        var latest = GetLatestVersion(channel, arch);
-        if (!SemVer.TryParse(latest.VersionName, out var remote))
-            throw new UpdateSourceException($"更新清单里的版本号「{latest.VersionName}」不是合法的 SemVer。");
-        return currentVersion >= remote;
-    }
-
-    public VersionAnnouncementDataModel GetAnnouncementList()
-    {
-        // 清单里暂时没有公告机制，返回空列表让调用方跳过。
-        return new VersionAnnouncementDataModel { Content = [] };
-    }
-
-    public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
-    {
-        var loaders = new List<ModLoader.LoaderBase>();
-        var tempPath = $@"{ModBase.pathTemp}Cache\Update\Download\";
-
-        loaders.Add(new ModLoader.LoaderTask<int, List<DownloadFile>>(
-            Lang.Text("Update.Task.GetVersionInfo"), load =>
-            {
-                var asset = _PickAsset(_PickChannel(channel), arch);
-                var url = asset["url"]!.GetValue<string>();
-                var fileName = url[(url.LastIndexOf('/') + 1)..];
-                if (string.IsNullOrWhiteSpace(fileName)) fileName = "PCL-Lite-update.exe";
-                tempPath += fileName;
-
-                // 清单给的是直链，正常应该直接下得动。但直链多半还是 github.com，
-                // 国内直连经常只有几十 KB/s，所以照样排上反代，直连放最后兜底。
-                var urls = new List<string>();
-                urls.AddRange(UpdatesGitHubModel.DownloadProxies.Select(proxy => proxy + url));
-                urls.Add(url);
-                load.output = [new DownloadFile(urls.Distinct(), tempPath)];
-            }));
-
-        loaders.Add(new LoaderDownload(Lang.Text("Update.Task.DownloadFile"), []));
-
-        loaders.Add(new ModLoader.LoaderTask<string, int>(
-            Lang.Text("Update.Task.ApplyFile"), _ => _ApplyDownloaded(tempPath, output)));
-
-        return loaders;
-    }
-
-    private static void _ApplyDownloaded(string path, string output)
-    {
-        if (path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-        {
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var zip = new ZipArchive(fs);
-            var entry = zip.Entries
-                            .FirstOrDefault(x => x.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                        ?? throw new Exception(Lang.Text("Update.Error.FileNotFound"));
-            entry.ExtractToFile(output, true);
-            return;
-        }
-
-        File.Copy(path, output, true);
+        return (owner, repo);
     }
 }

@@ -62,14 +62,29 @@ public class UpdatesGitHubModel : IUpdateSource
     /// </summary>
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
 
-    public UpdatesGitHubModel(string? sourceName = null)
+    /// <summary>
+    /// 实际去问哪个仓库。默认取 <see cref="ProjectLinks"/> 里的当前仓库，
+    /// 但 <see cref="UpdatesManifestModel"/> 会传入更新清单里写的仓库——
+    /// 这样清单把仓库指到哪儿，这里就问哪儿。
+    /// </summary>
+    private readonly string _owner;
+
+    private readonly string _repo;
+
+    public UpdatesGitHubModel(string? sourceName = null, string? owner = null, string? repo = null)
     {
         SourceName = sourceName ?? "GitHub Releases";
+        _owner = string.IsNullOrWhiteSpace(owner) ? ProjectLinks.GitHubOwner : owner.Trim();
+        _repo = string.IsNullOrWhiteSpace(repo) ? ProjectLinks.GitHubRepo : repo.Trim();
     }
 
     public string SourceName { get; set; }
 
-    public bool IsAvailable() => ProjectLinks.IsConfigured;
+    private string _ReleasesApi => $"https://api.github.com/repos/{_owner}/{_repo}/releases";
+
+    private string _Repository => $"https://github.com/{_owner}/{_repo}";
+
+    public bool IsAvailable() => !string.IsNullOrWhiteSpace(_owner) && !string.IsNullOrWhiteSpace(_repo);
 
     public bool RefreshCache(bool force = false)
     {
@@ -82,7 +97,7 @@ public class UpdatesGitHubModel : IUpdateSource
 
         try
         {
-            var json = HttpRequest.Create($"{ProjectLinks.ReleasesApi}?per_page={PageSize}")
+            var json = HttpRequest.Create($"{_ReleasesApi}?per_page={PageSize}")
                 .WithHeader("Accept", "application/vnd.github+json")
                 .SendAsync()
                 .GetAwaiter()
@@ -124,7 +139,7 @@ public class UpdatesGitHubModel : IUpdateSource
 
         try
         {
-            var atom = HttpRequest.Create($"{ProjectLinks.Repository}/releases.atom")
+            var atom = HttpRequest.Create($"{_Repository}/releases.atom")
                 .SendAsync()
                 .GetAwaiter()
                 .GetResult()
@@ -200,9 +215,9 @@ public class UpdatesGitHubModel : IUpdateSource
     /// Atom 订阅源不含资产，API 又挂的时候靠它拿到下载地址；
     /// 同样挂在 github.com 下，不受 REST API 限流约束。
     /// </summary>
-    private static JsonArray _FetchAssetsFromPage(string tag)
+    private JsonArray _FetchAssetsFromPage(string tag)
     {
-        var html = HttpRequest.Create($"{ProjectLinks.Repository}/releases/expanded_assets/{tag}")
+        var html = HttpRequest.Create($"{_Repository}/releases/expanded_assets/{tag}")
             .SendAsync()
             .GetAwaiter()
             .GetResult()
@@ -362,12 +377,12 @@ public class UpdatesGitHubModel : IUpdateSource
     /// 仓库地址还是占位符时，给一条能直接照着改的提示，
     /// 而不是让用户看到 GitHub API 返回的 404。
     /// </summary>
-    private static void _EnsureConfigured()
+    private void _EnsureConfigured()
     {
-        if (ProjectLinks.IsConfigured) return;
+        if (IsAvailable()) return;
         throw new UpdateSourceException(
-            "尚未配置更新仓库。请修改 PCL.Core/App/ProjectLinks.cs 中的 " +
-            "GitHubOwner 与 GitHubRepo 两个常量，填入你自己的 GitHub 仓库。");
+            $"更新仓库地址不完整（{_owner}/{_repo}）。请检查 PCL.Core/App/ProjectLinks.cs 中的 " +
+            "GitHubOwner 与 GitHubRepo，或 Pcl-Lite-service 仓库 update.json 里写的仓库路径。");
     }
 
     /// <summary>

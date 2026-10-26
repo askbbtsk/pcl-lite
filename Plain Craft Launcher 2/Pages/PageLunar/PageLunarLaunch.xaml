@@ -33,36 +33,64 @@
                         </StackPanel>
                     </Grid>
 
-                    <!--  信息块：标签与值分两列，值过长时省略并用 ToolTip 显示全文  -->
+                    <!--  选择区 + 信息块：标签与值分列，值过长时省略并用 ToolTip 显示全文  -->
                     <Border Background="{DynamicResource ColorBrushTransparentBackground}"
                             CornerRadius="5" Padding="14,12" Margin="6,0,6,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="70" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="目标版本"
-                                       FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
-                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="LabVersion"
-                                       FontSize="11.5" Margin="0,0,0,7"
-                                       TextTrimming="CharacterEllipsis" Text="Lunar Client 1.8.9" />
+                            <!--  版本  -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="游戏版本"
+                                       VerticalAlignment="Center"
+                                       FontSize="11.5" Opacity="0.55" Margin="0,0,10,9" />
+                            <local:MyComboBox Grid.Row="0" Grid.Column="1" x:Name="ComboVersion"
+                                              Height="28" Margin="0,0,10,9"
+                                              SelectionChanged="ComboVersion_SelectionChanged"
+                                              ToolTip="Lunar 服务端当前提供的全部子版本，选完立即生效。" />
+                            <local:MyButton Grid.Row="0" Grid.Column="2" x:Name="BtnRefreshVersions"
+                                            Height="28" MinWidth="72" Margin="0,0,0,9"
+                                            Text="刷新列表" Click="BtnRefreshVersions_Click" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="物料目录"
+                            <!--  账号  -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="账号"
+                                       VerticalAlignment="Center"
+                                       FontSize="11.5" Opacity="0.55" Margin="0,0,10,9" />
+                            <local:MyComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                              x:Name="ComboAccount" Height="28" Margin="0,0,0,9"
+                                              SelectionChanged="ComboAccount_SelectionChanged"
+                                              ToolTip="来自 Lunar 自己的账户库。进游戏用的是 Lunar 的激活账号，选完会同步过去。" />
+
+                            <!--  启动目录  -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="启动目录"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="LabCacheDir"
+                            <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabGameDir"
                                        FontSize="11.5" Margin="0,0,0,7"
                                        TextTrimming="CharacterEllipsis" Text=""
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Java"
+                            <!--  物料目录  -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="物料目录"
+                                       FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabCacheDir"
+                                       FontSize="11.5" Margin="0,0,0,7"
+                                       TextTrimming="CharacterEllipsis" Text=""
+                                       ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+
+                            <!--  Java  -->
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Java"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="LabJava"
+                            <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabJava"
                                        FontSize="11.5" TextTrimming="CharacterEllipsis" Text="启动后自动定位"
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                         </Grid>
@@ -83,10 +111,16 @@
             <local:MyCard Margin="0,15" Title="说明">
                 <StackPanel Margin="20,40,20,18">
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="不经过 Lunar 启动器，由 PCL 直接拉起游戏进程。物料清单向 Lunar 服务端实时获取，正版验证使用你在 PCL 登录的微软账号，走的是 Lunar 客户端原本的通道。" />
+                               Text="不经过 Lunar 启动器，由 PCL 直接拉起游戏进程。物料清单向 Lunar 服务端实时获取，1.7.10 到 26.x 的版本列表以服务端返回为准，启动方式完全一致。" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="前置条件：本机已安装 Lunar Client 并至少启动过一次，让物料与 JRE 落盘。PCL 不会下载 Lunar 本体。" />
+                               Text="账号用的是 Lunar 自己账户库里的账号（settings/game/accounts.json 的激活账号）。在这里切换会把 Lunar 的激活账号一并改掉，效果等同于在 Lunar 启动器里换号；Lunar 账户库为空时才回落到 PCL 主页面的登录凭据。" />
+
+                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
+                               Text="游戏目录跟随主页面当前选中的实例（版本隔离目录），与正常启动完全一致，不会把存档写进 .minecraft 根目录。" />
+
+                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
+                               Text="前置条件：本机已安装 Lunar Client 并至少启动过一次，让物料落盘。缺对应版本的 Java 时会自动下载（1.8.9～1.20.1 用 Java 17，1.20.6～1.21.11 用 Java 21，26.x 用 Java 25）。" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,0" Opacity="0.6" FontSize="11.5"
                                Text="当前未实现 Lunar 的本地 IPC 服务，好友与社交面板不可用；单人、多人、模组均正常。" />

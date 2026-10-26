@@ -11,6 +11,10 @@ namespace PCL;
 ///         骨架与 <see cref="PageBedrockLeft" /> 一致：状态卡片 + 左下角启动按钮，
 ///         数据来自 <see cref="ModLunar" />。目前只有一个子页面，所以不需要真正切换。
 ///     </para>
+///     <para>
+///         左下角按钮在游戏运行时会变成「强制停止」——同一个位置、同一个控件，
+///         只换文案和动作，免得用户在两颗按钮之间找。
+///     </para>
 /// </summary>
 public partial class PageLunarLeft
 {
@@ -47,6 +51,8 @@ public partial class PageLunarLeft
     {
         if (!IsLoaded) return;
 
+        var running = ModLunar.IsRunning;
+
         LabStatus.Text = ModLunar.StatusText;
         LabDetail.Text = ModLunar.DetailText;
 
@@ -55,12 +61,44 @@ public partial class PageLunarLeft
         _brushIdle ??= (Brush)FindResource("ColorBrushGray4");
         ShapeStatusDot.Fill = ready ? _brushReady : _brushIdle;
 
-        LabVersionText.Text = ready ? ModLunar.DefaultSubVersion : "";
-        BtnLaunch.IsEnabled = !ModLunar.IsBusy;
+        LabVersionText.Text = ready ? ModLunar.SelectedSubVersion : "";
+
+        // 账号：Lunar 只认自己账户库里的激活账号，这里如实显示，
+        // 免得用户以为在用 PCL 主页面的登录
+        var account = ModLunar.SelectedAccount;
+        if (account is not null)
+        {
+            LabAccountName.Text = account.DisplayName;
+            LabAccountHint.Text = $"Lunar 账户库里的账号（{account.Type}），进游戏用的就是它。";
+        }
+        else
+        {
+            LabAccountName.Text = "未找到 Lunar 账号";
+            LabAccountHint.Text = "先在 Lunar 启动器里登录一次；也可以用 PCL 主页面的登录凭据兜底。";
+        }
+
+        RefreshButton(running);
+    }
+
+    private void RefreshButton(bool running)
+    {
+        BtnLaunch.Text = running ? "强制停止" : "启动 Lunar";
+        BtnLaunch.IsEnabled = running || !ModLunar.IsBusy;
+        BtnLaunch.ColorType = running ? MyButton.ColorState.Red : MyButton.ColorState.Highlight;
     }
 
     private void BtnLaunch_Click(object sender, MouseButtonEventArgs e)
     {
+        // 运行中 → 强制停止；否则走启动
+        if (ModLunar.IsRunning)
+        {
+            ModLunar.Stop();
+            RefreshButton(false);
+            return;
+        }
+
+        if (ModLunar.IsBusy) return;
+
         if (!ModLunar.IsInstalled)
         {
             ModMain.MyMsgBox(
@@ -69,9 +107,8 @@ public partial class PageLunarLeft
             return;
         }
 
-        // 游戏目录沿用 PCL 当前选中的 .minecraft，和普通实例共用一套存档与配置
-        var gameDirectory = ModFolder.mcFolderSelected;
-        ModLunar.Launch(gameDirectory);
+        // 游戏目录由 ModLunar 自己决定（跟随主页面选中实例的隔离目录），这里不再传
+        ModLunar.Launch();
     }
 
     #region 页面切换

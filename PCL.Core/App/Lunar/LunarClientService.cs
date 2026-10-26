@@ -59,6 +59,26 @@ public sealed class LunarLaunchData
     /// </summary>
     public string JreFolderChecksum { get; init; } = string.Empty;
 
+    /// <summary>JRE 压缩包地址，本机没装过对应版本时用它补齐。</summary>
+    public string JreDownloadUrl { get; init; } = string.Empty;
+
+    /// <summary>JRE 压缩包的备用地址，官方 CDN 拉不动时用。</summary>
+    public string JreDownloadFallbackUrl { get; init; } = string.Empty;
+
+    /// <summary>压缩包内 <c>javaw.exe</c> 的相对路径，仅用于确认解压结果。</summary>
+    public IReadOnlyList<string> JreExecutablePath { get; init; } = [];
+
+    /// <summary>
+    ///     Lunar 官方启动器额外传给 JVM 的参数。
+    ///     <para>
+    ///         1.21+ 与 26.x 必需：<c>--add-opens java.base/java.io=ALL-UNNAMED</c>、
+    ///         <c>--enable-native-access=ALL-UNNAMED</c>、<c>--add-modules jdk.naming.dns</c>
+    ///         这些缺了会在启动早期就报模块访问错误。1.8.9 也有几条
+    ///         （<c>-Dlunar.webosr.url</c> 就是游戏内 UI 的入口），照抄最稳。
+    ///     </para>
+    /// </summary>
+    public IReadOnlyList<string> JvmExtraArguments { get; init; } = [];
+
     /// <summary>资源索引名，1.8.9 是 <c>1.8</c>。</summary>
     public string AssetIndex { get; init; } = string.Empty;
 
@@ -268,11 +288,25 @@ public static class LunarClientService
             Artifacts = artifacts,
             CanaryToken = root["canaryToken"]?.GetValue<string>() ?? string.Empty,
             JreFolderChecksum = root["jre"]?["folderChecksum"]?.GetValue<string>() ?? string.Empty,
+            JreDownloadUrl = root["jre"]?["download"]?["url"]?.GetValue<string>() ?? string.Empty,
+            JreDownloadFallbackUrl = root["jre"]?["download"]?["fallbackUrl"]?.GetValue<string>() ?? string.Empty,
+            JreExecutablePath = ReadStringArray(root["jre"]?["executablePathInArchive"]),
+            JvmExtraArguments = ReadStringArray(root["jre"]?["extraArguments"]),
             AssetIndex = assetIndex?.Id ?? string.Empty,
             AssetIndexInfo = assetIndex,
             UiSha1 = root["ui"]?["sourceSha1"]?.GetValue<string>() ?? string.Empty,
             UiUrl = root["ui"]?["sourceUrl"]?.GetValue<string>() ?? string.Empty
         };
+    }
+
+    private static IReadOnlyList<string> ReadStringArray(JsonNode? node)
+    {
+        if (node is not JsonArray array) return [];
+        return array
+            .Select(x => x?.GetValue<string>())
+            .Where(x => !string.IsNullOrEmpty(x))
+            .Select(x => x!)
+            .ToList();
     }
 
     /// <summary>
@@ -508,6 +542,79 @@ public static class LunarClientService
     }
 
     /// <summary>
+    ///     确保 <c>jre/&lt;checksum&gt;/</c> 下有可用的 Java，返回 <c>javaw.exe</c> 的完整路径。
+    ///     <para>
+    ///         不同 Minecraft 版本要的 JRE 不一样：1.8.9～1.20.1 是 Java 17，
+    ///         1.20.6～1.21.11 是 Java 21，26.x 是 Java 25。Lunar 官方启动器只下载
+    ///         你玩过的那个版本对应的 JRE，所以「在 PCL 里换了个没玩过的版本」
+    ///         大概率本机缺这一份 —— 这里按响应里的地址补上。
+    ///     </para>
+    /// </summary>
+    /// <returns>找不到也下不下来时返回 <c>null</c>，由调用方决定怎么报错。</returns>
+    public static async Task<string?> EnsureJavaAsync(
+        LunarLaunchData data,
+        string lunarRoot,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = FindBundledJava(lunarRoot, data.JreFolderChecksum);
+        if (existing is not null) return existing;
+        if (string.IsNullOrWhiteSpace(data.JreFolderChecksum)) return null;
+
+        var urls = new[] { data.JreDownloadUrl, data.JreDownloadFallbackUrl }
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .ToList();
+        if (urls.Count == 0) return null;
+
+        var target = Path.Combine(lunarRoot, "jre", data.JreFolderChecksum);
+        Directory.CreateDirectory(target);
+        var archive = target + ".pcljre.zip";
+
+        try
+        {
+            Exception? lastError = null;
+            foreach (var url in urls)
+            {
+                try
+                {
+                    progress?.Report($"正在下载 Java 运行时（{data.JreFolderChecksum[..Math.Min(8, data.JreFolderChecksum.Length)]}）…");
+                    await DownloadAsync(url, archive, cancellationToken).ConfigureAwait(false);
+                    lastError = null;
+                    break;
+                }
+                catch (Exception ex) when (ex is HttpRequestException or IOException)
+                {
+                    lastError = ex;
+                }
+            }
+
+            if (lastError is not null) throw lastError;
+
+            progress?.Report("正在解压 Java 运行时…");
+            ZipFile.ExtractToDirectory(archive, target, overwriteFiles: true);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or InvalidDataException)
+        {
+            // 下不下来就返回 null，让上层给出「先用 Lunar 启动器跑一次」的提示
+            return null;
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(archive)) File.Delete(archive);
+            }
+            catch (IOException)
+            {
+                // 删不掉留到下次覆盖
+            }
+        }
+
+        return FindBundledJava(lunarRoot, data.JreFolderChecksum);
+    }
+
+    /// <summary>
     ///     拼出完整的启动命令。
     ///     <para>
     ///         Lunar 不是原版那套「classpath 全塞 -cp」的玩法：它由 Genesis 引导层
@@ -545,6 +652,11 @@ public static class LunarClientService
 
         if (options.ExtraJvmArguments.Count > 0)
             arguments.AddRange(options.ExtraJvmArguments);
+
+        // 官方启动器按版本下发的 JVM 参数：1.21+ 的模块访问、26.x 的 ZGC 都在这儿，
+        // 漏了会在启动早期直接报错（--enable-native-access 之类）
+        if (data.JvmExtraArguments.Count > 0)
+            arguments.AddRange(data.JvmExtraArguments);
 
         // Genesis 主类必须在 JVM 的真实 classpath 上，否则起不来
         arguments.Add("-cp");

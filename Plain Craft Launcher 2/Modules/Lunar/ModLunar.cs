@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using PCL.Core.App;
 using PCL.Core.App.Lunar;
@@ -11,20 +12,32 @@ namespace PCL;
 /// <summary>
 ///     Lunar Client 的运行状态与启动流程。
 ///     <para>
-///         这里只做三件事：拿正版 token、按服务端清单补齐物料、拼命令行拉起来。
-///         协议细节见 <c>docs/LUNAR.md</c>；物料接口不需要鉴权，正版验证完全靠
-///         Minecraft 自己的 accessToken，所以不需要跟 Lunar 换任何令牌。
+///         这里只做四件事：确定用哪个版本、确定用哪个账号、按服务端清单补齐物料、
+///         拼命令行拉起来。协议细节见 <c>docs/LUNAR.md</c>。
+///     </para>
+///     <para>
+///         两个必须记住的事实：
+///         ① 物料接口不需要鉴权，正版验证发生在游戏进程内；
+///         ② 但游戏进程**不读**命令行里的 accessToken，它读的是
+///         <c>~/.lunarclient/settings/game/accounts.json</c> 里的激活账号，
+///         所以换账号必须改那个文件（<see cref="LunarAccountStore" />）。
 ///     </para>
 /// </summary>
 public static class ModLunar
 {
+    /// <summary>没选过版本时的默认值，也是唯一一个「本机一定有物料」的保底版本。</summary>
     public const string DefaultSubVersion = "1.8.9";
+
     public const string DefaultModule = "lunar";
 
     private static Process? _process;
     private static bool _isBusy;
+    private static IReadOnlyList<LunarAccount> _accounts = [];
+    private static string _activeAccountLocalId = string.Empty;
 
     public static event Action? StateChanged;
+
+    public static event Action<string>? LogReceived;
 
     /// <summary>Lunar 数据根目录。</summary>
     public static string LunarRoot => LunarClientService.DefaultLunarRoot;
@@ -42,6 +55,25 @@ public static class ModLunar
         }
     }
 
+    /// <summary>游戏进程是否还活着。已退出或从未启动都返回 <c>false</c>。</summary>
+    public static bool IsRunning
+    {
+        get
+        {
+            var process = _process;
+            if (process is null) return false;
+            try
+            {
+                return !process.HasExited;
+            }
+            catch (InvalidOperationException)
+            {
+                // 进程对象还没 Start 过，当成没在跑
+                return false;
+            }
+        }
+    }
+
     public static string StatusText { get; private set; } = "正在检测 Lunar Client…";
 
     public static string DetailText { get; private set; } = "";
@@ -52,8 +84,51 @@ public static class ModLunar
     /// <summary>最近一次启动用到的 Java，未启动过时为空。</summary>
     public static string JavaPath { get; private set; } = "";
 
-    public static event Action<string>? LogReceived;
+    /// <summary>最近一次启动实际使用的游戏目录（即 <c>--gameDir</c>）。</summary>
+    public static string GameDirectory { get; private set; } = "";
 
+    /// <summary>可选的 Lunar 子版本，未拉到版本列表时为空。</summary>
+    public static IReadOnlyList<LunarVersion> Versions => LunarVersionCatalog.Versions;
+
+    /// <summary>Lunar 账户库里的账号。</summary>
+    public static IReadOnlyList<LunarAccount> Accounts => _accounts;
+
+    /// <summary>Lunar 当前激活的账号。</summary>
+    public static string ActiveAccountLocalId => _activeAccountLocalId;
+
+    /// <summary>
+    ///     当前选中的子版本。存在配置里，没选过时用 <see cref="DefaultSubVersion" />；
+    ///     如果配置里那个版本已经不在服务端列表里（Lunar 会下线老版本），也退回默认值。
+    /// </summary>
+    public static string SelectedSubVersion
+    {
+        get
+        {
+            var configured = Config.Preference.Lunar.SubVersion;
+            if (string.IsNullOrWhiteSpace(configured)) return DefaultSubVersion;
+            if (LunarVersionCatalog.IsEmpty) return configured;
+            return LunarVersionCatalog.Find(configured) is null ? DefaultSubVersion : configured;
+        }
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value) || value == SelectedSubVersion) return;
+            Config.Preference.Lunar.SubVersion = value;
+            JavaPath = "";
+            Refresh();
+        }
+    }
+
+    /// <summary>
+    ///     当前选中的账号。空值表示跟随 Lunar 自己的激活账号。
+    /// </summary>
+    public static LunarAccount? SelectedAccount =>
+        new LunarAccountSnapshot(_activeAccountLocalId, _accounts)
+            .Resolve(Config.Preference.Lunar.AccountLocalId);
+
+    /// <summary>
+    ///     刷新界面用的状态：是否装了 Lunar、版本列表、账号列表。
+    ///     只读本地，不发网络请求，可以在 UI 线程直接调。
+    /// </summary>
     public static void Refresh()
     {
         if (!IsInstalled)
@@ -64,8 +139,31 @@ public static class ModLunar
             return;
         }
 
-        StatusText = $"Lunar Client {DefaultSubVersion}";
+        LunarVersionCatalog.TryLoadCache(LunarRoot);
+        RefreshAccounts();
+
+        StatusText = $"Lunar Client {SelectedSubVersion}";
         DetailText = $"物料目录：{LunarClientService.MultiverDirectory(LunarRoot)}";
+        RaiseStateChanged();
+    }
+
+    /// <summary>重新读一遍 Lunar 的账户库。</summary>
+    public static void RefreshAccounts()
+    {
+        var snapshot = LunarAccountStore.Read(LunarRoot);
+        _accounts = snapshot.Accounts;
+        _activeAccountLocalId = snapshot.ActiveLocalId;
+    }
+
+    /// <summary>
+    ///     拉一次版本列表（网络）。失败时保留缓存，不抛异常。
+    /// </summary>
+    public static async Task RefreshVersionsAsync()
+    {
+        if (!IsInstalled) return;
+
+        var installationId = ReadInstallationId();
+        await LunarVersionCatalog.FetchAsync(LunarRoot, installationId).ConfigureAwait(false);
         RaiseStateChanged();
     }
 
@@ -90,69 +188,101 @@ public static class ModLunar
     ///         会直接把界面冻住（1.4.0-nightly 就是这么翻的车）。
     ///     </para>
     /// </summary>
-    /// <param name="gameDirectory">游戏实例目录（<c>--gameDir</c>）。</param>
     /// <param name="memoryMb">分配内存。</param>
-    public static void Launch(string gameDirectory, int memoryMb = 2048)
+    public static void Launch(int memoryMb = 2048)
     {
+        if (IsBusy || IsRunning) return;
+
+        // 游戏目录必须在 UI 线程取：PathIndie 首次访问会触发实例加载
+        var gameDirectory = ResolveGameDirectory();
+
         // IsBusy 在 UI 线程上先占位，防止连点两次起两个进程
-        if (IsBusy) return;
         IsBusy = true;
         _ = Task.Run(() => LaunchCoreAsync(gameDirectory, memoryMb));
+    }
+
+    /// <summary>
+    ///     强制结束游戏进程（连同它派生的子进程）。
+    /// </summary>
+    public static void Stop()
+    {
+        var process = _process;
+        if (process is null) return;
+
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                Log("已强制结束游戏进程");
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            Log("结束进程失败：" + ex.Message);
+        }
+    }
+
+    /// <summary>
+    ///     和正常启动用同一个游戏目录：优先取当前实例的版本隔离目录，
+    ///     取不到才退回整个 .minecraft。
+    ///     <para>
+    ///         之前这里写死 <c>ModFolder.mcFolderSelected</c>，导致「主页面选的是
+    ///         实例 A、Lunar 却写进 .minecraft 根目录」，存档和配置全混在一起。
+    ///     </para>
+    /// </summary>
+    private static string ResolveGameDirectory()
+    {
+        try
+        {
+            var instance = ModInstanceList.McMcInstanceSelected;
+            if (instance is not null && Directory.Exists(instance.PathIndie))
+                return instance.PathIndie;
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 读取当前实例目录失败，退回 .minecraft 根目录", ModBase.LogLevel.Debug);
+        }
+
+        return ModFolder.mcFolderSelected;
     }
 
     private static async Task LaunchCoreAsync(string gameDirectory, int memoryMb)
     {
         try
         {
-            StatusText = "正在获取正版凭证…";
+            var subVersion = SelectedSubVersion;
+            GameDirectory = gameDirectory;
+
+            StatusText = $"正在准备 {subVersion}…";
             DetailText = "";
             RaiseStateChanged();
 
-            // 直接复用主页面登录过的凭据：mcLoginLoader 跑完一次之后 output 就有值，
-            // 再 Start() 一次会重新走 OAuth、多弹一次浏览器，用户会以为出问题了
-            var login = ModLaunch.mcLoginLoader.output;
+            var (playerName, playerUuid, accessToken) = await ResolveCredentialsAsync().ConfigureAwait(false);
 
-            if (string.IsNullOrWhiteSpace(login.AccessToken))
-            {
-                // 主页面还没登录过，兜底走一次。
-                // 不能用 WaitForExit —— 它会同步 sleep，这里必须用轮询等
-                ModLaunch.mcLoginLoader.Start();
-                while (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Loading)
-                    await Task.Delay(50).ConfigureAwait(false);
-
-                if (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Aborted)
-                    throw new InvalidOperationException("登录已取消。");
-                if (ModLaunch.mcLoginLoader.Error is { } loginError)
-                    throw loginError;
-
-                login = ModLaunch.mcLoginLoader.output;
-            }
-
-            if (string.IsNullOrWhiteSpace(login.AccessToken))
-                throw new InvalidOperationException("没有拿到 Minecraft accessToken，请先在主页面登录正版账号。");
-
-            Log($"账号：{login.Name}（{login.Uuid}）");
+            Log($"目标版本：{subVersion}");
+            Log($"游戏目录：{gameDirectory}");
 
             StatusText = "正在获取 Lunar 物料清单…";
             RaiseStateChanged();
 
             var installationId = ReadInstallationId();
             var data = await LunarClientService.FetchLaunchDataAsync(
-                DefaultSubVersion, DefaultModule,
+                subVersion, DefaultModule,
                 installationId: installationId,
-                profileId: NormalizeUuid(login.Uuid),
-                profileName: login.Name).ConfigureAwait(false);
+                profileId: playerUuid,
+                profileName: playerName).ConfigureAwait(false);
 
             Log($"物料清单：{data.Artifacts.Count} 个附件，主类 {data.MainClass}");
 
             var cacheDirectory = LunarClientService.MultiverDirectory(LunarRoot);
             var nativesDirectory = LunarClientService.NativesDirectory(LunarRoot);
 
-            StatusText = "正在校验物料…";
-            RaiseStateChanged();
-
             // 校验可以在设置里关掉：关掉后只判断文件在不在，不算 SHA-1
             var verifyFiles = Config.Preference.Lunar.VerifyFiles;
+            StatusText = verifyFiles ? "正在校验物料…" : "正在补齐物料…";
+            RaiseStateChanged();
+
             var progress = new Progress<(int Done, int Total)>(p =>
             {
                 StatusText = verifyFiles
@@ -166,10 +296,22 @@ public static class ModLunar
             await LunarClientService.ExtractNativesAsync(data, cacheDirectory, nativesDirectory)
                 .ConfigureAwait(false);
 
-            var javaPath = LunarClientService.FindBundledJava(LunarRoot, data.JreFolderChecksum)
-                           ?? throw new InvalidOperationException(
-                               $"没有找到 Lunar 自带的 Java（期望目录 jre/{data.JreFolderChecksum}）。" +
-                               "请先用 Lunar 启动器跑一次，让它把 JRE 下好。");
+            // 不同 MC 版本要的 JRE 不一样，本机没有就按服务端地址补一份
+            StatusText = "正在定位 Java…";
+            RaiseStateChanged();
+
+            var javaPath = await LunarClientService
+                .EnsureJavaAsync(data, LunarRoot, new Progress<string>(message =>
+                {
+                    StatusText = message;
+                    RaiseStateChanged();
+                }))
+                .ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(javaPath))
+                throw new InvalidOperationException(
+                    $"没有找到 {subVersion} 需要的 Java（期望目录 jre/{data.JreFolderChecksum}），" +
+                    "自动下载也没成功。请先用 Lunar 启动器跑一次这个版本，让它把 JRE 下好。");
 
             Log("Java：" + javaPath);
             JavaPath = javaPath;
@@ -204,11 +346,11 @@ public static class ModLunar
             {
                 LunarRoot = LunarRoot,
                 GameDirectory = gameDirectory,
-                VersionName = DefaultSubVersion,
-                PlayerName = login.Name,
-                PlayerUuid = NormalizeUuid(login.Uuid),
-                AccessToken = login.AccessToken,
-                // 1.8.9 不用 xuid，但 Genesis 会原样转发给游戏，给个数字比空串安全
+                VersionName = subVersion,
+                PlayerName = playerName,
+                PlayerUuid = playerUuid,
+                AccessToken = accessToken,
+                // Genesis 会把这些原样转给游戏，给个数字比空串安全
                 XboxUid = "0",
                 AllocatedMemoryMb = memoryMb,
                 InstallationId = installationId
@@ -229,26 +371,28 @@ public static class ModLunar
             StatusText = "正在启动…";
             RaiseStateChanged();
 
-            _process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-            _process.OutputDataReceived += (_, e) =>
+            var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+            process.OutputDataReceived += (_, e) =>
             {
                 if (!string.IsNullOrWhiteSpace(e.Data)) LogReceived?.Invoke(e.Data);
             };
-            _process.ErrorDataReceived += (_, e) =>
+            process.ErrorDataReceived += (_, e) =>
             {
                 if (!string.IsNullOrWhiteSpace(e.Data)) LogReceived?.Invoke(e.Data);
             };
-            _process.Exited += (_, _) =>
+            process.Exited += (_, _) =>
             {
                 _process = null;
                 IsBusy = false;
                 StatusText = "游戏已退出";
+                DetailText = "";
                 RaiseStateChanged();
             };
 
-            _process.Start();
-            _process.BeginOutputReadLine();
-            _process.BeginErrorReadLine();
+            _process = process;
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
 
             StatusText = "游戏运行中";
             DetailText = "由 PCL 直接拉起，未经过 Lunar 启动器";
@@ -256,12 +400,68 @@ public static class ModLunar
         }
         catch (Exception ex)
         {
+            _process = null;
             IsBusy = false;
             StatusText = "启动失败";
             DetailText = ex.Message;
             RaiseStateChanged();
             ModBase.Log(ex, "[Lunar] 启动失败", ModBase.LogLevel.Msgbox, userSummary: ex.Message);
         }
+    }
+
+    /// <summary>
+    ///     决定这次启动用哪个账号。
+    ///     <para>
+    ///         Lunar 有账号就直接用 Lunar 的（并且把它的激活账号切成这一个），
+    ///         没有才回落到 PCL 主页面登录的凭据。两条路都不通才报错。
+    ///     </para>
+    /// </summary>
+    private static async Task<(string Name, string Uuid, string Token)> ResolveCredentialsAsync()
+    {
+        RefreshAccounts();
+        var account = SelectedAccount;
+
+        if (account is not null)
+        {
+            // 游戏进程读的是 Lunar 自己的激活账号，这里同步一下，
+            // 否则「界面上选的是 A、进游戏是 B」
+            if (LunarAccountStore.SetActive(LunarRoot, account.LocalId))
+                Log($"账号：{account.DisplayName}（Lunar 账户库，{account.Type}）");
+            else
+                Log($"账号：{account.DisplayName}（切换 Lunar 激活账号失败，进游戏可能是另一个账号）");
+
+            var uuid = NormalizeUuid(account.MinecraftUuid);
+            return (account.DisplayName, uuid, account.AccessToken);
+        }
+
+        Log("Lunar 账户库里没有账号，改用 PCL 主页面登录的凭据");
+
+        // 直接复用主页面登录过的凭据：mcLoginLoader 跑完一次之后 output 就有值，
+        // 再 Start() 一次会重新走 OAuth、多弹一次浏览器，用户会以为出问题了
+        var login = ModLaunch.mcLoginLoader.output;
+
+        if (string.IsNullOrWhiteSpace(login.AccessToken))
+        {
+            // 主页面还没登录过，兜底走一次。
+            // 不能用 WaitForExit —— 它会同步 sleep，这里必须用轮询等
+            ModLaunch.mcLoginLoader.Start();
+            while (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Loading)
+                await Task.Delay(50).ConfigureAwait(false);
+
+            if (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Aborted)
+                throw new InvalidOperationException("登录已取消。");
+            if (ModLaunch.mcLoginLoader.Error is { } loginError)
+                throw loginError;
+
+            login = ModLaunch.mcLoginLoader.output;
+        }
+
+        if (string.IsNullOrWhiteSpace(login.AccessToken))
+            throw new InvalidOperationException(
+                "Lunar 账户库里没有账号，PCL 也没有登录凭据。请先在 Lunar 启动器里登录一次，或在主页面登录微软账号。");
+
+        Log($"账号：{login.Name}（PCL 登录）");
+        return (login.Name, NormalizeUuid(login.Uuid), login.AccessToken);
     }
 
     /// <summary>

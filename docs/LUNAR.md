@@ -1,15 +1,18 @@
-# Lunar Client 启动链路（1.8.9）
+# Lunar Client 启动链路（1.7.10 → 26.x）
 
 本文记录「不启动 Lunar 启动器、直接拉起 Lunar 游戏」所需的全部事实。
-结论来自对本机 Lunar Client 启动器（Electron）`resources/app.asar` 的静态分析，
-以及对着线上接口的实测，不是猜测。
+结论来自对本机 Lunar Client 启动器（Electron）`resources/app.asar` 的静态分析、
+对 `offline/multiver` 下 jar 的反编译字符串，以及对着线上接口的实测，不是猜测。
 
 ## 一句话结论
 
 Lunar 的 `/launcher/launch` 接口**不需要任何鉴权**，直接返回完整物料
-（classpath、原生库、主类、JRE、贴图与 UI 资源）。正版验证走的是
-Minecraft 自己的 `accessToken`，通过命令行参数传给游戏。
-所以「用自己的启动器拉起 Lunar」是可行的，代价是实现物料下载与命令行拼装。
+（classpath、原生库、主类、JRE、贴图与 UI 资源）。**所有子版本共用同一套启动方式**，
+只有 JRE 版本与 `jre.extraArguments` 不同。
+
+但账号有个反直觉的地方：**游戏进程不读命令行里的 `--accessToken`**，
+它读的是 `~/.lunarclient/settings/game/accounts.json` 里的激活账号。
+详见「账号」一节。
 
 ## 物料来源
 
@@ -106,9 +109,104 @@ GET https://api.lunarclientprod.com/launcher/metadata/versions/lunar
 
 **资源索引走 Mojang 官方**，不需要 Lunar 另给一套。
 
-## 正版验证：走 Minecraft 自己的通道
+### 服务端当前提供的全部子版本（实测 2026-10）
 
-游戏进程通过命令行拿账号信息，字段与官方启动器一致：
+`versions[]` 一共 9 个大版本、34 个子版本，全部可启动：
+
+| 大版本 | 子版本 |
+| --- | --- |
+| 26 | 26.1、26.1.1、26.1.2、26.2、26.3 |
+| 1.21 | 1.21、1.21.1、1.21.3、1.21.4、1.21.5、1.21.6、1.21.7、1.21.8、1.21.9、1.21.10、1.21.11 |
+| 1.20 | 1.20、1.20.1、1.20.2、1.20.3、1.20.4、1.20.5、1.20.6 |
+| 1.19 | 1.19、1.19.2、1.19.3、1.19.4 |
+| 1.18 | 1.18.1、1.18.2 |
+| 1.17 | 1.17.1 |
+| 1.16 | 1.16.5 |
+| 1.12 | 1.12.2 |
+| 1.8 | 1.8.9 |
+| 1.7 | 1.7.10 |
+
+## 全版本支持：高版本换了什么，没换什么
+
+对 1.7.10 / 1.8.9 / 1.12.2 / 1.16.5 / 1.17.1 / 1.18.2 / 1.19.4 / 1.20.1 / 1.20.6 /
+1.21.1 / 1.21.4 / 1.21.11 / 26.3 逐个打 `/launcher/launch` 比对，结论是**启动方式完全没变**：
+
+- `launchTypeData.mainClass` 全是 `com.moonsworth.lunar.genesis.Genesis`
+- `launchTypeData` 只有 `artifacts` 与 `mainClass` 两个字段，没有别的分支
+- 附件类型始终是 `CLASS_PATH` / `EXTERNAL_FILE` / `NATIVES` 三种
+- `--ichorClassPath` / `--ichorExternalFiles` / `--launchId` / `--canaryToken`
+  这些参数名一个都没改（在 `legacy-*.jar` 与 `modern-*.jar` 的参数解析类里核过）
+
+真正会变的是三样东西，都必须跟着服务端走：
+
+| 变化点 | 1.8.9～1.20.1 | 1.20.6～1.21.11 | 26.x |
+| --- | --- | --- | --- |
+| JRE | Java 17（`5a6eb763…`） | Java 21（`d093c370…`） | Java 25（`515e47c1…`） |
+| 附件数 | 61（7 类路径 / 50 外部 / 4 原生） | 69 / 68 | 66 |
+| 响应里的 `baseModpack` | 无 | 有（mrpack，官方启动器用来铺实例） | 有 |
+
+### `jre.extraArguments` 必须一起传
+
+`/launcher/launch` 的 `jre` 对象里有一份 `extraArguments`，是官方启动器
+逐个版本下发的 JVM 参数。**1.21+ 少了会直接起不来**，26.x 更明显：
+
+```
+--add-modules jdk.naming.dns
+--add-exports jdk.naming.dns/com.sun.jndi.dns=java.naming
+-Dlog4j2.formatMsgNoLookups=true
+--add-opens java.base/java.io=ALL-UNNAMED
+-XX:+UseStringDeduplication
+-XX:FlightRecorderOptions=repository=jfr
+-Dichor.filteredGenesisSentries=.*lcqt.*|.*Some of your mods are incompatible with the game or each other.*
+-Dlunar.webosr.url=file:index.html          ← 游戏内 Web UI 的入口，别漏
+# 1.20.1+ 追加
+-DTrickNvidiaDriversForPerformance=' net.minecraft.client.main.Main '
+# 26.x 追加
+-XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+AlwaysPreTouch
+--enable-native-access=ALL-UNNAMED
+--add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+-XX:StackShadowPages=32
+```
+
+### JRE 要按版本补齐
+
+`jre.folderChecksum` 是 `~/.lunarclient/jre/<checksum>/` 的目录名，
+`jre.download.url` / `fallbackUrl` 是 Zulu 的 zip，`executablePathInArchive`
+是 zip 里 `javaw.exe` 的相对路径。Lunar 官方启动器**只下载你玩过的那个版本**的 JRE，
+所以在 PCL 里换一个没玩过的版本，本机大概率缺这一份，必须自己下。
+
+### 物料是共享目录，但文件名不区分版本
+
+所有版本的附件都落在 `offline/multiver/`，文件名是固定的
+（`common-0.1.0-SNAPSHOT-all-nomappings.jar`、`lunar.jar`…）。
+换个版本启动时，同名文件会被**新版本的 SHA-1 覆盖**。
+所以校验不能只看「文件在不在」——文件在但版本对不上，会在启动早期抛
+`java.lang.NoSuchMethodError`（实测过：拿 1.8.9 的 `common` jar 去跑 1.21.4）。
+
+## 账号：Lunar 只认自己的账户库
+
+这是最容易误判的一处。命令行里确实有 `--username` / `--uuid` / `--accessToken`，
+`ClientGameBootstrap` 也确实把它们转给了原版客户端，但**游戏进程真正的会话来自别处**：
+
+`lunar.jar` 里有一个 AccountManager，它读
+`~/.lunarclient/settings/game/accounts.json`，按 `activeAccountLocalId` 挑账号，
+token 过期时自己刷新（日志里会出现
+`The launcher refreshed the access token for the current account %s.`）。
+
+所以：
+
+- 在 PCL 里登录了 A 账号、Lunar 里激活的是 B 账号 → 进游戏是 **B**
+- 想换账号，只能改 `activeAccountLocalId`（等同于在 Lunar 启动器里换号）
+- 命令行里的凭据对 Lunar 来说是装饰品，不影响会话
+
+PCL Lite 的做法：读 `accounts.json` 列出账号让用户选，启动前把
+`activeAccountLocalId` 同步过去（先备份 `accounts.json.pclbak`，只改这一个字段）。
+Lunar 账户库为空时才回落到 PCL 主页面的登录凭据。
+
+## 正版验证：实际上不需要 PCL 登录
+
+既然会话来自 Lunar 自己的账户库，**启动 Lunar 并不要求 PCL 先登录正版**。
+命令行里的 `--accessToken` 传什么都行（实测传 32 个 `0` 也能起）。
 
 ```
 --username <玩家名>
@@ -117,10 +215,6 @@ GET https://api.lunarclientprod.com/launcher/metadata/versions/lunar
 --accessToken <Minecraft accessToken>
 --userProperties {}
 ```
-
-也就是说：**用 PCL 已有的微软登录拿到的 accessToken 直接传进去即可**，
-不需要先向 Lunar 换 token。这也是「走 lunar client 原本的通道」的落点——
-Lunar 认的就是这个 MC token。
 
 ### 那套 WebSocket 认证是干什么的
 
@@ -167,9 +261,13 @@ Genesis 主类本身。
 -XX:+DisableAttachMechanism
 -XX:-CreateCoredumpOnCrash
 -XX:-CreateMinidumpOnCrash
--cp {7 个 CLASS_PATH 的绝对路径，用 ; 连接}
+{jre.extraArguments 原样展开}
+-cp {CLASS_PATH 的绝对路径，用 ; 连接}
 com.moonsworth.lunar.genesis.Genesis
 ```
+
+`jre.extraArguments` 的位置在内存参数之后、`-cp` 之前。1.8.9 是 9 条，
+26.3 是 15 条，照抄即可，不要自己删减——`-Dlunar.webosr.url` 关系到游戏内 UI。
 
 然后是 Genesis 自己的参数：
 
@@ -198,7 +296,7 @@ com.moonsworth.lunar.genesis.Genesis
 --ipcPort <端口>
 ```
 
-### 两个会直接崩启动的坑
+### 几个会直接崩启动的坑
 
 **① `--launcherFeatureFlags` 必须是 `{"enabled":[],"disabled":[]}`。**
 启动器里是 `JSON.stringify({enabled: R, disabled: ie})`。Genesis 在
@@ -213,9 +311,29 @@ because the return value of "JsonObject.get(String)" is null
 
 **② `--assetIndex` 的值不在 `/launcher/launch` 响应里。**
 要去 `/launcher/metadata/versions/lunar` 的
-`versions[].subversions[].assets.id` 取（1.8.9 → `1.8`）。启动器把它存进
+`versions[].subversions[].assets.id` 取（1.8.9 → `1.8`，1.21.4 → `19`）。启动器把它存进
 store 的 `subversionAssets`，用的时候 `subversionAssets[subVersion]` 直接查。
 传空串会让 Genesis 拿不到资源索引。
+
+**③ 物料必须按 SHA-1 校验，不能只看文件在不在。**
+`offline/multiver/` 是全部版本共用的目录，文件名固定，换版本会被覆盖。
+文件在、但版本不对时，启动早期抛 `NoSuchMethodError`：
+
+```
+java.lang.NoSuchMethodError: 'java.util.List com.moonsworth.lunar.ichor.CHHCRRRCCHCHOHCIHIHCIOHRORHCRC.RIORIOCIHICOOHOHICOHHHIOIRHOIH()'
+```
+
+实测拿 1.8.9 的 `common-0.1.0-SNAPSHOT-all-nomappings.jar` 跑 1.21.4 就是这样，
+按 SHA-1 重下 15 个文件后正常启动。设置里的「启动 Lunar 前校验物料文件」
+关掉之后只判断存在性，**跨版本切换时不要关**。
+
+**④ `--uiDir` 要指到 `ui/<sourceSha1>/` 这一层。**
+只给 `ui/` 的话 Genesis 找不到 `index.html`，游戏内菜单整块不渲染
+（HUD 与模组还在，很容易误判成「菜单功能没做」）。
+
+**⑤ `--gameDir` 要和主页面正常启动用同一个目录。**
+正常启动用的是实例的版本隔离目录（`PathIndie`），不是 `.minecraft` 根目录。
+Lunar 写错地方会把存档、`options.txt`、`mods` 和普通实例混在一起。
 
 ## 还没解决的点
 
@@ -263,4 +381,25 @@ store 的 `subversionAssets`，用的时候 `subversionAssets[subVersion]` 直�
   `<发行版>-<版本>/bin/javaw.exe`。
 - 资源索引本地已存在 `shared/assets/indexes/1.8.json`，objects 是 256 个哈希前缀目录。
   PCL 只补索引文件，不拉几万个资源对象。
+
+### 多版本实测（2026-10-26）
+
+用 `tools/lunar_launch_test.py <版本>` 按 PCL 的拼装逻辑直接拉进程，
+假 token、70 秒观察期：
+
+| 版本 | JRE | 附件 | 结果 |
+| --- | --- | --- | --- |
+| 1.8.9 | Java 17 | 61 | 存活，`Baked 19064 classes` |
+| 1.21.4 | Java 21 | 68 | 存活，`GenesisClassLoader(v1_21_4)`，MixinExtras 0.5.5 加载完成 |
+| 26.3 | Java 25 | 66 | 存活，`GenesisClassLoader(v26_3)` |
+
+1.21.4 第一次跑时抛 `NoSuchMethodError`（`common` jar 还是 1.8.9 那份），
+按 SHA-1 重下 15 个文件后正常——这条就是上面「坑 ③」的由来。
+
+脚本本身也留着，改协议时可以直接回归：
+
+```bash
+python tools/lunar_launch_test.py 1.21.4
+```
+
 

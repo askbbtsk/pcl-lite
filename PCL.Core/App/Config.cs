@@ -266,6 +266,25 @@ public static partial class Config
             /// </para>
             /// </summary>
             [ConfigItem<bool>("LunarVerifyFiles", true, ConfigSource.Local)] public partial bool VerifyFiles { get; set; }
+
+            /// <summary>
+            /// 上次选择的 Lunar 子版本，例如 <c>1.8.9</c>、<c>1.21.4</c>。
+            /// <para>
+            /// 空值表示「还没选过」，按 <c>ModLunar.DefaultSubVersion</c> 处理。
+            /// 记在这里而不是界面里，是为了下次打开还停在上次玩的版本。
+            /// </para>
+            /// </summary>
+            [ConfigItem<string>("LunarSubVersion", "", ConfigSource.Local)] public partial string SubVersion { get; set; }
+
+            /// <summary>
+            /// 选中的 Lunar 账号（<c>accounts.json</c> 里的 localId）。
+            /// <para>
+            /// Lunar 游戏进程只认它自己账户库里的激活账号，不认命令行 accessToken，
+            /// 所以这里存的是「要切成哪个账号」，启动前会同步进 Lunar 的
+            /// <c>activeAccountLocalId</c>。空值表示跟随 Lunar 当前激活的账号。
+            /// </para>
+            /// </summary>
+            [ConfigItem<string>("LunarAccount", "", ConfigSource.Local)] public partial string AccountLocalId { get; set; }
         }
 
         /// <summary>

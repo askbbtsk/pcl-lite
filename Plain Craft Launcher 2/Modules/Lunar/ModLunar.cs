@@ -107,20 +107,28 @@ public static class ModLunar
             DetailText = "";
             RaiseStateChanged();
 
-            // 走 PCL 自己的登录链路，拿到的就是微软正版 accessToken。
-            // 这里不能用 WaitForExit —— 它会同步 sleep，必须在后台线程上用轮询等
-            ModLaunch.mcLoginLoader.Start();
-            while (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Loading)
-                await Task.Delay(50).ConfigureAwait(false);
-
-            if (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Aborted)
-                throw new InvalidOperationException("登录已取消。");
-            if (ModLaunch.mcLoginLoader.Error is { } loginError)
-                throw loginError;
-
+            // 直接复用主页面登录过的凭据：mcLoginLoader 跑完一次之后 output 就有值，
+            // 再 Start() 一次会重新走 OAuth、多弹一次浏览器，用户会以为出问题了
             var login = ModLaunch.mcLoginLoader.output;
+
             if (string.IsNullOrWhiteSpace(login.AccessToken))
-                throw new InvalidOperationException("没有拿到 Minecraft accessToken，请先在 PCL 里登录正版账号。");
+            {
+                // 主页面还没登录过，兜底走一次。
+                // 不能用 WaitForExit —— 它会同步 sleep，这里必须用轮询等
+                ModLaunch.mcLoginLoader.Start();
+                while (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Loading)
+                    await Task.Delay(50).ConfigureAwait(false);
+
+                if (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Aborted)
+                    throw new InvalidOperationException("登录已取消。");
+                if (ModLaunch.mcLoginLoader.Error is { } loginError)
+                    throw loginError;
+
+                login = ModLaunch.mcLoginLoader.output;
+            }
+
+            if (string.IsNullOrWhiteSpace(login.AccessToken))
+                throw new InvalidOperationException("没有拿到 Minecraft accessToken，请先在主页面登录正版账号。");
 
             Log($"账号：{login.Name}（{login.Uuid}）");
 

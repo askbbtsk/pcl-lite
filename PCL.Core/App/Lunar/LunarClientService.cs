@@ -65,6 +65,15 @@ public sealed class LunarLaunchData
     /// <summary>资源索引的完整信息（含下载地址），拿不到时为 <c>null</c>。</summary>
     public LunarAssetIndex? AssetIndexInfo { get; init; }
 
+    /// <summary>
+    ///     界面资源的 SHA-1。Lunar 把界面资源放在 <c>ui/&lt;sha1&gt;/</c> 下，
+    ///     <c>--uiDir</c> 必须指到那一层——只给 <c>ui/</c> 的话游戏内菜单整块不显示。
+    /// </summary>
+    public string UiSha1 { get; init; } = string.Empty;
+
+    /// <summary>界面资源压缩包地址。</summary>
+    public string UiUrl { get; init; } = string.Empty;
+
     public IReadOnlyList<LunarArtifact> ClassPathArtifacts => Artifacts.Where(x => x.IsClassPath).ToList();
     public IReadOnlyList<LunarArtifact> NativesArtifacts => Artifacts.Where(x => x.IsNatives).ToList();
     public IReadOnlyList<LunarArtifact> ExternalArtifacts =>
@@ -131,6 +140,19 @@ public static class LunarClientService
 
     public static string AssetsDirectory(string lunarRoot) =>
         Path.Combine(lunarRoot, "shared", "assets");
+
+    /// <summary>
+    ///     界面资源目录。
+    ///     <para>
+    ///         Lunar 把界面资源按 SHA-1 分目录放在 <c>ui/&lt;sha1&gt;/</c> 下，
+    ///         <c>--uiDir</c> 必须指到这一层。只给 <c>ui/</c> 的话 Genesis 找不到
+    ///         <c>index.html</c>，游戏内菜单整块不显示（HUD 和模组都还在，很容易误判）。
+    ///     </para>
+    /// </summary>
+    public static string UiDirectory(string lunarRoot, string uiSha1) =>
+        string.IsNullOrWhiteSpace(uiSha1)
+            ? Path.Combine(lunarRoot, "ui")
+            : Path.Combine(lunarRoot, "ui", uiSha1);
 
     /// <summary>
     ///     本机是否装过 Lunar Client。
@@ -247,7 +269,9 @@ public static class LunarClientService
             CanaryToken = root["canaryToken"]?.GetValue<string>() ?? string.Empty,
             JreFolderChecksum = root["jre"]?["folderChecksum"]?.GetValue<string>() ?? string.Empty,
             AssetIndex = assetIndex?.Id ?? string.Empty,
-            AssetIndexInfo = assetIndex
+            AssetIndexInfo = assetIndex,
+            UiSha1 = root["ui"]?["sourceSha1"]?.GetValue<string>() ?? string.Empty,
+            UiUrl = root["ui"]?["sourceUrl"]?.GetValue<string>() ?? string.Empty
         };
     }
 
@@ -335,14 +359,72 @@ public static class LunarClientService
     }
 
     /// <summary>
-    ///     把附件补齐到本地，已存在且 SHA-1 对得上的直接跳过。
+    ///     确保界面资源就位，返回应该传给 <c>--uiDir</c> 的路径。
+    ///     <para>
+    ///         已经存在的直接复用（Lunar 启动器下载过的话就在这儿了），
+    ///         没有才下载并解压。
+    ///     </para>
+    /// </summary>
+    public static async Task<string> EnsureUiAsync(
+        LunarLaunchData data,
+        string lunarRoot,
+        CancellationToken cancellationToken = default)
+    {
+        var target = UiDirectory(lunarRoot, data.UiSha1);
+        if (File.Exists(Path.Combine(target, "index.html"))) return target;
+
+        if (string.IsNullOrWhiteSpace(data.UiUrl))
+        {
+            // 没地址也没现成资源，只能把旧路径交出去，至少不会崩
+            return target;
+        }
+
+        Directory.CreateDirectory(target);
+        var archive = target + ".lunardl.zip";
+
+        try
+        {
+            await DownloadAsync(data.UiUrl, archive, cancellationToken).ConfigureAwait(false);
+            ZipFile.ExtractToDirectory(archive, target, overwriteFiles: true);
+        }
+        catch (InvalidDataException)
+        {
+            // 解不开就算了，让游戏照常起，界面缺失比启动失败强
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(archive)) File.Delete(archive);
+            }
+            catch (IOException)
+            {
+                // 删不掉留到下次覆盖
+            }
+        }
+
+        return target;
+    }
+
+    /// <summary>
+    ///     把附件补齐到本地。
+    ///     <para>
+    ///         并发跑：61 个附件里有几个几十 MB 的 jar，串行算 SHA-1 要好几秒，
+    ///         而且大部分时间都耗在等磁盘上。并发数按核数取，封顶 8 ——
+    ///         再高也不会更快，只会把磁盘队列塞满。
+    ///     </para>
     /// </summary>
     /// <param name="targetDirectory">CLASS_PATH 与 EXTERNAL_FILE 的落点。</param>
     /// <param name="progress">已完成的条数与总条数。</param>
+    /// <param name="verify">
+    ///     是否校验 SHA-1。关掉时只判断文件在不在，不算哈希——
+    ///     省掉大文件的哈希计算，代价是文件损坏了发现不了。
+    /// </param>
     public static async Task EnsureArtifactsAsync(
         LunarLaunchData data,
         string targetDirectory,
         IProgress<(int Done, int Total)>? progress = null,
+        bool verify = true,
         CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(targetDirectory);
@@ -351,17 +433,26 @@ public static class LunarClientService
         var done = 0;
         progress?.Report((0, files.Count));
 
-        foreach (var artifact in files)
+        var options = new ParallelOptions
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 8),
+            CancellationToken = cancellationToken
+        };
+
+        await Parallel.ForEachAsync(files, options, async (artifact, ct) =>
+        {
             var destination = Path.Combine(targetDirectory, artifact.Name);
 
-            if (!await IsUpToDateAsync(destination, artifact.Sha1, cancellationToken).ConfigureAwait(false))
-                await DownloadAsync(artifact.Url, destination, cancellationToken).ConfigureAwait(false);
+            var needsDownload = verify
+                ? !await IsUpToDateAsync(destination, artifact.Sha1, ct).ConfigureAwait(false)
+                : !File.Exists(destination);
 
-            done++;
-            progress?.Report((done, files.Count));
-        }
+            if (needsDownload)
+                await DownloadAsync(artifact.Url, destination, ct).ConfigureAwait(false);
+
+            var current = Interlocked.Increment(ref done);
+            progress?.Report((current, files.Count));
+        }).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -493,7 +584,7 @@ public static class LunarClientService
         Add("--gameDir", options.GameDirectory);
         Add("--assetsDir", AssetsDirectory(options.LunarRoot));
         Add("--texturesDir", Path.Combine(options.LunarRoot, "textures"));
-        Add("--uiDir", Path.Combine(options.LunarRoot, "ui"));
+        Add("--uiDir", UiDirectory(options.LunarRoot, data.UiSha1));
         Add("--webosrDir", nativesDirectory);
         Add("--workingDirectory", ".");
         Add("--classpathDir", cacheDirectory);

@@ -254,6 +254,21 @@ public static partial class Config
         [ConfigItem<bool>("DetailedInstanceClassification", false, ConfigSource.Local)] public partial bool DetailedInstanceClassification {  get; set; }
 
         /// <summary>
+        /// Lunar Client 相关。
+        /// </summary>
+        [ConfigGroup("Lunar")] partial class LunarConfigGroup
+        {
+            /// <summary>
+            /// 启动前校验物料文件的 SHA-1。
+            /// <para>
+            /// 关掉之后只判断文件在不在，不算哈希。物料有几十 MB 的 jar，
+            /// 机械盘或慢速盘上校验要好几秒，嫌慢可以关。
+            /// </para>
+            /// </summary>
+            [ConfigItem<bool>("LunarVerifyFiles", true, ConfigSource.Local)] public partial bool VerifyFiles { get; set; }
+        }
+
+        /// <summary>
         /// 本地化配置。
         /// </summary>
         [ConfigGroup("Localization", ConfigSource.Local)] partial class LocalizationConfigGroup

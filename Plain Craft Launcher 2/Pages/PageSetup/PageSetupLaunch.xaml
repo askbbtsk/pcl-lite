@@ -311,6 +311,9 @@
                                           ToolTip="{DynamicResource Setup.Launch.Advanced.DisableCrashAnalysis.ToolTip}" />
                         <local:MyCheckBox Height="28" Text="{DynamicResource Setup.Launch.Advanced.LockMemory}" x:Name="CheckAdvanceLockMemory" Tag="LaunchAdvanceLockMemory" Change="CheckBoxChange"
                                           ToolTip="{DynamicResource Setup.Launch.Advanced.LockMemory.ToolTip}" />
+                        <!--  Lunar 是 nightly 里的实验特性，先写死文案，等协议稳定再补语言键  -->
+                        <local:MyCheckBox Height="28" Text="启动 Lunar 前校验物料文件" x:Name="CheckLunarVerify" Tag="LunarVerifyFiles" Change="CheckBoxChange"
+                                          ToolTip="关掉后只判断文件在不在，不算 SHA-1。物料里有几十 MB 的 jar，慢盘上校验要好几秒。" />
                     </StackPanel>
                     <local:MyHint Text="{DynamicResource Setup.Launch.Advanced.MoreInInstanceSetup}" Margin="0,5,0,10" Theme="Blue" Grid.Row="9"
                                   Grid.ColumnSpan="2"

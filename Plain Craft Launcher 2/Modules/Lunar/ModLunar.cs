@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using PCL.Core.App;
 using PCL.Core.App.Lunar;
 
 namespace PCL;
@@ -150,12 +151,18 @@ public static class ModLunar
             StatusText = "正在校验物料…";
             RaiseStateChanged();
 
+            // 校验可以在设置里关掉：关掉后只判断文件在不在，不算 SHA-1
+            var verifyFiles = Config.Preference.Lunar.VerifyFiles;
             var progress = new Progress<(int Done, int Total)>(p =>
             {
-                StatusText = $"正在校验物料 {p.Done}/{p.Total}";
+                StatusText = verifyFiles
+                    ? $"正在校验物料 {p.Done}/{p.Total}"
+                    : $"正在补齐物料 {p.Done}/{p.Total}";
                 RaiseStateChanged();
             });
-            await LunarClientService.EnsureArtifactsAsync(data, cacheDirectory, progress).ConfigureAwait(false);
+            await LunarClientService
+                .EnsureArtifactsAsync(data, cacheDirectory, progress, verifyFiles)
+                .ConfigureAwait(false);
             await LunarClientService.ExtractNativesAsync(data, cacheDirectory, nativesDirectory)
                 .ConfigureAwait(false);
 
@@ -179,6 +186,18 @@ public static class ModLunar
             else
             {
                 Log("没有拿到资源索引，游戏可能缺贴图与音效");
+            }
+
+            // 界面资源：Lunar 按 SHA-1 分目录存放，--uiDir 要指到那一层，
+            // 指错了游戏内菜单整块不显示
+            if (!string.IsNullOrWhiteSpace(data.UiSha1))
+            {
+                var uiDir = await LunarClientService.EnsureUiAsync(data, LunarRoot).ConfigureAwait(false);
+                Log($"界面资源：{uiDir}");
+            }
+            else
+            {
+                Log("没有拿到界面资源版本号，游戏内菜单可能不显示");
             }
 
             var options = new LunarLaunchOptions

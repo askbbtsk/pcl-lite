@@ -68,7 +68,12 @@ public static class ModLunar
         RaiseStateChanged();
     }
 
-    private static void RaiseStateChanged() => StateChanged?.Invoke();
+    /// <summary>
+    ///     状态变化通知。统一走 UI 线程 —— 启动流程跑在后台线程，
+    ///     直接在这里触发事件会让订阅者跨线程改控件。
+    /// </summary>
+    private static void RaiseStateChanged() =>
+        ModBase.RunInUi(() => StateChanged?.Invoke());
 
     private static void Log(string message)
     {
@@ -78,23 +83,41 @@ public static class ModLunar
 
     /// <summary>
     ///     启动 Lunar Client。
+    ///     <para>
+    ///         整个流程丢到后台线程：登录加载器的 <c>WaitForExit</c> 是
+    ///         <c>while (...) Thread.Sleep(10)</c> 的同步阻塞，在 UI 线程上调用
+    ///         会直接把界面冻住（1.4.0-nightly 就是这么翻的车）。
+    ///     </para>
     /// </summary>
     /// <param name="gameDirectory">游戏实例目录（<c>--gameDir</c>）。</param>
     /// <param name="memoryMb">分配内存。</param>
-    public static async Task LaunchAsync(string gameDirectory, int memoryMb = 2048)
+    public static void Launch(string gameDirectory, int memoryMb = 2048)
     {
+        // IsBusy 在 UI 线程上先占位，防止连点两次起两个进程
         if (IsBusy) return;
+        IsBusy = true;
+        _ = Task.Run(() => LaunchCoreAsync(gameDirectory, memoryMb));
+    }
 
+    private static async Task LaunchCoreAsync(string gameDirectory, int memoryMb)
+    {
         try
         {
-            IsBusy = true;
             StatusText = "正在获取正版凭证…";
             DetailText = "";
             RaiseStateChanged();
 
-            // 走 PCL 自己的登录链路，拿到的就是微软正版 accessToken
+            // 走 PCL 自己的登录链路，拿到的就是微软正版 accessToken。
+            // 这里不能用 WaitForExit —— 它会同步 sleep，必须在后台线程上用轮询等
             ModLaunch.mcLoginLoader.Start();
-            ModLaunch.mcLoginLoader.WaitForExit();
+            while (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Loading)
+                await Task.Delay(50).ConfigureAwait(false);
+
+            if (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Aborted)
+                throw new InvalidOperationException("登录已取消。");
+            if (ModLaunch.mcLoginLoader.Error is { } loginError)
+                throw loginError;
+
             var login = ModLaunch.mcLoginLoader.output;
             if (string.IsNullOrWhiteSpace(login.AccessToken))
                 throw new InvalidOperationException("没有拿到 Minecraft accessToken，请先在 PCL 里登录正版账号。");

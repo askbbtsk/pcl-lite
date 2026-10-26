@@ -71,7 +71,7 @@ public partial class PageLunarLeft
 
         // 游戏目录沿用 PCL 当前选中的 .minecraft，和普通实例共用一套存档与配置
         var gameDirectory = ModFolder.mcFolderSelected;
-        _ = ModLunar.LaunchAsync(gameDirectory);
+        ModLunar.Launch(gameDirectory);
     }
 
     #region 页面切换

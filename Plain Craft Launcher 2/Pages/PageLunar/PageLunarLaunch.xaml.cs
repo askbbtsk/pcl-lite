@@ -82,7 +82,7 @@ public partial class PageLunarLaunch
     private void BtnLaunch_Click(object sender, MouseButtonEventArgs e)
     {
         if (ModLunar.IsBusy) return;
-        _ = ModLunar.LaunchAsync(ModFolder.mcFolderSelected);
+        ModLunar.Launch(ModFolder.mcFolderSelected);
         RefreshButtons();
     }
 

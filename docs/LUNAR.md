@@ -199,6 +199,14 @@ token 过期时自己刷新（日志里会出现
 - 想换账号，只能改 `activeAccountLocalId`（等同于在 Lunar 启动器里换号）
 - 命令行里的凭据对 Lunar 来说是装饰品，不影响会话
 
+实测日志里能看到这两行挨着出现，是最直接的证据：
+
+```
+[Client thread/INFO]: Setting user: TestPlayer      ← 原版客户端用了 --username
+[Client thread/INFO]: [LC] Setting user: lyricify   ← Lunar 立刻用账户库里的账号覆盖
+[WebSocketConnectReadThread/INFO]: [LC Assets] Connection established as lyricify (Online)
+```
+
 PCL Lite 的做法：读 `accounts.json` 列出账号让用户选，启动前把
 `activeAccountLocalId` 同步过去（先备份 `accounts.json.pclbak`，只改这一个字段）。
 Lunar 账户库为空时才回落到 PCL 主页面的登录凭据。

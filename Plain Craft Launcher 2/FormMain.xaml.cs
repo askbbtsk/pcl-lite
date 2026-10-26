@@ -1395,6 +1395,16 @@ public partial class FormMain
         ///     存档详细管理，这是一个副页面。
         /// </summary>
         VersionSaves = 12,
+
+        /// <summary>
+        ///     Lunar Client（实验特性）。导航栏里排在「基岩版」右侧。
+        ///     <para>
+        ///         数值故意取 13 而不是插进中间：导航按钮的 <c>Tag</c> 会被直接强转成这个枚举，
+        ///         但按钮的**排列顺序由 XAML 决定**，与数值无关。所以新增一级页面时
+        ///         追加一个没被占用的值即可，不需要给 Setup / Tools / 各个副页面重新编号。
+        ///         </para>
+        /// </summary>
+        Lunar = 13,
     }
 
     /// <summary>
@@ -1418,6 +1428,12 @@ public partial class FormMain
         DownloadCleanroom = 13,
         DownloadFabric = 14,
         DownloadLiteLoader = 16,
+
+        /// <summary>
+        ///     Lunar Client 的启动页。只在 <see cref="PageType.Lunar" /> 下使用，
+        ///     与下载页的下标空间互不干扰（和基岩版复用 0 / 1 是同一个道理）。
+        /// </summary>
+        LunarLaunch = 17,
         DownloadLabyMod = 17,
         DownloadLegacyFabric = 18,
 
@@ -1553,6 +1569,13 @@ public partial class FormMain
                     if (ModMain.frmBedrockLeft is null)
                         ModMain.frmBedrockLeft = new PageBedrockLeft();
                     return ModMain.frmBedrockLeft.pageID;
+                }
+
+                case PageType.Lunar:
+                {
+                    if (ModMain.frmLunarLeft is null)
+                        ModMain.frmLunarLeft = new PageLunarLeft();
+                    return ModMain.frmLunarLeft.pageID;
                 }
 
                 case PageType.InstanceSetup:
@@ -1700,6 +1723,20 @@ public partial class FormMain
                     if (ModMain.frmBedrockLeft is null)
                         ModMain.frmBedrockLeft = new PageBedrockLeft();
                     foreach (var item in ModMain.frmBedrockLeft.PanItem.Children)
+                        if (item is MyListItem listItem &&
+                            ModBase.Val(listItem.Tag) == (double)subType)
+                        {
+                            listItem.SetChecked(true, true, stack == pageCurrent);
+                            break;
+                        }
+
+                    break;
+                }
+                case PageType.Lunar:
+                {
+                    if (ModMain.frmLunarLeft is null)
+                        ModMain.frmLunarLeft = new PageLunarLeft();
+                    foreach (var item in ModMain.frmLunarLeft.PanItem.Children)
                         if (item is MyListItem listItem &&
                             ModBase.Val(listItem.Tag) == (double)subType)
                         {
@@ -1878,6 +1915,14 @@ public partial class FormMain
                             subType = ModMain.frmBedrockLeft.pageID;
                         PageChangeAnim(ModMain.frmBedrockLeft,
                             (FrameworkElement)ModMain.frmBedrockLeft.PageGet(subType));
+                        break;
+                    }
+                case PageType.Lunar: // Lunar Client（实验特性）
+                    {
+                        ModMain.frmLunarLeft ??= new PageLunarLeft();
+                        subType = ModMain.frmLunarLeft.pageID;
+                        PageChangeAnim(ModMain.frmLunarLeft,
+                            (FrameworkElement)ModMain.frmLunarLeft.PageGet(subType));
                         break;
                     }
                 case PageType.Setup: // 设置

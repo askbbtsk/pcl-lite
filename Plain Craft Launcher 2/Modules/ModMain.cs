@@ -39,6 +39,8 @@ public static class ModMain
     public static PageBedrockLeft? frmBedrockLeft;
     public static PageBedrockDownload? frmBedrockDownload;
     public static PageBedrockLaunch? frmBedrockLaunch;
+    public static PageLunarLeft? frmLunarLeft;
+    public static PageLunarLaunch? frmLunarLaunch;
     public static PageDownloadLeft? frmDownloadLeft;
     public static PageDownloadInstall? frmDownloadInstall;
     public static PageDownloadClient? frmDownloadClient;

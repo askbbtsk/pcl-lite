@@ -171,6 +171,11 @@
                                                  Check="BtnTitleSelect_Click"
                                                  LogoScale="0.9"
                                                  SvgIcon="lucide/boxes" />
+                            <!--  Lunar Client：实验特性，排在基岩版右侧。Tag 是 PageType 的值，不是下标  -->
+                            <local:MyRadioButton x:Name="BtnTitleSelectLunar" Text="Lunar" Tag="13" Margin="5,0" Padding="2,0"
+                                                 Check="BtnTitleSelect_Click"
+                                                 LogoScale="0.9"
+                                                 SvgIcon="lucide/sparkles" />
                             <local:MyRadioButton x:Name="BtnTitleSelect3" Text="{DynamicResource Main.Tab.Settings}" Tag="3" Margin="5,0" Padding="2,0"
                                                  Check="BtnTitleSelect_Click"
                                                  LogoScale="1.1"

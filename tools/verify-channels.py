@@ -117,28 +117,60 @@ def main():
         got = pick(releases, lvl)
         print(f"  {chan:<9} -> {got[1] if got else '(无)'}")
 
-    # 关键断言
+    # 关键断言：全部从线上列表推出来，不写死版本号，
+    # 否则每发一版都要改一遍脚本，改完还容易忘了改。
     print("\n断言：")
-    cases = [
-        ("Stable", "1.3.2", True, "1.3.2 用户走稳定版通道，应当看到更新"),
-        ("Stable", "1.3.3", False, "1.3.3 用户走稳定版通道，应当已是最新"),
-        ("Preview", "1.3.2", True, "1.3.2 用户走预览通道，应当看到更新"),
-        ("Latest", "1.3.3", False, "1.3.3 用户走始终最新，应当已是最新"),
-        ("Snapshot", "1.3.3", False, "1.3.3 用户走快照通道，应当已是最新"),
-    ]
-    for chan, current, expect_update, desc in cases:
-        got = pick(releases, CHANNELS[chan])
+    picked = {chan: pick(releases, lvl) for chan, lvl in CHANNELS.items()}
+    stable = picked["Stable"]
+    latest = picked["Latest"]
+
+    checks = []
+
+    # ① 稳定版通道只能挑到正式版
+    if stable is None:
+        checks.append((False, "稳定版通道挑不出任何版本"))
+    else:
+        lvl = level_from_name(stable[1])
+        checks.append((lvl == 0, f"稳定版通道挑中的必须是正式版：{stable[1]}（等级 {lvl}）"))
+
+    # ② 预发布版本不能漏到稳定/预览/快照通道
+    for chan in ("Stable", "Preview", "Snapshot"):
+        got = picked[chan]
         if got is None:
-            print(f"  ✗ {desc}：通道挑不出任何版本")
-            failed += 1
             continue
-        latest_name = got[1]
-        has_update = semver_key(latest_name) > semver_key(current)
-        mark = "✓" if has_update == expect_update else "✗"
-        if has_update != expect_update:
+        lvl = level_from_name(got[1])
+        checks.append((lvl <= CHANNELS[chan],
+                       f"{chan} 通道不该收到等级 {lvl} 的 {got[1]}"))
+
+    # ③ 始终最新必须挑到全局最大的那个，nightly 只有它能收到
+    if latest is None:
+        checks.append((False, "始终最新通道挑不出任何版本"))
+    else:
+        all_keys = [(semver_key(normalize_tag(r["tag_name"])), normalize_tag(r["tag_name"]))
+                    for r in releases if not r.get("draft")]
+        newest = max(all_keys)[1] if all_keys else None
+        checks.append((latest[1] == newest,
+                       f"始终最新通道应当挑到全局最新：挑中 {latest[1]}，实际最新 {newest}"))
+
+    # ④ 用稳定版通道挑中的版本当基准：它自己应当「已是最新」，
+    #    比它旧一档的版本应当「看到更新」
+    if stable is not None:
+        base = stable[1]
+        checks.append((not (semver_key(base) > semver_key(base)),
+                       f"{base} 用户走稳定版通道，应当已是最新"))
+        older = sorted((semver_key(normalize_tag(r["tag_name"])), normalize_tag(r["tag_name"]))
+                       for r in releases
+                       if not r.get("draft") and level_from_name(r["tag_name"]) == 0
+                       and semver_key(r["tag_name"]) < semver_key(base))
+        if older:
+            prev = older[-1][1]
+            checks.append((semver_key(base) > semver_key(prev),
+                           f"{prev} 用户走稳定版通道，应当看到更新 {base}"))
+
+    for ok, desc in checks:
+        if not ok:
             failed += 1
-        verdict = f"有新版本 {latest_name}" if has_update else "已是最新"
-        print(f"  {mark} {desc}：{current} vs {latest_name} -> {verdict}")
+        print(f"  {'✓' if ok else '✗'} {desc}")
 
     print("\n" + "=" * 70)
     if failed:

@@ -120,6 +120,8 @@ public partial class PageSetupUI
 
             // 主页面
             CheckHiddenPageDownload.Checked = uiHidden.PageDownload;
+            CheckHiddenPageBedrock.Checked = uiHidden.PageBedrock;
+            CheckHiddenPageLunar.Checked = uiHidden.PageLunar;
             CheckHiddenPageSetup.Checked = uiHidden.PageSetup;
             CheckHiddenPageTools.Checked = uiHidden.PageTools;
 
@@ -1071,8 +1073,9 @@ public partial class PageSetupUI
             // 获取配置组引用以缩短代码
             var conf = Config.Preference.Hide;
 
-            // 顶部栏：下载、设置、工具
-            var isAllTitleHidden = !HiddenForceShow && conf.PageDownload && conf.PageSetup && conf.PageTools;
+            // 顶部栏：下载、基岩版、Lunar、设置、工具
+            var isAllTitleHidden = !HiddenForceShow && conf.PageDownload && conf.PageBedrock
+                                   && conf.PageLunar && conf.PageSetup && conf.PageTools;
 
             if (isAllTitleHidden)
             {
@@ -1084,8 +1087,12 @@ public partial class PageSetupUI
                 ModMain.frmMain.BtnTitleSelect1.Visibility = !HiddenForceShow && conf.PageDownload
                     ? Visibility.Collapsed
                     : Visibility.Visible;
-                // 基岩版没有「隐藏页面」开关，始终显示
-                ModMain.frmMain.BtnTitleSelect2.Visibility = Visibility.Visible;
+                ModMain.frmMain.BtnTitleSelect2.Visibility = !HiddenForceShow && conf.PageBedrock
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+                ModMain.frmMain.BtnTitleSelectLunar.Visibility = !HiddenForceShow && conf.PageLunar
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
                 ModMain.frmMain.BtnTitleSelect3.Visibility =
                     !HiddenForceShow && conf.PageSetup ? Visibility.Collapsed : Visibility.Visible;
                 ModMain.frmMain.BtnTitleSelect4.Visibility =

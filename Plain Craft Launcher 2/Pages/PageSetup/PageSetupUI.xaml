@@ -506,6 +506,11 @@
                                           x:Name="CheckHiddenPageSetup" Tag="UiHiddenPageSetup" Change="CheckBoxChange" />
                         <local:MyCheckBox Height="22" VerticalAlignment="Center" Grid.Row="1" Grid.Column="4" Text="{DynamicResource Setup.Ui.FeatureHide.Item.Tools}"
                                           x:Name="CheckHiddenPageTools" Tag="UiHiddenPageTools" Change="CheckBoxChange" />
+                        <!--  基岩版与 Lunar：与 Java 一样先写死文案，等协议稳定再补语言键  -->
+                        <local:MyCheckBox Height="22" VerticalAlignment="Center" Grid.Row="1" Grid.Column="5" Text="基岩版"
+                                          x:Name="CheckHiddenPageBedrock" Tag="UiHiddenPageBedrock" Change="CheckBoxChange" />
+                        <local:MyCheckBox Height="22" VerticalAlignment="Center" Grid.Row="1" Grid.Column="6" Text="Lunar"
+                                          x:Name="CheckHiddenPageLunar" Tag="UiHiddenPageLunar" Change="CheckBoxChange" />
                         <TextBlock Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Left" Text="{DynamicResource Setup.Ui.FeatureHide.SubSetup}" />
                         <local:MyCheckBox Height="22" VerticalAlignment="Center" Grid.Row="2" Grid.Column="2" Text="{DynamicResource Setup.Ui.FeatureHide.Item.Launch}"
                                           x:Name="CheckHiddenSetupLaunch" Tag="UiHiddenSetupLaunch"

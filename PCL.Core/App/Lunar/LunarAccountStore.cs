@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -24,6 +25,19 @@ public sealed record LunarAccount(
     string Type,
     string AccessToken)
 {
+    /// <summary>
+    ///     Lunar 会话的到期时间，来自 <c>accessTokenExpiresAt</c>。
+    ///     <para>
+    ///         这个 token 是 Lunar 自己签的 JWT（24 小时有效），不是 Minecraft 的
+    ///         accessToken。过期后游戏里会显示 Invalid session，而续期只能由
+    ///         Lunar 启动器通过 IPC 的 <c>AuthService/RefreshAccount</c> 完成。
+    ///     </para>
+    /// </summary>
+    public DateTimeOffset? ExpiresAt { get; init; }
+
+    /// <summary>Lunar 会话是否已经过期（留一分钟余量）。</summary>
+    public bool IsExpired => ExpiresAt is { } expires && expires <= DateTimeOffset.UtcNow.AddMinutes(1);
+
     public string DisplayName =>
         string.IsNullOrWhiteSpace(MinecraftName) ? Username : MinecraftName;
 }
@@ -90,7 +104,10 @@ public static class LunarAccountStore
                     profile?["name"]?.GetValue<string>() ?? string.Empty,
                     profile?["id"]?.GetValue<string>() ?? string.Empty,
                     item["type"]?.GetValue<string>() ?? string.Empty,
-                    item["accessToken"]?.GetValue<string>() ?? string.Empty));
+                    item["accessToken"]?.GetValue<string>() ?? string.Empty)
+                {
+                    ExpiresAt = ParseTimestamp(item["accessTokenExpiresAt"])
+                });
             }
 
             var active = root["activeAccountLocalId"]?.GetValue<string>() ?? string.Empty;
@@ -140,6 +157,24 @@ public static class LunarAccountStore
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
             return false;
+        }
+    }
+
+    /// <summary>读 <c>accessTokenExpiresAt</c>（形如 <c>2026-10-20T15:21:35.563Z</c>），读不出来就当没有。</summary>
+    private static DateTimeOffset? ParseTimestamp(JsonNode? node)
+    {
+        try
+        {
+            var text = node?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            return DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed)
+                ? parsed
+                : null;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FormatException)
+        {
+            return null;
         }
     }
 }

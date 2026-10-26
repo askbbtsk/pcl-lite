@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using PCL.Core.App;
 using PCL.Core.App.Lunar;
+using PCL.Core.Minecraft.Profile;
+using PCL.Core.Minecraft.Profile.Models;
 
 namespace PCL;
 
@@ -415,6 +417,12 @@ public static class ModLunar
     ///         Lunar 有账号就直接用 Lunar 的（并且把它的激活账号切成这一个），
     ///         没有才回落到 PCL 主页面登录的凭据。两条路都不通才报错。
     ///     </para>
+    ///     <para>
+    ///         注意「账号」和「令牌」是两件事：账号由 <c>accounts.json</c> 的
+    ///         <c>activeAccountLocalId</c> 决定，而命令行里的 <c>--accessToken</c>
+    ///         必须是真正的 Minecraft 令牌。Lunar 存的那串是它自己签的 JWT，
+    ///         不能拿来联机，所以这里会尽量换成 PCL 里同名账号的令牌。
+    ///     </para>
     /// </summary>
     private static async Task<(string Name, string Uuid, string Token)> ResolveCredentialsAsync()
     {
@@ -430,7 +438,24 @@ public static class ModLunar
             else
                 Log($"账号：{account.DisplayName}（切换 Lunar 激活账号失败，进游戏可能是另一个账号）");
 
+            if (account.IsExpired)
+            {
+                Log($"Lunar 会话已于 {account.ExpiresAt!.Value.ToLocalTime():yyyy-MM-dd HH:mm} 过期。");
+                Log("续期只能由 Lunar 启动器做（游戏通过 IPC 的 AuthService/RefreshAccount 找启动器要），");
+                Log("所以游戏内账号面板会显示 Invalid session —— 打开一次 Lunar 启动器即可刷新。");
+            }
+
             var uuid = NormalizeUuid(account.MinecraftUuid);
+
+            // accounts.json 里的 accessToken 是 Lunar 自己签的 JWT，不是 Minecraft 的会话令牌。
+            // 拿它当 --accessToken 传给游戏，联机会被服务器拒掉，所以优先换成 PCL 登录的同名账号。
+            if (TryGetPclToken(account.DisplayName) is { } pcl)
+            {
+                Log($"Minecraft 令牌：取自 PCL 登录（{pcl.Name}）");
+                return (account.DisplayName, uuid, pcl.Token);
+            }
+
+            Log("Minecraft 令牌：PCL 里没有这个账号的登录，只能用 Lunar 账户库那份（联机大概率失败）");
             return (account.DisplayName, uuid, account.AccessToken);
         }
 
@@ -462,6 +487,32 @@ public static class ModLunar
 
         Log($"账号：{login.Name}（PCL 登录）");
         return (login.Name, NormalizeUuid(login.Uuid), login.AccessToken);
+    }
+
+    /// <summary>
+    ///     从 PCL 主页面的登录里取一个能用的 Minecraft 令牌，账号名必须和 Lunar 那条对得上。
+    ///     <para>
+    ///         对不上就一律不用：令牌和 UUID 是绑在一起的，拿别人的令牌联机会被服务器直接踢。
+    ///         过期了也不用 —— 这里不主动跑登录流程，启动 Lunar 时突然弹个登录框更吓人。
+    ///     </para>
+    /// </summary>
+    private static (string Name, string Token)? TryGetPclToken(string minecraftName)
+    {
+        if (string.IsNullOrWhiteSpace(minecraftName)) return null;
+
+        try
+        {
+            var profile = ProfileService.Current;
+            if (profile is null || profile.ProfileType != ProfileType.Microsoft) return null;
+            if (string.IsNullOrWhiteSpace(profile.AccessToken) || profile.IsExpired) return null;
+            if (!string.Equals(profile.UserName, minecraftName, StringComparison.OrdinalIgnoreCase)) return null;
+            return (profile.UserName, profile.AccessToken);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 读取 PCL 登录凭据失败，改用 Lunar 账户库里的令牌", ModBase.LogLevel.Debug);
+            return null;
+        }
     }
 
     /// <summary>

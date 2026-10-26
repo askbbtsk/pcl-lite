@@ -138,7 +138,8 @@ public partial class PageLunarLaunch
     {
         var accounts = ModLunar.Accounts;
         var selected = ModLunar.SelectedAccount;
-        var signature = string.Join(",", accounts.Select(x => x.LocalId)) + "#" + (selected?.LocalId ?? "");
+        var signature = string.Join(",", accounts.Select(x => x.LocalId + (x.IsExpired ? "!" : "")))
+                        + "#" + (selected?.LocalId ?? "");
         if (signature == _accountSignature) return;
         _accountSignature = signature;
 
@@ -160,9 +161,14 @@ public partial class PageLunarLaunch
                 foreach (var account in accounts)
                     ComboAccount.Items.Add(new MyComboBoxItem
                     {
-                        Content = account.DisplayName,
+                        // 会话过期要写在脸上：不然用户只会看到「启动成功但账号无效」
+                        Content = account.IsExpired
+                            ? account.DisplayName + "（会话已过期）"
+                            : account.DisplayName,
                         Tag = account.LocalId,
-                        ToolTip = $"{account.Type}　{account.MinecraftUuid}",
+                        ToolTip = account.IsExpired && account.ExpiresAt is { } expires
+                            ? $"{account.Type}　{account.MinecraftUuid}\nLunar 会话已于 {expires.ToLocalTime():yyyy-MM-dd HH:mm} 过期，打开一次 Lunar 启动器即可刷新"
+                            : $"{account.Type}　{account.MinecraftUuid}",
                         IsSelected = account.LocalId == selected?.LocalId
                     });
 

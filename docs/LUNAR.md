@@ -211,10 +211,63 @@ PCL Lite 的做法：读 `accounts.json` 列出账号让用户选，启动前把
 `activeAccountLocalId` 同步过去（先备份 `accounts.json.pclbak`，只改这一个字段）。
 Lunar 账户库为空时才回落到 PCL 主页面的登录凭据。
 
-## 正版验证：实际上不需要 PCL 登录
+### ① 那个 `accessToken` 不是 Minecraft 令牌
 
-既然会话来自 Lunar 自己的账户库，**启动 Lunar 并不要求 PCL 先登录正版**。
-命令行里的 `--accessToken` 传什么都行（实测传 32 个 `0` 也能起）。
+`accounts.json` 里的 `accessToken` 是 **Lunar 自己签的 JWT**：`iss` 是
+`authentication`，带 `xuid` / `profiles` / `platform` / `mid`，24 小时有效，
+`accessTokenExpiresAt` 就是它的 `exp`。
+
+它只给 Lunar 自己的后端用。**拿它当 `--accessToken` 传给游戏，联机会被服务器拒掉** ——
+Mojang 的会话校验认的是自己签的令牌，不认 Lunar 的。
+
+所以命令行那份仍然必须是真正的 Minecraft accessToken。PCL Lite 的做法：
+PCL 主页面登录的账号如果和 Lunar 这条同名，就用 PCL 的令牌；否则退回账户库那份，
+并在日志里写明「联机大概率失败」。账号名对不上时不能混用 —— 令牌和 UUID 绑在一起。
+
+### ② 过期不会自己刷新，是找启动器要
+
+`lunar.jar` 里有这几句日志和一个失败原因枚举：
+
+```
+Current account's access token has expired, refreshing...
+Failed to refresh access token for account %s
+Successfully refreshed access token for account %s
+```
+
+枚举项里有 **`LAUNCHER_NOT_OPEN`**（`launcher_not_open`），旁边还有
+`ACCOUNTS_FILE_EMPTY`、`MISSING_REFRESH_TOKEN`、`NOT_PURCHASED_MINECRAFT`，
+弹窗 key 是 `popups.refresh_auth`。对应的调用是 gRPC：
+
+```
+com.lunarclient.gameipc.auth.v1.AuthService / RefreshAccount
+  RefreshAccountRequest  { Uuid uuid }
+  RefreshAccountResponse { bool success; AccountError error }
+```
+
+注意响应里**没有 token 字段**——说明刷新是启动器做的：它自己刷新、自己写
+`accounts.json`，然后只回一个 `success`。游戏只是等这个结果。
+
+我们不是 Lunar 启动器、也没接上那条 IPC，所以刷新必然失败 →
+游戏内账号面板显示 **Invalid session. Please re-authenticate.**
+
+**Lunar 会话只能由 Lunar 启动器续期**（24 小时一次）。它过期不影响
+「能不能进游戏 / 能不能联机」，那是命令行里那份 Minecraft 令牌的事。
+
+### ③ 为什么不能自己替它刷新
+
+`accounts.json` 里的 `refreshToken` 是微软发的，但**绑在 Lunar 的 OAuth 应用上**：
+
+```json
+{"error":"invalid_grant","error_description":"AADSTS70000: ... The token was issued for a different client id"}
+```
+
+换 `login.live.com/oauth20_token.srf` 也是同一句。所以既不能拿它换新令牌，
+也没法替 Lunar 签 JWT。
+
+## 正版验证：启动不强制要求 PCL 登录，但联机需要真令牌
+
+既然账号身份来自 Lunar 自己的账户库，**启动 Lunar 并不要求 PCL 先登录正版**。
+命令行里的 `--accessToken` 传 32 个 `0` 也能把游戏拉起来。
 
 ```
 --username <玩家名>
@@ -223,6 +276,10 @@ Lunar 账户库为空时才回落到 PCL 主页面的登录凭据。
 --accessToken <Minecraft accessToken>
 --userProperties {}
 ```
+
+但「能启动」和「能联机」是两回事：进别人的服务器时，服务器会拿客户端交上来的
+令牌去 Mojang 校验，这时必须是**真正的 Minecraft accessToken**，而且必须属于
+`--uuid` 那个账号。所以 PCL Lite 会优先用 PCL 登录里的同名账号令牌。
 
 ### 那套 WebSocket 认证是干什么的
 

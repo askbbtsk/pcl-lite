@@ -68,8 +68,12 @@ public partial class PageLunarLeft
         var account = ModLunar.SelectedAccount;
         if (account is not null)
         {
-            LabAccountName.Text = account.DisplayName;
-            LabAccountHint.Text = $"Lunar 账户库里的账号（{account.Type}），进游戏用的就是它。";
+            LabAccountName.Text = account.IsExpired
+                ? account.DisplayName + "（会话已过期）"
+                : account.DisplayName;
+            LabAccountHint.Text = account.IsExpired
+                ? "Lunar 会话过期后游戏内会显示 Invalid session，打开一次 Lunar 启动器即可刷新。"
+                : $"Lunar 账户库里的账号（{account.Type}），进游戏用的就是它。";
         }
         else
         {

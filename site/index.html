@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCL Lite</title>
+<meta name="description" content="PCL Lite —— 基于 PCL-CE 的轻量 Minecraft 启动器，支持正版登录、Lunar Client 与基岩版。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232b7fd4'/%3E%3Ctext x='50' y='64' font-family='Segoe UI,Arial' font-size='30' font-weight='700' fill='%23fff' text-anchor='middle'%3ELITE%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #12151b;
+    --fg: #e9eef6;
+    --dim: #93a0b4;
+    --blue: #3991e3;
+    --blue2: #1964c2;
+    --card: #1a1f28;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    background: radial-gradient(1200px 600px at 50% -10%, #1c2533 0%, var(--bg) 55%);
+    color: var(--fg);
+    font: 16px/1.7 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { width: 100%; max-width: 560px; text-align: center; }
+  .logo {
+    width: 96px; height: 96px; border-radius: 22px; margin: 0 auto 26px;
+    display: grid; place-items: center;
+    background: linear-gradient(180deg, var(--blue), var(--blue2));
+    box-shadow: 0 18px 40px -18px rgba(57,145,227,.85);
+    font-weight: 700; font-size: 26px; letter-spacing: .5px; color: #fff;
+  }
+  h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: .2px; }
+  .tag { margin: 0 0 30px; color: var(--dim); }
+  .links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  a.btn {
+    display: inline-block; padding: 11px 22px; border-radius: 10px;
+    text-decoration: none; font-size: 15px; transition: .18s ease;
+    border: 1px solid #2b3442; color: var(--fg); background: var(--card);
+  }
+  a.btn:hover { border-color: #3d4a5c; transform: translateY(-1px); }
+  a.primary {
+    background: linear-gradient(180deg, var(--blue), var(--blue2));
+    border-color: transparent; color: #fff;
+    box-shadow: 0 12px 26px -14px rgba(57,145,227,.9);
+  }
+  footer { margin-top: 46px; font-size: 13px; color: #6b788b; }
+  footer a { color: #8b98ab; text-decoration: none; }
+  footer a:hover { color: var(--fg); }
+</style>
+</head>
+<body>
+<main>
+  <div class="logo">LITE</div>
+  <h1>PCL Lite</h1>
+  <p class="tag">轻量、干净的 Minecraft 启动器 · 支持正版登录 / Lunar Client / 基岩版</p>
+  <div class="links">
+    <a class="btn primary" href="https://github.com/askbbtsk/pcl-lite/releases/latest">下载最新版</a>
+    <a class="btn" href="https://github.com/askbbtsk/pcl-lite">GitHub</a>
+    <a class="btn" href="https://github.com/askbbtsk/pcl-lite/releases">更新日志</a>
+  </div>
+  <footer>
+    官网正在施工 · <a href="https://github.com/askbbtsk/pcl-lite">askbbtsk/pcl-lite</a>
+  </footer>
+</main>
+</body>
+</html>

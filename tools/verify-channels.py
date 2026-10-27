@@ -53,15 +53,21 @@ def level_from_name(name):
     return 1
 
 
-SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.\-]+))?(?:\+[0-9A-Za-z.\-]+)?$")
+SEMVER_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?(?:-([0-9A-Za-z.\-]+))?(?:\+[0-9A-Za-z.\-]+)?$")
 
 
 def semver_key(name):
-    """返回可直接比较的元组。无后缀 > 有后缀（SemVer 2.0 §11.3）。"""
+    """返回可直接比较的元组。无后缀 > 有后缀（SemVer 2.0 §11.3）。
+
+    允许省略 patch 位：`v1.5` 等价于 `1.5.0`。启动器那边的正则要求三段，
+    所以线上 tag 现在都是三段；这里放宽只是为了让脚本在写错 tag 时给出
+    有意义的断言结果，而不是抛异常。
+    """
     m = SEMVER_RE.match(normalize_tag(name))
     if not m:
         raise ValueError(f"tag 解析不了: {name!r}")
-    major, minor, patch = (int(m.group(i)) for i in (1, 2, 3))
+    major, minor = int(m.group(1)), int(m.group(2))
+    patch = int(m.group(3) or 0)
     pre = m.group(4)
     if pre is None:
         return (major, minor, patch, 1, ())

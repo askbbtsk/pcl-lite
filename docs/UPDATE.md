@@ -51,7 +51,26 @@
 小请求，换来的是「最快那条通道的延迟」——正常几百毫秒出结果。
 
 全部失败才回退到「直接读当前仓库的 Releases」。反代列表只有一处定义，
-失效时改 `DownloadProxies` 即可，下载和清单同时生效。
+失效时改 `DownloadProxies` 即可，清单会跟着用。
+
+### 发布包（exe）的下载顺序和清单不一样
+
+清单是**抢答**，谁快用谁；发布包是**按序尝试**，前一个失败才换下一个
+（`FileDownloader.DownloadCoreAsync` 就是照列表顺序挨个试）。
+
+所以发布包的列表是：**官方直链排第一**，`DownloadProxies` 里的反代只作后备。
+
+```
+https://github.com/askbbtsk/pcl-lite/releases/download/<tag>/<file>.exe   ← 先试
+https://cors.isteed.cc/https://github.com/...                             ← 直连失败才轮到
+https://gh-proxy.com/https://github.com/...
+https://gitproxy.click/https://github.com/...
+```
+
+理由很直接：反代是第三方中转，把一个马上要被执行的 exe 先交给别人的服务器过一道，
+没有任何好处。直连被墙时最坏多等一次 30 秒的响应超时，之后照样落到反代上。
+
+> 顺序在这里就是优先级，改 `GetDownloadLoader` 里 `urls` 的构造顺序即可。
 
 ### 什么算「这条通道失败」
 

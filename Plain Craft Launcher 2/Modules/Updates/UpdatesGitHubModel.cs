@@ -34,10 +34,12 @@ public class UpdatesGitHubModel : IUpdateSource
     private const int PageSize = 20;
 
     /// <summary>
-    /// GitHub 下载反代。国内直连 github.com 拉大文件经常只有几十 KB/s，
-    /// 这些反代把流量中转一遍通常快一个数量级。按实测速度排序，
-    /// 反代服务时好坏，下载器会按顺序往后换，最后回退直连。
-    /// 失效了改这个列表即可，顺序即优先级。
+    /// GitHub 反代，只作为<b>后备</b>：官方直链打不开（被墙、超时、404）时才轮到它们。
+    /// <para>
+    /// 顺序即优先级。走反代等于把发布包交给别人的服务器中转一遍，能直连就不要绕，
+    /// 所以 <see cref="GetDownloadLoader"/> 里官方地址永远排在最前面。
+    /// 反代服务时好时坏，失效了改这个列表即可。
+    /// </para>
     /// </summary>
     internal static readonly string[] DownloadProxies =
     [
@@ -346,11 +348,11 @@ public class UpdatesGitHubModel : IUpdateSource
                 var fileName = url[(url.LastIndexOf('/') + 1)..];
                 tempPath += fileName;
 
-                // 反代优先、直连兜底：国内直连 GitHub 大文件太慢。
-                // 下载器会按顺序尝试，全挂了才轮到直连。
-                var urls = new List<string>();
+                // 官方直链优先、反代兜底。
+                // 顺序在 DownloadCoreAsync 里就是优先级：挨个试，前一个失败才换下一个。
+                // 直连能通就用直连——反代是第三方中转，没必要把发布包先过一道别人的手。
+                var urls = new List<string> { url };
                 urls.AddRange(DownloadProxies.Select(proxy => proxy + url));
-                urls.Add(url);
                 load.output = [new DownloadFile(urls.Distinct(), tempPath)];
             }));
 

@@ -211,20 +211,31 @@ PCL Lite 的做法：读 `accounts.json` 列出账号让用户选，启动前把
 `activeAccountLocalId` 同步过去（先备份 `accounts.json.pclbak`，只改这一个字段）。
 Lunar 账户库为空时才回落到 PCL 主页面的登录凭据。
 
-### ① 那个 `accessToken` 不是 Minecraft 令牌
+### ① 那个 `accessToken` 就是 Minecraft 令牌，只是 24 小时就过期
 
-`accounts.json` 里的 `accessToken` 是 **Lunar 自己签的 JWT**：`iss` 是
-`authentication`，带 `xuid` / `profiles` / `platform` / `mid`，24 小时有效，
-`accessTokenExpiresAt` 就是它的 `exp`。
+`accounts.json` 里的 `accessToken` 长得很像「Lunar 自己签的 JWT」，其实**不是**：
 
-它只给 Lunar 自己的后端用。**拿它当 `--accessToken` 传给游戏，联机会被服务器拒掉** ——
-Mojang 的会话校验认的是自己签的令牌，不认 Lunar 的。
+```json
+{"xuid":"2535464508196445","auth":"XBOX","iss":"authentication","platform":"PC_LAUNCHER",
+ "profiles":{"mc":"694cd52b-…"},"pfd":[{"type":"mc","id":"694cd52b-…","name":"lyricify"}],
+ "aid":"4358653d-…","nbf":1793021199,"exp":1793107599}
+```
 
-所以命令行那份仍然必须是真正的 Minecraft accessToken。PCL Lite 的做法：
-PCL 主页面登录的账号如果和 Lunar 这条同名，就用 PCL 的令牌；否则退回账户库那份，
-并在日志里写明「联机大概率失败」。账号名对不上时不能混用 —— 令牌和 UUID 绑在一起。
+`iss: authentication` 是 Mojang 的签发者，`aid` 是拿它时用的 Azure 应用 id
+（Lunar 的启动器流程走 `api.minecraftservices.com/launcher/login`，所以带
+`platform: PC_LAUNCHER`）。启动器自己也是拿它去
+`POST https://sessionserver.mojang.com/session/minecraft/join` 建会话的 ——
+见 `dist-electron/electron/main.js` 里 `executeWithAccessToken(t, e => Bke(e, u))`
+那一段，`Bke` 就是 join 请求。
 
-### ② 过期不会自己刷新，是找启动器要
+所以它是**真令牌**，能联机。唯一的限制是 `exp` 只有 24 小时，
+`accessTokenExpiresAt` 就是它。
+
+PCL Lite 的做法：优先用 PCL 主页面登录里同名账号的令牌（更新），
+拿不到才退回账户库那份；如果那份已经过期，日志里会写明联机大概率失败。
+账号名对不上时不能混用 —— 令牌和 UUID 是绑在一起的。
+
+### ② 过期不自己刷，是找启动器要 —— 现在由 PCL 应答
 
 `lunar.jar` 里有这几句日志和一个失败原因枚举：
 
@@ -236,7 +247,7 @@ Successfully refreshed access token for account %s
 
 枚举项里有 **`LAUNCHER_NOT_OPEN`**（`launcher_not_open`），旁边还有
 `ACCOUNTS_FILE_EMPTY`、`MISSING_REFRESH_TOKEN`、`NOT_PURCHASED_MINECRAFT`，
-弹窗 key 是 `popups.refresh_auth`。对应的调用是 gRPC：
+弹窗 key 是 `popups.refresh_auth`。对应的调用是 gRPC 风格的手写 protobuf：
 
 ```
 com.lunarclient.gameipc.auth.v1.AuthService / RefreshAccount
@@ -244,16 +255,26 @@ com.lunarclient.gameipc.auth.v1.AuthService / RefreshAccount
   RefreshAccountResponse { bool success; AccountError error }
 ```
 
-注意响应里**没有 token 字段**——说明刷新是启动器做的：它自己刷新、自己写
-`accounts.json`，然后只回一个 `success`。游戏只是等这个结果。
+响应里**没有 token 字段**——刷新是服务端做的：它自己刷新、自己写
+`accounts.json`，然后只回一个 `success`，游戏拿到结果后重读那个文件。
 
-我们不是 Lunar 启动器、也没接上那条 IPC，所以刷新必然失败 →
+这条链路走的是本地 WebSocket，不是 HTTP/2：
+
+```
+ws://127.0.0.1:<--ipcPort>
+请求头 lc-handshake: base64(Handshake{launch_id, process_id, installation_id})
+信封   LauncherboundIPCMessage / GameboundIPCMessage，按 request_id 配对
+```
+
+Lunar 启动器固定监听 **28190**（`mVe=28190`），启动器没开时没人应答 →
 游戏内账号面板显示 **Invalid session. Please re-authenticate.**
 
-**Lunar 会话只能由 Lunar 启动器续期**（24 小时一次）。它过期不影响
-「能不能进游戏 / 能不能联机」，那是命令行里那份 Minecraft 令牌的事。
+**1.5 起 PCL 自己当这个服务端**（`PCL.Core/App/Lunar/LunarIpcServer.cs`）：
+启动前抢 28190，抢到了就由 PCL 应答 `RefreshAccount`；抢不到说明 Lunar 启动器
+正开着，把端口原样交给游戏让它处理。端口被占但对方不响应 WebSocket 时，
+传 `--ipcPort 0` 干脆不启用。
 
-### ③ 为什么不能自己替它刷新
+### ③ 为什么不能直接拿 `refreshToken` 刷
 
 `accounts.json` 里的 `refreshToken` 是微软发的，但**绑在 Lunar 的 OAuth 应用上**：
 
@@ -261,8 +282,19 @@ com.lunarclient.gameipc.auth.v1.AuthService / RefreshAccount
 {"error":"invalid_grant","error_description":"AADSTS70000: ... The token was issued for a different client id"}
 ```
 
-换 `login.live.com/oauth20_token.srf` 也是同一句。所以既不能拿它换新令牌，
-也没法替 Lunar 签 JWT。
+换 `login.live.com/oauth20_token.srf` 也是同一句。所以那个 `refreshToken`
+对第三方没有用处。
+
+PCL 的做法是绕开它：用 **PCL 自己登录**的微软账号（refreshToken 绑在 PCL 的
+OAuth 应用上，能用）刷一个新的 Minecraft 令牌，写回 `accounts.json` 的
+`accessToken` / `accessTokenExpiresAt`，`refreshToken` 一个字节都不动。
+
+前提是 PCL 主页面登录的是同一个账号（按游戏内名字比对）。对不上就宁可失败 ——
+把别人的令牌写进这条账号，联机会被服务器直接踢。
+
+另一条路 `wss://authenticator.lunarclientprod.com/launcher-v3` 也能换到
+Lunar 侧的 JWT（见下文「那套 WebSocket 认证」），但那是启动器自用的令牌，
+和 `accounts.json` 里的不是一回事，续期用不上。
 
 ## 正版验证：启动不强制要求 PCL 登录，但联机需要真令牌
 
@@ -402,16 +434,17 @@ Lunar 写错地方会把存档、`options.txt`、`mods` 和普通实例混在一
 
 ## 还没解决的点
 
-1. **`--ipcPort`**：启动器会在该端口起一个 WebSocket 服务（实测默认 28190），
-   游戏连上来做握手，启动器注册 9 个 protobuf 服务（社交、皮肤、设置同步等）。
+1. **`--ipcPort` 只实现了 `AuthService`**：启动器会在该端口起一个 WebSocket 服务
+   （实测默认 28190），注册 9 个 protobuf 服务（社交、皮肤、设置同步、Tebex 等）。
+   PCL 只实现了 `AuthService/RefreshAccount`，其余调用一律回空响应，
+   代价是好友/社交/实时设置同步仍然不可用。游戏本体、单人、多人、模组都正常。
+
    传 `0` 时游戏**不会卡住**，只是每 5 秒重试一次并打日志：
 
    ```
    [Bridge] Found IPC port: 0
    [WebSocketConnectReadThread-78] ERROR Lunar Client - [LC IPC] WS-Error: Cannot assign requested address: connect
    ```
-
-   代价是好友/社交/实时设置同步不可用。游戏本体、单人、多人、模组都正常。
 
 2. **`canaryToken`**：实测返回 `control:<hash>,<hash>` 形式，看起来是
    防篡改/灰度开关。原样透传即可，实测未触发校验。

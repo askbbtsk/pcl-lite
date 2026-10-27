@@ -127,6 +127,16 @@ public sealed class LunarLaunchOptions
     public string LauncherVersion { get; init; } = "3.3.0";
     public string InstallationId { get; init; } = string.Empty;
 
+    /// <summary>
+    ///     本地 IPC 端口（<c>--ipcPort</c>）。
+    ///     <para>
+    ///         0 表示不启用：游戏会跳过社交面板与实时设置同步，账号过期也不会来要续期。
+    ///         非 0 时游戏会连 <c>ws://127.0.0.1:&lt;port&gt;</c>，
+    ///         由 <see cref="LunarIpcServer" /> 或 Lunar 启动器应答。
+    ///     </para>
+    /// </summary>
+    public int IpcPort { get; init; }
+
     /// <summary>额外 JVM 参数，会被插在内存参数之后。</summary>
     public IReadOnlyList<string> ExtraJvmArguments { get; init; } = [];
 }
@@ -705,8 +715,9 @@ public static class LunarClientService
         if (options.Fullscreen) Add("--fullscreen", "true");
         Add("--server", options.Server);
 
-        // 0 表示「没有 IPC 服务」，游戏侧会跳过社交与实时设置同步
-        Add("--ipcPort", "0");
+        // 0 表示「没有 IPC 服务」，游戏侧会跳过社交与实时设置同步；
+        // 非 0 时游戏会连上来要账号续期（AuthService/RefreshAccount）
+        Add("--ipcPort", options.IpcPort.ToString());
 
         var startInfo = new ProcessStartInfo
         {

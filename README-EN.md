@@ -5,6 +5,7 @@
 # PCL Lite
 
 Preface: PCL and its guard squad keep saying we "touched the cake", and hand out labels while they're at it. I'd like to know — does this hat factory have some grudge against the bakery? How come the hat factory is the one always touching the cake?
+https://github.com/askbbtsk/pcl-lite/readmedlc
 
 [![Stars](https://img.shields.io/github/stars/askbbtsk/pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/askbbtsk/pcl-lite/stargazers)
 [![Release](https://img.shields.io/github/v/release/askbbtsk/pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/askbbtsk/pcl-lite/releases)
@@ -32,8 +33,9 @@ Get the latest build from [Releases](https://github.com/askbbtsk/pcl-lite/releas
 
 | Architecture | File | Notes |
 |---|---|---|
-| x64 (stable) | `PCL-Lite_1.1_x64.exe` | Single file, no extraction needed |
-| x64 (pre-release) | `PCL-Lite_1.2.2-beta_x64.exe` | Newer features, may be unstable |
+| x64 | `PCL-Lite_[version]-[tag]_x64.exe` | Single file, no extraction needed |
+
+`[tag]` is one of `pre`, `snapshot`, or `nightly`. Builds without a tag are stable releases.
 
 - Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
 - The launcher updates itself from this repository's Releases
@@ -75,6 +77,7 @@ You can still try PCL Lite on unsupported systems, but you may run into many add
 | [Build & release](docs/BUILD.md) | Compiling, secret injection, signing, publishing a release |
 | [Azure login](docs/AZURE-LOGIN.md) | Registering an app from scratch to sign in with your own client_id |
 | [MCP](docs/MCP.md) | Letting AI clients drive the launcher directly |
+| [Open-source inventory](docs/CREDITS.md) | Where the code came from, third-party libraries, and their licenses |
 
 ## 🔒 License
 

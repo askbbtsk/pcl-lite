@@ -16,7 +16,10 @@ namespace PCL.Core.App.Lunar;
 /// <param name="MinecraftName">游戏内名字。</param>
 /// <param name="MinecraftUuid">游戏内 UUID，32 位不带横线。</param>
 /// <param name="Type"><c>XBOX</c> 或 <c>MOJANG</c>。</param>
-/// <param name="AccessToken">Lunar 存的 Minecraft accessToken。</param>
+/// <param name="AccessToken">
+///     Minecraft 的 accessToken（<c>api.minecraftservices.com</c> 签发，24 小时）。
+///     游戏拿它去 <c>sessionserver</c> 建会话，联机校验的就是它。
+/// </param>
 public sealed record LunarAccount(
     string LocalId,
     string Username,
@@ -26,11 +29,11 @@ public sealed record LunarAccount(
     string AccessToken)
 {
     /// <summary>
-    ///     Lunar 会话的到期时间，来自 <c>accessTokenExpiresAt</c>。
+    ///     会话到期时间，来自 <c>accessTokenExpiresAt</c>。
     ///     <para>
-    ///         这个 token 是 Lunar 自己签的 JWT（24 小时有效），不是 Minecraft 的
-    ///         accessToken。过期后游戏里会显示 Invalid session，而续期只能由
-    ///         Lunar 启动器通过 IPC 的 <c>AuthService/RefreshAccount</c> 完成。
+    ///         过期后游戏里会显示 <c>Invalid session</c>。续期走本地 IPC 的
+    ///         <c>AuthService/RefreshAccount</c>：正常情况下由 Lunar 启动器应答，
+    ///         PCL 启动时没人应答，所以 1.5 起由 <see cref="LunarIpcServer" /> 自己接管。
     ///     </para>
     /// </summary>
     public DateTimeOffset? ExpiresAt { get; init; }
@@ -148,6 +151,53 @@ public static class LunarAccountStore
             if (!File.Exists(backup)) File.Copy(path, backup);
 
             root["activeAccountLocalId"] = localId;
+
+            var temporary = path + ".pcltmp";
+            File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temporary, path, overwrite: true);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     把某个账号的 <c>accessToken</c> / <c>accessTokenExpiresAt</c> 换成新的。
+    ///     <para>
+    ///         只动这两个字段：<c>refreshToken</c> 是 Lunar 自己的 OAuth 应用签的，
+    ///         换掉会让 Lunar 启动器以后再也刷不动这个账号；其余字段（profile、
+    ///         localId、type…）游戏也在用，一律原样保留。
+    ///     </para>
+    ///     <para>
+    ///         游戏端拿到 IPC 的成功响应后会**重新读一遍这个文件**，所以写入必须先落盘
+    ///         再回响应 —— 调用方要保证在返回前 <c>await</c> 完。
+    ///     </para>
+    /// </summary>
+    /// <returns>写入成功返回 <c>true</c>。</returns>
+    public static bool UpdateToken(string lunarRoot, string localId, string accessToken,
+        DateTimeOffset? expiresAt)
+    {
+        if (string.IsNullOrWhiteSpace(localId) || string.IsNullOrWhiteSpace(accessToken)) return false;
+
+        var path = FilePath(lunarRoot);
+        try
+        {
+            if (!File.Exists(path)) return false;
+
+            if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root) return false;
+            if (root["accounts"] is not JsonObject accounts) return false;
+            if (accounts[localId] is not JsonObject account) return false;
+
+            // 第一次改之前留个底，出问题可以直接换回来
+            var backup = path + ".pclbak";
+            if (!File.Exists(backup)) File.Copy(path, backup);
+
+            account["accessToken"] = accessToken;
+            if (expiresAt is { } value)
+                account["accessTokenExpiresAt"] =
+                    value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
 
             var temporary = path + ".pcltmp";
             File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));

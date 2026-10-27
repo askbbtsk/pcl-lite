@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.App;
 using PCL.Core.App.Lunar;
 using PCL.Core.Minecraft.Profile;
+using PCL.Core.Minecraft.Profile.Authentication;
 using PCL.Core.Minecraft.Profile.Models;
 
 namespace PCL;
@@ -18,11 +20,14 @@ namespace PCL;
 ///         拼命令行拉起来。协议细节见 <c>docs/LUNAR.md</c>。
 ///     </para>
 ///     <para>
-///         两个必须记住的事实：
+///         三个必须记住的事实：
 ///         ① 物料接口不需要鉴权，正版验证发生在游戏进程内；
-///         ② 但游戏进程**不读**命令行里的 accessToken，它读的是
+///         ② 游戏进程**不读**命令行里的 accessToken 做会话，它读的是
 ///         <c>~/.lunarclient/settings/game/accounts.json</c> 里的激活账号，
-///         所以换账号必须改那个文件（<see cref="LunarAccountStore" />）。
+///         所以换账号必须改那个文件（<see cref="LunarAccountStore" />）；
+///         ③ 账户库里那个 <c>accessToken</c> 过期后，游戏会通过本地 IPC 的
+///         <c>AuthService/RefreshAccount</c> 找启动器续期。PCL 不经过 Lunar 启动器，
+///         所以由 <see cref="LunarIpcServer" /> 自己接管那个端口。
 ///     </para>
 /// </summary>
 public static class ModLunar
@@ -34,6 +39,7 @@ public static class ModLunar
 
     private static Process? _process;
     private static bool _isBusy;
+    private static LunarIpcServer? _ipcServer;
     private static IReadOnlyList<LunarAccount> _accounts = [];
     private static string _activeAccountLocalId = string.Empty;
 
@@ -344,6 +350,11 @@ public static class ModLunar
                 Log("没有拿到界面资源版本号，游戏内菜单可能不显示");
             }
 
+            // 游戏会连 127.0.0.1:<ipcPort> 要账号续期。端口空闲就 PCL 自己接管；
+            // 被占用说明 Lunar 启动器正开着，让它处理
+            var ipc = await StartIpcAsync(installationId).ConfigureAwait(false);
+            Log(ipc.Message);
+
             var options = new LunarLaunchOptions
             {
                 LunarRoot = LunarRoot,
@@ -355,7 +366,8 @@ public static class ModLunar
                 // Genesis 会把这些原样转给游戏，给个数字比空串安全
                 XboxUid = "0",
                 AllocatedMemoryMb = memoryMb,
-                InstallationId = installationId
+                InstallationId = installationId,
+                IpcPort = ipc.GamePort
             };
 
             var startInfo = LunarClientService.BuildStartInfo(
@@ -386,6 +398,8 @@ public static class ModLunar
             {
                 _process = null;
                 IsBusy = false;
+                // 游戏没了就没人需要续期了，端口让出来给别的程序
+                StopIpc();
                 StatusText = "游戏已退出";
                 DetailText = "";
                 RaiseStateChanged();
@@ -404,6 +418,7 @@ public static class ModLunar
         {
             _process = null;
             IsBusy = false;
+            StopIpc();
             StatusText = "启动失败";
             DetailText = ex.Message;
             RaiseStateChanged();
@@ -420,8 +435,8 @@ public static class ModLunar
     ///     <para>
     ///         注意「账号」和「令牌」是两件事：账号由 <c>accounts.json</c> 的
     ///         <c>activeAccountLocalId</c> 决定，而命令行里的 <c>--accessToken</c>
-    ///         必须是真正的 Minecraft 令牌。Lunar 存的那串是它自己签的 JWT，
-    ///         不能拿来联机，所以这里会尽量换成 PCL 里同名账号的令牌。
+    ///         要一个没被吊销、没到期的 Minecraft 令牌。账户库里那份也是真令牌，
+    ///         只是可能已经过期，所以优先用 PCL 登录里同名账号的。
     ///     </para>
     /// </summary>
     private static async Task<(string Name, string Uuid, string Token)> ResolveCredentialsAsync()
@@ -441,21 +456,23 @@ public static class ModLunar
             if (account.IsExpired)
             {
                 Log($"Lunar 会话已于 {account.ExpiresAt!.Value.ToLocalTime():yyyy-MM-dd HH:mm} 过期。");
-                Log("续期只能由 Lunar 启动器做（游戏通过 IPC 的 AuthService/RefreshAccount 找启动器要），");
-                Log("所以游戏内账号面板会显示 Invalid session —— 打开一次 Lunar 启动器即可刷新。");
+                Log("进游戏后如果显示 Invalid session，游戏会通过本地 IPC 找 PCL 续期；");
+                Log("续期用的是 PCL 自己登录的微软账号，所以请确保主页面登录的是同一个号。");
             }
 
             var uuid = NormalizeUuid(account.MinecraftUuid);
 
-            // accounts.json 里的 accessToken 是 Lunar 自己签的 JWT，不是 Minecraft 的会话令牌。
-            // 拿它当 --accessToken 传给游戏，联机会被服务器拒掉，所以优先换成 PCL 登录的同名账号。
+            // 账户库里的 accessToken 是 api.minecraftservices.com 签的真令牌，
+            // 但它可能是几小时前刷新过的，所以优先换成 PCL 登录里的同名账号。
             if (TryGetPclToken(account.DisplayName) is { } pcl)
             {
                 Log($"Minecraft 令牌：取自 PCL 登录（{pcl.Name}）");
                 return (account.DisplayName, uuid, pcl.Token);
             }
 
-            Log("Minecraft 令牌：PCL 里没有这个账号的登录，只能用 Lunar 账户库那份（联机大概率失败）");
+            Log(account.IsExpired
+                ? "Minecraft 令牌：PCL 里没有这个账号的登录，账户库那份又已经过期 —— 联机大概率失败"
+                : "Minecraft 令牌：PCL 里没有这个账号的登录，退回账户库那份（还能用，但不会再续期）");
             return (account.DisplayName, uuid, account.AccessToken);
         }
 
@@ -487,6 +504,85 @@ public static class ModLunar
 
         Log($"账号：{login.Name}（PCL 登录）");
         return (login.Name, NormalizeUuid(login.Uuid), login.AccessToken);
+    }
+
+    /// <summary>
+    ///     抢占 Lunar 的 IPC 端口。抢到了就由 PCL 应答游戏的续期请求，
+    ///     抢不到（Lunar 启动器在跑）就把端口原样交给游戏。
+    /// </summary>
+    private static async Task<LunarIpcStartResult> StartIpcAsync(string installationId)
+    {
+        StopIpc();
+
+        var result = await LunarIpcServer
+            .StartAsync(LunarIpcServer.DefaultPort, installationId, RefreshLunarAccountAsync, Log)
+            .ConfigureAwait(false);
+
+        _ipcServer = result.Server;
+        return result;
+    }
+
+    private static void StopIpc()
+    {
+        _ipcServer?.Dispose();
+        _ipcServer = null;
+    }
+
+    /// <summary>
+    ///     应答游戏端的 <c>AuthService/RefreshAccount</c>。
+    ///     <para>
+    ///         Lunar 启动器收到这个请求时用的是它自己 OAuth 应用的 refreshToken，
+    ///         那个令牌绑死在 Lunar 的应用上（拿它换新令牌会得到 <c>AADSTS70000</c>），
+    ///         PCL 用不了。这里改走另一条路：用 **PCL 自己登录**的微软账号刷一个
+    ///         新的 Minecraft 令牌，写回 <c>accounts.json</c>。
+    ///     </para>
+    ///     <para>
+    ///         所以前提是 PCL 主页面登录了同一个账号；不是同一个号就宁可失败，
+    ///         也不能把别人的令牌写进这条账号里（令牌和 UUID 是绑定的）。
+    ///     </para>
+    /// </summary>
+    private static async Task<LunarRefreshResult> RefreshLunarAccountAsync(Guid minecraftUuid,
+        CancellationToken cancellationToken)
+    {
+        var wanted = NormalizeUuid(minecraftUuid.ToString());
+
+        RefreshAccounts();
+        var account = _accounts.FirstOrDefault(x =>
+            string.Equals(NormalizeUuid(x.MinecraftUuid), wanted, StringComparison.OrdinalIgnoreCase));
+
+        if (account is null)
+            return LunarRefreshResult.Fail(LunarAccountError.AccountsFileEmpty,
+                "Lunar 账户库里没有这个 UUID");
+
+        var profile = ProfileService.Current;
+        if (profile is null || profile.ProfileType != ProfileType.Microsoft)
+            return LunarRefreshResult.Fail(LunarAccountError.MissingRefreshToken,
+                "PCL 当前没有登录微软账号，没有可用的 refreshToken");
+
+        if (!string.Equals(profile.UserName, account.DisplayName, StringComparison.OrdinalIgnoreCase))
+            return LunarRefreshResult.Fail(LunarAccountError.MissingRefreshToken,
+                $"PCL 登录的是 {profile.UserName}，Lunar 这条是 {account.DisplayName}，不是同一个账号");
+
+        var refreshed = await new MicrosoftProvider()
+            .RefreshAsync(profile, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(refreshed.AccessToken))
+            return LunarRefreshResult.Fail(LunarAccountError.MissingRefreshToken,
+                "微软那边没有返回新的 accessToken");
+
+        // 先落盘再回响应：游戏拿到 success 之后会立刻重读这个文件
+        if (!LunarAccountStore.UpdateToken(LunarRoot, account.LocalId, refreshed.AccessToken,
+                refreshed.ExpiresAt))
+            return LunarRefreshResult.Fail(LunarAccountError.Unspecified,
+                "写 accounts.json 失败（文件被占用？）");
+
+        // 把新令牌同步进 PCL 自己的档案，下次启动就能直接用
+        ProfileService.ApplyAuthenticationResult(refreshed, profile, select: false);
+        RefreshAccounts();
+
+        return LunarRefreshResult.Ok(
+            $"新令牌到期 {refreshed.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm}");
     }
 
     /// <summary>

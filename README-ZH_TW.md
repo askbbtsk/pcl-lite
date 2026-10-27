@@ -5,6 +5,7 @@
 # PCL Lite
 
 前言：pcl 和它的護衛隊天天說動了蛋糕，順手扣帽子，我想知道 pcl 這個帽子工廠和烘焙店是有仇嗎 怎麼帽子工廠天天動蛋糕？
+https://github.com/askbbtsk/pcl-lite/readmedlc
 
 [![Stars](https://img.shields.io/github/stars/askbbtsk/pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/askbbtsk/pcl-lite/stargazers)
 [![Release](https://img.shields.io/github/v/release/askbbtsk/pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/askbbtsk/pcl-lite/releases)
@@ -32,8 +33,9 @@ PCL Lite 是基於 PCL 開放原始碼開發的衍生版本，在上游功能的
 
 | 架構 | 檔案 | 說明 |
 |---|---|---|
-| x64（穩定版） | `PCL-Lite_1.1_x64.exe` | 單一檔案、免解壓縮 |
-| x64（預發布） | `PCL-Lite_1.2.2-beta_x64.exe` | 功能較新，可能不穩定 |
+| x64 | `PCL-Lite_[version]-[tag]_x64.exe` | 單一檔案、免解壓縮 |
+
+`[tag]` 為 `pre`、`snapshot` 或 `nightly`；沒有 tag 的是穩定版。
 
 - 需要已安裝 [.NET 10 桌面執行階段](https://dotnet.microsoft.com/download/dotnet/10.0)
 - 啟動器內建自動更新，更新來源指向本儲存庫的 Releases
@@ -73,6 +75,7 @@ PCL Lite 始終建議使用最新版本的作業系統以獲得最佳體驗。
 | [建置與發布](docs/BUILD.md) | 編譯、金鑰注入、簽章、發版 |
 | [Azure 登入](docs/AZURE-LOGIN.md) | 從零註冊應用程式，用自己的 client_id 走正版登入 |
 | [MCP](docs/MCP.md) | 讓 AI 用戶端直接操作啟動器 |
+| [開源專案清單](docs/CREDITS.md) | 程式碼來源、第三方函式庫、各自的授權條款 |
 
 ## 🔒 授權條款
 

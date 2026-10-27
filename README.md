@@ -33,8 +33,9 @@ PCL Lite 是基于 PCL 开源代码开发的衍生版本，在上游功能的基
 
 | 架构 | 文件 | 说明 |
 |---|---|---|
-| x64（稳定版） | `PCL-Lite_1.1_x64.exe` | 单文件、免解压 |
-| x64（预发布） | `PCL-Lite_1.2.2-beta_x64.exe` | 功能较新，可能不稳定 |
+| x64 | `PCL-Lite_[version]-[tag]_x64.exe` | 单文件、免解压 |
+tag包括pre,snapshot和nightly
+
 
 - 需要已安装 [.NET 10 桌面运行时](https://dotnet.microsoft.com/download/dotnet/10.0)
 - 启动器内置自动更新，更新源指向本仓库的 Releases

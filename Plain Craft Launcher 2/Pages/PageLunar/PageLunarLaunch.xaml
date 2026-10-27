@@ -147,6 +147,9 @@
                                               HorizontalScrollBarVisibility="Auto">
                             <TextBox x:Name="TextLog" IsReadOnly="True" BorderThickness="0"
                                      Background="Transparent" FontFamily="Consolas" FontSize="11.5"
+                                     Foreground="{DynamicResource ColorBrush1}"
+                                     CaretBrush="{DynamicResource ColorBrush1}"
+                                     SelectionBrush="{DynamicResource ColorBrush2}"
                                      TextWrapping="NoWrap" VerticalScrollBarVisibility="Disabled"
                                      HorizontalScrollBarVisibility="Disabled" />
                         </local:MyScrollViewer>

@@ -207,9 +207,15 @@ token 过期时自己刷新（日志里会出现
 [WebSocketConnectReadThread/INFO]: [LC Assets] Connection established as lyricify (Online)
 ```
 
-PCL Lite 的做法：读 `accounts.json` 列出账号让用户选，启动前把
-`activeAccountLocalId` 同步过去（先备份 `accounts.json.pclbak`，只改这一个字段）。
+PCL Lite 的做法：账号下拉框分两组列出「PCL Lite 登录账号」和「Lunar 启动器账号」，
+选 Lunar 那条时启动前把 `activeAccountLocalId` 同步过去（先备份 `accounts.json.pclbak`，
+只改这一个字段）；选 PCL 那条时，如果账户库里有同一个 UUID 的账号，也一并切过去，
+没有就只换命令行令牌（游戏内身份仍由 Lunar 决定，日志里会写明）。
 Lunar 账户库为空时才回落到 PCL 主页面的登录凭据。
+
+列 PCL 账号只是读本地档案（`ProfileService.Profiles`），**不会触发任何授权流程**，
+不会重新登录。只有「启动时发现这个档案的令牌过期」才会静默刷一次
+（`MicrosoftProvider.RefreshAsync`，用档案里已有的 `refreshToken`，同样不弹窗）。
 
 ### ① 那个 `accessToken` 就是 Minecraft 令牌，只是 24 小时就过期
 
@@ -273,6 +279,32 @@ Lunar 启动器固定监听 **28190**（`mVe=28190`），启动器没开时没�
 启动前抢 28190，抢到了就由 PCL 应答 `RefreshAccount`；抢不到说明 Lunar 启动器
 正开着，把端口原样交给游戏让它处理。端口被占但对方不响应 WebSocket 时，
 传 `--ipcPort 0` 干脆不启用。
+
+### ②-1 请求里的 UUID 是账户库里的 `minecraftProfile.id`
+
+游戏侧是这么拼的（`lunar.jar` → `com.moonsworth.lunar.client.util.ICCOCOHOCCOROROIRHCCRHICOOOHHC`
+的 `IOOCCRIRHHROHIHRCHHRRIOICHIOIR` 方法）：
+
+```java
+RefreshAccountRequest.newBuilder()
+  .setUuid(toProtoUuid(UUID.fromString(withDashes(account.getProfile().getId()))))
+```
+
+`Uuid` 是 `{ fixed64 high64 = 1; fixed64 low64 = 2; }`，取值就是
+`UUID.getMostSignificantBits()` / `getLeastSignificantBits()`——和 Java 的
+UUID 文本一一对应，没有大小端花样（`high64` 就是前 16 个十六进制字符）。
+
+1.5.1 起匹配按这个顺序走，只要有一条命中就续期：
+
+1. `minecraftProfile.id`
+2. `localId`（万一哪天协议改传这个）
+3. **本次启动用的那个账号** —— 启动前已经把 `activeAccountLocalId` 切成它了，
+   游戏问「当前账号」时指的必然是它
+
+第 3 条是 1.5.0 报「账户库里没有这个 UUID」的兜底：账户库被 Lunar 启动器改过、
+或者文件正好写到一半，UUID 就可能对不上。命中兜底时日志里会写明。
+另外账户库读出来是空的话会隔 200ms 重读一次 —— 游戏退出前会连续刷好几个 json，
+撞上写一半的窗口并不稀奇。
 
 ### ③ 为什么不能直接拿 `refreshToken` 刷
 

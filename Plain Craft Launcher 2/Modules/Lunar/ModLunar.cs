@@ -43,6 +43,19 @@ public static class ModLunar
     private static IReadOnlyList<LunarAccount> _accounts = [];
     private static string _activeAccountLocalId = string.Empty;
 
+    /// <summary>
+    ///     本次启动实际交给游戏的 Lunar 账号（<c>localId</c>）。
+    ///     <para>
+    ///         游戏发续期请求时带的是它自己认为的当前账号 UUID。万一对不上账户库
+    ///         （账户库被 Lunar 启动器改过、或者文件正好写到一半），就按这个兜底：
+    ///         启动前已经把激活账号切成它了，游戏问的必然是它。
+    ///     </para>
+    /// </summary>
+    private static string _launchedLocalId = string.Empty;
+
+    /// <summary>账号选择里 PCL 账号的前缀，和 Lunar 的 <c>localId</c> 区分开。</summary>
+    public const string PclSelectionPrefix = "pcl:";
+
     public static event Action? StateChanged;
 
     public static event Action<string>? LogReceived;
@@ -127,11 +140,65 @@ public static class ModLunar
     }
 
     /// <summary>
-    ///     当前选中的账号。空值表示跟随 Lunar 自己的激活账号。
+    ///     当前选中的 Lunar 账号。空值表示「没选 Lunar 的」——要么选了 PCL 登录账号，
+    ///     要么什么都没选（这时跟随 Lunar 自己的激活账号）。
     /// </summary>
-    public static LunarAccount? SelectedAccount =>
-        new LunarAccountSnapshot(_activeAccountLocalId, _accounts)
-            .Resolve(Config.Preference.Lunar.AccountLocalId);
+    public static LunarAccount? SelectedAccount
+    {
+        get
+        {
+            var configured = Config.Preference.Lunar.AccountLocalId;
+            if (IsPclSelection(configured)) return null;
+            return new LunarAccountSnapshot(_activeAccountLocalId, _accounts).Resolve(StripLunarPrefix(configured));
+        }
+    }
+
+    /// <summary>
+    ///     当前选中的 PCL 登录账号。没选 PCL 账号时为 <c>null</c>。
+    ///     <para>
+    ///         只读本地档案，**不会触发任何登录/授权流程**，所以把它列进下拉框不会导致重新登录。
+    ///     </para>
+    /// </summary>
+    public static McProfile? SelectedPclProfile
+    {
+        get
+        {
+            var configured = Config.Preference.Lunar.AccountLocalId;
+            if (!IsPclSelection(configured)) return null;
+            var id = configured[PclSelectionPrefix.Length..];
+            return PclProfiles.FirstOrDefault(x => x.ProfileId == id);
+        }
+    }
+
+    /// <summary>PCL 里登录过的微软账号。读不出来就返回空列表，不抛异常。</summary>
+    public static IReadOnlyList<McProfile> PclProfiles
+    {
+        get
+        {
+            try
+            {
+                return ProfileService.Profiles
+                    .Where(x => x.ProfileType == ProfileType.Microsoft && !string.IsNullOrWhiteSpace(x.UserName))
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "[Lunar] 读取 PCL 账号列表失败", ModBase.LogLevel.Debug);
+                return [];
+            }
+        }
+    }
+
+    /// <summary>下拉框里那一项的唯一标识：<c>pcl:&lt;ProfileId&gt;</c> 或 <c>lunar:&lt;localId&gt;</c>。</summary>
+    public static string SelectionTag(LunarAccount account) => "lunar:" + account.LocalId;
+
+    public static string SelectionTag(McProfile profile) => PclSelectionPrefix + profile.ProfileId;
+
+    private static bool IsPclSelection(string? value) =>
+        value is not null && value.StartsWith(PclSelectionPrefix, StringComparison.OrdinalIgnoreCase);
+
+    private static string StripLunarPrefix(string? value) =>
+        value is not null && value.StartsWith("lunar:", StringComparison.OrdinalIgnoreCase) ? value[6..] : value ?? "";
 
     /// <summary>
     ///     刷新界面用的状态：是否装了 Lunar、版本列表、账号列表。
@@ -442,6 +509,12 @@ public static class ModLunar
     private static async Task<(string Name, string Uuid, string Token)> ResolveCredentialsAsync()
     {
         RefreshAccounts();
+        _launchedLocalId = string.Empty;
+
+        // ① 用户在账号下拉框里明确点了「PCL Lite 登录账号」
+        if (SelectedPclProfile is { } pclProfile)
+            return await ResolveFromPclProfileAsync(pclProfile).ConfigureAwait(false);
+
         var account = SelectedAccount;
 
         if (account is not null)
@@ -449,22 +522,27 @@ public static class ModLunar
             // 游戏进程读的是 Lunar 自己的激活账号，这里同步一下，
             // 否则「界面上选的是 A、进游戏是 B」
             if (LunarAccountStore.SetActive(LunarRoot, account.LocalId))
+            {
+                _launchedLocalId = account.LocalId;
                 Log($"账号：{account.DisplayName}（Lunar 账户库，{account.Type}）");
+            }
             else
+            {
                 Log($"账号：{account.DisplayName}（切换 Lunar 激活账号失败，进游戏可能是另一个账号）");
+            }
 
             if (account.IsExpired)
             {
                 Log($"Lunar 会话已于 {account.ExpiresAt!.Value.ToLocalTime():yyyy-MM-dd HH:mm} 过期。");
-                Log("进游戏后如果显示 Invalid session，游戏会通过本地 IPC 找 PCL 续期；");
-                Log("续期用的是 PCL 自己登录的微软账号，所以请确保主页面登录的是同一个号。");
+                Log("游戏发现会话过期时会通过本地 IPC 的 AuthService/RefreshAccount 找 PCL 要续期；");
+                Log("续期用的是 PCL 里同一个 UUID 的登录，所以请在主页面登录这个号。");
             }
 
             var uuid = NormalizeUuid(account.MinecraftUuid);
 
             // 账户库里的 accessToken 是 api.minecraftservices.com 签的真令牌，
-            // 但它可能是几小时前刷新过的，所以优先换成 PCL 登录里的同名账号。
-            if (TryGetPclToken(account.DisplayName) is { } pcl)
+            // 但它可能是几小时前刷新过的，所以优先换成 PCL 登录里的同 UUID 账号。
+            if (TryGetPclToken(account) is { } pcl)
             {
                 Log($"Minecraft 令牌：取自 PCL 登录（{pcl.Name}）");
                 return (account.DisplayName, uuid, pcl.Token);
@@ -504,6 +582,59 @@ public static class ModLunar
 
         Log($"账号：{login.Name}（PCL 登录）");
         return (login.Name, NormalizeUuid(login.Uuid), login.AccessToken);
+    }
+
+    /// <summary>
+    ///     用 PCL 自己登录的账号启动。
+    ///     <para>
+    ///         这条路的坑在于：游戏进程**不读**命令行里的令牌，它按 <c>accounts.json</c>
+    ///         的激活账号决定「我是谁」。所以这里会顺手在 Lunar 账户库里找同名（同 UUID）
+    ///         的账号并把激活账号切过去；找不到就只能启动，进游戏仍是 Lunar 原来那个身份。
+    ///     </para>
+    /// </summary>
+    private static async Task<(string Name, string Uuid, string Token)> ResolveFromPclProfileAsync(
+        McProfile profile)
+    {
+        Log($"账号：{profile.UserName}（PCL Lite 登录）");
+
+        var uuid = NormalizeUuid(profile.Uuid);
+        var twin = _accounts.FirstOrDefault(x =>
+            string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
+
+        if (twin is not null && LunarAccountStore.SetActive(LunarRoot, twin.LocalId))
+        {
+            _launchedLocalId = twin.LocalId;
+            Log($"Lunar 账户库里有同一个 UUID 的账号，激活账号已切过去（{twin.LocalId}）");
+        }
+        else
+        {
+            Log("Lunar 账户库里没有这个 UUID：游戏内身份仍由 Lunar 的激活账号决定，" +
+                "这里只换了命令行令牌（联机用这个号，好友列表是另一个号）");
+        }
+
+        var token = profile.AccessToken;
+        if (profile.IsExpired)
+        {
+            Log("PCL 令牌已过期，先刷新一次…");
+            try
+            {
+                var refreshed = await new MicrosoftProvider()
+                    .RefreshAsync(profile, CancellationToken.None)
+                    .ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(refreshed.AccessToken))
+                {
+                    token = refreshed.AccessToken;
+                    ProfileService.ApplyAuthenticationResult(refreshed, profile, select: false);
+                    Log($"令牌已刷新，到期 {refreshed.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("刷新失败，仍然用旧令牌启动：" + ex.Message);
+            }
+        }
+
+        return (profile.UserName, uuid, token);
     }
 
     /// <summary>
@@ -547,21 +678,22 @@ public static class ModLunar
         var wanted = NormalizeUuid(minecraftUuid.ToString());
 
         RefreshAccounts();
-        var account = _accounts.FirstOrDefault(x =>
-            string.Equals(NormalizeUuid(x.MinecraftUuid), wanted, StringComparison.OrdinalIgnoreCase));
+        if (_accounts.Count == 0)
+        {
+            // 游戏随时在写这个文件，偶尔会正好读到写了一半的内容，重读一次再下结论
+            await Task.Delay(200, cancellationToken).ConfigureAwait(false);
+            RefreshAccounts();
+        }
 
+        var account = FindRefreshTarget(wanted);
         if (account is null)
             return LunarRefreshResult.Fail(LunarAccountError.AccountsFileEmpty,
-                "Lunar 账户库里没有这个 UUID");
+                $"Lunar 账户库里没有 UUID {wanted}（现有：{DescribeAccountUuids()}）");
 
-        var profile = ProfileService.Current;
-        if (profile is null || profile.ProfileType != ProfileType.Microsoft)
+        var profile = FindPclProfileFor(account);
+        if (profile is null)
             return LunarRefreshResult.Fail(LunarAccountError.MissingRefreshToken,
-                "PCL 当前没有登录微软账号，没有可用的 refreshToken");
-
-        if (!string.Equals(profile.UserName, account.DisplayName, StringComparison.OrdinalIgnoreCase))
-            return LunarRefreshResult.Fail(LunarAccountError.MissingRefreshToken,
-                $"PCL 登录的是 {profile.UserName}，Lunar 这条是 {account.DisplayName}，不是同一个账号");
+                $"PCL 里没有登录 {account.DisplayName}（{account.MinecraftUuid}），没有可用的 refreshToken");
 
         var refreshed = await new MicrosoftProvider()
             .RefreshAsync(profile, cancellationToken)
@@ -586,22 +718,75 @@ public static class ModLunar
     }
 
     /// <summary>
-    ///     从 PCL 主页面的登录里取一个能用的 Minecraft 令牌，账号名必须和 Lunar 那条对得上。
+    ///     在账户库里找到这次要续期的账号。
+    ///     <para>
+    ///         按可靠性从高到低试三种认法：UUID → <c>localId</c> → 本次启动用的那个。
+    ///         最后那条不是瞎猜：启动前已经把 Lunar 的激活账号切成了它，游戏问「当前账号」
+    ///         时指的必然是它。只有账户库里真有多个账号、且请求的 UUID 一个都对不上时
+    ///         才会走到那里，日志里会写明是兜底命中的。
+    ///     </para>
+    /// </summary>
+    private static LunarAccount? FindRefreshTarget(string wantedUuid)
+    {
+        var byUuid = _accounts.FirstOrDefault(x =>
+            string.Equals(NormalizeUuid(x.MinecraftUuid), wantedUuid, StringComparison.OrdinalIgnoreCase));
+        if (byUuid is not null) return byUuid;
+
+        var byLocalId = _accounts.FirstOrDefault(x =>
+            string.Equals(NormalizeUuid(x.LocalId), wantedUuid, StringComparison.OrdinalIgnoreCase));
+        if (byLocalId is not null) return byLocalId;
+
+        if (!string.IsNullOrWhiteSpace(_launchedLocalId))
+        {
+            var launched = _accounts.FirstOrDefault(x => x.LocalId == _launchedLocalId);
+            if (launched is not null)
+            {
+                Log($"[续期] 请求的 UUID {wantedUuid} 不在账户库里，" +
+                    $"按本次启动用的账号 {launched.DisplayName}（{launched.MinecraftUuid}）处理");
+                return launched;
+            }
+        }
+
+        // 只有一个账号时也不用猜
+        return _accounts.Count == 1 ? _accounts[0] : null;
+    }
+
+    /// <summary>
+    ///     找 PCL 里对应的登录。**先按 UUID 认，再按名字认** ——
+    ///     改过名的账号 UUID 不变，只比名字会认错人。
+    /// </summary>
+    private static McProfile? FindPclProfileFor(LunarAccount account)
+    {
+        var uuid = NormalizeUuid(account.MinecraftUuid);
+        var profiles = PclProfiles;
+
+        return profiles.FirstOrDefault(x =>
+                   string.Equals(NormalizeUuid(x.Uuid), uuid, StringComparison.OrdinalIgnoreCase))
+               ?? profiles.FirstOrDefault(x =>
+                   string.Equals(x.UserName, account.DisplayName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>失败信息里带上账户库现有的 UUID，下次一眼就能看出对不上的是哪个。</summary>
+    private static string DescribeAccountUuids() =>
+        _accounts.Count == 0
+            ? "账户库是空的"
+            : string.Join("、", _accounts.Select(x =>
+                $"{x.DisplayName}={NormalizeUuid(x.MinecraftUuid)}"));
+
+    /// <summary>
+    ///     从 PCL 的登录里取一个能用的 Minecraft 令牌，必须是同一个账号（UUID 优先，其次同名）。
     ///     <para>
     ///         对不上就一律不用：令牌和 UUID 是绑在一起的，拿别人的令牌联机会被服务器直接踢。
     ///         过期了也不用 —— 这里不主动跑登录流程，启动 Lunar 时突然弹个登录框更吓人。
     ///     </para>
     /// </summary>
-    private static (string Name, string Token)? TryGetPclToken(string minecraftName)
+    private static (string Name, string Token)? TryGetPclToken(LunarAccount account)
     {
-        if (string.IsNullOrWhiteSpace(minecraftName)) return null;
-
         try
         {
-            var profile = ProfileService.Current;
-            if (profile is null || profile.ProfileType != ProfileType.Microsoft) return null;
+            var profile = FindPclProfileFor(account);
+            if (profile is null) return null;
             if (string.IsNullOrWhiteSpace(profile.AccessToken) || profile.IsExpired) return null;
-            if (!string.Equals(profile.UserName, minecraftName, StringComparison.OrdinalIgnoreCase)) return null;
             return (profile.UserName, profile.AccessToken);
         }
         catch (Exception ex)

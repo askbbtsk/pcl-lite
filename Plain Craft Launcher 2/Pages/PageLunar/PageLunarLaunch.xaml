@@ -96,6 +96,15 @@
                         </Grid>
                     </Border>
 
+                    <!--
+                        账号状态的说明单独占一行并自动换行。
+                        以前把「（会话已过期）」塞在下拉框内容里，文字一长就把右边的
+                        按钮和日志挤歪；换行文本放在这里，多长都只往下长。
+                    -->
+                    <TextBlock x:Name="LabAccountHint" Margin="6,8,6,0" FontSize="11"
+                               Opacity="0.7" TextWrapping="Wrap" LineHeight="15"
+                               Visibility="Collapsed" Text="" />
+
                     <WrapPanel Margin="0,14,0,0">
                         <local:MyButton x:Name="BtnLaunch" Height="35" MinWidth="130" Margin="0,0,12,0"
                                         ColorType="Highlight" Text="启动 Lunar" Click="BtnLaunch_Click" />
@@ -122,8 +131,11 @@
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
                                Text="前置条件：本机已安装 Lunar Client 并至少启动过一次，让物料落盘。缺对应版本的 Java 时会自动下载（1.8.9～1.20.1 用 Java 17，1.20.6～1.21.11 用 Java 21，26.x 用 Java 25）。" />
 
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,0" Opacity="0.6" FontSize="11.5"
-                               Text="当前未实现 Lunar 的本地 IPC 服务，好友与社交面板不可用；单人、多人、模组均正常。" />
+                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
+                               Text="账号下拉框分两组：PCL Lite 登录账号来自启动器自己的档案，Lunar 启动器账号来自 Lunar 的账户库。选 PCL 账号时会把 Lunar 的激活账号一并切到同一个 UUID（找不到同名账号就只换命令行令牌）。列出来只是读本地文件，不会触发重新登录。" />
+
+                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.6" FontSize="11.5"
+                               Text="会话过期不用管：游戏会通过本地 IPC 的 AuthService/RefreshAccount 找启动器续期，PCL 启动前会抢占 127.0.0.1:28190 自己应答（Lunar 启动器开着时让位给它）。好友与社交面板仍未实现。" />
                 </StackPanel>
             </local:MyCard>
 
@@ -136,23 +148,33 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="11" Opacity="0.55"
-                                   Text="启动阶段与游戏输出" />
-                        <local:MyButton x:Name="BtnClearLog" Grid.Column="1" Height="24" MinWidth="60"
-                                        Text="清空" Click="BtnClearLog_Click" />
+                                   Text="启动阶段与游戏输出（可直接选中复制）" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <local:MyButton x:Name="BtnCopyLog" Height="24" MinWidth="60" Margin="0,0,8,0"
+                                            Text="复制" Click="BtnCopyLog_Click" />
+                            <local:MyButton x:Name="BtnExportLog" Height="24" MinWidth="60" Margin="0,0,8,0"
+                                            Text="导出" Click="BtnExportLog_Click" />
+                            <local:MyButton x:Name="BtnClearLog" Height="24" MinWidth="60"
+                                            Text="清空" Click="BtnClearLog_Click" />
+                        </StackPanel>
                     </Grid>
 
+                    <!--
+                        这里刻意不用 MyScrollViewer：它的模板里只有纵向滚动条
+                        （CanHorizontallyScroll=False），长行会被直接切掉、也拖不出来。
+                        TextBox 自己的模板两条滚动条都有，而且不套一层 ScrollViewer
+                        才不会把左键拖动选中抢走。
+                    -->
                     <Border Background="{DynamicResource ColorBrushTransparentBackground}"
                             CornerRadius="5" Padding="10">
-                        <local:MyScrollViewer Height="230" VerticalScrollBarVisibility="Auto"
-                                              HorizontalScrollBarVisibility="Auto">
-                            <TextBox x:Name="TextLog" IsReadOnly="True" BorderThickness="0"
-                                     Background="Transparent" FontFamily="Consolas" FontSize="11.5"
-                                     Foreground="{DynamicResource ColorBrush1}"
-                                     CaretBrush="{DynamicResource ColorBrush1}"
-                                     SelectionBrush="{DynamicResource ColorBrush2}"
-                                     TextWrapping="NoWrap" VerticalScrollBarVisibility="Disabled"
-                                     HorizontalScrollBarVisibility="Disabled" />
-                        </local:MyScrollViewer>
+                        <TextBox x:Name="TextLog" Height="230" IsReadOnly="True" BorderThickness="0"
+                                 Background="Transparent" FontFamily="Consolas" FontSize="11.5"
+                                 Foreground="{DynamicResource ColorBrush1}"
+                                 CaretBrush="{DynamicResource ColorBrush1}"
+                                 SelectionBrush="{DynamicResource ColorBrush2}"
+                                 IsReadOnlyCaretVisible="True" TextWrapping="NoWrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto" />
                     </Border>
                 </StackPanel>
             </local:MyCard>

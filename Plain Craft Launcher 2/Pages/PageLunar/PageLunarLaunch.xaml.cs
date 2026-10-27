@@ -73,6 +73,7 @@ public partial class PageLunarLaunch
 
         RefreshVersionCombo();
         RefreshAccountCombo();
+        RefreshAccountHint();
 
         LabGameDir.Text = string.IsNullOrWhiteSpace(ModLunar.GameDirectory)
             ? _gameDirPreview
@@ -132,14 +133,31 @@ public partial class PageLunarLaunch
     }
 
     /// <summary>
-    ///     账号下拉框，内容来自 Lunar 自己的账户库。
+    ///     账号下拉框：分「PCL Lite 登录账号」和「Lunar 启动器账号」两组。
+    ///     <para>
+    ///         分组头是禁用项（<see cref="UIElement.IsEnabled" /> = false），点不动也选不上，
+    ///         只用来在列表里画一条分界。真正能选的是下面那些，<c>Tag</c> 带着
+    ///         <c>pcl:</c> / <c>lunar:</c> 前缀，选完原样存进配置。
+    ///     </para>
     /// </summary>
     private void RefreshAccountCombo()
     {
         var accounts = ModLunar.Accounts;
-        var selected = ModLunar.SelectedAccount;
+        var pclProfiles = ModLunar.PclProfiles;
+
+        // 1.5.0 存的是裸的 localId，没有前缀。这里补上，否则老用户的选中项
+        // 会对不上任何一项，下拉框看起来像「没选账号」
+        var selectedTag = Config.Preference.Lunar.AccountLocalId ?? "";
+        if (!string.IsNullOrEmpty(selectedTag)
+            && !selectedTag.StartsWith("pcl:", StringComparison.OrdinalIgnoreCase)
+            && !selectedTag.StartsWith("lunar:", StringComparison.OrdinalIgnoreCase))
+            selectedTag = "lunar:" + selectedTag;
+
+        // 选中项也要进签名：换账号时要重建，否则下拉框显示的还是旧的
         var signature = string.Join(",", accounts.Select(x => x.LocalId + (x.IsExpired ? "!" : "")))
-                        + "#" + (selected?.LocalId ?? "");
+                        + "|" + string.Join(",", pclProfiles.Select(x => x.ProfileId + ":" + x.UserName +
+                            (x.IsExpired ? "!" : "")))
+                        + "#" + selectedTag;
         if (signature == _accountSignature) return;
         _accountSignature = signature;
 
@@ -147,13 +165,33 @@ public partial class PageLunarLaunch
         try
         {
             ComboAccount.Items.Clear();
+
+            if (pclProfiles.Count > 0)
+            {
+                ComboAccount.Items.Add(MakeGroupHeader("PCL Lite 登录账号"));
+                foreach (var profile in pclProfiles)
+                    ComboAccount.Items.Add(new MyComboBoxItem
+                    {
+                        // 下拉框里只写名字，过期状态放到下面那行说明里，免得把右侧挤歪
+                        Content = profile.UserName,
+                        Tag = ModLunar.SelectionTag(profile),
+                        ToolTip = profile.IsExpired
+                            ? $"PCL Lite 登录　{profile.Uuid}\n令牌已于 {profile.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm} 过期，启动前会尝试刷新"
+                            : $"PCL Lite 登录　{profile.Uuid}",
+                        IsSelected = selectedTag == ModLunar.SelectionTag(profile)
+                    });
+            }
+
+            ComboAccount.Items.Add(MakeGroupHeader("Lunar 启动器账号"));
+
             if (accounts.Count == 0)
             {
                 ComboAccount.Items.Add(new MyComboBoxItem
                 {
-                    Content = "未找到 Lunar 账号（回落 PCL 登录）",
+                    Content = "（Lunar 账户库是空的）",
                     Tag = "",
-                    IsSelected = true
+                    IsEnabled = false,
+                    IsSelected = string.IsNullOrEmpty(selectedTag)
                 });
             }
             else
@@ -161,25 +199,73 @@ public partial class PageLunarLaunch
                 foreach (var account in accounts)
                     ComboAccount.Items.Add(new MyComboBoxItem
                     {
-                        // 会话过期要写在脸上：不然用户只会看到「启动成功但账号无效」
-                        Content = account.IsExpired
-                            ? account.DisplayName + "（会话已过期）"
-                            : account.DisplayName,
-                        Tag = account.LocalId,
+                        Content = account.DisplayName,
+                        Tag = ModLunar.SelectionTag(account),
                         ToolTip = account.IsExpired && account.ExpiresAt is { } expires
-                            ? $"{account.Type}　{account.MinecraftUuid}\nLunar 会话已于 {expires.ToLocalTime():yyyy-MM-dd HH:mm} 过期，打开一次 Lunar 启动器即可刷新"
+                            ? $"{account.Type}　{account.MinecraftUuid}\nLunar 会话已于 {expires.ToLocalTime():yyyy-MM-dd HH:mm} 过期，进游戏后会通过 IPC 续期"
                             : $"{account.Type}　{account.MinecraftUuid}",
-                        IsSelected = account.LocalId == selected?.LocalId
+                        IsSelected = selectedTag == ModLunar.SelectionTag(account)
                     });
+            }
 
-                if (ComboAccount.SelectedItem is null && ComboAccount.Items.Count > 0)
-                    ComboAccount.SelectedIndex = 0;
+            // 没有任何一项被选中时（第一次进页面、或者配置里那个账号已经不在库里）
+            // 落到第一个可选账号上，不然下拉框是空白，用户会以为读不到账号
+            if (ComboAccount.SelectedItem is null)
+            {
+                var first = ComboAccount.Items.OfType<MyComboBoxItem>()
+                                .FirstOrDefault(x => x.IsEnabled && !string.IsNullOrWhiteSpace(x.Tag as string))
+                            ?? ComboAccount.Items.OfType<MyComboBoxItem>().LastOrDefault();
+                if (first is not null) first.IsSelected = true;
             }
         }
         finally
         {
             _suppressComboEvents = false;
         }
+    }
+
+    /// <summary>分组头：禁用状态，点不动、也选不上。</summary>
+    private static MyComboBoxItem MakeGroupHeader(string text) => new()
+    {
+        Content = text,
+        Tag = "",
+        IsEnabled = false
+    };
+
+    /// <summary>
+    ///     账号状态那行说明。会话过期、PCL 里找不到对应登录，都写在这里 ——
+    ///     这块是自动换行的，写多长都不会挤到右边的按钮和日志。
+    /// </summary>
+    private void RefreshAccountHint()
+    {
+        var account = ModLunar.SelectedAccount;
+        var pclProfile = ModLunar.SelectedPclProfile;
+
+        string text;
+        if (account is { IsExpired: true } expired)
+        {
+            var hasPcl = ModLunar.PclProfiles.Any(x =>
+                string.Equals(x.UserName, expired.DisplayName, StringComparison.OrdinalIgnoreCase));
+            text = $"Lunar 会话已于 {expired.ExpiresAt!.Value.ToLocalTime():yyyy-MM-dd HH:mm} 过期。" +
+                   (hasPcl
+                       ? "进游戏后会自动续期，不需要打开 Lunar 启动器。"
+                       : "PCL 里没有这个账号的登录，续期会失败 —— 请先在主页面登录它。");
+        }
+        else if (pclProfile is { IsExpired: true } pcl)
+        {
+            text = $"PCL 里 {pcl.UserName} 的令牌已于 {pcl.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm} 过期，启动前会先刷新一次。";
+        }
+        else if (pclProfile is not null)
+        {
+            text = $"用 PCL Lite 的登录启动：{pclProfile.UserName}。游戏内身份仍取 Lunar 账户库里同一个 UUID 的账号。";
+        }
+        else
+        {
+            text = "";
+        }
+
+        LabAccountHint.Text = text;
+        LabAccountHint.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void RefreshButtons()
@@ -209,11 +295,15 @@ public partial class PageLunarLaunch
     private void ComboAccount_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_suppressComboEvents) return;
-        if (ComboAccount.SelectedItem is not MyComboBoxItem { Tag: string localId }) return;
+        if (ComboAccount.SelectedItem is not MyComboBoxItem { Tag: string tag }) return;
+
+        // 分组头的 Tag 是空串，选中它什么都不做（正常情况下也选不上，它是禁用项）
+        if (string.IsNullOrWhiteSpace(tag)) return;
 
         // 只记下来，真正切 Lunar 的激活账号放在启动前做：
         // 光点下拉框就改别人的配置文件太粗暴了
-        Config.Preference.Lunar.AccountLocalId = localId;
+        Config.Preference.Lunar.AccountLocalId = tag;
+        RefreshAccountHint();
     }
 
     private async void BtnRefreshVersions_Click(object sender, MouseButtonEventArgs e)
@@ -278,12 +368,63 @@ public partial class PageLunarLaunch
         TextLog.Clear();
     }
 
+    private void BtnCopyLog_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (string.IsNullOrEmpty(TextLog.Text))
+        {
+            HintService.Hint("日志是空的，没有可复制的内容");
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(TextLog.Text);
+            HintService.Hint("已复制全部日志");
+        }
+        catch (Exception ex)
+        {
+            // 剪贴板偶尔会被别的程序占住，失败要说出来而不是静默
+            ModBase.Log(ex, "[Lunar] 复制日志失败", ModBase.LogLevel.Debug);
+            HintService.Hint("复制失败：" + ex.Message);
+        }
+    }
+
+    private void BtnExportLog_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (string.IsNullOrEmpty(TextLog.Text))
+        {
+            HintService.Hint("日志是空的，没有可导出的内容");
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "导出 Lunar 运行日志",
+            FileName = $"Lunar-{DateTime.Now:yyyyMMdd-HHmmss}.log",
+            DefaultExt = ".log",
+            Filter = "日志文件 (*.log)|*.log|文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*"
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            File.WriteAllText(dialog.FileName, TextLog.Text);
+            HintService.Hint("日志已导出到 " + dialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            ModMain.MyMsgBox("写文件失败：" + ex.Message, "导出日志");
+        }
+    }
+
     private void AppendLog(string line)
     {
         ModBase.RunInUi(() =>
         {
+            // 用户往上翻着看的时候别把他拽回底部，只有本来就在底部才跟着滚
+            var atBottom = TextLog.VerticalOffset >= TextLog.ExtentHeight - TextLog.ViewportHeight - 4;
             TextLog.AppendText(line + Environment.NewLine);
-            TextLog.ScrollToEnd();
+            if (atBottom) TextLog.ScrollToEnd();
         });
     }
 

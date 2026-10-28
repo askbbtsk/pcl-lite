@@ -81,40 +81,57 @@ public sealed class LunarIpcServer : IDisposable
     ///         是的话把端口原样交给游戏，由启动器负责续期；不是的话让游戏别连，
     ///         免得连到不相干的东西上。
     ///     </para>
+    ///     <para>
+    ///         <paramref name="fallbackPorts" /> 用于「PCL 能自己续期，不想让位」的场景：
+    ///         主端口被占就依次试这些端口，抢到哪个就把哪个交给游戏。全部失败才回退到
+    ///         上面那套让位逻辑。
+    ///     </para>
     /// </summary>
     public static async Task<LunarIpcStartResult> StartAsync(
         int port,
         string installationId,
         Func<Guid, CancellationToken, Task<LunarRefreshResult>> refresh,
         Action<string> log,
+        IReadOnlyList<int>? fallbackPorts = null,
         CancellationToken cancellationToken = default)
     {
-        TcpListener listener;
-        try
+        var candidates = new List<int> { port };
+        if (fallbackPorts is not null)
+            foreach (var candidate in fallbackPorts)
+                if (candidate > 0 && !candidates.Contains(candidate))
+                    candidates.Add(candidate);
+
+        foreach (var candidate in candidates)
         {
-            listener = new TcpListener(IPAddress.Loopback, port);
-            listener.Start();
-        }
-        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
-        {
-            var isWebSocket = await LooksLikeWebSocketAsync(port, cancellationToken).ConfigureAwait(false);
-            return isWebSocket
-                ? new LunarIpcStartResult(null, port, LunarIpcPortState.TakenByLauncher,
-                    $"端口 {port} 已被占用，且对方是 WebSocket 服务 —— 应该是 Lunar 启动器在运行，" +
-                    "续期交给它处理")
-                : new LunarIpcStartResult(null, 0, LunarIpcPortState.TakenByOther,
-                    $"端口 {port} 被其他程序占用，且不响应 WebSocket，本次不启用 IPC");
-        }
-        catch (Exception ex) when (ex is SocketException or UnauthorizedAccessException)
-        {
-            return new LunarIpcStartResult(null, 0, LunarIpcPortState.TakenByOther,
-                $"无法监听端口 {port}：{ex.Message}");
+            try
+            {
+                var listener = new TcpListener(IPAddress.Loopback, candidate);
+                listener.Start();
+                var server = new LunarIpcServer(listener, candidate, installationId, refresh, log);
+                server.StartAcceptLoop();
+                return new LunarIpcStartResult(server, candidate, LunarIpcPortState.Served,
+                    candidate == port
+                        ? $"已在 127.0.0.1:{candidate} 接管 Lunar IPC"
+                        : $"端口 {port} 被占用，改在 127.0.0.1:{candidate} 接管 Lunar IPC，续期由 PCL 处理");
+            }
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
+            {
+                // 换下一个候选端口
+            }
+            catch (Exception ex) when (ex is SocketException or UnauthorizedAccessException)
+            {
+                return new LunarIpcStartResult(null, 0, LunarIpcPortState.TakenByOther,
+                    $"无法监听端口 {candidate}：{ex.Message}");
+            }
         }
 
-        var server = new LunarIpcServer(listener, port, installationId, refresh, log);
-        server.StartAcceptLoop();
-        return new LunarIpcStartResult(server, port, LunarIpcPortState.Served,
-            $"已在 127.0.0.1:{port} 接管 Lunar IPC");
+        var isWebSocket = await LooksLikeWebSocketAsync(port, cancellationToken).ConfigureAwait(false);
+        return isWebSocket
+            ? new LunarIpcStartResult(null, port, LunarIpcPortState.TakenByLauncher,
+                $"端口 {port} 已被占用，且对方是 WebSocket 服务 —— 应该是 Lunar 启动器在运行，" +
+                "续期交给它处理")
+            : new LunarIpcStartResult(null, 0, LunarIpcPortState.TakenByOther,
+                $"端口 {port} 被其他程序占用，且不响应 WebSocket，本次不启用 IPC");
     }
 
     private void StartAcceptLoop() => _ = Task.Run(AcceptLoopAsync);

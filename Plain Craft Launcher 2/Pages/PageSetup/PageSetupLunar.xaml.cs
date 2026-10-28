@@ -254,7 +254,10 @@ public partial class PageSetupLunar
         RefreshEffectiveHint();
     }
 
-    private void BtnBrowseJava_Click(object sender, RoutedEventArgs e)
+    // 注意参数类型：MyIconTextButton.Click 是自定义的 ClickEventHandler，
+    // 第二个参数是 ModBase.RouteEventArgs，不是 RoutedEventArgs。
+    // 写成 RoutedEventArgs 编译期查不出来，打开设置页时才会抛 XamlParseException。
+    private void BtnBrowseJava_Click(object sender, ModBase.RouteEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -322,7 +325,8 @@ public partial class PageSetupLunar
         RefreshEffectiveHint();
     }
 
-    private void BtnResetJvm_Click(object sender, RoutedEventArgs e)
+    // MyIconButton.Click 的第二个参数是 EventArgs
+    private void BtnResetJvm_Click(object sender, EventArgs e)
     {
         TextJvm.Text = string.Empty;
         Config.Preference.Lunar.JvmArgs = string.Empty;

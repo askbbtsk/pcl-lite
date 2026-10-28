@@ -245,12 +245,11 @@ public partial class PageLunarLaunch
         string text;
         if (account is { IsExpired: true } expired)
         {
-            var hasPcl = ModLunar.PclProfiles.Any(x =>
-                string.Equals(x.UserName, expired.DisplayName, StringComparison.OrdinalIgnoreCase));
+            var pcl = ModLunar.MatchPclProfile(expired);
             text = $"Lunar 会话已于 {expired.ExpiresAt!.Value.ToLocalTime():yyyy-MM-dd HH:mm} 过期。" +
-                   (hasPcl
-                       ? "进游戏后会自动续期，不需要打开 Lunar 启动器。"
-                       : "PCL 里没有这个账号的登录，续期会失败 —— 请先在主页面登录它。");
+                   (pcl is not null
+                       ? $"启动前会先用 PCL 里的 {pcl.UserName} 刷新一次，不需要打开 Lunar 启动器。"
+                       : "PCL 里没有这个账号的登录，没法自动续期 —— 请先在主页面登录它。");
         }
         else if (pclProfile is { IsExpired: true } pcl)
         {

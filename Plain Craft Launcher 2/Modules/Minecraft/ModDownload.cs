@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
+using PCL.Core.IO.Net;
 using PCL.Core.IO.Net.Http;
 using PCL.Core.Utils;
 using PCL.Network;
@@ -400,11 +401,11 @@ public static class ModDownload
             }
 
             // 确定官方源是否可用
-            if (!dlPreferMojang)
+            if (!DownloadSource.OfficialSourceIsFast)
             {
                 var deltaTime = TimeUtils.GetTimeTick() - startTime;
-                dlPreferMojang = deltaTime < 4000;
-                ModBase.Log($"[Download] Mojang 官方源加载耗时：{deltaTime}ms，{(dlPreferMojang ? "可优先使用官方源" : "不优先使用官方源")}");
+                DownloadSource.OfficialSourceIsFast = deltaTime < 4000;
+                ModBase.Log($"[Download] Mojang 官方源加载耗时：{deltaTime}ms，{(DownloadSource.OfficialSourceIsFast ? "可优先使用官方源" : "不优先使用官方源")}");
             }
 
             // 添加 PCL 特供项
@@ -2135,21 +2136,22 @@ public static class ModDownload
 
     #region DlSource | 镜像下载源
 
-    private static bool dlPreferMojang;
-
     /// <summary>
     ///     下载文件（而非获取版本列表）的时候，是否优先使用官方源。
+    ///     <para>
+    ///         实际判定在 <see cref="DownloadSource.PreferMojang" />：这里只是转个手，
+    ///         让「文件下载源」设置只有一个实现，Lunar 那些在 <c>PCL.Core</c> 里的
+    ///         下载也能跟着同一份偏好走。
+    ///     </para>
     /// </summary>
-    public static bool DlSourcePreferMojang =>
-        Config.Download.FileSource == 2 ||
-        (Config.Download.FileSource == 1 && dlPreferMojang);
+    public static bool DlSourcePreferMojang => DownloadSource.PreferMojang;
 
     /// <summary>
     ///     下载文件（而非获取版本列表）的时候，根据是否优先使用官方源决定使用 Url 的顺序。
     /// </summary>
     public static IEnumerable<string> DlSourceOrder(IEnumerable<string> officialUrls, IEnumerable<string> mirrorUrls)
     {
-        return DlSourcePreferMojang ? officialUrls.Union(mirrorUrls) : mirrorUrls.Union(officialUrls);
+        return DownloadSource.Order(officialUrls, mirrorUrls);
     }
 
     /// <summary>
@@ -2157,7 +2159,7 @@ public static class ModDownload
     /// </summary>
     public static bool DlVersionListPreferMojang =>
         Config.Download.VersionListSource == 2 ||
-        (Config.Download.VersionListSource == 1 && dlPreferMojang);
+        (Config.Download.VersionListSource == 1 && DownloadSource.OfficialSourceIsFast);
 
     /// <summary>
     ///     获取版本列表（而非下载文件）的时候，根据是否优先使用官方源决定使用 Url 的顺序。
@@ -2172,55 +2174,12 @@ public static class ModDownload
     /// <summary>
     ///     下载 Assets 文件。
     /// </summary>
-    public static IEnumerable<string> DlSourceAssetsGet(string original)
-    {
-        original = original.Replace("http://resources.download.minecraft.net",
-            "https://resources.download.minecraft.net");
-        return DlSourceOrder(new[] { original },
-            new[]
-            {
-                original.Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/assets")
-                    .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/assets")
-                    .Replace("https://resources.download.minecraft.net", "https://bmclapi2.bangbang93.com/assets")
-            });
-    }
+    public static IEnumerable<string> DlSourceAssetsGet(string original) => DownloadSource.Assets(original);
 
     /// <summary>
     ///     下载 Libraries 文件。
     /// </summary>
-    public static IEnumerable<string> DlSourceLibraryGet(string original)
-    {
-        if (new[] { "minecraftforge", "fabricmc", "neoforged" }.Any(k => original.Contains(k))) // 不添加原版源
-            return new[]
-            {
-                original.Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/maven")
-                    .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/maven")
-                    .Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/maven")
-                    .Replace("https://zkitefly.github.io/unlisted-versions-of-minecraft",
-                        "https://alist.8mi.tech/d/mirror/unlisted-versions-of-minecraft/Auto"),
-                original.Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/libraries")
-                    .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/libraries")
-                    .Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/libraries")
-                    .Replace("https://zkitefly.github.io/unlisted-versions-of-minecraft",
-                        "https://alist.8mi.tech/d/mirror/unlisted-versions-of-minecraft/Auto")
-            };
-
-        return DlSourceOrder(new[] { original },
-            new[]
-            {
-                original.Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/maven")
-                    .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/maven")
-                    .Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/maven")
-                    .Replace("https://zkitefly.github.io/unlisted-versions-of-minecraft",
-                        "https://alist.8mi.tech/d/mirror/unlisted-versions-of-minecraft/Auto"),
-                original.Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com/libraries")
-                    .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com/libraries")
-                    .Replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/libraries")
-                    .Replace("https://zkitefly.github.io/unlisted-versions-of-minecraft",
-                        "https://alist.8mi.tech/d/mirror/unlisted-versions-of-minecraft/Auto"),
-                original
-            });
-    }
+    public static IEnumerable<string> DlSourceLibraryGet(string original) => DownloadSource.Libraries(original);
 
     /// <summary>
     ///     下载 Launcher 或 Meta 文件。
@@ -2230,17 +2189,7 @@ public static class ModDownload
     {
         if (original is null)
             throw new Exception(Lang.Text("Minecraft.Download.Error.NoJsonDownloadAddress"));
-        return DlSourceOrder(new[] { original },
-            new[]
-            {
-                original.Replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com")
-                    .Replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com")
-                    .Replace("https://launcher.mojang.com", "https://bmclapi2.bangbang93.com")
-                    .Replace("https://launchermeta.mojang.com", "https://bmclapi2.bangbang93.com")
-                    .Replace("https://zkitefly.github.io/unlisted-versions-of-minecraft",
-                        "https://alist.8mi.tech/d/mirror/unlisted-versions-of-minecraft/Auto"),
-                original
-            });
+        return DownloadSource.LauncherOrMeta(original);
     }
 
     /// <summary>

@@ -134,6 +134,9 @@
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
                                Text="账号下拉框分两组：PCL Lite 登录账号来自启动器自己的档案，Lunar 启动器账号来自 Lunar 的账户库。选 PCL 账号时会把 Lunar 的激活账号一并切到同一个 UUID（找不到同名账号就只换命令行令牌）。列出来只是读本地文件，不会触发重新登录。" />
 
+                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
+                               Text="内存、JVM 参数和 Java 路径在「设置 → Lunar Client」里改，可以设全局，也可以只给某一个版本单独设。改完启动时日志里会写明这次实际用了多少内存、哪些参数、以及它们来自哪一层。" />
+
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.6" FontSize="11.5"
                                Text="会话过期不用管：游戏会通过本地 IPC 的 AuthService/RefreshAccount 找启动器续期，PCL 启动前会抢占 127.0.0.1:28190 自己应答（Lunar 启动器开着时让位给它）。好友与社交面板仍未实现。" />
                 </StackPanel>

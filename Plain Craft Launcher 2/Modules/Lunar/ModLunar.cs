@@ -203,19 +203,23 @@ public static class ModLunar
     /// <summary>
     ///     刷新界面用的状态：是否装了 Lunar、版本列表、账号列表。
     ///     只读本地，不发网络请求，可以在 UI 线程直接调。
+    ///     <para>
+    ///         「没装」不再是禁用状态：物料全部由 <see cref="LunarInstaller" /> 从服务端
+    ///         清单补齐，<c>~/.lunarclient</c> 是空的也能直接启动。
+    ///     </para>
     /// </summary>
     public static void Refresh()
     {
+        LunarVersionCatalog.TryLoadCache(LunarRoot);
+        RefreshAccounts();
+
         if (!IsInstalled)
         {
-            StatusText = "未检测到 Lunar Client";
-            DetailText = $"没有找到 {LunarRoot}。请先安装并至少启动过一次 Lunar Client，让物料落盘。";
+            StatusText = "未安装 Lunar Client";
+            DetailText = "本机还没有任何物料。点「启动 Lunar」会自动下载并安装（首次约 300 MB）。";
             RaiseStateChanged();
             return;
         }
-
-        LunarVersionCatalog.TryLoadCache(LunarRoot);
-        RefreshAccounts();
 
         StatusText = $"Lunar Client {SelectedSubVersion}";
         DetailText = $"物料目录：{LunarClientService.MultiverDirectory(LunarRoot)}";
@@ -232,11 +236,12 @@ public static class ModLunar
 
     /// <summary>
     ///     拉一次版本列表（网络）。失败时保留缓存，不抛异常。
+    ///     <para>
+    ///         没装 Lunar 也能拉 —— 版本列表本来就是启动前要用的东西。
+    ///     </para>
     /// </summary>
     public static async Task RefreshVersionsAsync()
     {
-        if (!IsInstalled) return;
-
         var installationId = ReadInstallationId();
         await LunarVersionCatalog.FetchAsync(LunarRoot, installationId).ConfigureAwait(false);
         RaiseStateChanged();
@@ -256,6 +261,119 @@ public static class ModLunar
     }
 
     /// <summary>
+    ///     把 PCL 的全局内存设置换算成 MB。算不出来就返回 0，让上层退回内置默认。
+    ///     <para>
+    ///         <c>is32BitJava</c> 明确传 <see langword="false" />：不传的话它会去读
+    ///         当前选中实例的 Java 设置，而 Lunar 的 JRE 是它自己按版本下发的，
+    ///         跟实例没关系。
+    ///     </para>
+    /// </summary>
+    public static int ResolvePclGlobalMemoryMb()
+    {
+        try
+        {
+            var gigabytes = PageSetupLaunch.GetRam(null, true, false);
+            return gigabytes <= 0 ? 0 : (int)Math.Round(gigabytes * 1024d);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 读取 PCL 全局内存设置失败，改用内置默认", ModBase.LogLevel.Developer);
+            return 0;
+        }
+    }
+
+    /// <summary>
+    ///     把这次生效的设置写进日志。用户反馈「改了没反应」时，这几行就是唯一线索。
+    /// </summary>
+    private static void LogSettings(LunarEffectiveSettings settings)
+    {
+        Log($"内存：{settings.MemoryMb} MB（{LunarLaunchProfile.DescribeSource(settings.MemorySource)}）");
+
+        if (settings.JvmArguments.Count == 0)
+            Log("JVM 参数：没有额外的自定义参数");
+        else
+            Log($"JVM 参数：{string.Join(' ', settings.JvmArguments)}" +
+                $"（{LunarLaunchProfile.DescribeSource(settings.JvmSource)}）");
+    }
+
+    /// <summary>
+    ///     安装进度的节流状态。物料阶段是并发下载，一秒能回调几十次；
+    ///     每次都往 UI 线程丢一条就会把界面刷成幻灯片。
+    /// </summary>
+    private static string _lastProgressStage = "";
+
+    private static int _lastProgressPercent = -1;
+
+    /// <summary>
+    ///     把 <see cref="LunarInstaller" /> 的阶段名翻成界面上的说法，并做节流。
+    /// </summary>
+    private static void ReportInstallProgress(LunarInstallProgress progress)
+    {
+        var percent = progress.Total > 0
+            ? progress.Done * 100 / progress.Total
+            : -1;
+
+        // 同阶段内进度百分比没变就不刷新，换阶段一定要刷新
+        if (progress.Stage == _lastProgressStage && percent == _lastProgressPercent && percent >= 0) return;
+
+        _lastProgressStage = progress.Stage;
+        _lastProgressPercent = percent;
+
+        var name = progress.Stage switch
+        {
+            LunarInstaller.StageLicenses => "许可文件",
+            LunarInstaller.StageTextures => "外观资源",
+            LunarInstaller.StageAssets => "原版资源",
+            LunarInstaller.StageArtifacts => "客户端物料",
+            LunarInstaller.StageJre => "Java 运行时",
+            LunarInstaller.StageUi => "界面资源",
+            _ => progress.Stage
+        };
+
+        StatusText = progress.Total > 0
+            ? $"正在准备{name} {progress.Done}/{progress.Total}"
+            : $"正在准备{name}…";
+        RaiseStateChanged();
+    }
+
+    /// <summary>
+    ///     账户库不存在时按这次登录建一份。
+    ///     <para>
+    ///         游戏进程不读命令行里的 <c>--accessToken</c>，它按
+    ///         <c>accounts.json</c> 的 <c>activeAccountLocalId</c> 决定「我是谁」。
+    ///         没装过 Lunar 启动器的机器上这个文件根本不存在，不补的话游戏进去没有身份。
+    ///     </para>
+    ///     <para>
+    ///         账户库里已经**有任何账号**就什么都不做 —— 那是 Lunar 启动器或上一次启动的成果。
+    ///         只有「文件不存在」或「文件里一个账号都没有」这两种情况才补。
+    ///     </para>
+    /// </summary>
+    private static void EnsureAccountLibrary(string playerName, string playerUuid, string accessToken)
+    {
+        // 不能只看文件在不在：Lunar 启动器跑过但没登录时，文件里是个空的 accounts 对象
+        if (_accounts.Count > 0) return;
+
+        var uuid = NormalizeUuid(playerUuid).Replace("-", string.Empty);
+        if (string.IsNullOrWhiteSpace(uuid) || uuid == new string('0', 32))
+        {
+            Log("账户库不存在，但这次没有拿到有效的游戏 UUID，跳过自动创建");
+            return;
+        }
+
+        var localId = Guid.NewGuid().ToString("N");
+        if (!LunarAccountStore.CreateIfMissing(LunarRoot, localId, playerName, playerName, uuid,
+                accessToken, null))
+        {
+            Log("账户库不存在，自动创建失败 —— 游戏内可能没有身份，联机会失败");
+            return;
+        }
+
+        _launchedLocalId = localId;
+        RefreshAccounts();
+        Log($"Lunar 账户库不存在，已按本次登录创建：{playerName}（{localId}）");
+    }
+
+    /// <summary>
     ///     启动 Lunar Client。
     ///     <para>
     ///         整个流程丢到后台线程：登录加载器的 <c>WaitForExit</c> 是
@@ -263,8 +381,12 @@ public static class ModLunar
     ///         会直接把界面冻住（1.4.0-nightly 就是这么翻的车）。
     ///     </para>
     /// </summary>
-    /// <param name="memoryMb">分配内存。</param>
-    public static void Launch(int memoryMb = 2048)
+    /// <para>
+    ///     内存、JVM 参数、Java 路径都由设置页决定（见 <see cref="LunarLaunchProfile" />），
+    ///     这里不再接收参数，免得两个地方各算一套。
+    /// </para>
+    /// </summary>
+    public static void Launch()
     {
         if (IsBusy || IsRunning) return;
 
@@ -273,7 +395,7 @@ public static class ModLunar
 
         // IsBusy 在 UI 线程上先占位，防止连点两次起两个进程
         IsBusy = true;
-        _ = Task.Run(() => LaunchCoreAsync(gameDirectory, memoryMb));
+        _ = Task.Run(() => LaunchCoreAsync(gameDirectory));
     }
 
     /// <summary>
@@ -322,12 +444,16 @@ public static class ModLunar
         return ModFolder.mcFolderSelected;
     }
 
-    private static async Task LaunchCoreAsync(string gameDirectory, int memoryMb)
+    private static async Task LaunchCoreAsync(string gameDirectory)
     {
         try
         {
             var subVersion = SelectedSubVersion;
             GameDirectory = gameDirectory;
+
+            // 内存 / JVM 参数 / Java 覆盖都在设置页里配，这里只负责解析出最终值
+            var settings = LunarLaunchProfile.Resolve(subVersion, ResolvePclGlobalMemoryMb());
+            LogSettings(settings);
 
             StatusText = $"正在准备 {subVersion}…";
             DetailText = "";
@@ -350,72 +476,31 @@ public static class ModLunar
 
             Log($"物料清单：{data.Artifacts.Count} 个附件，主类 {data.MainClass}");
 
+            // 全新机器上账户库压根不存在，而游戏进程只认 accounts.json 里的激活账号。
+            // 先按这次解析出的凭据建一份，再往下走（已有内容一律不动）
+            EnsureAccountLibrary(playerName, playerUuid, accessToken);
+
             var cacheDirectory = LunarClientService.MultiverDirectory(LunarRoot);
             var nativesDirectory = LunarClientService.NativesDirectory(LunarRoot);
 
             // 校验可以在设置里关掉：关掉后只判断文件在不在，不算 SHA-1
             var verifyFiles = Config.Preference.Lunar.VerifyFiles;
-            StatusText = verifyFiles ? "正在校验物料…" : "正在补齐物料…";
-            RaiseStateChanged();
+            _lastProgressStage = "";
+            _lastProgressPercent = -1;
 
-            var progress = new Progress<(int Done, int Total)>(p =>
-            {
-                StatusText = verifyFiles
-                    ? $"正在校验物料 {p.Done}/{p.Total}"
-                    : $"正在补齐物料 {p.Done}/{p.Total}";
-                RaiseStateChanged();
-            });
-            await LunarClientService
-                .EnsureArtifactsAsync(data, cacheDirectory, progress, verifyFiles)
-                .ConfigureAwait(false);
-            await LunarClientService.ExtractNativesAsync(data, cacheDirectory, nativesDirectory)
-                .ConfigureAwait(false);
-
-            // 不同 MC 版本要的 JRE 不一样，本机没有就按服务端地址补一份
-            StatusText = "正在定位 Java…";
-            RaiseStateChanged();
-
-            var javaPath = await LunarClientService
-                .EnsureJavaAsync(data, LunarRoot, new Progress<string>(message =>
-                {
-                    StatusText = message;
-                    RaiseStateChanged();
-                }))
+            // 物料补齐全交给 LunarInstaller：licenses → textures → assets →
+            // artifacts/natives → jre → ui → logs，顺序与官方启动器一致
+            var javaPath = await LunarInstaller.EnsureInstalledAsync(
+                    data, LunarRoot, settings.JavaPathOverride, verifyFiles, Log, ReportInstallProgress)
                 .ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(javaPath))
                 throw new InvalidOperationException(
                     $"没有找到 {subVersion} 需要的 Java（期望目录 jre/{data.JreFolderChecksum}），" +
-                    "自动下载也没成功。请先用 Lunar 启动器跑一次这个版本，让它把 JRE 下好。");
+                    "自动下载也没成功。可以在「设置 → Lunar」里手动指定一个 Java，或者检查网络。");
 
-            Log("Java：" + javaPath);
             JavaPath = javaPath;
             RaiseStateChanged();
-
-            // 资源索引是原版那套，缺了会没贴图没声音。只补索引文件，不拉几万个资源对象
-            if (data.AssetIndexInfo is { } assetIndex)
-            {
-                Log($"资源索引：{assetIndex.Id}");
-                await LunarClientService
-                    .EnsureAssetIndexAsync(assetIndex, LunarClientService.AssetsDirectory(LunarRoot))
-                    .ConfigureAwait(false);
-            }
-            else
-            {
-                Log("没有拿到资源索引，游戏可能缺贴图与音效");
-            }
-
-            // 界面资源：Lunar 按 SHA-1 分目录存放，--uiDir 要指到那一层，
-            // 指错了游戏内菜单整块不显示
-            if (!string.IsNullOrWhiteSpace(data.UiSha1))
-            {
-                var uiDir = await LunarClientService.EnsureUiAsync(data, LunarRoot).ConfigureAwait(false);
-                Log($"界面资源：{uiDir}");
-            }
-            else
-            {
-                Log("没有拿到界面资源版本号，游戏内菜单可能不显示");
-            }
 
             // 游戏会连 127.0.0.1:<ipcPort> 要账号续期。端口空闲就 PCL 自己接管；
             // 被占用说明 Lunar 启动器正开着，让它处理
@@ -432,7 +517,8 @@ public static class ModLunar
                 AccessToken = accessToken,
                 // Genesis 会把这些原样转给游戏，给个数字比空串安全
                 XboxUid = "0",
-                AllocatedMemoryMb = memoryMb,
+                AllocatedMemoryMb = settings.MemoryMb,
+                ExtraJvmArguments = settings.JvmArguments,
                 InstallationId = installationId,
                 IpcPort = ipc.GamePort
             };
@@ -797,26 +883,33 @@ public static class ModLunar
     }
 
     /// <summary>
-    ///     Lunar 的 <c>installation_id</c> 存在 launcher-cache 下，有就复用，
-    ///     这样服务端看到的是同一个「安装」。
+    ///     Lunar 的 <c>installation_id</c> 存在 <c>launcher-cache/installation-id</c> 下。
+    ///     <para>
+    ///         有就复用，没有就生成一个**并落盘** —— 每次启动都换一个 GUID 的话，
+    ///         服务端会把同一台机器当成无数次全新安装。
+    ///     </para>
     /// </summary>
     private static string ReadInstallationId()
     {
+        var path = Path.Combine(LunarClientService.LauncherCacheDirectory(LunarRoot), "installation-id");
         try
         {
-            var path = Path.Combine(LunarRoot, "launcher-cache", "installation-id");
             if (File.Exists(path))
             {
                 var text = File.ReadAllText(path).Trim();
-                if (Guid.TryParse(text, out var id)) return id.ToString();
+                if (Guid.TryParse(text, out var existing)) return existing.ToString();
             }
-        }
-        catch (IOException)
-        {
-            // 读不到就现生成一个，不影响启动
-        }
 
-        return Guid.NewGuid().ToString();
+            var created = Guid.NewGuid();
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, created.ToString());
+            return created.ToString();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // 写不进去就现生成一个，不影响启动
+            return Guid.NewGuid().ToString();
+        }
     }
 
     /// <summary>Lunar 要的是不带横线的 UUID，接口校验要的是带横线的，这里统一成带横线。</summary>

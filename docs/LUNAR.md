@@ -93,6 +93,57 @@ Content-Type: application/json
 1.8.9 的 JRE 是 **Zulu 17**（`zulu17.64.17-ca-jre17.0.18-win_x64.zip`），
 不是 Java 8——Lunar 用 Genesis 引导层跑在 17 上。
 
+## 安装阶段全清单（从零装完 Lunar Client）
+
+官方启动器把「准备物料」拆成若干 stage，**每个 stage 一个 <code>super(`&lt;名&gt;`)</code>**。
+在 `app.asar` 里 `grep -o 'super(\`[a-z-]*\`'` 能全抓出来，一共 23 个：
+
+```
+artifacts assets jre natives ui textures libraries licenses jar-validation
+modpack lcpack dawnpack processors optifine-patcher assetserver gameipc
+overwolf promotions styngr checkout updater window
+```
+
+真正在「启动前准备物料」这一步跑的是其中 7 个，顺序固定：
+
+| stage | 落点 | 索引 / 清单来源 | 备注 |
+| --- | --- | --- | --- |
+| `licenses` | `~/.lunarclient/licenses/` | 响应顶层 `licenses[]` | 每项 `{file, sha1, url, size}`，平铺 |
+| `textures` | `~/.lunarclient/textures/` | `textures.indexUrl` | 索引式，见下 |
+| `assets` | `~/.lunarclient/shared/assets/` | `versions[].subversions[].assets` | Mojang 原版索引 + objects |
+| `artifacts` + `natives` | `~/.lunarclient/offline/multiver/`<br>`…/multiver/natives/` | `launchTypeData.artifacts[]` | natives 是 zip，解到 `natives/` |
+| `jre` | `~/.lunarclient/jre/<folderChecksum>/` | `jre.download` | `url` 失败再用 `fallbackUrl` |
+| `ui` | `~/.lunarclient/ui/<sourceSha1>/` | `ui.sourceUrl` + `ui.assets` | 先解 zip，再跑一次索引式 |
+| `logs` | `~/.lunarclient/logs/game/config.xml` | 内置模板 | 见下 |
+
+**`textures` / `ui.assets` 是「索引式」物料源**，不是 JSON：
+
+```
+GET <indexUrl>          → 纯文本，每行：<相对路径> <sha1> [字节数] [mtime]
+GET <baseUrl><sha1>     → 单个文件
+```
+
+官方启动器的 `indexed-downloader`（`O3` 类）解析时只取前两列，
+索引缓存在 `launcher-cache/texturesIndex.txt`、`launcher-cache/uiIndex-<sha1>.txt`。
+路径安全性检查是必须的：绝对路径、盘符、含 `..` 的条目会被判成
+`INDEX_UNSAFE_PATH` 直接抛异常。
+
+**`logs/game/config.xml` 只有启动器会写**，是个 1276 字符的 log4j2 模板，
+只有两个占位符：`absolute-path-here` → `latest.log`、`gz-absolute-path-here` →
+`%d{yyyy-MM-dd}-%i.log.gz`。`-Dlog4j.configurationFile` 指着它，
+文件不存在时 log4j2 退回默认配置，结果是 `latest.log` 里一条游戏日志都没有。
+
+> **PCL 侧对应实现**：`PCL.Core/App/Lunar/LunarInstaller.cs`。
+> 1.5.2 起这 7 个阶段全部由 PCL 自己跑，`~/.lunarclient` 是空的也能从零装完，
+> 不再要求「先装一次 Lunar 启动器」。
+>
+> 原版相关的地址（`resources.download.minecraft.net` 的 objects、
+> `launchermeta.mojang.com` 的资源索引）走 `PCL.Core/IO/Net/DownloadSource.cs`，
+> 与「设置 → 下载 → 文件下载源」**完全同一份实现**：
+> 优先镜像时 BMCLAPI 在前，优先官方时官方在前，自动模式看官方源探测耗时。
+> Lunar 自己的 CDN（multiver 物料、textures、ui、licenses、jre）没有镜像，
+> 只能直连。
+
 ## 版本元数据（公开，无需鉴权）
 
 ```
@@ -464,12 +515,88 @@ java.lang.NoSuchMethodError: 'java.util.List com.moonsworth.lunar.ichor.CHHCRRRC
 正常启动用的是实例的版本隔离目录（`PathIndie`），不是 `.minecraft` 根目录。
 Lunar 写错地方会把存档、`options.txt`、`mods` 和普通实例混在一起。
 
+## 内存与 JVM 参数（1.5.2 起可配）
+
+Lunar 的 JRE 是它自己按版本下发的（1.8.9 要 17、1.21 要 21、26.x 要 25），
+内存需求跟原版实例不是一回事，所以这套设置**独立于** `Config.Launch`。
+但默认仍然跟随 PCL 的全局内存，免得用户以为改了全局却没作用。
+
+分层顺序（`PCL.Core/App/Lunar/LunarLaunchProfile.cs` 里的 `Resolve`）：
+
+```
+版本覆盖 → Lunar 全局 → PCL 全局 → 内置默认（2048 MB）
+```
+
+配置项都在 `Config.Preference.Lunar` 下：
+
+| 配置项 | 含义 |
+| --- | --- |
+| `MemoryMb` | Lunar 的堆上限（MB）。`0` = 跟随 PCL 全局 |
+| `JvmArgs` | 全局附加 JVM 参数 |
+| `JavaPath` | 覆盖 Lunar 自带的 JRE。文件不存在时自动忽略 |
+| `VersionOverrides` | 按版本覆盖，JSON：`{"1.8.9":{"on":true,"mem":4096,"jvm":"..."}}` |
+
+### 用户参数的插入位置很关键
+
+`BuildStartInfo` 里的顺序是：
+
+```
+内置默认（-Xmx / -Djava.library.path / -Dichor.* …）
+  → 用户参数（ExtraJvmArguments）
+  → 官方按版本下发的 JVM 参数（data.JvmExtraArguments）
+```
+
+**1.5.2 把用户参数挪到了最后。** 原来它在官方参数之前，结果是用户写的
+`-XX:+UseZGC`、`-Xmx8G` 会被官方值盖掉 —— JVM 对重复参数取**最后一次**。
+挪到末尾之后用户设置才真正有最高优先级。
+
+### 参数必须切分成独立元素
+
+Lunar 是往 `ProcessStartInfo.ArgumentList` 里逐项塞的，
+整串塞进去会被当成一个参数，JVM 直接报 `Unrecognized option`。
+`LunarLaunchProfile.SplitArguments` 负责切：引号内的空格不切，
+`\"` 视为字面引号，`""` 算一个空参数。
+
+## IPC 服务支持矩阵
+
+游戏进程连上 `--ipcPort` 之后，能向启动器发起的 RPC 一共 9 个服务。
+这张表是从官方启动器的 `app.asar`（`dist-electron/electron/main.js`）里
+把所有 `class extends CQ { constructor(e) { super(<x>.XxxServiceName, e) } }`
+抓出来得到的 —— 那批类就是启动器注册的服务端实现，没被实现的 RPC 游戏调了也没用。
+
+| 服务（`lunarclient.gameipc.` 前缀） | RPC | PCL | 不做会怎样 |
+| --- | --- | --- | --- |
+| `auth.v1.AuthService` | `RefreshAccount` | ✅ 已实现 | 会话过期后游戏内联机失败，且会一直重试 |
+| `auth.v1.AuthService` | `AddAccount` | ❌ 回空响应 | 游戏内「添加账号」无效 |
+| `browser.v1.BrowserService` | `OpenUrl` | ❌ 回空响应 | 游戏内点商店 / 公告 / 帮助链接不会用系统浏览器打开 |
+| `chat.v1.ChatService` | `ReceiveMessage` | ❌ 回空响应 | 游戏内聊天面板发消息给启动器没反应 |
+| `launch.v1.LaunchService` | `LaunchGame` | ❌ 回空响应 | 游戏内「换版本重开」不会真的重开 |
+| `location.v1.LocationService` | `UpdateLocation` / `UpdateFocus` | ❌ 回空响应 | 启动器侧拿不到「在哪个服务器 / 在菜单」，只影响启动器展示 |
+| `promotion.v1.PromotionService` | `CheckPendingPromotion` / `PlayPromotion` | ❌ 回空响应 | 活动推广不弹 |
+| `tebex.v1.TebexService` | `CheckTebexCapabilities` / `OpenTebexJsCheckout` | ❌ 回空响应 | 游戏内 Tebex 商店结账打不开 |
+| `paynow.v1.PayNowService` | `CheckPayNowCapabilities` / `OpenPayNowJsCheckout` | ❌ 回空响应 | 同上，PayNow 那条通道 |
+| `styngr.v1.StyngrRadioService` | `SetMuted` / `SetPlaying` / `SetVolume` / `StartPlaylist` | ❌ 回空响应 | 游戏内电台（Styngr）的播放控制无效 |
+
+另外还有一批**反方向**的推送（启动器 → 游戏，`GameboundIPCMessage.push_notification`），
+PCL 一个都不发：`ExitGamePush`、`PlayServerPush`、`SendChatPush`、`FocusGamePush`、
+`StartStorePreviewSessionPush`、`PendingPromotionUpdatePush`、`Styngr*Update`、
+`PayNowJsCheckoutClosed`、`TebexJsCheckoutClosed`。
+这些都需要启动器自己有对应的界面（服务器列表、聊天面板、商店）才有意义，
+PCL 没有这些界面，所以不发也不会缺功能 —— 唯一的例外是想让 PCL 主动优雅关游戏时
+得用 `ExitGamePush`，现在只能 `Kill`。
+
+**回空响应是安全的**：`IPCRpcResponse.output` 是空字节，游戏侧按目标消息类型解析
+得到的是一个全默认实例，不会抛异常，只是「什么都没发生」。比不回（RPC 挂到超时）好。
+
+`AuthService` 的 `NotifySwitchAccount` / `OpenMicrosoftPopup` 只有消息定义，
+连官方启动器都没给它们绑定客户端方法，实测不会出现在 IPC 上，不用管。
+
 ## 还没解决的点
 
-1. **`--ipcPort` 只实现了 `AuthService`**：启动器会在该端口起一个 WebSocket 服务
-   （实测默认 28190），注册 9 个 protobuf 服务（社交、皮肤、设置同步、Tebex 等）。
-   PCL 只实现了 `AuthService/RefreshAccount`，其余调用一律回空响应，
-   代价是好友/社交/实时设置同步仍然不可用。游戏本体、单人、多人、模组都正常。
+1. **`--ipcPort` 只实现了 `AuthService/RefreshAccount`**：启动器会在该端口起一个
+   WebSocket 服务（实测默认 28190），注册上表那 9 个服务。
+   PCL 只应答续期那一条，其余回空响应，具体影响见上面的矩阵。
+   游戏本体、单人、多人、模组都正常。
 
    传 `0` 时游戏**不会卡住**，只是每 5 秒重试一次并打日志：
 
@@ -510,7 +637,9 @@ Lunar 写错地方会把存档、`options.txt`、`mods` 和普通实例混在一
   `~/.lunarclient/jre/<checksum>/` 的目录名，里面一层
   `<发行版>-<版本>/bin/javaw.exe`。
 - 资源索引本地已存在 `shared/assets/indexes/1.8.json`，objects 是 256 个哈希前缀目录。
-  PCL 只补索引文件，不拉几万个资源对象。
+  **1.5.2 起 objects 也会补齐**：1.8 索引去重后是 722 个对象，
+  以前只补索引文件、靠「装过 Lunar 启动器」蒙混过去，全新机器上是没贴图没声音的。
+- 全新临时目录从零装 1.8.9 的实测体积与条数见下（1.5.2 验证）。
 
 ### 多版本实测（2026-10-26）
 

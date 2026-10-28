@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,6 +12,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using PCL.Core.IO.Net;
 
 namespace PCL.Core.App.Lunar;
 
@@ -41,6 +43,29 @@ public sealed record LunarArtifact(string Name, string Sha1, string Url, string 
 /// <param name="Url">Mojang 的索引文件地址。</param>
 /// <param name="Sha1">索引文件的 SHA-1。</param>
 public sealed record LunarAssetIndex(string Id, string Url, string Sha1);
+
+/// <summary>
+///     一份「索引 + 文件 CDN」形式的物料源。
+///     <para>
+///         官方启动器里 <c>textures</c> 与 <c>ui.assets</c> 都是这个形状：
+///         先去 <paramref name="IndexUrl" /> 下一个纯文本索引（每行
+///         <c>&lt;相对路径&gt; &lt;sha1&gt; [大小] [mtime]</c>），
+///         再按 <paramref name="BaseUrl" /> + sha1 逐个取文件。
+///     </para>
+/// </summary>
+/// <param name="IndexUrl">索引文件地址。</param>
+/// <param name="IndexSha1">索引文件的 SHA-1，用来判断本地那份还能不能用。</param>
+/// <param name="BaseUrl">文件 CDN 前缀，拼上 sha1 就是完整地址。</param>
+public sealed record LunarIndexedSource(string IndexUrl, string IndexSha1, string BaseUrl);
+
+/// <summary>
+///     <c>licenses</c> 目录里的一份许可文件。
+/// </summary>
+/// <param name="File">相对 <c>~/.lunarclient/licenses/</c> 的路径。</param>
+/// <param name="Sha1">内容 SHA-1。</param>
+/// <param name="Url">下载地址。</param>
+/// <param name="Size">字节数，仅用于进度显示。</param>
+public sealed record LunarLicense(string File, string Sha1, string Url, long Size);
 
 /// <summary>
 ///     <c>POST /launcher/launch</c> 的解析结果。
@@ -94,6 +119,25 @@ public sealed class LunarLaunchData
     /// <summary>界面资源压缩包地址。</summary>
     public string UiUrl { get; init; } = string.Empty;
 
+    /// <summary>
+    ///     界面资源的索引式物料源（<c>ui.assets</c>）。
+    ///     <para>
+    ///         官方启动器解压完 <c>source.zip</c> 之后还会跑一遍这个索引下载，
+    ///         把 HUD、模组菜单那些运行时才用到的资源补齐。只解 zip 也能进游戏，
+    ///         但界面里会缺图标。
+    ///     </para>
+    /// </summary>
+    public LunarIndexedSource? UiAssets { get; init; }
+
+    /// <summary>
+    ///     皮肤 / 披风 / 表情这些外观资源的索引式物料源。
+    ///     落在 <c>~/.lunarclient/textures/</c>，缺了游戏内其他玩家是默认皮肤。
+    /// </summary>
+    public LunarIndexedSource? Textures { get; init; }
+
+    /// <summary>许可文件清单，落在 <c>~/.lunarclient/licenses/</c>。</summary>
+    public IReadOnlyList<LunarLicense> Licenses { get; init; } = [];
+
     public IReadOnlyList<LunarArtifact> ClassPathArtifacts => Artifacts.Where(x => x.IsClassPath).ToList();
     public IReadOnlyList<LunarArtifact> NativesArtifacts => Artifacts.Where(x => x.IsNatives).ToList();
     public IReadOnlyList<LunarArtifact> ExternalArtifacts =>
@@ -137,7 +181,13 @@ public sealed class LunarLaunchOptions
     /// </summary>
     public int IpcPort { get; init; }
 
-    /// <summary>额外 JVM 参数，会被插在内存参数之后。</summary>
+    /// <summary>
+    ///     额外 JVM 参数，会被插在<b>所有</b>内置与官方参数之后。
+    ///     <para>
+    ///         JVM 对重复参数取最后一次，所以放最后才能让用户写的 <c>-Xmx</c>、
+    ///         <c>-XX:+UseZGC</c> 盖掉前面那些默认值。
+    ///     </para>
+    /// </summary>
     public IReadOnlyList<string> ExtraJvmArguments { get; init; } = [];
 }
 
@@ -170,6 +220,33 @@ public static class LunarClientService
 
     public static string AssetsDirectory(string lunarRoot) =>
         Path.Combine(lunarRoot, "shared", "assets");
+
+    /// <summary>外观资源目录（<c>--texturesDir</c>），索引式下载的落点。</summary>
+    public static string TexturesDirectory(string lunarRoot) =>
+        Path.Combine(lunarRoot, "textures");
+
+    /// <summary>许可文件目录，官方启动器每次启动都会对齐一遍。</summary>
+    public static string LicensesDirectory(string lunarRoot) =>
+        Path.Combine(lunarRoot, "licenses");
+
+    /// <summary>
+    ///     启动器缓存目录。索引文件（<c>texturesIndex.txt</c>、
+    ///     <c>uiIndex-&lt;sha1&gt;.txt</c>）和 <c>installation-id</c> 都在这儿。
+    /// </summary>
+    public static string LauncherCacheDirectory(string lunarRoot) =>
+        Path.Combine(lunarRoot, "launcher-cache");
+
+    /// <summary>游戏日志目录，<c>config.xml</c> 与 <c>latest.log</c> 的落点。</summary>
+    public static string GameLogsDirectory(string lunarRoot) =>
+        Path.Combine(lunarRoot, "logs", "game");
+
+    /// <summary>游戏设置目录，<c>accounts.json</c> 就在这一层下面。</summary>
+    public static string GameSettingsDirectory(string lunarRoot) =>
+        Path.Combine(lunarRoot, "settings", "game");
+
+    /// <summary>JRE 根目录，下面按 <c>folderChecksum</c> 分版本。</summary>
+    public static string JreDirectory(string lunarRoot) =>
+        Path.Combine(lunarRoot, "jre");
 
     /// <summary>
     ///     界面资源目录。
@@ -305,8 +382,53 @@ public static class LunarClientService
             AssetIndex = assetIndex?.Id ?? string.Empty,
             AssetIndexInfo = assetIndex,
             UiSha1 = root["ui"]?["sourceSha1"]?.GetValue<string>() ?? string.Empty,
-            UiUrl = root["ui"]?["sourceUrl"]?.GetValue<string>() ?? string.Empty
+            UiUrl = root["ui"]?["sourceUrl"]?.GetValue<string>() ?? string.Empty,
+            UiAssets = ReadIndexedSource(root["ui"]?["assets"]),
+            Textures = ReadIndexedSource(root["textures"]),
+            Licenses = ReadLicenses(root["licenses"])
         };
+    }
+
+    /// <summary>
+    ///     读一份「索引 + CDN」形式的物料源。三个字段缺任何一个都当成没有。
+    /// </summary>
+    private static LunarIndexedSource? ReadIndexedSource(JsonNode? node)
+    {
+        if (node is null) return null;
+
+        var indexUrl = node["indexUrl"]?.GetValue<string>();
+        var indexSha1 = node["indexSha1"]?.GetValue<string>();
+        var baseUrl = node["baseUrl"]?.GetValue<string>();
+
+        if (string.IsNullOrWhiteSpace(indexUrl)
+            || string.IsNullOrWhiteSpace(indexSha1)
+            || string.IsNullOrWhiteSpace(baseUrl))
+            return null;
+
+        return new LunarIndexedSource(indexUrl, indexSha1, baseUrl);
+    }
+
+    private static IReadOnlyList<LunarLicense> ReadLicenses(JsonNode? node)
+    {
+        if (node is not JsonArray array) return [];
+
+        var result = new List<LunarLicense>();
+        foreach (var item in array)
+        {
+            if (item is not JsonObject entry) continue;
+
+            var file = entry["file"]?.GetValue<string>();
+            var url = entry["url"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(file) || string.IsNullOrWhiteSpace(url)) continue;
+
+            result.Add(new LunarLicense(
+                file,
+                entry["sha1"]?.GetValue<string>() ?? string.Empty,
+                url,
+                entry["size"]?.GetValue<long>() ?? 0));
+        }
+
+        return result;
     }
 
     private static IReadOnlyList<string> ReadStringArray(JsonNode? node)
@@ -382,8 +504,12 @@ public static class LunarClientService
     /// <summary>
     ///     确保 <c>assets/indexes/&lt;id&gt;.json</c> 存在。
     ///     <para>
-    ///         只补这一个索引文件，不去拉几万个资源对象——那是 Lunar 启动器
-    ///         「更新资源」的活，这里只保证游戏能找到索引。
+    ///         只补这一个索引文件，资源对象由 <see cref="EnsureAssetObjectsAsync" /> 处理。
+    ///     </para>
+    ///     <para>
+    ///         索引本身在 <c>launchermeta.mojang.com</c> 上，走
+    ///         <see cref="DownloadSource.LauncherOrMeta" /> 按「文件下载源」设置决定
+    ///         官方 / BMCLAPI 的先后。
     ///     </para>
     /// </summary>
     public static async Task EnsureAssetIndexAsync(
@@ -399,7 +525,116 @@ public static class LunarClientService
         var destination = Path.Combine(indexesDirectory, index.Id + ".json");
         if (await IsUpToDateAsync(destination, index.Sha1, cancellationToken).ConfigureAwait(false)) return;
 
-        await DownloadAsync(index.Url, destination, cancellationToken).ConfigureAwait(false);
+        await DownloadFirstAsync(DownloadSource.LauncherOrMeta(index.Url), destination, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     原版资源对象的 CDN。启动器里写死成 <c>uze</c> 这个常量。
+    /// </summary>
+    private const string MinecraftResourcesBase = "https://resources.download.minecraft.net";
+
+    /// <summary>
+    ///     资源对象的候选地址。走 <see cref="DownloadSource" />，跟「下载 → 文件下载源」
+    ///     设置完全一致：优先镜像时 BMCLAPI 在前，优先官方时官方在前，自动模式看探测结果。
+    ///     <para>
+    ///         以前这里硬编码了一份 <c>bmclapi2</c> 地址，既不跟设置走，
+    ///         改镜像域名时还得记住改两处。
+    ///     </para>
+    /// </summary>
+    private static IReadOnlyList<string> AssetObjectUrls(string prefix, string hash) =>
+        DownloadSource.Assets($"{MinecraftResourcesBase}/{prefix}/{hash}");
+
+    /// <summary>
+    ///     按资源索引补齐 <c>assets/objects/</c> 下的文件。
+    ///     <para>
+    ///         这一步照抄官方启动器的 <c>assets</c> stage：
+    ///         索引里每个对象按 <c>&lt;hash 前两位&gt;/&lt;hash&gt;</c> 落在 objects 下，
+    ///         地址是 <c>https://resources.download.minecraft.net/&lt;前两位&gt;/&lt;hash&gt;</c>。
+    ///         少了这一步，游戏进去是没贴图没声音的。
+    ///     </para>
+    ///     <para>
+    ///         已经存在的文件按 SHA-1 判断，命中就跳过 —— 装过 Lunar 启动器的机器上
+    ///         这份数据本来就是齐的，这里只会补真正缺的那几个。
+    ///     </para>
+    /// </summary>
+    /// <param name="index">资源索引。必须已经通过 <see cref="EnsureAssetIndexAsync" /> 落盘。</param>
+    /// <param name="assetsDirectory"><c>--assetsDir</c> 指向的目录。</param>
+    /// <param name="progress">进度回调，参数是「已完成 / 总数」。</param>
+    /// <param name="verify">
+    ///     是否校验 SHA-1。这一个索引动辄两三千个文件、好几百 MB，
+    ///     全量算哈希要十几秒；关掉后只判断文件在不在。
+    /// </param>
+    public static async Task EnsureAssetObjectsAsync(
+        LunarAssetIndex index,
+        string assetsDirectory,
+        IProgress<(int Done, int Total)>? progress = null,
+        bool verify = true,
+        CancellationToken cancellationToken = default)
+    {
+        var indexFile = Path.Combine(assetsDirectory, "indexes", index.Id + ".json");
+        if (!File.Exists(indexFile)) return;
+
+        // 索引里同一个 hash 可能被多个路径引用，去重后才是真正要下的文件数
+        var hashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var root = JsonNode.Parse(await File.ReadAllTextAsync(indexFile, cancellationToken)
+                .ConfigureAwait(false));
+            if (root?["objects"] is not JsonObject objects) return;
+
+            foreach (var (_, value) in objects)
+            {
+                if (value?["hash"]?.GetValue<string>() is { Length: > 0 } hash) hashes.Add(hash);
+            }
+        }
+        catch (Exception ex) when (ex is JsonException or IOException)
+        {
+            // 索引坏了就当没有，别让启动流程跟着挂
+            return;
+        }
+
+        if (hashes.Count == 0) return;
+
+        var total = hashes.Count;
+        var done = 0;
+        var failures = new ConcurrentBag<string>();
+        progress?.Report((0, total));
+
+        var options = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = DownloadParallelism,
+            CancellationToken = cancellationToken
+        };
+
+        await Parallel.ForEachAsync(hashes, options, async (hash, ct) =>
+        {
+            var prefix = hash[..2];
+            var destination = Path.Combine(assetsDirectory, "objects", prefix, hash);
+
+            var upToDate = verify
+                ? await IsUpToDateAsync(destination, hash, ct).ConfigureAwait(false)
+                : File.Exists(destination);
+
+            if (!upToDate)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                    await DownloadFirstAsync(AssetObjectUrls(prefix, hash), destination, ct)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException)
+                {
+                    failures.Add($"{hash[..8]}（{ex.Message}）");
+                }
+            }
+
+            var current = Interlocked.Increment(ref done);
+            progress?.Report((current, total));
+        }).ConfigureAwait(false);
+
+        ThrowIfAnyFailed(failures, "原版资源");
     }
 
     /// <summary>
@@ -475,11 +710,12 @@ public static class LunarClientService
 
         var files = data.Artifacts.Where(x => !x.IsNatives).ToList();
         var done = 0;
+        var failures = new ConcurrentBag<string>();
         progress?.Report((0, files.Count));
 
         var options = new ParallelOptions
         {
-            MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 8),
+            MaxDegreeOfParallelism = DownloadParallelism,
             CancellationToken = cancellationToken
         };
 
@@ -492,11 +728,24 @@ public static class LunarClientService
                 : !File.Exists(destination);
 
             if (needsDownload)
-                await DownloadAsync(artifact.Url, destination, ct).ConfigureAwait(false);
+            {
+                try
+                {
+                    await DownloadAsync(artifact.Url, destination, ct).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException)
+                {
+                    // 单个文件失败不中断整段：全部试完之后再一起报，
+                    // 下次启动会接着补没下好的那些
+                    failures.Add($"{artifact.Name}（{ex.Message}）");
+                }
+            }
 
             var current = Interlocked.Increment(ref done);
             progress?.Report((current, files.Count));
         }).ConfigureAwait(false);
+
+        ThrowIfAnyFailed(failures, "物料");
     }
 
     /// <summary>
@@ -511,23 +760,45 @@ public static class LunarClientService
         Directory.CreateDirectory(cacheDirectory);
         Directory.CreateDirectory(nativesDirectory);
 
+        var failures = new ConcurrentBag<string>();
+
         foreach (var artifact in data.NativesArtifacts)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var archive = Path.Combine(cacheDirectory, artifact.Name);
 
-            if (!await IsUpToDateAsync(archive, artifact.Sha1, cancellationToken).ConfigureAwait(false))
-                await DownloadAsync(artifact.Url, archive, cancellationToken).ConfigureAwait(false);
-
             try
             {
+                if (!await IsUpToDateAsync(archive, artifact.Sha1, cancellationToken).ConfigureAwait(false))
+                    await DownloadAsync(artifact.Url, archive, cancellationToken).ConfigureAwait(false);
+
                 ZipFile.ExtractToDirectory(archive, nativesDirectory, overwriteFiles: true);
             }
-            catch (InvalidDataException)
+            catch (Exception ex) when (ex is HttpRequestException or IOException
+                                           or TaskCanceledException or InvalidDataException)
             {
-                // 不是 zip 就跳过，别让一个坏包拖垮整次启动
+                failures.Add($"{artifact.Name}（{ex.Message}）");
             }
         }
+
+        ThrowIfAnyFailed(failures, "原生库");
+    }
+
+    /// <summary>
+    ///     把并发下载攒下来的失败一次性抛出来。
+    ///     <para>
+    ///     只报前 5 个：几百个文件同时失败时，全列出来用户也看不完，
+    ///     而且真正的原因（断网、代理挂了）看一个就够了。
+    ///     </para>
+    /// </summary>
+    private static void ThrowIfAnyFailed(ConcurrentBag<string> failures, string what)
+    {
+        if (failures.IsEmpty) return;
+
+        var sample = string.Join("、", failures.Take(5));
+        var more = failures.Count > 5 ? $"……等 {failures.Count} 个" : string.Empty;
+        throw new InvalidOperationException(
+            $"{what}下载失败：{sample}{more}。已下好的不会重下，检查网络后重试即可。");
     }
 
     /// <summary>
@@ -660,13 +931,15 @@ public static class LunarClientService
             "-XX:-CreateMinidumpOnCrash"
         };
 
-        if (options.ExtraJvmArguments.Count > 0)
-            arguments.AddRange(options.ExtraJvmArguments);
-
         // 官方启动器按版本下发的 JVM 参数：1.21+ 的模块访问、26.x 的 ZGC 都在这儿，
         // 漏了会在启动早期直接报错（--enable-native-access 之类）
         if (data.JvmExtraArguments.Count > 0)
             arguments.AddRange(data.JvmExtraArguments);
+
+        // 用户自己写的参数放在最末：JVM 对重复参数取最后一次，这样 -Xmx、-XX:+UseZGC
+        // 之类的设置才能盖掉上面那些默认值和官方值
+        if (options.ExtraJvmArguments.Count > 0)
+            arguments.AddRange(options.ExtraJvmArguments);
 
         // Genesis 主类必须在 JVM 的真实 classpath 上，否则起不来
         arguments.Add("-cp");
@@ -733,7 +1006,10 @@ public static class LunarClientService
         return startInfo;
     }
 
-    private static async Task<bool> IsUpToDateAsync(string path, string expectedSha1,
+    /// <summary>
+    ///     文件是否已经是要的那一份。不给 <paramref name="expectedSha1" /> 时只判断存不存在。
+    /// </summary>
+    internal static async Task<bool> IsUpToDateAsync(string path, string expectedSha1,
         CancellationToken cancellationToken)
     {
         if (!File.Exists(path)) return false;
@@ -744,7 +1020,53 @@ public static class LunarClientService
         return string.Equals(Convert.ToHexStringLower(hash), expectedSha1, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static async Task DownloadAsync(string url, string destination,
+    /// <summary>
+    ///     并发下载的并行度。
+    ///     <para>
+    ///         Lunar 的物料是「几百个小文件」，瓶颈在往返延迟而不是带宽，
+    ///         所以按核数×2 取，比纯按核数快一倍以上。封顶 16 ——
+    ///         再高对端会开始限流，反而更慢。
+    ///     </para>
+    /// </summary>
+    internal static int DownloadParallelism => Math.Clamp(Environment.ProcessorCount * 2, 4, 16);
+
+    /// <summary>
+    ///     下一个文件到指定位置，带重试。
+    ///     <para>
+    ///         物料是几百个小文件并发拉，中间夹一次 TLS 握手失败太正常了
+    ///         （实测 <c>multiver-releases.lunarclientprod.com</c> 偶发
+    ///         <c>unexpected EOF</c>）。没有重试的话，一个文件的抖动会让
+    ///         整段物料下载失败。
+    ///     </para>
+    /// </summary>
+    internal static async Task DownloadAsync(string url, string destination,
+        CancellationToken cancellationToken)
+    {
+        const int maxAttempts = 3;
+
+        for (var attempt = 1;; attempt++)
+        {
+            try
+            {
+                await DownloadOnceAsync(url, destination, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            catch (Exception ex) when (attempt < maxAttempts
+                                       && !cancellationToken.IsCancellationRequested
+                                       && ex is HttpRequestException or IOException or TaskCanceledException)
+            {
+                // 退避 300ms / 1200ms，给对端一点喘息
+                await Task.Delay(TimeSpan.FromMilliseconds(300 * attempt * attempt), cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     下一个文件到指定位置。先写 <c>.lunardl</c> 临时文件再换名，
+    ///     半截文件不会被下一次启动当成「已经有了」。
+    /// </summary>
+    private static async Task DownloadOnceAsync(string url, string destination,
         CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
@@ -779,6 +1101,35 @@ public static class LunarClientService
 
             throw;
         }
+    }
+
+    /// <summary>
+    ///     按顺序试一组地址，第一个成功的算数。全失败就把最后一个异常抛出去。
+    ///     <para>
+    ///         <c>jre.download</c> 本身就给了 <c>url</c> + <c>fallbackUrl</c> 两条，
+    ///         官方 CDN 在国内经常拉不动，得留后路。
+    ///     </para>
+    /// </summary>
+    internal static async Task DownloadFirstAsync(IReadOnlyList<string> urls, string destination,
+        CancellationToken cancellationToken)
+    {
+        if (urls.Count == 0) throw new ArgumentException("没有可用的下载地址。", nameof(urls));
+
+        Exception? lastError = null;
+        foreach (var url in urls)
+        {
+            try
+            {
+                await DownloadAsync(url, destination, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException)
+            {
+                lastError = ex;
+            }
+        }
+
+        throw lastError ?? new HttpRequestException("下载失败。");
     }
 
     private static string Truncate(string text, int length)

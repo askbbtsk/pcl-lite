@@ -43,8 +43,9 @@ public partial class PageLunarLaunch
         RefreshPage();
 
         // 版本列表可能还是空的（第一次进这个页面），后台拉一次；
-        // 拉完会触发 StateChanged，界面自己会更新
-        if (ModLunar.Versions.Count == 0 && ModLunar.IsInstalled)
+        // 拉完会触发 StateChanged，界面自己会更新。
+        // 没装 Lunar 也要拉 —— 物料由 PCL 自己下，版本列表是启动前就要用的
+        if (ModLunar.Versions.Count == 0)
             _ = ModLunar.RefreshVersionsAsync();
     }
 
@@ -273,9 +274,10 @@ public partial class PageLunarLaunch
         var running = ModLunar.IsRunning;
         var busy = ModLunar.IsBusy;
 
-        // 运行中这颗按钮直接变「强制停止」，位置不动
+        // 运行中这颗按钮直接变「强制停止」，位置不动。
+        // 没装过 Lunar 也能点 —— 物料由 PCL 自己从服务端清单补齐
         BtnLaunch.Text = running ? "强制停止" : busy ? "运行中…" : "启动 Lunar";
-        BtnLaunch.IsEnabled = running || (!busy && ModLunar.IsInstalled);
+        BtnLaunch.IsEnabled = running || !busy;
         BtnLaunch.ColorType = running ? MyButton.ColorState.Red : MyButton.ColorState.Highlight;
 
         ComboVersion.IsEnabled = !running && !busy;
@@ -342,7 +344,7 @@ public partial class PageLunarLaunch
         var directory = LunarClientService.MultiverDirectory(ModLunar.LunarRoot);
         if (!Directory.Exists(directory))
         {
-            ModMain.MyMsgBox("物料目录还不存在，先启动一次游戏再试。", "打开物料目录");
+            ModMain.MyMsgBox("物料目录还不存在，先启动一次游戏，PCL 会把物料下到这里。", "打开物料目录");
             return;
         }
 

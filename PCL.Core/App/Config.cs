@@ -285,6 +285,43 @@ public static partial class Config
             /// </para>
             /// </summary>
             [ConfigItem<string>("LunarAccount", "", ConfigSource.Local)] public partial string AccountLocalId { get; set; }
+
+            /// <summary>
+            /// Lunar 的堆上限（MB）。<c>0</c> 表示跟随 PCL 全局内存设置。
+            /// <para>
+            /// 单独开一项而不是直接复用 <see cref="LaunchConfigGroup" /> 的滑块，是因为
+            /// Lunar 的 JRE 由它自己按版本下发（17 / 21 / 25），内存需求跟原版实例不一样，
+            /// 强行套用全局值容易给出一个对某个版本偏小的数字。
+            /// </para>
+            /// </summary>
+            [ConfigItem<int>("LunarMemoryMb", 0, ConfigSource.Local)] public partial int MemoryMb { get; set; }
+
+            /// <summary>
+            /// 全局附加 JVM 参数，只对 Lunar 生效。
+            /// <para>
+            /// 会被拼在 Lunar 按版本下发的 JVM 参数<b>之后</b>：JVM 对重复参数取最后一次，
+            /// 这样用户写的 <c>-Xmx</c>、<c>-XX:+UseZGC</c> 才能盖掉官方值。
+            /// </para>
+            /// </summary>
+            [ConfigItem<string>("LunarJvmArgs", "", ConfigSource.Local)] public partial string JvmArgs { get; set; }
+
+            /// <summary>
+            /// 覆盖 Lunar 自带的 JRE，指向一个具体的 <c>java.exe</c>。空值表示用 Lunar 的。
+            /// <para>
+            /// 只在文件确实存在时才生效，写错了会退回自动定位，不会把启动搞崩。
+            /// </para>
+            /// </summary>
+            [ConfigItem<string>("LunarJavaPath", "", ConfigSource.Local)] public partial string JavaPath { get; set; }
+
+            /// <summary>
+            /// 按版本覆盖的内存与 JVM 参数，JSON：<c>{"1.8.9":{"on":true,"mem":4096,"jvm":"..."}}</c>。
+            /// <para>
+            /// 走 <see cref="PCL.Core.App.Lunar.LunarLaunchProfile" /> 读写，别直接解析。
+            /// 存成一个字符串是沿用 <c>ProfileService.Profiles</c> 的做法：
+            /// 版本数量不定，拆成配置项会让配置文件越滚越大。
+            /// </para>
+            /// </summary>
+            [ConfigItem<string>("LunarVersionOverrides", "", ConfigSource.Local)] public partial string VersionOverrides { get; set; }
         }
 
         /// <summary>

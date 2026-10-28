@@ -34,8 +34,13 @@
                 </local:MyListItem.Buttons>
             </local:MyListItem>
 
+            <local:MyListItem x:Name="ItemLunar" IsScaleAnimationEnabled="False" Tag="12" MinPaddingRight="35"
+                              Height="36" VerticalAlignment="Top" Title="Lunar Client" Type="RadioBox"
+                              Check="PageCheck" LogoScale="1"
+                              SvgIcon="brand/lunar" />
+
             <local:MyListItem x:Name="ItemGameManage" IsScaleAnimationEnabled="False" Tag="2" MinPaddingRight="35"
-                               Check="PageCheck"
+                              Check="PageCheck"
                                Height="36" VerticalAlignment="Top" Title="{DynamicResource Setup.Left.Item.GameManage}" Type="RadioBox"
                               LogoScale="0.95"
                               SvgIcon="lucide/book-marked">

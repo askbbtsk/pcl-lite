@@ -298,6 +298,12 @@ public partial class PageSetupLeft
                     ModMain.frmSetupJava = new PageSetupJava();
                 return ModMain.frmSetupJava;
             }
+            case FormMain.PageSubType.SetupLunar:
+            {
+                if (ModMain.frmSetupLunar is null)
+                    ModMain.frmSetupLunar = new PageSetupLunar();
+                return ModMain.frmSetupLunar;
+            }
 
             default:
             {

@@ -1449,6 +1449,11 @@ public partial class FormMain
         SetupLauncherMisc = 10,
         SetupLauncherLanguage = 11,
 
+        /// <summary>
+        ///     Lunar Client 的启动设置（Java、内存、JVM 参数）。
+        /// </summary>
+        SetupLunar = 12,
+
         ToolsTest = 3,
 
         BedrockDownload = 0,

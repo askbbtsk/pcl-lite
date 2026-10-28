@@ -215,8 +215,8 @@ public static class ModLunar
 
         if (!IsInstalled)
         {
-            StatusText = "未安装 Lunar Client";
-            DetailText = "本机还没有任何物料。点「启动 Lunar」会自动下载并安装（首次约 300 MB）。";
+            StatusText = "还没有下载 Lunar 物料";
+            DetailText = "不需要装 Lunar 启动器。点「启动 Lunar」，PCL 会自己把物料下到本机（首次约 300 MB）。";
             RaiseStateChanged();
             return;
         }
@@ -640,7 +640,22 @@ public static class ModLunar
             return (account.DisplayName, uuid, account.AccessToken);
         }
 
-        Log("Lunar 账户库里没有账号，改用 PCL 主页面登录的凭据");
+        // ③ Lunar 账户库里一个账号都没有。典型情况是从没装过、或装过但从没在 Lunar 启动器里登录。
+        // 这种时候只要 PCL Lite 自己登录过微软账号就够用，不必先去 Lunar 登录一次
+        var pclAccount = ProfileService.Current;
+        if (pclAccount is null || pclAccount.ProfileType != ProfileType.Microsoft ||
+            string.IsNullOrWhiteSpace(pclAccount.AccessToken))
+        {
+            pclAccount = PclProfiles.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.AccessToken));
+        }
+
+        if (pclAccount is not null)
+        {
+            Log("Lunar 账户库里没有账号，改用 PCL Lite 登录的账号");
+            return await ResolveFromPclProfileAsync(pclAccount).ConfigureAwait(false);
+        }
+
+        Log("Lunar 账户库和 PCL 账号列表都是空的，尝试走一次主页面登录");
 
         // 直接复用主页面登录过的凭据：mcLoginLoader 跑完一次之后 output 就有值，
         // 再 Start() 一次会重新走 OAuth、多弹一次浏览器，用户会以为出问题了
@@ -664,7 +679,7 @@ public static class ModLunar
 
         if (string.IsNullOrWhiteSpace(login.AccessToken))
             throw new InvalidOperationException(
-                "Lunar 账户库里没有账号，PCL 也没有登录凭据。请先在 Lunar 启动器里登录一次，或在主页面登录微软账号。");
+                "PCL 里还没有登录任何账号。请在主页面登录微软账号后重试 —— 不需要登录 Lunar 启动器。");
 
         Log($"账号：{login.Name}（PCL 登录）");
         return (login.Name, NormalizeUuid(login.Uuid), login.AccessToken);
@@ -691,6 +706,10 @@ public static class ModLunar
         {
             _launchedLocalId = twin.LocalId;
             Log($"Lunar 账户库里有同一个 UUID 的账号，激活账号已切过去（{twin.LocalId}）");
+        }
+        else if (_accounts.Count == 0)
+        {
+            Log("Lunar 账户库还是空的，稍后会按这个账号新建一份（不需要 Lunar 启动器登录过）");
         }
         else
         {

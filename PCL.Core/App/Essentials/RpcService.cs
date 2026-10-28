@@ -133,7 +133,8 @@ public sealed partial class RpcService
                 var app = Lifecycle.CurrentApplication;
                 app.Dispatcher.BeginInvoke(() =>
                 {
-                    var window = app.MainWindow!;
+                    // 主窗口已经关掉但进程还活着时 MainWindow 会是 null，直接空引用会把整个实例带崩
+                    if (app.MainWindow is not { } window) return;
                     if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal;
                     if (!window.Topmost)
                     {

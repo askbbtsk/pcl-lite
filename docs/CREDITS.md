@@ -9,18 +9,6 @@ PCL Lite 站在很多人的肩膀上。这份清单列出直接借用了代码�
 
 ### PCL（Plain Craft Launcher）
 
-- 作者：龙腾猫跃（LTCat）
-- 许可证：MIT
-- 仓库：<https://github.com/Meloong-Git/PCL>
-- 关系：PCL Lite 的**全部基础代码**来自 PCL。界面框架、下载器、实例管理、主题引擎、
-  语言系统等绝大部分功能都是上游的实现，本项目只在其上做增量修改。
-
-### PCL-CE（Community Edition）
-
-- 仓库：<https://github.com/PCL-Community/PCL2-CE>
-- 许可证：MIT
-- 关系：PCL Lite 的**直接 fork 基线**。`PCL.Core` 的分层结构、生命周期服务、
-  `ConfigItem` 源生成器、MCP 服务骨架等均来自此分支。
 
 ### PCL-Symbio-Edition
 

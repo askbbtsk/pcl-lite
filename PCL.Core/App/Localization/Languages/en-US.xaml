@@ -2495,8 +2495,6 @@
     <sys:String x:Key="Setup.About.SponsorOriginalAuthor">Sponsor original author</sys:String>
     <sys:String x:Key="Setup.About.Title">About</sys:String>
     <sys:String x:Key="Setup.About.UpstreamLegal.OpenSource">Source code</sys:String>
-    <sys:String x:Key="Setup.About.UpstreamLegal.PrivacyText">The User Agent of this software includes the launcher version number to count the number of users on each version.&#xD;Other than this, this software will not upload any other information to the developers.</sys:String>
-    <sys:String x:Key="Setup.About.UpstreamLegal.TermsAndDisclaimer">ToS &amp; Disclaimer</sys:String>
     <sys:String x:Key="Setup.About.UpstreamLegal.Title">Open source and legal information</sys:String>
     <sys:String x:Key="Setup.About.Version.Info">Current version: %VERSION% (%BRANCH%, %VERSIONCODE%, %COMMIT_HASH%)</sys:String>
 
@@ -2534,8 +2532,6 @@
     <sys:String x:Key="Setup.About.Legal.CommunitySource">PCL Lite source code</sys:String>
     <sys:String x:Key="Setup.About.Legal.CopyrightText">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</sys:String>
     <sys:String x:Key="Setup.About.Legal.OtherInfo">Other information</sys:String>
-    <sys:String x:Key="Setup.About.Legal.PrivacyNotice">Privacy statement</sys:String>
-    <sys:String x:Key="Setup.About.Legal.PrivacyText">The User Agent of this software includes the launcher version number to count the number of users on each version.&#xD;Other than this, this software will not upload any other information to the developers.&#xD;* Online and hardware/software survey features follow their own privacy policies, which are separate from this notice.</sys:String>
     <sys:String x:Key="Setup.About.Legal.Title">Legal information</sys:String>
 
     <!-- Setup.About.SpecialThanks -->

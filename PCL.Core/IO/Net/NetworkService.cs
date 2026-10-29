@@ -70,7 +70,8 @@ public partial class NetworkService
             .ConfigurePrimaryHttpMessageHandler(_GetSocketsHttpHandler)
             .AddHttpMessageHandler(() => new NetworkGuardHandler())
             .ConfigureHttpClient(c => c.DefaultRequestHeaders
-                .UserAgent.Add(new ProductInfoHeaderValue("PCL-Lite", Basics.VersionName)))
+                // 不带版本号：见 HttpSenderExtension，统一只报产品名
+                .UserAgent.Add(new ProductInfoHeaderValue("PCL-Lite")))
             .SetHandlerLifetime(TimeSpan.FromMinutes(LifeTime)));
         
         // 默认的 HTTP Client

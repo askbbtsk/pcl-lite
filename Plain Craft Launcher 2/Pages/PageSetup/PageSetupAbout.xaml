@@ -215,17 +215,7 @@
                 Title="{DynamicResource Setup.About.Legal.Title}">
                 <StackPanel Margin="25,39,23,20">
                     <TextBlock
-                        Margin="0,6,0,4"
-                        FontWeight="Bold"
-                        Text="{DynamicResource Setup.About.Legal.PrivacyNotice}"
-                        TextWrapping="Wrap" />
-                    <TextBlock
-                        Margin="0,0,0,2"
-                        LineHeight="17"
-                        Text="{DynamicResource Setup.About.Legal.PrivacyText}"
-                        TextWrapping="Wrap" />
-                    <TextBlock
-                        Margin="0,12,0,4"
+                        Margin="0,0,0,4"
                         FontWeight="Bold"
                         Text="{DynamicResource Setup.About.Legal.OtherInfo}"
                         TextWrapping="Wrap" />
@@ -273,13 +263,6 @@
                         local:CustomEventService.EventType="OpenUrl"
                         Padding="13,0"
                         Text="{DynamicResource Setup.About.UpstreamLegal.OpenSource}" />
-                    <local:MyButton
-                        Width="160"
-                        Margin="0,0,20,0"
-                        local:CustomEventService.EventData="https://shimo.im/docs/rGrd8pY8xWkt6ryW"
-                        local:CustomEventService.EventType="OpenUrl"
-                        Padding="13,0"
-                        Text="{DynamicResource Setup.About.UpstreamLegal.TermsAndDisclaimer}" />
                 </StackPanel>
             </local:MyCard>
             <local:MyCard

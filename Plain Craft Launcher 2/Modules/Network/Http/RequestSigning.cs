@@ -28,11 +28,13 @@ public static class RequestSigning
         {
             client.Headers.Add("x-api-key", Secrets.CurseForgeAPIKey);
         }
+        // 不带任何版本号：UA 里塞构建号等于每个请求都在上报「谁在用哪个版本」，可以据此统计用户数量。
+        // 这里只保留产品名，需要伪装成浏览器时再补浏览器段。
         var userAgent = !string.IsNullOrEmpty(customUserAgent)
             ? customUserAgent
             : useBrowserUserAgent
-                ? $"PCL2/{ModBase.upstreamVersion}.{ModBase.versionBranchCode} PCLCE/{ModBase.versionStandardCode} Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0"
-                : $"PCL2/{ModBase.upstreamVersion}.{ModBase.versionBranchCode} PCLCE/{ModBase.versionStandardCode}";
+                ? "PCL2 PCLCE Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0"
+                : "PCL2 PCLCE";
         client.Headers.Add("User-Agent", userAgent);
     }
 }

@@ -56,7 +56,7 @@ C 盘紧张或者想单独隔离一套存档时完全没辙。
 
 单文件、免解压。**需要已安装 [.NET 10 桌面运行时](https://dotnet.microsoft.com/download/dotnet/10.0)**。
 
-SHA-256：`{{SHA256}}`
+SHA-256：`937A5C628AE300B899D152FE5D4AA6340092513C9EBF5B7CE483B5A324D19D2D`
 
 ## 已知问题
 

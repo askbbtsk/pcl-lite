@@ -3725,4 +3725,5 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Bedrock.Download.Err.Fe3">FE3 接口返回错误（{0}）。稍后重试；一直这样就挂代理。</sys:String>
     <sys:String x:Key="Bedrock.Download.Err.NoFe3">连不上 FE3 接口：{0}。检查网络或代理。</sys:String>
     <sys:String x:Key="Lunar.Error.OperationFailed">Lunar 页面操作失败。请查看错误详情。</sys:String>
+    <sys:String x:Key="Tools.Import.Shortcut">转移 PCL 设置</sys:String>
 </ResourceDictionary>

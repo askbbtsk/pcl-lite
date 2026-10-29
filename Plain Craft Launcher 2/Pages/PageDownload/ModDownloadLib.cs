@@ -70,8 +70,14 @@ public static class ModDownloadLib
     ///     它的 Genesis 固定往 <c>%APPDATA%\.minecraft</c> 里补原版客户端，
     ///     不能装进玩家自己的 MC 目录。
     /// </param>
+    /// <param name="repairOnly">
+    ///     只补缺的文件，不把「实例已存在」当成跳过条件。Lunar 用：
+    ///     jar 和 json 都在、<c>libraries</c> 缺一半时，Genesis 会闷头把剩下的下完
+    ///     （实测 1.3 GB / 970 个文件，界面上一个字都没有），所以这种情况必须
+    ///     照样交给 PCL 的下载任务，让进度能看见。
+    /// </param>
     public static ModLoader.LoaderCombo<string> McDownloadClient(NetPreDownloadBehaviour behaviour, string id,
-        string jsonUrl = null, string targetMcFolder = null)
+        string jsonUrl = null, string targetMcFolder = null, bool repairOnly = false)
     {
         if (!RestrictedFeaturePolicy.Check("minecraft-client-download")) return null;
         try
@@ -90,7 +96,8 @@ public static class ModDownloadLib
             }
 
             // 已有实例检查
-            if (behaviour != NetPreDownloadBehaviour.IgnoreCheck && File.Exists(Path.Combine(versionFolder, id + ".json")) &&
+            if (!repairOnly && behaviour != NetPreDownloadBehaviour.IgnoreCheck &&
+                File.Exists(Path.Combine(versionFolder, id + ".json")) &&
                 File.Exists(Path.Combine(versionFolder, id + ".jar")))
             {
                 if (behaviour == NetPreDownloadBehaviour.ExitWhileExistsOrDownloading)

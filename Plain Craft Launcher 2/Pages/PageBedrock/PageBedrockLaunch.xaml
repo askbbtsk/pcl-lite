@@ -40,11 +40,11 @@
                                             <TextBlock Margin="0,3,0,0" FontSize="11.5" Opacity="0.65"
                                                        Text="{Binding Info}" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
-                                        <local:MyButton Grid.Column="1" Width="90" Height="30" Margin="0,0,10,0"
+                                        <local:MyButton Grid.Column="1" MinWidth="90" Height="30" Margin="0,0,10,0"
                                                         VerticalAlignment="Center"
                                                         Text="{DynamicResource Bedrock.Launch.OpenFolder}"
                                                         Tag="{Binding Install}" Click="BtnOpenInstallFolder_Click" />
-                                        <local:MyButton Grid.Column="2" Width="90" Height="30"
+                                        <local:MyButton Grid.Column="2" MinWidth="90" Height="30"
                                                         VerticalAlignment="Center" ColorType="Highlight"
                                                         Text="{DynamicResource Bedrock.Launch.Launch}"
                                                         Tag="{Binding Install}" Click="BtnLaunch_Click" />

@@ -23,6 +23,10 @@
                                     Click="BtnCreateShortcut_Click" />
                     <local:MyButton MinWidth="120" Text="{DynamicResource Tools.Test.LaunchCount.Title}"
                                     Margin="0,0,15,15" Click="BtnLaunchCount_Click" />
+                    <!--  导入设置页在左栏也有一项，这里放一颗按钮：左栏只有两项时很容易被忽略  -->
+                    <local:MyButton MinWidth="120" Text="{DynamicResource Tools.Import.Shortcut}"
+                                    ToolTip="{DynamicResource Tools.Import.Desc}"
+                                    Margin="0,0,15,15" Click="BtnImport_Click" />
                 </WrapPanel>
             </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Tools.Test.CustomDownload.Title}">
@@ -181,11 +185,11 @@
                             <ColumnDefinition />
                             <ColumnDefinition />
                         </Grid.ColumnDefinitions>
-                        <local:MyButton x:Name="BtnAchievementPreview" Grid.Column="0" Width="140"
+                        <local:MyButton x:Name="BtnAchievementPreview" Grid.Column="0" MinWidth="140"
                                         Text="{DynamicResource Tools.Test.Achievement.Preview}"
                                         ColorType="Highlight" Margin="0,0,15,0" HorizontalAlignment="Right"
                                         Click="BtnAchievementPreview_Click" />
-                        <local:MyButton x:Name="BtnAchievementSave" Grid.Column="1" Width="140"
+                        <local:MyButton x:Name="BtnAchievementSave" Grid.Column="1" MinWidth="140"
                                         Text="{DynamicResource Tools.Test.Achievement.Save}"
                                         Margin="0,0,15,0" HorizontalAlignment="Left" Click="BtnAchievementSave_Click" />
                     </Grid>

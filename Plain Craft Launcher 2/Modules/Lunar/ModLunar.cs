@@ -549,6 +549,10 @@ public static class ModLunar
     ///         闷头下，界面上什么都没有，玩家只能看着「进程活着但没窗口」猜。
     ///     </para>
     ///     <para>
+    ///         <c>repairOnly</c> 是关键：只缺 <c>libraries</c> 时 jar 和 json 都在，
+    ///         普通模式下会被当成「实例已存在」直接跳过，于是又回到 Genesis 闷头下。
+    ///     </para>
+    ///     <para>
     ///         下载失败不阻断启动：Genesis 自己还会再试一次，只是慢、且没进度。
     ///     </para>
     /// </summary>
@@ -558,11 +562,12 @@ public static class ModLunar
 
         try
         {
-            Log($"本机还没有原版 {version}，交给 PCL 下载到 {VanillaRoot}");
+            Log($"原版 {version} 的文件不齐，交给 PCL 补齐到 {VanillaRoot}");
 
             ModLoader.LoaderCombo<string>? loader = null;
             ModBase.RunInUiWait(() => loader = ModDownloadLib.McDownloadClient(
-                NetPreDownloadBehaviour.ExitWhileExistsOrDownloading, version, null, VanillaRoot));
+                NetPreDownloadBehaviour.ExitWhileExistsOrDownloading, version, null, VanillaRoot,
+                repairOnly: true));
 
             if (loader is null)
             {
@@ -795,7 +800,7 @@ public static class ModLunar
             try
             {
                 if (!vanillaReady)
-                    Log($"本机还没有原版 {subVersion} 的客户端文件，Lunar 会先把它下到 {VanillaRoot}（约 100–200 MB）。" +
+                    Log($"原版 {subVersion} 的文件还没补齐，Lunar 会自己把剩下的下到 {VanillaRoot}。" +
                         "这期间不会有窗口，属正常现象，别关进程。");
 
                 var lastBytes = MeasureVanillaFootprint().Bytes;
@@ -812,7 +817,7 @@ public static class ModLunar
                     if (footprint.Bytes > lastBytes + 512 * 1024)
                     {
                         // 还在下：报个进度，让用户知道没死
-                        Log($"Lunar 正在下载原版依赖：已 {footprint.Bytes / 1024d / 1024d:F0} MB、" +
+                        Log($"Lunar 自己在补原版依赖（PCL 那边没补完）：已 {footprint.Bytes / 1024d / 1024d:F0} MB、" +
                             $"{footprint.Files} 个文件，继续等待…");
                         lastBytes = footprint.Bytes;
                         stalled = 0;
@@ -849,14 +854,31 @@ public static class ModLunar
         try
         {
             var directory = Path.Combine(VanillaRoot, "versions", version);
-            return File.Exists(Path.Combine(directory, version + ".jar")) &&
-                   File.Exists(Path.Combine(directory, version + ".json"));
+            if (!File.Exists(Path.Combine(directory, version + ".jar")) ||
+                !File.Exists(Path.Combine(directory, version + ".json")))
+                return false;
+
+            // jar 和 json 齐了不代表能用：Genesis 还要 libraries 里那几百个文件。
+            // 只看 jar/json 会漏判，结果是它自己在后台把剩下的下完 —— 实测能到
+            // 1.3 GB / 970 个文件，全程没有进度，看着就像卡死。
+            return CountMissingVanillaFiles(version) == 0;
         }
         catch (Exception ex)
         {
             ModBase.Log(ex, "[Lunar] 检查原版客户端失败", ModBase.LogLevel.Debug);
             return true; // 查不出来就别乱下结论
         }
+    }
+
+    /// <summary>
+    ///     用 PCL 自己的库文件清单数一下还缺几个文件（主 jar 也在清单里）。
+    ///     只比存在性，不算哈希 —— 够判断「要不要让 PCL 补一次」，真正的校验交给下载任务。
+    /// </summary>
+    private static int CountMissingVanillaFiles(string version)
+    {
+        var instanceFolder = Path.Combine(VanillaRoot, "versions", version);
+        return ModLibrary.McLibNetFilesFromInstance(new McInstance(instanceFolder))
+            .Count(file => !File.Exists(file.LocalPath));
     }
 
     /// <summary>

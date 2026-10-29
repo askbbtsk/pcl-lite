@@ -88,6 +88,23 @@ public partial class PageToolsLeft
     }
 
     /// <summary>
+    ///     从别处跳到某个子页面（百宝箱卡片上的按钮就靠这个），左栏的勾选跟着走。
+    ///     <para>
+    ///         先设勾选再显式切一次页：勾选本身会触发 <c>Check</c> → <c>PageCheck</c> → <c>PageChange</c>，
+    ///         已经切过去时后面这次调用会因为 <c>pageID</c> 相同直接返回，不会切两遍。
+    ///     </para>
+    /// </summary>
+    public void SwitchTo(FormMain.PageSubType id)
+    {
+        if (id == FormMain.PageSubType.ToolsImport)
+            ItemImport.SetChecked(true, false, true);
+        else
+            ItemTest.SetChecked(true, false, true);
+
+        PageChange(id);
+    }
+
+    /// <summary>
     ///     切换现有页面。
     /// </summary>
     public void PageChange(FormMain.PageSubType id)

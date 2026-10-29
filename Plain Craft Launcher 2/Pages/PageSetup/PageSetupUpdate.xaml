@@ -71,7 +71,7 @@
                             <ColumnDefinition Width="50" />
                             <ColumnDefinition Width="10" />
                             <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="85" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="29" />
@@ -91,9 +91,10 @@
                                    Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" />
                         <TextBlock x:Name="TextUpdateDesc" Text="by bsk10ww" FontSize="14" Grid.Row="2"
                                    Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                        <!--  按钮宽度跟着文案走：写死 85 时英文的 "Download and install" 会被裁成 "wnload and ins"  -->
                         <local:MyButton x:Name="BtnUpdate" Text="{DynamicResource Setup.Update.Install}" ColorType="Highlight" Grid.Row="0"
-                                        Grid.RowSpan="2" Grid.Column="3" HorizontalAlignment="Center"
-                                        VerticalAlignment="Center" Width="85" Height="30"
+                                        Grid.RowSpan="2" Grid.Column="3" HorizontalAlignment="Right"
+                                        VerticalAlignment="Center" MinWidth="85" MaxWidth="230" Height="30"
                                         Click="BtnUpdate_Click" />
                         <TextBlock x:Name="TextChangelog"
                                     Text="{DynamicResource Setup.Update.Changelog.Placeholder}"
@@ -111,9 +112,9 @@
                             <ColumnDefinition Width="50" />
                             <ColumnDefinition Width="10" />
                             <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="10" />
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="29" />
@@ -129,10 +130,10 @@
                         <TextBlock x:Name="TextCurrentDesc" Text="{DynamicResource Setup.Update.Latest}" FontSize="14" Grid.Row="2" Grid.Column="2"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" />
                         <local:MyButton x:Name="BtnCheckAgain" Text="{DynamicResource Setup.Update.CheckAgain}" ColorType="Highlight" Grid.Row="0"
-                                        Grid.RowSpan="2" Grid.Column="3" HorizontalAlignment="Stretch"
+                                        Grid.RowSpan="2" Grid.Column="3" HorizontalAlignment="Stretch" MinWidth="80"
                                         VerticalAlignment="Stretch" Click="BtnCheckAgain_OnClick" />
                         <local:MyButton x:Name="BtnChangelog" Text="{DynamicResource Setup.Update.Changelog.View}" ColorType="Normal" Grid.Row="0"
-                                        Grid.RowSpan="2" Grid.Column="5" HorizontalAlignment="Stretch"
+                                        Grid.RowSpan="2" Grid.Column="5" HorizontalAlignment="Stretch" MinWidth="100"
                                         VerticalAlignment="Stretch" Click="BtnChangelog_Click" />
                     </Grid>
                 </StackPanel>
@@ -145,7 +146,7 @@
                             <ColumnDefinition Width="50" />
                             <ColumnDefinition Width="10" />
                             <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="85" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="29" />
@@ -164,8 +165,8 @@
                         <TextBlock x:Name="TextOptionalUpdateDesc" Text="20.0 MiB" FontSize="14" Grid.Row="2"
                                    Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Top" />
                         <local:MyButton x:Name="BtnOptionalUpdate" Text="{DynamicResource Setup.Update.Install}" ColorType="Highlight" Grid.Row="0"
-                                        Grid.RowSpan="2" Grid.Column="3" HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch" />
+                                        Grid.RowSpan="2" Grid.Column="3" HorizontalAlignment="Right"
+                                        VerticalAlignment="Stretch" MinWidth="85" MaxWidth="230" />
                         <TextBlock x:Name="TextOptionalChangelog"
                                     Text="{DynamicResource Setup.Update.OtherOptions.Placeholder}"
                                    Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" TextWrapping="Wrap" />

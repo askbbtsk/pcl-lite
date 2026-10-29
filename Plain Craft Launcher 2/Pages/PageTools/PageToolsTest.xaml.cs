@@ -488,6 +488,15 @@ public partial class PageToolsTest
         ModMain.MyMsgBox(Lang.Text("Tools.Test.LaunchCount.Message", States.System.LaunchCount), Lang.Text("Tools.Test.LaunchCount.Title"));
     }
 
+    /// <summary>
+    ///     跳到左栏的「导入设置」。走左栏的切换逻辑，勾选状态和动画才跟得上，
+    ///     否则会出现「页面换了但左栏还亮着实用工具」。
+    /// </summary>
+    private void BtnImport_Click(object sender, MouseButtonEventArgs e)
+    {
+        ModMain.frmToolsLeft?.SwitchTo(FormMain.PageSubType.ToolsImport);
+    }
+
     private async void BtnAchievementPreview_Click(object sender, MouseButtonEventArgs e)
     {
         var url = GetAchievementUrl();

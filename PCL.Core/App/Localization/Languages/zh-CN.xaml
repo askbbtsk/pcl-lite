@@ -3713,6 +3713,7 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Lunar.Status.FetchManifest">正在获取 Lunar 物料清单…</sys:String>
     <sys:String x:Key="Lunar.Status.Launching">正在启动…</sys:String>
     <sys:String x:Key="Lunar.Status.Exited">游戏已退出</sys:String>
+    <sys:String x:Key="Lunar.Status.Stopped">游戏已停止</sys:String>
     <sys:String x:Key="Lunar.Status.Crashed">游戏异常退出（退出码 {0}）</sys:String>
     <sys:String x:Key="Lunar.Status.CrashedDesc">输出已写入 PCL 日志。</sys:String>
     <sys:String x:Key="Lunar.Status.Running">游戏运行中</sys:String>

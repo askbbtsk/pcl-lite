@@ -3627,6 +3627,7 @@ Install Lunar Client and launch it at least once first.</sys:String>
     <sys:String x:Key="Lunar.Status.FetchManifest">Fetching the Lunar manifest…</sys:String>
     <sys:String x:Key="Lunar.Status.Launching">Launching…</sys:String>
     <sys:String x:Key="Lunar.Status.Exited">Game exited</sys:String>
+    <sys:String x:Key="Lunar.Status.Stopped">Game stopped</sys:String>
     <sys:String x:Key="Lunar.Status.Crashed">Game crashed (exit code {0})</sys:String>
     <sys:String x:Key="Lunar.Status.CrashedDesc">Output was written to the PCL log.</sys:String>
     <sys:String x:Key="Lunar.Status.Running">Game running</sys:String>

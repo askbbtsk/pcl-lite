@@ -50,6 +50,16 @@ public static class ModLunar
     private static string _activeAccountLocalId = string.Empty;
 
     /// <summary>
+    ///     这次退出是不是我们自己按的「结束游戏」。
+    ///     <para>
+    ///         <see cref="Stop" /> 走的是 <c>Process.Kill</c>，Windows 给这种进程的退出码是 <c>-1</c>。
+    ///         以前只判断「退出码非 0」，于是玩家自己点停止也会被报成「游戏异常退出（退出码 -1）」，
+    ///         白白吓一跳。
+    ///     </para>
+    /// </summary>
+    private static volatile bool _stopRequested;
+
+    /// <summary>
     ///     子进程最近若干行输出。游戏在 Minecraft 初始化前就静默退出时（1.17.1 踩过），
     ///     文件日志里只剩「启动了」和「退出了」，这几行是唯一的死因线索。
     /// </summary>
@@ -533,12 +543,15 @@ public static class ModLunar
         {
             if (!process.HasExited)
             {
+                // 先立牌子再动手：Exited 事件可能在 Kill 返回前就排上队了
+                _stopRequested = true;
                 process.Kill(entireProcessTree: true);
                 Log("已强制结束游戏进程");
             }
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
         {
+            _stopRequested = false;
             Log("结束进程失败：" + ex.Message);
         }
     }
@@ -613,6 +626,7 @@ public static class ModLunar
     {
         try
         {
+            _stopRequested = false;
             var subVersion = SelectedSubVersion;
             GameDirectory = gameDirectory;
 
@@ -733,17 +747,27 @@ public static class ModLunar
                     // 进程对象已经不可用，只能按未知处理
                 }
 
+                // 读完就复位，免得影响下一次启动
+                var stopped = _stopRequested;
+                _stopRequested = false;
+
                 _process = null;
                 IsBusy = false;
                 // 游戏没了就没人需要续期了，端口让出来给别的程序
                 StopIpc();
 
                 var elapsed = DateTime.Now - startedAt;
-                Log($"游戏进程已退出（退出码 {exitCode}，运行 {elapsed.TotalSeconds:F0} 秒）");
+                Log($"游戏进程已退出（退出码 {exitCode}{(stopped ? "，由 PCL 结束" : "")}，运行 {elapsed.TotalSeconds:F0} 秒）");
+
+                // Windows 给被强制结束的进程的退出码是 -1。不是自己按的停止也可能是任务管理器
+                // 或杀软干掉的，这种情况说「异常退出」同样是冤枉 —— 只有真正的非零退出才算崩
+                var forced = stopped || exitCode == -1;
+                var clean = exitCode == 0;
 
                 // 异常退出，或者起来不到一分钟就没了 —— 这两种情况把最后几十行落进文件日志。
-                // 界面日志框只在页面打开时才有人看，导出也容易漏，文件日志才是排查的依据
-                if (exitCode != 0 || elapsed < TimeSpan.FromMinutes(1))
+                // 界面日志框只在页面打开时才有人看，导出也容易漏，文件日志才是排查的依据。
+                // 主动停止就别刷了，那不是问题
+                if (!forced && (exitCode != 0 || elapsed < TimeSpan.FromMinutes(1)))
                 {
                     var tail = SnapshotGameOutput();
                     if (tail.Count == 0)
@@ -757,10 +781,12 @@ public static class ModLunar
                     }
                 }
 
-                StatusText = exitCode == 0
-                    ? Lang.Text("Lunar.Status.Exited")
-                    : Lang.Text("Lunar.Status.Crashed", exitCode);
-                DetailText = exitCode == 0 ? "" : Lang.Text("Lunar.Status.CrashedDesc");
+                StatusText = forced
+                    ? Lang.Text("Lunar.Status.Stopped")
+                    : clean
+                        ? Lang.Text("Lunar.Status.Exited")
+                        : Lang.Text("Lunar.Status.Crashed", exitCode);
+                DetailText = forced || clean ? "" : Lang.Text("Lunar.Status.CrashedDesc");
                 RaiseStateChanged();
             };
 
@@ -771,14 +797,18 @@ public static class ModLunar
             WatchFirstWindow(process, gameDirectory, startedAt, subVersion, vanillaReady);
 
             // 首次启动某个版本时 Genesis 要先把原版客户端下下来，这期间不会有窗口，
-            // 所以状态文案得说实话，不然用户只会看到「游戏运行中」却什么都没有
-            StatusText = vanillaReady
-                ? Lang.Text("Lunar.Status.Running")
-                : Lang.Text("Lunar.Status.VanillaPending", subVersion);
-            DetailText = vanillaReady
-                ? Lang.Text("Lunar.Status.RunningDesc")
-                : Lang.Text("Lunar.Status.VanillaPendingDesc", VanillaRoot);
-            RaiseStateChanged();
+            // 所以状态文案得说实话，不然用户只会看到「游戏运行中」却什么都没有。
+            // 进程可能已经在这几行之前就退了（Exited 是线程池回调），那就别再盖回去
+            if (!process.HasExited)
+            {
+                StatusText = vanillaReady
+                    ? Lang.Text("Lunar.Status.Running")
+                    : Lang.Text("Lunar.Status.VanillaPending", subVersion);
+                DetailText = vanillaReady
+                    ? Lang.Text("Lunar.Status.RunningDesc")
+                    : Lang.Text("Lunar.Status.VanillaPendingDesc", VanillaRoot);
+                RaiseStateChanged();
+            }
         }
         catch (Exception ex)
         {

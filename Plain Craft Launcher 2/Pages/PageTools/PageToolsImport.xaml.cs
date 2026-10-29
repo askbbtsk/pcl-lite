@@ -97,6 +97,15 @@ public partial class PageToolsImport
         foreach (var name in new[] { "PCLCE", "PCLLite" })
             roots.Add(Path.Combine(localAppData, name));
 
+        // PCL2 原版绝大多数是便携版，setup.ini 就在启动器旁边；而启动器通常直接扔在
+        // .minecraft 那一层或者它的 PCL 子目录里，顺手一起看，省得每次都手动选
+        var mcRoot = ModFolder.mcFolderSelected;
+        if (!string.IsNullOrWhiteSpace(mcRoot))
+        {
+            roots.Add(mcRoot);
+            roots.Add(Path.Combine(mcRoot, "PCL"));
+        }
+
         try
         {
             roots.AddRange(Directory.EnumerateDirectories(appData));
@@ -199,18 +208,20 @@ public partial class PageToolsImport
                 SvgIcon = source.IsCe ? "lucide/file-box" : "lucide/file-input",
                 Margin = new Thickness(0, 0, 0, 6)
             };
-            item.Click += Item_Click;
+            // 必须闭包捕获 source：MyListItem.Click 的 sender 是模板里那个 Button，
+            // 不是列表项本身，用 sender 去匹配 Tag 永远匹配不上 —— 表现就是「点了没反应，
+            // 开始导入一直是灰的」，以前 PCL2 原版转不了就是这个
+            item.Click += (_, _) => Select(source);
             PanResults.Children.Add(item);
         }
 
         LabEmpty.Visibility = _sources.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         if (_selected is not null && !_sources.Contains(_selected)) _selected = null;
-        ShowSelected();
-    }
 
-    private void Item_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is MyListItem { Tag: Source source }) Select(source);
+        // 只有一个来源时直接替用户选上，省得他以为「开始导入」是坏的
+        if (_selected is null && _sources.Count == 1) _selected = _sources[0];
+
+        ShowSelected();
     }
 
     private void Select(Source source)
@@ -307,14 +318,31 @@ public partial class PageToolsImport
             File.Copy(key, Path.Combine(Paths.SharedData, "UserKey.bin" + ConfigService.PendingSuffix), true);
     }
 
-    /// <summary>PCL2 原版：setup.ini 是 <c>键:值</c> 的纯文本，先转成 yml 放进暂存。</summary>
+    /// <summary>
+    ///     PCL2 原版：<c>setup.ini</c> 是 <c>键:值</c> 的纯文本，先转成 yml 放进暂存。
+    ///     <para>
+    ///         只写 PCL Lite 真认得的键（<see cref="ConfigService.KeySet" />）：setup.ini 里混着
+    ///         <c>UiLauncherEmail</c>、<c>LoginPageType</c> 这类早就没了的键，原样塞进去只会把
+    ///         本地配置弄脏。写进去的值保持字符串，和启动时自带的 <c>setup.ini</c> 迁移
+    ///         （<c>CatIniMigration</c>）完全一致，读取时由 provider 负责转类型。
+    ///     </para>
+    ///     <para>
+    ///         先复制现有 <c>config.v1.yml</c> 再往上盖，这样导入是合并而不是清空 ——
+    ///         用户已经在 PCL Lite 里调过的东西不会因为导入一次别人的配置就全没了。
+    ///     </para>
+    /// </summary>
     private static void ImportPcl2(Source source)
     {
         var file = Path.Combine(source.Folder, source.FileName);
         var pending = ConfigService.LocalConfigPath + ConfigService.PendingSuffix;
         if (File.Exists(pending)) File.Delete(pending);
 
+        if (File.Exists(ConfigService.LocalConfigPath))
+            File.Copy(ConfigService.LocalConfigPath, pending, true);
+
         var provider = new YamlFileProvider(pending);
+        var known = 0;
+        var skipped = 0;
         foreach (var line in File.ReadAllLines(file, Encoding.UTF8))
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
@@ -323,10 +351,23 @@ public partial class PageToolsImport
 
             var key = line[..index].Trim();
             if (key.Length == 0) continue;
+            if (!ConfigService.KeySet.Contains(key))
+            {
+                skipped++;
+                continue;
+            }
+
             provider.Set(key, line[(index + 1)..].Trim());
+            known++;
         }
 
         provider.Sync();
+
+        ModBase.Log($"[Import] 从 {file} 读到 {known} 个可用键，跳过 {skipped} 个 PCL Lite 不认识的键",
+            ModBase.LogLevel.Developer);
+
+        if (known == 0)
+            throw new InvalidOperationException(Lang.Text("Tools.Import.NoKeys", file));
     }
 
     #endregion

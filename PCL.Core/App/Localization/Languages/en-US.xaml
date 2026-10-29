@@ -3725,6 +3725,7 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Tools.Import.RestartFailed">Automatic restart failed. Please close and reopen PCL manually.</sys:String>
     <sys:String x:Key="Tools.Import.Failed">Import failed: {0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">No PCL config found in this folder: {0}</sys:String>
+    <sys:String x:Key="Tools.Import.NoKeys">None of the settings in this setup.ini are recognised: {0}</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">Migrate PCL settings</sys:String>
     <sys:String x:Key="Lunar.Tip.PickGameDir">Pick a .minecraft folder as the game directory</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetGameDir">Reset to default (current MC folder)</sys:String>

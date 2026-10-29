@@ -3415,6 +3415,7 @@
     <sys:String x:Key="Tools.Import.RestartFailed">自动重启失败，请手动关掉再打开 PCL。</sys:String>
     <sys:String x:Key="Tools.Import.Failed">导入失败：{0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">这个文件夹里没有找到 PCL 的配置文件：{0}</sys:String>
+    <sys:String x:Key="Tools.Import.NoKeys">这个 setup.ini 里的设置项一个都认不出来：{0}</sys:String>
 
     <!-- Tools.ServerQuery -->
 

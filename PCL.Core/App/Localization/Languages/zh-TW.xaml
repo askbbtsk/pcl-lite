@@ -3666,6 +3666,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Tools.Import.RestartFailed">自動重新啟動失敗，請手動關掉再開啟 PCL。</sys:String>
     <sys:String x:Key="Tools.Import.Failed">匯入失敗：{0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">這個資料夾裡沒有找到 PCL 的設定檔：{0}</sys:String>
+    <sys:String x:Key="Tools.Import.NoKeys">這個 setup.ini 裡的設定項一個都認不出來：{0}</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">移轉 PCL 設定</sys:String>
     <sys:String x:Key="Crash.Report.JarInJarMod.WarningSection">=== 依賴警告（缺少前置 / 版本不符）===</sys:String>
     <sys:String x:Key="Crash.Report.JarInJarMod.WarningNone">未發現依賴問題。</sys:String>

@@ -12,6 +12,31 @@ using System.Threading.Tasks;
 namespace PCL.Core.App.Lunar;
 
 /// <summary>
+///     一个版本可选的一种 loader（服务端叫 module）。
+///     <para>
+///         同一个游戏版本可以有好几套：Lunar 自己在 <c>lunar</c> 里绑了 OptiFine，
+///         <c>lunar-noOF</c> 是不带任何额外 mod 的原版，
+///         另外还有 <c>fabric</c> 与 <c>forge</c>。它们的
+///         <c>mainClass</c>、JRE 与 JVM 参数完全相同，只有附件清单不一样。
+///     </para>
+/// </summary>
+/// <param name="Id">请求 <c>/launcher/launch</c> 时填进 <c>module</c> 字段的值。</param>
+/// <param name="Name">服务端给的名字，例如 <c>Lunar + OptiFine</c>。</param>
+/// <param name="Description">服务端的补充说明，可能为空。</param>
+/// <param name="IsDefault">官方默认选中的那个。1.17.1 默认是 <c>fabric</c>，不是 <c>lunar</c>。</param>
+/// <param name="Sort">服务端排序权重，越小越靠前。</param>
+public sealed record LunarModule(
+    string Id,
+    string Name,
+    string Description,
+    bool IsDefault,
+    int Sort)
+{
+    /// <summary>界面上显示的文字。</summary>
+    public string DisplayName => string.IsNullOrWhiteSpace(Name) ? Id : Name;
+}
+
+/// <summary>
 ///     Lunar Client 的一个可启动子版本。
 /// </summary>
 /// <param name="Id">子版本号，例如 <c>1.21.4</c>、<c>26.3</c>。</param>
@@ -20,16 +45,25 @@ namespace PCL.Core.App.Lunar;
 /// <param name="AssetIndexId">原版资源索引名，1.8.9 是 <c>1.8</c>，1.21.4 是 <c>19</c>。</param>
 /// <param name="AssetIndexUrl">索引文件地址。</param>
 /// <param name="AssetIndexSha1">索引文件 SHA-1。</param>
+/// <param name="Modules">这个版本可选的 loader，按服务端 <c>sort</c> 升序。可能为空。</param>
 public sealed record LunarVersion(
     string Id,
     string ParentId,
     string ParentName,
     string AssetIndexId,
     string AssetIndexUrl,
-    string AssetIndexSha1)
+    string AssetIndexSha1,
+    IReadOnlyList<LunarModule> Modules)
 {
     /// <summary>下拉框里显示的文字。</summary>
     public string DisplayName => Id;
+
+    /// <summary>
+    ///     官方默认的 loader。服务端没标默认时退回列表里的第一个，
+    ///     列表为空时返回 <see langword="null" />（调用方要自己兜底）。
+    /// </summary>
+    public LunarModule? DefaultModule =>
+        Modules.FirstOrDefault(x => x.IsDefault) ?? Modules.FirstOrDefault();
 
     /// <summary>
     ///     版本号排序用的键。按段比较数字，<c>26.3</c> 比 <c>1.21.11</c> 新，
@@ -103,7 +137,11 @@ public static class LunarVersionCatalog
             if (!File.Exists(path)) return false;
 
             var root = JsonNode.Parse(File.ReadAllText(path));
-            if (ParseVersions(root?["versions"]) is not { Count: > 0 } parsed) return false;
+            if (ParseCachedVersions(root?["versions"]) is not { Count: > 0 } parsed) return false;
+
+            // 1.5.4 及以前写的缓存里没有 modules。这种缓存虽然能读，但界面上会一个
+            // loader 都选不了，所以当成无效，让上层重新拉一次（只发生一次）
+            if (parsed.All(x => x.Modules.Count == 0)) return false;
 
             _versions = parsed;
             return true;
@@ -184,7 +222,9 @@ public static class LunarVersionCatalog
 
             foreach (var subversion in subversions)
             {
-                var subId = subversion?["id"]?.GetValue<string>();
+                if (subversion is null) continue;
+
+                var subId = subversion["id"]?.GetValue<string>();
                 if (string.IsNullOrWhiteSpace(subId)) continue;
 
                 var assets = subversion["assets"];
@@ -194,11 +234,78 @@ public static class LunarVersionCatalog
                     parentName,
                     assets?["id"]?.GetValue<string>() ?? string.Empty,
                     assets?["url"]?.GetValue<string>() ?? string.Empty,
-                    assets?["sha1"]?.GetValue<string>() ?? string.Empty));
+                    assets?["sha1"]?.GetValue<string>() ?? string.Empty,
+                    ParseModules(subversion["modules"])));
             }
         }
 
         result.Sort((a, b) => LunarVersion.Compare(b.Id, a.Id));
+        return result;
+    }
+
+    /// <summary>
+    ///     读自己写的缓存。缓存是扁平数组（<c>id/parentId/.../modules</c>），
+    ///     和服务端的 <c>versions[].subversions[]</c> 不是一套结构，不能共用一个解析器 ——
+    ///     1.5.4 之前这里错用了服务端那套，导致缓存**永远读不回来**，
+    ///     每次进页面版本列表都是空的。
+    /// </summary>
+    private static List<LunarVersion>? ParseCachedVersions(JsonNode? node)
+    {
+        if (node is not JsonArray versions) return null;
+
+        // 旧格式（或者有人手工塞了服务端原始响应）走服务端那套解析
+        if (versions.Any(x => x?["subversions"] is JsonArray)) return ParseVersions(node);
+
+        var result = new List<LunarVersion>();
+        foreach (var version in versions)
+        {
+            if (version is null) continue;
+
+            var id = version["id"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(id)) continue;
+
+            result.Add(new LunarVersion(
+                id,
+                version["parentId"]?.GetValue<string>() ?? string.Empty,
+                version["parentName"]?.GetValue<string>() ?? string.Empty,
+                version["assetIndexId"]?.GetValue<string>() ?? string.Empty,
+                version["assetIndexUrl"]?.GetValue<string>() ?? string.Empty,
+                version["assetIndexSha1"]?.GetValue<string>() ?? string.Empty,
+                ParseModules(version["modules"])));
+        }
+
+        if (result.Count == 0) return null;
+        result.Sort((a, b) => LunarVersion.Compare(b.Id, a.Id));
+        return result;
+    }
+
+    /// <summary>
+    ///     解析 <c>subversions[].modules[]</c>。这一层决定「这个版本能选哪些 loader」，
+    ///     缺了它就只能按写死的 <c>lunar</c>（OptiFine）走 —— 而 1.17.1 的官方默认是
+    ///     <c>fabric</c>，硬走 OptiFine 会在游戏初始化前静默退出。
+    /// </summary>
+    private static List<LunarModule> ParseModules(JsonNode? node)
+    {
+        var result = new List<LunarModule>();
+        if (node is not JsonArray modules) return result;
+
+        foreach (var module in modules)
+        {
+            if (module is null) continue;
+
+            var id = module["id"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(id)) continue;
+
+            result.Add(new LunarModule(
+                id,
+                module["name"]?.GetValue<string>() ?? id,
+                module["description"]?.GetValue<string>() ?? string.Empty,
+                module["default"] is JsonValue isDefault && isDefault.TryGetValue<bool>(out var flag) && flag,
+                module["sort"] is JsonValue sortNode && sortNode.TryGetValue<int>(out var sort) ? sort : 0));
+        }
+
+        // 服务端的 sort 是展示顺序（0 在前），不是优先级，直接按它排
+        result.Sort((a, b) => a.Sort.CompareTo(b.Sort));
         return result;
     }
 
@@ -210,6 +317,18 @@ public static class LunarVersionCatalog
 
             var array = new JsonArray();
             foreach (var version in versions)
+            {
+                var modules = new JsonArray();
+                foreach (var module in version.Modules)
+                    modules.Add(new JsonObject
+                    {
+                        ["id"] = module.Id,
+                        ["name"] = module.Name,
+                        ["description"] = module.Description,
+                        ["default"] = module.IsDefault,
+                        ["sort"] = module.Sort
+                    });
+
                 array.Add(new JsonObject
                 {
                     ["id"] = version.Id,
@@ -217,8 +336,10 @@ public static class LunarVersionCatalog
                     ["parentName"] = version.ParentName,
                     ["assetIndexId"] = version.AssetIndexId,
                     ["assetIndexUrl"] = version.AssetIndexUrl,
-                    ["assetIndexSha1"] = version.AssetIndexSha1
+                    ["assetIndexSha1"] = version.AssetIndexSha1,
+                    ["modules"] = modules
                 });
+            }
 
             var root = new JsonObject
             {

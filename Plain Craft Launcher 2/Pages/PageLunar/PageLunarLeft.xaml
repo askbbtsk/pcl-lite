@@ -4,10 +4,16 @@
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:local="clr-namespace:PCL"
-                  mc:Ignorable="d">
+                  mc:Ignorable="d"
+                  Width="260">
     <!--
         文案暂时直接写中文：这是 nightly 里的实验特性，等协议稳定后再补四语言键，
         免得先加一堆键、后面改协议又要全删一遍。
+    -->
+    <!--
+        宽度写死，理由同 PageBedrockLeft：FormMain 里左栏那列是 Auto，
+        状态文字一长（「游戏异常退出（退出码 -1）」之类）就会把左栏撑开，
+        右边页面被压成一条缝。
     -->
     <Grid>
         <Grid.RowDefinitions>

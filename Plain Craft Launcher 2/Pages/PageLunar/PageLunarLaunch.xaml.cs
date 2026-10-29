@@ -20,6 +20,7 @@ public partial class PageLunarLaunch
     private bool _suppressComboEvents;
     private string _versionSignature = "";
     private string _accountSignature = "";
+    private string _moduleSignature = "";
     private string _gameDirPreview = "";
     private Brush? _brushReady;
     private Brush? _brushIdle;
@@ -73,6 +74,7 @@ public partial class PageLunarLaunch
         ShapeDot.Fill = ModLunar.IsInstalled ? _brushReady : _brushIdle;
 
         RefreshVersionCombo();
+        RefreshModuleChips();
         RefreshAccountCombo();
         RefreshAccountHint();
 
@@ -131,6 +133,63 @@ public partial class PageLunarLaunch
         {
             _suppressComboEvents = false;
         }
+    }
+
+    /// <summary>
+    ///     Loader 选择：每个版本能选的注入方案不一样（OptiFine / 原版 / Fabric / Forge），
+    ///     按服务端下发的 <c>modules</c> 动态生成一排可点击的胶囊按钮 —— 通常只有两三个，
+    ///     点一下就换，比下拉框少一次点击。
+    ///     <para>
+    ///         只在「可选项本身变了」时重建。选中状态变化不重建，否则每次点击都会把刚点中的
+    ///         按钮销毁重造，动画和焦点一起丢。
+    ///     </para>
+    /// </summary>
+    private void RefreshModuleChips()
+    {
+        var modules = ModLunar.Modules;
+        // 版本也要进签名：两个版本的 module id 可能一模一样但默认值不同
+        // （1.17.1 默认 fabric，别的版本默认 lunar），不带上版本就会沿用上一个版本的高亮
+        var signature = ModLunar.SelectedSubVersion + "|" + string.Join(",", modules.Select(x => x.Id));
+        if (signature == _moduleSignature) return;
+        _moduleSignature = signature;
+
+        PanLoaders.Children.Clear();
+        PanLoaders.Visibility = modules.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        if (modules.Count == 0) return;
+
+        var selected = ModLunar.SelectedModuleId;
+        foreach (var module in modules)
+        {
+            var chip = new MyRadioButton
+            {
+                Text = module.DisplayName,
+                Margin = new Thickness(0, 0, 8, 0),
+                Tag = module.Id,
+                ToolTip = BuildModuleTooltip(module),
+                // 先设 Checked 再挂进面板：Parent 还是空的时候 SetChecked 只记状态、
+                // 不广播事件，重建过程不会把用户的配置又改一遍
+                Checked = string.Equals(module.Id, selected, StringComparison.OrdinalIgnoreCase)
+            };
+            chip.Check += ModuleChip_Check;
+            PanLoaders.Children.Add(chip);
+        }
+    }
+
+    private static string BuildModuleTooltip(LunarModule module)
+    {
+        var text = module.DisplayName;
+        if (!string.IsNullOrWhiteSpace(module.Description)) text += "\n" + module.Description;
+        if (module.IsDefault) text += "\n（这个版本的官方默认）";
+        return text + "\nmodule = " + module.Id;
+    }
+
+    private void ModuleChip_Check(MyRadioButton sender, bool raiseByMouse)
+    {
+        // 程序化设置 Checked 时 raiseByMouse 是 false，不能当成用户操作
+        if (!raiseByMouse) return;
+        if (sender.Tag is not string id || string.IsNullOrWhiteSpace(id)) return;
+
+        ModLunar.SelectModule(id);
     }
 
     /// <summary>
@@ -281,6 +340,7 @@ public partial class PageLunarLaunch
 
         ComboVersion.IsEnabled = !running && !busy;
         ComboAccount.IsEnabled = !running && !busy;
+        PanLoaders.IsEnabled = !running && !busy;
         BtnRefreshVersions.IsEnabled = !running && !busy;
     }
 

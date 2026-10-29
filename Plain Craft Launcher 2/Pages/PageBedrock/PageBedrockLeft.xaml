@@ -4,7 +4,14 @@
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:local="clr-namespace:PCL"
-                  mc:Ignorable="d">
+                  mc:Ignorable="d"
+                  Width="260">
+    <!--
+        宽度必须写死。FormMain 里这一列是 Width="Auto"，左栏不自己定宽就会按内容撑开：
+        状态里出现一句长的失败原因（比如「安装失败：没能拿到 xxx 的下载地址…」），
+        整块左栏能涨到 800 多像素，把右边页面压成一条缝，版本列表只剩「未下载」两个字。
+        ScrollViewer 横向禁用时也不会给子元素宽度约束，TextWrapping 因此形同虚设。
+    -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
@@ -65,15 +72,16 @@
                             <!--
                                 允许换行（版本名长的时候能看到完整内容），但用 MaxHeight 封顶：
                                 解包时这里每秒刷好几次，不限高的话整块左栏会跟着文字上下跳。
+                                失败原因往往有两三行，所以留 3 行的高度；再多就靠 ToolTip 看全文。
                             -->
                             <TextBlock x:Name="LabStatus" Grid.Column="1"
                                        FontSize="13" FontWeight="Bold"
-                                       TextWrapping="Wrap" MaxHeight="36"
+                                       TextWrapping="Wrap" MaxHeight="54"
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
                                        Text="{DynamicResource Bedrock.Launch.Detecting}" />
                         </Grid>
                         <TextBlock x:Name="LabDetail" Text="" FontSize="10.5" Margin="15,4,0,0"
-                                   TextWrapping="Wrap" MaxHeight="30" LineHeight="14"
+                                   TextWrapping="Wrap" MaxHeight="42" LineHeight="14"
                                    ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
                                    Opacity="0.65" />
                     </StackPanel>

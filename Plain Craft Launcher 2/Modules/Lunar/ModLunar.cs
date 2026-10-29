@@ -35,13 +35,27 @@ public static class ModLunar
     /// <summary>没选过版本时的默认值，也是唯一一个「本机一定有物料」的保底版本。</summary>
     public const string DefaultSubVersion = "1.8.9";
 
-    public const string DefaultModule = "lunar";
+    /// <summary>
+    ///     拿不到版本元数据时用的 loader。<c>lunar</c> 就是「Lunar + OptiFine」，
+    ///     也是 1.8.9 的官方默认，所以当兜底是安全的。
+    /// </summary>
+    public const string FallbackModule = "lunar";
 
     private static Process? _process;
     private static bool _isBusy;
     private static LunarIpcServer? _ipcServer;
     private static IReadOnlyList<LunarAccount> _accounts = [];
     private static string _activeAccountLocalId = string.Empty;
+
+    /// <summary>
+    ///     子进程最近若干行输出。游戏在 Minecraft 初始化前就静默退出时（1.17.1 踩过），
+    ///     文件日志里只剩「启动了」和「退出了」，这几行是唯一的死因线索。
+    /// </summary>
+    private static readonly Queue<string> _recentOutput = new();
+
+    private static readonly object _recentOutputLock = new();
+
+    private const int RecentOutputLimit = 80;
 
     /// <summary>
     ///     本次启动实际交给游戏的 Lunar 账号（<c>localId</c>）。
@@ -149,6 +163,60 @@ public static class ModLunar
     }
 
     /// <summary>
+    ///     当前版本可选的 loader。版本列表还没拉到时为空，界面上就不显示这一行。
+    /// </summary>
+    public static IReadOnlyList<LunarModule> Modules =>
+        LunarVersionCatalog.Find(SelectedSubVersion)?.Modules ?? [];
+
+    /// <summary>
+    ///     这次启动实际用哪个 loader。
+    ///     <para>
+    ///         顺序：配置里记的（用户点过的）→ 该版本的官方默认 → 兜底 <c>lunar</c>。
+    ///         配置里那个如果当前版本不提供（比如在 1.17.1 选了 fabric，又切到 1.8.9），
+    ///         就退回官方默认，但**不改配置** —— 切回 1.17.1 时选择还在。
+    ///         </para>
+    ///     <para>
+    ///         必须按服务端下发的 modules 走：1.17.1 的官方默认是 <c>fabric</c>，
+    ///         一直写死 <c>lunar</c>（OptiFine）会在游戏初始化前静默退出。
+    ///     </para>
+    /// </summary>
+    public static LunarModule? SelectedModule
+    {
+        get
+        {
+            var modules = Modules;
+            if (modules.Count == 0) return null;
+
+            var configured = Config.Preference.Lunar.ModuleId;
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                var match = modules.FirstOrDefault(x =>
+                    string.Equals(x.Id, configured, StringComparison.OrdinalIgnoreCase));
+                if (match is not null) return match;
+            }
+
+            return LunarVersionCatalog.Find(SelectedSubVersion)?.DefaultModule ?? modules[0];
+        }
+    }
+
+    /// <summary>传给 <c>/launcher/launch</c> 的 <c>module</c> 值。</summary>
+    public static string SelectedModuleId => SelectedModule?.Id ?? FallbackModule;
+
+    /// <summary>
+    ///     用户点了某个 loader。只记配置，不发请求 —— 物料清单在启动时才拉，
+    ///     提前拉会白下一份用不上的附件。
+    /// </summary>
+    public static void SelectModule(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return;
+        if (string.Equals(Config.Preference.Lunar.ModuleId, id, StringComparison.Ordinal)) return;
+
+        Config.Preference.Lunar.ModuleId = id;
+        Log($"已选择 loader：{SelectedModule?.DisplayName ?? id}（{id}）");
+        Refresh();
+    }
+
+    /// <summary>
     ///     当前选中的 Lunar 账号。空值表示「没选 Lunar 的」——要么选了 PCL 登录账号，
     ///     要么什么都没选（这时跟随 Lunar 自己的激活账号）。
     /// </summary>
@@ -230,7 +298,9 @@ public static class ModLunar
             return;
         }
 
-        StatusText = $"Lunar Client {SelectedSubVersion}";
+        StatusText = SelectedModule is { } module
+            ? $"Lunar Client {SelectedSubVersion}（{module.DisplayName}）"
+            : $"Lunar Client {SelectedSubVersion}";
         DetailText = $"物料目录：{LunarClientService.MultiverDirectory(LunarRoot)}";
         RaiseStateChanged();
     }
@@ -267,6 +337,30 @@ public static class ModLunar
     {
         ModBase.Log("[Lunar] " + message);
         LogReceived?.Invoke(message);
+    }
+
+    /// <summary>
+    ///     接一行子进程输出：进环形缓冲（供退出时落盘）的同时推到界面日志框。
+    /// </summary>
+    private static void CaptureGameOutput(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line)) return;
+
+        lock (_recentOutputLock)
+        {
+            _recentOutput.Enqueue(line);
+            while (_recentOutput.Count > RecentOutputLimit) _recentOutput.Dequeue();
+        }
+
+        LogReceived?.Invoke(line);
+    }
+
+    private static List<string> SnapshotGameOutput()
+    {
+        lock (_recentOutputLock)
+        {
+            return _recentOutput.ToList();
+        }
     }
 
     /// <summary>
@@ -470,7 +564,11 @@ public static class ModLunar
 
             var (playerName, playerUuid, accessToken) = await ResolveCredentialsAsync().ConfigureAwait(false);
 
+            var module = SelectedModule;
             Log($"目标版本：{subVersion}");
+            Log(module is null
+                ? $"Loader：{SelectedModuleId}（还没拿到版本元数据，按兜底值走）"
+                : $"Loader：{module.DisplayName}（{module.Id}，该版本共 {Modules.Count} 种可选）");
             Log($"游戏目录：{gameDirectory}");
 
             StatusText = "正在获取 Lunar 物料清单…";
@@ -478,7 +576,7 @@ public static class ModLunar
 
             var installationId = ReadInstallationId();
             var data = await LunarClientService.FetchLaunchDataAsync(
-                subVersion, DefaultModule,
+                subVersion, SelectedModuleId,
                 installationId: installationId,
                 profileId: playerUuid,
                 profileName: playerName).ConfigureAwait(false);
@@ -547,23 +645,56 @@ public static class ModLunar
             StatusText = "正在启动…";
             RaiseStateChanged();
 
+            lock (_recentOutputLock) _recentOutput.Clear();
+            var startedAt = DateTime.Now;
+
+            // 必须在 Start 之前问：Genesis 一起来就会开始写 versions/<ver>，事后再问就永远是「已就绪」
+            var vanillaReady = IsVanillaReady(subVersion);
+
             var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-            process.OutputDataReceived += (_, e) =>
-            {
-                if (!string.IsNullOrWhiteSpace(e.Data)) LogReceived?.Invoke(e.Data);
-            };
-            process.ErrorDataReceived += (_, e) =>
-            {
-                if (!string.IsNullOrWhiteSpace(e.Data)) LogReceived?.Invoke(e.Data);
-            };
+            process.OutputDataReceived += (_, e) => CaptureGameOutput(e.Data ?? "");
+            process.ErrorDataReceived += (_, e) => CaptureGameOutput(e.Data ?? "");
             process.Exited += (_, _) =>
             {
+                // 退出码先取，_process 置空之后就拿不到了
+                var exitCode = -1;
+                try
+                {
+                    exitCode = process.ExitCode;
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
+                {
+                    // 进程对象已经不可用，只能按未知处理
+                }
+
                 _process = null;
                 IsBusy = false;
                 // 游戏没了就没人需要续期了，端口让出来给别的程序
                 StopIpc();
-                StatusText = "游戏已退出";
-                DetailText = "";
+
+                var elapsed = DateTime.Now - startedAt;
+                Log($"游戏进程已退出（退出码 {exitCode}，运行 {elapsed.TotalSeconds:F0} 秒）");
+
+                // 异常退出，或者起来不到一分钟就没了 —— 这两种情况把最后几十行落进文件日志。
+                // 界面日志框只在页面打开时才有人看，导出也容易漏，文件日志才是排查的依据
+                if (exitCode != 0 || elapsed < TimeSpan.FromMinutes(1))
+                {
+                    var tail = SnapshotGameOutput();
+                    if (tail.Count == 0)
+                    {
+                        ModBase.Log("[Lunar] 子进程没有输出任何内容，说明它在 JVM 起来之前就结束了");
+                    }
+                    else
+                    {
+                        ModBase.Log($"[Lunar] 下面是子进程最后的 {tail.Count} 行输出：");
+                        foreach (var line in tail) ModBase.Log("[Lunar][out] " + line);
+                    }
+                }
+
+                StatusText = exitCode == 0
+                    ? "游戏已退出"
+                    : $"游戏异常退出（退出码 {exitCode}）";
+                DetailText = exitCode == 0 ? "" : "子进程输出已写入 PCL 日志，可反馈给开发者定位";
                 RaiseStateChanged();
             };
 
@@ -571,9 +702,14 @@ public static class ModLunar
             process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
+            WatchFirstWindow(process, gameDirectory, startedAt, subVersion, vanillaReady);
 
-            StatusText = "游戏运行中";
-            DetailText = "由 PCL 直接拉起，未经过 Lunar 启动器";
+            // 首次启动某个版本时 Genesis 要先把原版客户端下下来，这期间不会有窗口，
+            // 所以状态文案得说实话，不然用户只会看到「游戏运行中」却什么都没有
+            StatusText = vanillaReady ? "游戏运行中" : $"正在下载原版 {subVersion} 的依赖…";
+            DetailText = vanillaReady
+                ? "由 PCL 直接拉起，未经过 Lunar 启动器"
+                : $"Lunar 需要先把原版客户端下到 {VanillaRoot}（约 100–200 MB），期间没有窗口是正常的";
             RaiseStateChanged();
         }
         catch (Exception ex)
@@ -585,6 +721,154 @@ public static class ModLunar
             DetailText = ex.Message;
             RaiseStateChanged();
             ModBase.Log(ex, "[Lunar] 启动失败", ModBase.LogLevel.Msgbox, userSummary: ex.Message);
+        }
+    }
+
+    /// <summary>
+    ///     看门狗：启动后一直没窗口时，判断到底是「在下原版依赖」还是「网络卡死」。
+    ///     <para>
+    ///         实测 1.17.1 弹不出窗口的真正原因是：<b>Genesis 在 <c>ClientGameBootstrap</c> 里
+    ///         把整个原版客户端下到 <c>%APPDATA%\.minecraft</c></b>（<c>versions/&lt;ver&gt;</c>
+    ///         的 jar/json 加 <c>libraries</c> 里上百个文件，约 100–200 MB）。
+    ///         这期间它既不打印进度、也不建窗口，从外面看就是「进程活着但什么都没有」——
+    ///         本机 1.17.1 那次就是这么被当成卡死、在下载到一半时被杀掉的。
+    ///     </para>
+    ///     <para>
+    ///         所以这里改成看 <c>libraries</c> + <c>versions</c> 的体积有没有涨：
+    ///         涨就是在下载，只记一行进度继续等；连续 90 秒一动不动才是真卡住。
+    ///         判断「已经进游戏」仍然用游戏目录里的 <c>latest.log</c>（MC 一进主循环就写）。
+    ///     </para>
+    /// </summary>
+    private static void WatchFirstWindow(Process process, string gameDirectory, DateTime startedAt, string subVersion,
+        bool vanillaReady)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (!vanillaReady)
+                    Log($"本机还没有原版 {subVersion} 的客户端文件，Lunar 会先把它下到 {VanillaRoot}（约 100–200 MB）。" +
+                        "这期间不会有窗口，属正常现象，别关进程。");
+
+                var lastBytes = MeasureVanillaFootprint().Bytes;
+                var stalled = 0;
+
+                // 每 20 秒看一次，最多看 10 分钟：大文件下载慢的时候也不至于提前下结论
+                for (var round = 1; round <= 30; round++)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
+                    if (process.HasExited) return;
+                    if (HasGameLog(gameDirectory, startedAt)) return;
+
+                    var footprint = MeasureVanillaFootprint();
+                    if (footprint.Bytes > lastBytes + 512 * 1024)
+                    {
+                        // 还在下：报个进度，让用户知道没死
+                        Log($"Lunar 正在下载原版依赖：已 {footprint.Bytes / 1024d / 1024d:F0} MB、" +
+                            $"{footprint.Files} 个文件，继续等待…");
+                        lastBytes = footprint.Bytes;
+                        stalled = 0;
+                        continue;
+                    }
+
+                    lastBytes = footprint.Bytes;
+                    stalled += 1;
+                    if (stalled < 5) continue; // 前 100 秒不下结论，Genesis 有解压/校验的空窗期
+
+                    Log($"启动 {round * 20} 秒后既没有窗口、原版依赖也没有再变大 —— 大概率是 Genesis 在下载依赖时被网络卡住了");
+                    HintService.Hint(
+                        "Lunar 启动后一直没有窗口，而且原版依赖也没有再变大，可能卡在下载依赖（它不走系统代理）。" +
+                        "给 PCL 配一个可用代理后重试。",
+                        HintType.Warning);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "[Lunar] 首窗检查失败", ModBase.LogLevel.Debug);
+            }
+        });
+    }
+
+    /// <summary>
+    ///     Genesis 放原版客户端的地方。<b>它写死用标准 <c>.minecraft</c></b>，
+    ///     和我们在 <c>--gameDir</c> 里传的目录无关 —— 实测 1.17.1 的
+    ///     <c>versions/1.17.1/1.17.1.jar</c> 就是落在 <c>%APPDATA%\.minecraft</c> 里的。
+    /// </summary>
+    private static string VanillaRoot => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft");
+
+    /// <summary>这个版本的原版客户端文件在不在（只看 jar 与 json，依赖缺失时 Genesis 会补）。</summary>
+    private static bool IsVanillaReady(string version)
+    {
+        try
+        {
+            var directory = Path.Combine(VanillaRoot, "versions", version);
+            return File.Exists(Path.Combine(directory, version + ".jar")) &&
+                   File.Exists(Path.Combine(directory, version + ".json"));
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 检查原版客户端失败", ModBase.LogLevel.Debug);
+            return true; // 查不出来就别乱下结论
+        }
+    }
+
+    /// <summary>
+    ///     量一下 <c>libraries</c> 与 <c>versions</c> 的总体积和文件数，用来判断「还在下载」。
+    ///     遍历失败（权限、文件被删）一律当 0，不能让看门狗把自己搞崩。
+    /// </summary>
+    private static (long Bytes, int Files) MeasureVanillaFootprint()
+    {
+        long bytes = 0;
+        var files = 0;
+        try
+        {
+            foreach (var root in new[] { "libraries", "versions" })
+            {
+                var directory = Path.Combine(VanillaRoot, root);
+                if (!Directory.Exists(directory)) continue;
+
+                var options = new EnumerationOptions
+                {
+                    RecurseSubdirectories = true,
+                    IgnoreInaccessible = true,
+                    AttributesToSkip = FileAttributes.ReparsePoint
+                };
+                foreach (var file in Directory.EnumerateFiles(directory, "*", options))
+                {
+                    files += 1;
+                    try
+                    {
+                        bytes += new FileInfo(file).Length;
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        // 文件刚被替换掉，跳过
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 统计原版目录体积失败", ModBase.LogLevel.Debug);
+        }
+
+        return (bytes, files);
+    }
+
+    /// <summary>游戏目录里的 <c>latest.log</c> 在这次启动之后有没有被写过。</summary>
+    private static bool HasGameLog(string gameDirectory, DateTime startedAt)
+    {
+        try
+        {
+            var latestLog = Path.Combine(gameDirectory, "logs", "latest.log");
+            return File.Exists(latestLog) && File.GetLastWriteTime(latestLog) >= startedAt;
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 读取游戏日志时间失败", ModBase.LogLevel.Debug);
+            return false;
         }
     }
 

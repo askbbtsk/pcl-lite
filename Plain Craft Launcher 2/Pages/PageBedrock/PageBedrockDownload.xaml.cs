@@ -226,9 +226,8 @@ public partial class PageBedrockDownload
             if (!File.Exists(packagePath))
             {
                 view.SetStatus(Lang.Text("Bedrock.Download.Status.Resolving"));
+                // 解析不出来时这里会抛，异常信息已经写清了是下架、接口报错还是连不上
                 var url = await ModBedrockDownload.ResolveUrlAsync(view.Entry);
-                if (string.IsNullOrWhiteSpace(url))
-                    throw new InvalidOperationException(Lang.Text("Bedrock.Download.UrlFailed", view.Entry.Key));
 
                 view.SetStatus(Lang.Text("Bedrock.Download.Status.Downloading", 0d));
                 var progress = new Progress<(long Received, long Total)>(p =>

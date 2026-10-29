@@ -30,8 +30,13 @@
                     <TextBlock x:Name="LabDir" Margin="0,14,0,0" FontSize="11.5" TextTrimming="CharacterEllipsis"
                                TextWrapping="NoWrap" Opacity="0.65"
                                ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                    <!--
+                        状态行必须能换行：失败原因（比如「安装失败：xxx 已经不在微软的下载服务里了…」）
+                        一句话就七八十个字，NoWrap + 省略号等于把关键信息藏起来。
+                        页面本身是纵向滚动的，多占两行不影响任何东西。
+                    -->
                     <TextBlock x:Name="LabStatus" Margin="0,12,0,0" FontSize="12" MinHeight="17"
-                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Opacity="0.7"
+                               TextWrapping="Wrap" LineHeight="18" Opacity="0.7"
                                ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
                                Text="{DynamicResource Bedrock.Download.Status.Idle}" />
                 </StackPanel>
@@ -82,12 +87,23 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Margin="6,0,12,0" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock FontSize="14" FontWeight="Bold" Text="{Binding Title}"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Margin="8,0,0,0" FontSize="11.5" Opacity="0.6"
+                                        <!--
+                                            标题和徽标用 Grid 而不是水平 StackPanel：StackPanel 横向
+                                            不给子元素宽度约束，里面的 TextTrimming 永远不生效，
+                                            窄窗口下标题只会被硬裁掉。
+                                        -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" FontSize="14" FontWeight="Bold"
+                                                       Text="{Binding Title}" TextWrapping="NoWrap"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Title}" />
+                                            <TextBlock Grid.Column="1" Margin="8,0,0,0" FontSize="11.5" Opacity="0.6"
                                                        VerticalAlignment="Center" Text="{Binding Badge}" />
-                                        </StackPanel>
+                                        </Grid>
                                         <TextBlock Margin="0,3,0,0" FontSize="11.5" Opacity="0.65"
                                                    Text="{Binding Subtitle}" TextTrimming="CharacterEllipsis" />
                                         <Grid Width="220" Height="4" Margin="0,6,0,0" HorizontalAlignment="Left"

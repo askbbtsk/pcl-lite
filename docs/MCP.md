@@ -20,7 +20,7 @@ AI 扮演「调用方」——你在对话框里说「帮我把重复的 sodium 
 | 允许启动/停止游戏 | **默认关闭**。关掉后不能触发启动流程，也不能强杀进程 |
 | 允许修改启动器设置 | **默认关闭**。关掉时 `pcl_config_set` 会被拒绝 |
 
-口令存在加密的共享配置里（`%APPDATA%\PCLCE\config.v1.json` 里是 `ENC!...` 密文），不会明文落进 `config.v1.yml`。
+口令存在加密的共享配置里（`%APPDATA%\PCLLite\config.v1.json` 里是 `ENC!...` 密文），不会明文落进 `config.v1.yml`。
 改完口令**立刻生效**，不用重启服务。
 
 > 口令本身是**单向**的：`pcl_config_get` 读到 `McpToken` 会直接拒绝，AI 拿不到明文。

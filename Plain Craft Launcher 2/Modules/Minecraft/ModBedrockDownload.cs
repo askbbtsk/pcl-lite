@@ -19,7 +19,7 @@ namespace PCL;
 ///     </para>
 ///     <para>
 ///         根目录可以用 <c>Config.Launch.BedrockDownloadDirectory</c> 换位置
-///         （GDK 解包后 2 GB 起，放系统盘容易撑爆），留空时用 <c>%LOCALAPPDATA%\PCLCE\Bedrock</c>。
+///         （GDK 解包后 2 GB 起，放系统盘容易撑爆），留空时用 <c>%LOCALAPPDATA%\PCLLite\Bedrock</c>。
 ///     </para>
 /// </summary>
 public static class ModBedrockDownload
@@ -80,16 +80,33 @@ public static class ModBedrockDownload
         return Path.Combine(PackagesDirectory, $"{safeKey}{extension}");
     }
 
-    /// <summary>把版本解析成真实下载地址。GDK 直接用列表里的地址，UWP 走 FE3。</summary>
-    public static async Task<string?> ResolveUrlAsync(BedrockVersionEntry entry)
+    /// <summary>
+    ///     把版本解析成真实下载地址。GDK 直接用列表里的地址，UWP 走 FE3。
+    ///     <para>
+    ///         解析不出来时直接抛异常，把「下架」「接口报错」「连不上」三种情况分开说 ——
+    ///         以前一律返回 null，上层只能提示「可能被网络拦截了」，
+    ///         而实测 1.18.10.21 那种老 Beta 是微软把它从下载服务里删了，跟网络无关。
+    ///     </para>
+    /// </summary>
+    public static async Task<string> ResolveUrlAsync(BedrockVersionEntry entry)
     {
         if (entry.HasDirectUrl) return entry.Meta;
 
-        var url = await ModBedrockUwp.ResolveDownloadUrlAsync(entry.Meta).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(url))
-            ModBase.Log($"[Bedrock] 未能解析 {entry.Key} 的下载地址（UpdateID {entry.Meta}）",
-                ModBase.LogLevel.Normal);
-        return url;
+        var result = await ModBedrockUwp.ResolveDownloadUrlAsync(entry.Meta).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(result.Url)) return result.Url!;
+
+        ModBase.Log($"[Bedrock] 未能解析 {entry.Key} 的下载地址（UpdateID {entry.Meta}）：" +
+                    $"{result.Failure} {result.Detail}", ModBase.LogLevel.Normal);
+
+        throw new InvalidOperationException(result.Failure switch
+        {
+            ModBedrockUwp.Fe3ResolveFailure.Delisted =>
+                $"{entry.Key} 已经不在微软的下载服务里了（FE3 返回空结果，不是网络问题）。" +
+                "换一个更新的版本，或者选 GDK 形态的包。",
+            ModBedrockUwp.Fe3ResolveFailure.HttpError =>
+                $"FE3 接口返回错误（{result.Detail}）。稍后重试；如果一直这样，挂上代理再试。",
+            _ => $"连不上 FE3 接口：{result.Detail}。检查网络或代理设置。"
+        });
     }
 
     /// <summary>下载到本地，返回文件路径。已有同名文件且大小一致时直接复用。</summary>

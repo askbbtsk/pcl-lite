@@ -277,6 +277,17 @@ public static partial class Config
             [ConfigItem<string>("LunarSubVersion", "", ConfigSource.Local)] public partial string SubVersion { get; set; }
 
             /// <summary>
+            /// 选中的 loader（服务端叫 module），例如 <c>lunar</c>（Lunar + OptiFine）、
+            /// <c>lunar-noOF</c>（原版）、<c>fabric</c>、<c>forge</c>。
+            /// <para>
+            /// 这里只存「用户点过哪个」，不保证对当前版本有效：换到不提供这个 loader 的版本时，
+            /// <c>ModLunar.SelectedModule</c> 会退回该版本的官方默认值，但**不会覆盖这里的值** ——
+            /// 切回原来那个版本时用户的选择还在。
+            /// </para>
+            /// </summary>
+            [ConfigItem<string>("LunarModule", "", ConfigSource.Local)] public partial string ModuleId { get; set; }
+
+            /// <summary>
             /// 选中的 Lunar 账号（<c>accounts.json</c> 里的 localId）。
             /// <para>
             /// Lunar 游戏进程只认它自己账户库里的激活账号，不认命令行 accessToken，
@@ -735,7 +746,7 @@ public static partial class Config
         [ConfigItem<string>("BedrockGdkDirectories", "", ConfigSource.Local)] public partial string BedrockGdkDirectories { get; set; }
 
         /// <summary>
-        /// 基岩版下载目录，留空表示用默认的 <c>%LOCALAPPDATA%\PCLCE\Bedrock</c>。
+        /// 基岩版下载目录，留空表示用默认的 <c>%LOCALAPPDATA%\PCLLite\Bedrock</c>。
         /// <para>
         /// GDK 包解包后动辄 2 GB，放在系统盘容易撑爆，所以允许用户换到别的盘。
         /// 安装包（<c>packages</c>）与解包产物（<c>versions</c>）都跟着这个根目录走。

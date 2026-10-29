@@ -144,6 +144,65 @@ GET <baseUrl><sha1>     → 单个文件
 > Lunar 自己的 CDN（multiver 物料、textures、ui、licenses、jre）没有镜像，
 > 只能直连。
 
+## 首次启动某个版本：Genesis 会先下载整个原版客户端
+
+**这是「进程活着但窗口永远不出来」的头号原因，跟 loader 选错、跟物料缺失都无关。**
+
+`ClientGameBootstrap.apply()` 里有一句 `...download(...)`，走的是 Java 的
+`java.net.http.HttpClient`（`-Djdk.httpclient.HttpClient.log=requests` 能看到完整 URL）。
+它把目标版本的原版客户端补到 **`%APPDATA%\.minecraft`**：
+
+| 内容 | 实测大小 |
+| --- | --- |
+| `versions/<ver>/<ver>.jar` | 1.17.1 是 19.5 MB，1.16.5 是 17.5 MB |
+| `versions/<ver>/<ver>.json` | 30 KB |
+| `libraries/**` | 上百个文件，几十 MB |
+| `assets/indexes/*.json` + objects | 视版本而定 |
+
+三个必须知道的事实：
+
+1. **它写死用标准 `.minecraft`**，和命令行里的 `--gameDir` 无关。
+   证据：1.17.1 的 jar 落在 `%APPDATA%\.minecraft\versions\1.17.1\`，
+   而同一时刻 `options.txt` / `logs/latest.log` 的 mtime 还是旧的 —— 游戏数据确实用的
+   是 `--gameDir`，只有原版客户端这一份去标准目录找。
+2. **全程没有窗口、没有进度、ichor-boot.log 也停在 `Launching Minecraft <ver>`**。
+   从外面看就是「双击了没反应」，实测被用户当成卡死在下载到一半时杀掉过。
+3. **下载完就永久好了**。1.8.9 的 jar 早就在（07-14），所以它一直没出问题；
+   1.17.1 是第一次启动，于是「只有 1.17.1 打不开」。
+
+所以 PCL 现在的做法是：启动前先看 `versions/<ver>/<ver>.{jar,json}` 在不在，
+不在就把状态文案改成「正在下载原版 X 的依赖…」并说明会下到哪；
+启动后每 20 秒量一次 `libraries` + `versions` 的体积，涨了就报一行进度继续等，
+**连续 100 秒不涨**才判定网络卡住并提示配代理。
+
+### 代理必须手动注入 JVM
+
+Genesis 那次下载用的是 `java.net.http.HttpClient`，**不读系统代理，也不读
+`java.net.useSystemProxies` 之外的任何东西**。直连被墙时 TCP 能连上、HTTP 应答永远不来，
+主线程就永久阻塞在 `HttpClientImpl.send()`：
+
+```
+"main" ... WAITING (parking)
+  at jdk.internal.net.http.HttpClientImpl.send(...)
+  at com.moonsworth.lunar...download(...)
+  at com.moonsworth.lunar.genesis.ClientGameBootstrap.apply(...)
+  at com.moonsworth.lunar.genesis.Genesis.run(...)
+```
+
+所以 `BuildStartInfo` 里必须把 PCL 当前生效的代理翻成
+`-Dhttp.proxyHost/-Dhttps.proxyHost`（`LunarClientService.BuildProxyArguments`）。
+没有显式代理时退回 `-Djava.net.useSystemProxies=true`。
+本机回环一定要在 `-Dhttp.nonProxyHosts` 里放过 —— 游戏要连 `127.0.0.1:<ipcPort>`
+做会话续期。
+
+实测游戏只连三个域名：
+
+```
+api.lunarclientprod.com            接口
+thirdpartycache.lunarclientprod.com 第三方缓存（tier-tagger 等）
+analytics.lunarclientprod.com      遥测（国内常连不上，失败只是刷 WARN，不影响启动）
+```
+
 ## 版本元数据（公开，无需鉴权）
 
 ```
@@ -159,6 +218,33 @@ GET https://api.lunarclientprod.com/launcher/metadata/versions/lunar
 - `modules`: `lunar`（Lunar + OptiFine）、`forge`（Lunar + Forge）
 
 **资源索引走 Mojang 官方**，不需要 Lunar 另给一套。
+
+### loader 选择（1.5.5 起）
+
+`subversions[].modules[]` 就是「这个版本能选哪些 loader」，键是
+`id / name / description / default / sort / loaders[]`。实测全集四个：
+
+| id | 名字 | 说明 |
+| --- | --- | --- |
+| `lunar` | Lunar + OptiFine | Lunar 自带 OptiFine 的那套（1.8.9 的默认） |
+| `lunar-noOF` | Lunar | 不带任何额外 mod 的原版 |
+| `fabric` | Lunar + Fabric | 1.17.1 的默认 |
+| `forge` | Lunar + Forge | 老版本才有 |
+
+**默认值每个版本不一样**，1.17.1 是 `fabric`，1.8.9 是 `lunar`。
+1.5.4 及以前 PCL 写死 `module = "lunar"`，等于在 1.17.1 上走了一条官方默认之外的分支。
+
+同一个版本换 module，只有附件清单变，其余完全一致：
+
+```
+module=lunar   61 个附件（含 OptiFine_v1_17_1.jar、optifine-0.1.0-SNAPSHOT-all.jar）
+module=fabric  63 个附件（含 lunar-fabric-mixins-0.1.0-SNAPSHOT-all.jar 等）
+两者 mainClass / jre.folderChecksum / jre.extraArguments 完全相同
+```
+
+所以切换 loader 不需要换 JRE，也不需要改命令行结构，只换 `module` 字段和附件清单。
+解析顺序是 `配置里点过的 → 该版本官方默认 → lunar`；配置里那个如果当前版本不提供，
+**退回默认但不改配置**（切回来选择还在）。
 
 ### 服务端当前提供的全部子版本（实测 2026-10）
 

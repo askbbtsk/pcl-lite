@@ -48,6 +48,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <!--  版本  -->
@@ -62,35 +63,46 @@
                                             Height="28" MinWidth="72" Margin="0,0,0,9"
                                             Text="刷新列表" Click="BtnRefreshVersions_Click" />
 
-                            <!--  账号  -->
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="账号"
+                            <!--
+                                Loader：每个版本能选的注入方案不一样（OptiFine / 原版 / Fabric / Forge），
+                                由服务端 modules 决定，这里按服务端返回动态生成可点击的胶囊按钮。
+                                选中的那个直接决定启动时请求哪份物料清单。
+                            -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Loader"
                                        VerticalAlignment="Center"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,9" />
-                            <local:MyComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            <WrapPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                       x:Name="PanLoaders" Margin="0,0,0,9" />
+
+                            <!--  账号  -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="账号"
+                                       VerticalAlignment="Center"
+                                       FontSize="11.5" Opacity="0.55" Margin="0,0,10,9" />
+                            <local:MyComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                                               x:Name="ComboAccount" Height="28" Margin="0,0,0,9"
                                               SelectionChanged="ComboAccount_SelectionChanged"
                                               ToolTip="来自 PCL Lite 已登录的账号和 Lunar 的账户库。进游戏用的是 Lunar 的激活账号，选完会同步过去。" />
 
                             <!--  启动目录  -->
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="启动目录"
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="启动目录"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabGameDir"
+                            <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabGameDir"
                                        FontSize="11.5" Margin="0,0,0,7"
                                        TextTrimming="CharacterEllipsis" Text=""
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
 
                             <!--  物料目录  -->
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="物料目录"
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="物料目录"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabCacheDir"
+                            <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabCacheDir"
                                        FontSize="11.5" Margin="0,0,0,7"
                                        TextTrimming="CharacterEllipsis" Text=""
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
 
                             <!--  Java  -->
-                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Java"
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Java"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,0" />
-                            <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabJava"
+                            <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabJava"
                                        FontSize="11.5" TextTrimming="CharacterEllipsis" Text="启动后自动定位"
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                         </Grid>
@@ -121,6 +133,9 @@
                 <StackPanel Margin="20,40,20,18">
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
                                Text="不经过 Lunar 启动器，由 PCL 直接拉起游戏进程。物料清单向 Lunar 服务端实时获取，1.7.10 到 26.x 的版本列表以服务端返回为准，启动方式完全一致。" />
+
+                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
+                               Text="Loader 那一行由服务端下发，同一个版本可能提供 Lunar + OptiFine、Lunar（原版）、Lunar + Fabric、Lunar + Forge 几种，点一下就换。默认值跟官方启动器一致（例如 1.17.1 官方默认是 Fabric，不是 OptiFine）。换 loader 会重新取一份附件清单，只补差异的部分。" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
                                Text="账号优先用 PCL Lite 里已经登录的账号，不需要先在 Lunar 启动器里登录过。选了 Lunar 账户库里的账号时，会把 Lunar 的激活账号一并改掉，效果等同于在 Lunar 启动器里换号。" />

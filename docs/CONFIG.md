@@ -9,20 +9,24 @@
 | 用途 | 路径 | 说明 |
 | --- | --- | --- |
 | 实例数据 | `<启动器exe目录>\PCL\` | 每份启动器一份，配置、缓存、日志都在这 |
-| 共享数据 | `%APPDATA%\PCLCE\` | 跨启动器实例共享，账号等 |
-| 共享本地数据 | `%LOCALAPPDATA%\PCLCE\` | 大文件、可随时删的缓存 |
-| 临时 | `%TEMP%\PCLCE\` | 运行中可删，运行时可删但要小心 |
+| 共享数据 | `%APPDATA%\PCLLite\` | 跨启动器实例共享，账号等 |
+| 共享本地数据 | `%LOCALAPPDATA%\PCLLite\` | 大文件、可随时删的缓存 |
+| 临时 | `%TEMP%\PCLLite\` | 运行中可删，运行时可删但要小心 |
 
-> 调试版（`#if DEBUG`）目录名是 `PCLCE_Debug` / `.PCLCEDebug`，和正式版隔离，
+> 调试版（`#if DEBUG`）目录名是 `PCLLite_Debug` / `.PCLCEDebug`，和正式版隔离，
 > 可以同时开着两个版本调试。调试版还认四个环境变量覆盖路径：
 > `PCL_PATH` / `PCL_PATH_SHARED` / `PCL_PATH_LOCAL` / `PCL_PATH_TEMP`。
+
+> 1.5.5 起这两处目录叫 `PCLLite`（以前叫 `PCLCE`）。**不做迁移**：老的 `PCLCE`
+> 目录原样留着，新版本只读写新目录。所以从 1.5.4 及更早升级上来时，
+> 设置和登录状态是空的 —— 重新配一次即可，老目录可以手动删。
 
 ## 二、三份配置文件
 
 | 文件 | 路径 | 格式 | 存什么 |
 | --- | --- | --- | --- |
 | 本地配置 | `<exe目录>\PCL\config.v1.yml` | YAML | 界面、主题、下载、Java、启动参数等绝大多数设置 |
-| 共享配置 | `%APPDATA%\PCLCE\config.v1.json` | JSON | 跨实例共享的东西（账号相关等） |
+| 共享配置 | `%APPDATA%\PCLLite\config.v1.json` | JSON | 跨实例共享的东西（账号相关等） |
 | 实例配置 | `<游戏目录>\PCL\config.v1.yml` | YAML | 只对该游戏实例生效的覆盖项 |
 
 三者的关系：**实例配置 > 本地配置 > 默认值**，共享配置是独立的一份，不参与这个优先级。
@@ -107,7 +111,7 @@ public partial int WindowHue { get; set; }
 | 从 | 到 |
 | --- | --- |
 | `<exe目录>\PCL\setup.ini` | `<exe目录>\PCL\config.v1.yml` |
-| `%APPDATA%\.PCLCE\*.json` | `%APPDATA%\PCLCE\config.v1.json` |
+| `%APPDATA%\.PCLCE\*.json` | `%APPDATA%\PCLLite\config.v1.json` |
 | `<游戏目录>\PCL\setup.ini` | `<游戏目录>\PCL\config.v1.yml` |
 
 迁移只在目标文件不存在时执行一次（`ConfigService._TryMigrate`），INI 解析器是 `CatIniMigration`。

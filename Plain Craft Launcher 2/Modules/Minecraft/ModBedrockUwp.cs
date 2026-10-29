@@ -138,10 +138,42 @@ public static class ModBedrockUwp
                                             """;
 
     /// <summary>
+    ///     FE3 解析失败的原因。分这么细是因为处理办法完全不同：
+    ///     下架了换版本，接口报错重试，连不上查代理。
+    /// </summary>
+    public enum Fe3ResolveFailure
+    {
+        /// <summary>解析成功。</summary>
+        None,
+
+        /// <summary>接口正常应答，但一个文件地址都没有 —— 该版本已从微软下载服务下线。</summary>
+        Delisted,
+
+        /// <summary>HTTP 4xx / 5xx。</summary>
+        HttpError,
+
+        /// <summary>连不上、超时、SOAP 解析失败。</summary>
+        Transport
+    }
+
+    /// <summary>FE3 解析结果。</summary>
+    /// <param name="Url">成功时的真实下载地址。</param>
+    /// <param name="Failure">失败原因。</param>
+    /// <param name="Detail">给人看的补充信息，成功时为空。</param>
+    public sealed record Fe3ResolveResult(string? Url, Fe3ResolveFailure Failure, string Detail);
+
+    /// <summary>
     ///     用 Microsoft Store FE3 接口把旧版 UWP 的 UpdateID（GUID）解析为真实下载地址。
     ///     对应 BedrockLauncher.Core 的 UpdateIDHelper.GetUriAsync。
+    ///     <para>
+    ///         实测（2026-10-29）：1.21.114 / 1.21.101 这类当前版本能正常拿到 2 条地址；
+    ///         而 1.18.10.21 这种 2021 年的 Beta，六个 UpdateID 全部返回
+    ///         <c>HTTP 200</c> + 空的 <c>GetExtendedUpdateInfo2Result</c> ——
+    ///         微软确实把它从下载服务里删了，客户端做什么都换不出来。
+    ///         所以这里要把「下架」和「网络失败」分开报，别再把锅甩给网络。
+    ///     </para>
     /// </summary>
-    public static async Task<string?> ResolveDownloadUrlAsync(string updateId)
+    public static async Task<Fe3ResolveResult> ResolveDownloadUrlAsync(string updateId)
     {
         try
         {
@@ -149,6 +181,9 @@ public static class ModBedrockUwp
             var doc = new XmlDocument();
             doc.LoadXml(Fe3FileUrlTemplate);
             doc.GetElementsByTagName("UpdateID")[0]!.InnerText = updateId;
+            // MessageID 必须每条请求都换：写死一个固定值会被当成重放请求，
+            // 服务端直接回 500 InvalidSecurity（实测固定值会这样）
+            doc.GetElementsByTagName("a:MessageID")[0]!.InnerText = "urn:uuid:" + Guid.NewGuid();
             doc.GetElementsByTagName("Created")[0]!.InnerText = now.ToString("o");
             doc.GetElementsByTagName("Expires")[0]!.InnerText = now.AddMinutes(5).ToString("o");
             doc.GetElementsByTagName("deviceAttributes")[0]!.InnerText = DeviceAttributes;
@@ -157,28 +192,40 @@ public static class ModBedrockUwp
             client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", SoapContentType);
             using var content = new StringContent(doc.InnerXml, Encoding.UTF8, "application/soap+xml");
             using var response = await client.PostAsync(Fe3UpdateUri, content).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
 
             var soapResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+                return new Fe3ResolveResult(null, Fe3ResolveFailure.HttpError,
+                    $"HTTP {(int)response.StatusCode} {Snippet(soapResponse)}");
+
             var xdoc = XDocument.Parse(soapResponse);
             XNamespace ns = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService";
             var urls = xdoc.Descendants(ns + "Url")
                 .Select(x => WebUtility.HtmlDecode(x.Value).Trim())
                 .Where(x => !string.IsNullOrEmpty(x))
                 .ToList();
-            if (urls.Count == 0) return null;
+            if (urls.Count == 0)
+                return new Fe3ResolveResult(null, Fe3ResolveFailure.Delisted,
+                    $"FE3 应答 {soapResponse.Length} 字节，没有任何文件地址");
 
             // 优先取带签名参数的完整下载地址（同 BedrockLauncher.Core 的判定方式）
             var complexUrl = urls.FirstOrDefault(url =>
                 url.Contains("?P1=") || url.Contains("tlu.dl.") || url.Contains("&P2=") ||
                 url.Contains("%3d") || url.Length > 150);
-            return complexUrl ?? urls[^1];
+            return new Fe3ResolveResult(complexUrl ?? urls[^1], Fe3ResolveFailure.None, string.Empty);
         }
         catch (Exception ex)
         {
             ModBase.Log($"[Bedrock] FE3 解析下载地址失败 ({updateId}): {ex.Message}", ModBase.LogLevel.Normal);
-            return null;
+            return new Fe3ResolveResult(null, Fe3ResolveFailure.Transport, ex.Message);
         }
+    }
+
+    /// <summary>把 SOAP 错误正文压成一行，写进日志和提示里。</summary>
+    private static string Snippet(string text)
+    {
+        var flat = Regex.Replace(text, @"\s+", " ").Trim();
+        return flat.Length <= 160 ? flat : flat[..160] + "…";
     }
 
     #endregion

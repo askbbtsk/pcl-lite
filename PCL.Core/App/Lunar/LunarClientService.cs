@@ -13,6 +13,8 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.IO.Net;
+using PCL.Core.IO.Net.Http;
+using PCL.Core.Logging;
 
 namespace PCL.Core.App.Lunar;
 
@@ -936,6 +938,9 @@ public static class LunarClientService
         if (data.JvmExtraArguments.Count > 0)
             arguments.AddRange(data.JvmExtraArguments);
 
+        // 代理必须在官方参数之后：这些是 -D 系统属性，不冲突，但保持「后写覆盖」的语义
+        arguments.AddRange(BuildProxyArguments());
+
         // 用户自己写的参数放在最末：JVM 对重复参数取最后一次，这样 -Xmx、-XX:+UseZGC
         // 之类的设置才能盖掉上面那些默认值和官方值
         if (options.ExtraJvmArguments.Count > 0)
@@ -1004,6 +1009,58 @@ public static class LunarClientService
             startInfo.ArgumentList.Add(argument);
 
         return startInfo;
+    }
+
+    /// <summary>
+    ///     把 PCL 当前生效的代理翻成 JVM 系统属性。
+    ///     <para>
+    ///         <b>这一步不能省。</b>实测 1.17.1（OptiFine 和 Fabric 都一样）：Genesis 打印完
+    ///         <c>Launching Minecraft 1.17.1</c> 之后，会在 <c>ClientGameBootstrap</c> 里
+    ///         自己下一次东西。它用的是 Java 的 <c>HttpClient</c>，**完全不读系统代理**，
+    ///         没有 <c>-Dhttps.proxyHost</c> 就是直连。目标被墙时 TCP 能连上、HTTP 应答永远不来，
+    ///         主线程就永久阻塞在 <c>HttpClientImpl.send()</c> 里 ——
+    ///         表现是「进程活着、窗口永远不出来、日志停在 Launching Minecraft」。
+    ///     </para>
+    ///     <para>
+    ///         1.8.9 / 1.16.5 不需要这一步（它们的物料已经在本地），所以这个坑只在
+    ///         部分版本上出现，很容易被当成「某个版本坏了」。
+    ///     </para>
+    /// </summary>
+    private static IReadOnlyList<string> BuildProxyArguments()
+    {
+        var result = new List<string>();
+        try
+        {
+            // 拿一个真实目标问代理：这样 NoProxy / SystemProxy / CustomProxy 三种模式都覆盖到
+            var probe = new Uri("https://api.lunarclientprod.com");
+            var proxy = HttpProxyManager.Instance.GetProxy(probe);
+
+            // WebProxy.GetProxy 在没有代理时会把目标原样返回，这种情况不能当成代理
+            if (proxy is null || string.IsNullOrWhiteSpace(proxy.Host) ||
+                (string.Equals(proxy.Host, probe.Host, StringComparison.OrdinalIgnoreCase) &&
+                 proxy.Port == probe.Port))
+            {
+                // 没有显式代理时退一步：让 JVM 自己去读 Windows 的代理设置
+                result.Add("-Djava.net.useSystemProxies=true");
+                return result;
+            }
+
+            var port = proxy.Port > 0 ? proxy.Port : 80;
+            result.Add($"-Dhttp.proxyHost={proxy.Host}");
+            result.Add($"-Dhttp.proxyPort={port}");
+            result.Add($"-Dhttps.proxyHost={proxy.Host}");
+            result.Add($"-Dhttps.proxyPort={port}");
+            // 本机回环必须绕过代理：游戏要连 127.0.0.1 的 IPC 端口做会话续期
+            result.Add("-Dhttp.nonProxyHosts=localhost|127.*|[::1]");
+
+            LogWrapper.Info("Lunar", $"已把代理 {proxy.Host}:{port} 注入游戏 JVM 参数");
+        }
+        catch (Exception ex)
+        {
+            LogWrapper.Warn(ex, "Lunar", "读取代理设置失败，游戏将直连");
+        }
+
+        return result;
     }
 
     /// <summary>

@@ -64,10 +64,10 @@ public static class Paths
     static Paths()
     {
 #if DEBUG
-        const string name = "PCLCE_Debug";
+        const string name = "PCLLite_Debug";
         const string oldName = ".PCLCEDebug";
 #else
-        const string name = "PCLCE";
+        const string name = "PCLLite";
         const string oldName = ".PCLCE";
 #endif
         // fill paths

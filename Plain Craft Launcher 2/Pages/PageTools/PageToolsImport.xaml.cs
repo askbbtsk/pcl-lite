@@ -43,6 +43,15 @@ public partial class PageToolsImport
 
     private void BtnRescan_Click(object sender, MouseButtonEventArgs e) => Rescan();
 
+    /// <summary>
+    ///     回到百宝箱主页面。走左栏的切换逻辑，勾选状态才跟得上
+    ///     （<c>MyIconTextButton.Click</c> 的第二参数是 <c>ModBase.RouteEventArgs</c>，写错要到运行时才炸）。
+    /// </summary>
+    private void BtnBack_Click(object sender, ModBase.RouteEventArgs e)
+    {
+        ModMain.frmToolsLeft?.SwitchTo(FormMain.PageSubType.ToolsTest);
+    }
+
     private void BtnPick_Click(object sender, MouseButtonEventArgs e)
     {
         var folder = SystemDialogs.SelectFolder(Lang.Text("Tools.Import.Pick"));

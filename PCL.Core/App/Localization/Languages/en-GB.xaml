@@ -3645,6 +3645,7 @@ Install Lunar Client and launch it at least once first.</sys:String>
     <sys:String x:Key="Tools.Import.Title">Import PCL2 / PCLCE settings</sys:String>
     <sys:String x:Key="Tools.Import.Desc">Copy settings, accounts and keys over from an old PCL. The source folder is read-only.</sys:String>
     <sys:String x:Key="Tools.Import.Rescan">Search again</sys:String>
+    <sys:String x:Key="Tools.Import.Back">Back to toolbox</sys:String>
     <sys:String x:Key="Tools.Import.Pick">Choose folder</sys:String>
     <sys:String x:Key="Tools.Import.Found">Folders found</sys:String>
     <sys:String x:Key="Tools.Import.Empty">Nothing found. You can pick one yourself.</sys:String>

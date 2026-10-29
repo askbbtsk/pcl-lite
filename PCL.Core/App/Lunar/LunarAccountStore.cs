@@ -252,39 +252,13 @@ public static class LunarAccountStore
                 root = new JsonObject();
             }
 
-            var account = new JsonObject
+            root["activeAccountLocalId"] = localId;
+            root["accounts"] = new JsonObject
             {
-                ["accessToken"] = accessToken,
-                ["eligibleForMigration"] = false,
-                ["hasMultipleProfiles"] = false,
-                ["legacy"] = false,
-                ["persistent"] = true,
-                ["localId"] = localId,
-                // Lunar 自己的 OAuth 令牌拿不到，留空：游戏端续期走本地 IPC，
-                // 由 LunarIpcServer 用 PCL 的登录去刷新，不依赖这个字段
-                ["refreshToken"] = string.Empty,
-                ["minecraftProfile"] = new JsonObject
-                {
-                    ["id"] = minecraftUuid,
-                    ["name"] = minecraftName
-                },
-                ["remoteId"] = string.Empty,
-                ["type"] = "Xbox",
-                ["username"] = username
+                [localId] = NewAccountObject(localId, username, minecraftName, minecraftUuid, accessToken, expiresAt)
             };
 
-            if (expiresAt is { } value)
-                account["accessTokenExpiresAt"] =
-                    value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
-
-            root["activeAccountLocalId"] = localId;
-            root["accounts"] = new JsonObject { [localId] = account };
-
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-
-            var temporary = path + ".pcltmp";
-            File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.Move(temporary, path, overwrite: true);
+            Write(path, root);
             return true;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
@@ -292,6 +266,125 @@ public static class LunarAccountStore
             return false;
         }
     }
+
+    /// <summary>
+    ///     把一条账号写进账户库，并切成激活账号：没有就新增，有就只更新令牌。
+    ///     <para>
+    ///         和 <see cref="CreateIfMissing" /> 的区别是关键：那个只在「账户库是空的」时候才写，
+    ///         这个不管库里已经有几个账号都会把自己这一条补进去。
+    ///     </para>
+    ///     <para>
+    ///         场景就是用户报的「在 PCL 里选了账号 A，进游戏却是 Lunar 登录的账号 B」：
+    ///         账户库里只有 B，A 压根不存在，于是 <c>activeAccountLocalId</c> 一直指着 B。
+    ///         游戏进程不读命令行里的 <c>--accessToken</c>，只认这个字段，所以必须把 A
+    ///         真正写进库里再切过去，光传令牌没用。
+    ///     </para>
+    ///     <para>
+    ///         只新增/改自己那一条，其余账号（包括 B 的 refreshToken）原样保留；
+    ///         新条目的 <c>refreshToken</c> 留空 —— Lunar 的 OAuth 令牌拿不到，续期走本地 IPC。
+    ///     </para>
+    /// </summary>
+    /// <returns>写入成功返回 <c>true</c>。</returns>
+    public static bool Upsert(string lunarRoot, string localId, string username, string minecraftName,
+        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt)
+    {
+        if (string.IsNullOrWhiteSpace(localId) || string.IsNullOrWhiteSpace(minecraftUuid)) return false;
+
+        var path = FilePath(lunarRoot);
+        try
+        {
+            JsonObject root;
+            if (File.Exists(path))
+            {
+                if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject existing) return false;
+                root = existing;
+            }
+            else
+            {
+                root = new JsonObject();
+            }
+
+            if (root["accounts"] is not JsonObject accounts)
+            {
+                accounts = new JsonObject();
+                root["accounts"] = accounts;
+            }
+
+            if (accounts[localId] is JsonObject account)
+            {
+                // 已经有这一条：只换令牌和到期时间，localId / profile / type 这些游戏也在读，别动
+                if (!string.IsNullOrWhiteSpace(accessToken)) account["accessToken"] = accessToken;
+                if (expiresAt is { } updated) account["accessTokenExpiresAt"] = FormatTimestamp(updated);
+            }
+            else
+            {
+                accounts[localId] = NewAccountObject(localId, username, minecraftName, minecraftUuid,
+                    accessToken, expiresAt);
+            }
+
+            if (root["activeAccountLocalId"]?.GetValue<string>() != localId)
+                root["activeAccountLocalId"] = localId;
+
+            Write(path, root);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException
+                                       or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>账户库里一条账号的 JSON 形状，<see cref="CreateIfMissing" /> 和 <see cref="Upsert" /> 共用。</summary>
+    private static JsonObject NewAccountObject(string localId, string username, string minecraftName,
+        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt)
+    {
+        var account = new JsonObject
+        {
+            ["accessToken"] = accessToken,
+            ["eligibleForMigration"] = false,
+            ["hasMultipleProfiles"] = false,
+            ["legacy"] = false,
+            ["persistent"] = true,
+            ["localId"] = localId,
+            // Lunar 自己的 OAuth 令牌拿不到，留空：游戏端续期走本地 IPC，
+            // 由 LunarIpcServer 用 PCL 的登录去刷新，不依赖这个字段
+            ["refreshToken"] = string.Empty,
+            ["minecraftProfile"] = new JsonObject
+            {
+                ["id"] = minecraftUuid,
+                ["name"] = minecraftName
+            },
+            ["remoteId"] = string.Empty,
+            ["type"] = "Xbox",
+            ["username"] = username
+        };
+
+        if (expiresAt is { } value) account["accessTokenExpiresAt"] = FormatTimestamp(value);
+        return account;
+    }
+
+    /// <summary>
+    ///     落盘。第一次改之前留一份 <c>.pclbak</c>，写入走「临时文件 + 换名」，
+    ///     避免写一半断电把 Lunar 的账户库弄坏。
+    /// </summary>
+    private static void Write(string path, JsonObject root)
+    {
+        if (File.Exists(path))
+        {
+            var backup = path + ".pclbak";
+            if (!File.Exists(backup)) File.Copy(path, backup);
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        var temporary = path + ".pcltmp";
+        File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        File.Move(temporary, path, overwrite: true);
+    }
+
+    private static string FormatTimestamp(DateTimeOffset value) =>
+        value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
 
     /// <summary>读 <c>accessTokenExpiresAt</c>（形如 <c>2026-10-20T15:21:35.563Z</c>），读不出来就当没有。</summary>
     private static DateTimeOffset? ParseTimestamp(JsonNode? node)

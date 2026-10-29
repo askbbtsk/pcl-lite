@@ -3645,6 +3645,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Tools.Import.Title">匯入 PCL2 / PCLCE 的設定</sys:String>
     <sys:String x:Key="Tools.Import.Desc">把舊 PCL 的設定、帳號和金鑰複製過來。來源資料夾唯讀，不會動它。</sys:String>
     <sys:String x:Key="Tools.Import.Rescan">重新搜尋</sys:String>
+    <sys:String x:Key="Tools.Import.Back">返回百寶箱</sys:String>
     <sys:String x:Key="Tools.Import.Pick">選擇資料夾</sys:String>
     <sys:String x:Key="Tools.Import.Found">找到的資料夾</sys:String>
     <sys:String x:Key="Tools.Import.Empty">沒找到。可以自己選一個。</sys:String>

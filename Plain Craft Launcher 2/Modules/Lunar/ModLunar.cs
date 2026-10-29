@@ -1116,22 +1116,8 @@ public static class ModLunar
         var twin = _accounts.FirstOrDefault(x =>
             string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
 
-        if (twin is not null && LunarAccountStore.SetActive(LunarRoot, twin.LocalId))
-        {
-            _launchedLocalId = twin.LocalId;
-            Log($"Lunar 账户库里有同一个 UUID 的账号，激活账号已切过去（{twin.LocalId}）");
-        }
-        else if (_accounts.Count == 0)
-        {
-            Log("Lunar 账户库还是空的，稍后会按这个账号新建一份（不需要 Lunar 启动器登录过）");
-        }
-        else
-        {
-            Log("Lunar 账户库里没有这个 UUID：游戏内身份仍由 Lunar 的激活账号决定，" +
-                "这里只换了命令行令牌（联机用这个号，好友列表是另一个号）");
-        }
-
         var token = profile.AccessToken;
+        DateTimeOffset? tokenExpiresAt = profile.ExpiresAt;
         if (profile.IsExpired)
         {
             Log("PCL 令牌已过期，先刷新一次…");
@@ -1143,6 +1129,7 @@ public static class ModLunar
                 if (!string.IsNullOrWhiteSpace(refreshed.AccessToken))
                 {
                     token = refreshed.AccessToken;
+                    tokenExpiresAt = refreshed.ExpiresAt ?? tokenExpiresAt;
                     ProfileService.ApplyAuthenticationResult(refreshed, profile, select: false);
                     Log($"令牌已刷新，到期 {refreshed.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm}");
                 }
@@ -1151,6 +1138,30 @@ public static class ModLunar
             {
                 Log("刷新失败，仍然用旧令牌启动：" + ex.Message);
             }
+        }
+
+        if (twin is not null && LunarAccountStore.SetActive(LunarRoot, twin.LocalId))
+        {
+            _launchedLocalId = twin.LocalId;
+            Log($"Lunar 账户库里有同一个 UUID 的账号，激活账号已切过去（{twin.LocalId}）");
+        }
+        else if (!string.IsNullOrWhiteSpace(token) &&
+                 LunarAccountStore.Upsert(LunarRoot, Guid.NewGuid().ToString("N"), profile.UserName,
+                     profile.UserName, uuid.Replace("-", string.Empty), token, tokenExpiresAt))
+        {
+            // 账户库里没有这个号：直接补一条并切过去。以前这里只写日志然后照旧启动，
+            // 结果游戏读 activeAccountLocalId，进游戏还是 Lunar 原来那个账号 ——
+            // 用户看到的就是「在 PCL 里选了 A，游戏里是 B」
+            RefreshAccounts();
+            var added = _accounts.FirstOrDefault(x =>
+                string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
+            _launchedLocalId = added?.LocalId ?? string.Empty;
+            Log($"Lunar 账户库里没有这个 UUID，已按 PCL 登录新建一条并切成激活账号（{added?.LocalId}）");
+        }
+        else
+        {
+            Log("Lunar 账户库写入失败：游戏内身份仍由 Lunar 原来的激活账号决定，" +
+                "这里只换了命令行令牌（联机用这个号，好友列表是另一个号）");
         }
 
         return (profile.UserName, uuid, token);

@@ -3394,6 +3394,7 @@
     <sys:String x:Key="Tools.Import.Title">导入 PCL2 / PCLCE 的设置</sys:String>
     <sys:String x:Key="Tools.Import.Desc">把旧 PCL 的设置、账号和密钥复制过来。源文件夹只读，不会动它。</sys:String>
     <sys:String x:Key="Tools.Import.Rescan">重新搜索</sys:String>
+    <sys:String x:Key="Tools.Import.Back">返回百宝箱</sys:String>
     <sys:String x:Key="Tools.Import.Pick">选择文件夹</sys:String>
     <sys:String x:Key="Tools.Import.Found">找到的文件夹</sys:String>
     <sys:String x:Key="Tools.Import.Empty">没找到。可以自己选一个。</sys:String>

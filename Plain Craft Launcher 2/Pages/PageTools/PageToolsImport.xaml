@@ -7,6 +7,12 @@
                           VerticalScrollBarVisibility="Auto">
         <StackPanel x:Name="PanMain" Margin="25,10">
 
+            <!--  从百宝箱卡片点进来时左栏不一定被注意到，这里放一颗显式的返回按钮  -->
+            <local:MyIconTextButton x:Name="BtnBack" HorizontalAlignment="Left" Margin="0,10,0,0"
+                                    Text="{DynamicResource Tools.Import.Back}"
+                                    SvgIcon="lucide/arrow-left" LogoScale="0.9"
+                                    Click="BtnBack_Click" />
+
             <local:MyCard Margin="0,15,0,15" Title="{DynamicResource Tools.Import.Title}">
                 <StackPanel Margin="25,40,25,20">
                     <TextBlock Text="{DynamicResource Tools.Import.Desc}" TextWrapping="Wrap" LineHeight="19" />

@@ -82,18 +82,38 @@
                             <!--  启动目录  -->
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="{DynamicResource Lunar.Field.GameDir}"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabGameDir"
-                                       FontSize="11.5" Margin="0,0,0,7"
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="LabGameDir"
+                                       FontSize="11.5" Margin="0,0,10,7"
                                        TextTrimming="CharacterEllipsis" Text=""
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                            <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,7">
+                                <local:MyIconButton x:Name="BtnPickGameDir" Height="22" Width="22" Margin="0,0,6,0"
+                                                    SvgIcon="lucide/folder-open" LogoScale="0.8"
+                                                    ToolTip="{DynamicResource Lunar.Tip.PickGameDir}"
+                                                    Click="BtnPickGameDir_Click" />
+                                <local:MyIconButton x:Name="BtnResetGameDir" Height="22" Width="22"
+                                                    SvgIcon="lucide/rotate-ccw" LogoScale="0.8"
+                                                    ToolTip="{DynamicResource Lunar.Tip.ResetGameDir}"
+                                                    Click="BtnResetGameDir_Click" />
+                            </StackPanel>
 
                             <!--  物料目录  -->
                             <TextBlock Grid.Row="4" Grid.Column="0" Text="{DynamicResource Lunar.Field.CacheDir}"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
-                            <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabCacheDir"
-                                       FontSize="11.5" Margin="0,0,0,7"
+                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="LabCacheDir"
+                                       FontSize="11.5" Margin="0,0,10,7"
                                        TextTrimming="CharacterEllipsis" Text=""
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                            <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,7">
+                                <local:MyIconButton x:Name="BtnPickRoot" Height="22" Width="22" Margin="0,0,6,0"
+                                                    SvgIcon="lucide/folder-open" LogoScale="0.8"
+                                                    ToolTip="{DynamicResource Lunar.Tip.PickRoot}"
+                                                    Click="BtnPickRoot_Click" />
+                                <local:MyIconButton x:Name="BtnResetRoot" Height="22" Width="22"
+                                                    SvgIcon="lucide/rotate-ccw" LogoScale="0.8"
+                                                    ToolTip="{DynamicResource Lunar.Tip.ResetRoot}"
+                                                    Click="BtnResetRoot_Click" />
+                            </StackPanel>
 
                             <!--  Java  -->
                             <TextBlock Grid.Row="5" Grid.Column="0" Text="Java"

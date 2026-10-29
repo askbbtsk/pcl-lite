@@ -192,7 +192,11 @@ public partial class PageSetupLunar
             TextMemory.IsEnabled = CheckFollowGlobal.Checked != true;
 
         if (PanVersionOptions is not null)
-            PanVersionOptions.IsEnabled = CheckVersionOverride.Checked == true;
+            // 用折叠而不是 IsEnabled=false：禁用态的输入框在深色主题下会变成两条黑条，
+            // 里面还留着「留空 = 沿用全局」的占位文字，看着像出了 bug
+            PanVersionOptions.Visibility = CheckVersionOverride.Checked == true
+                ? Visibility.Visible
+                : Visibility.Collapsed;
     }
 
     private void RefreshJavaHint()

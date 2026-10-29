@@ -9,6 +9,7 @@ using System.Windows.Media;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.App.Lunar;
+using PCL.Core.UI;
 
 namespace PCL;
 
@@ -79,9 +80,10 @@ public partial class PageLunarLaunch
         RefreshAccountCombo();
         RefreshAccountHint();
 
-        LabGameDir.Text = string.IsNullOrWhiteSpace(ModLunar.GameDirectory)
-            ? _gameDirPreview
-            : ModLunar.GameDirectory;
+        // 运行中显示进程真正用的目录；没运行就显示「下次会用哪个」
+        LabGameDir.Text = ModLunar.IsRunning && !string.IsNullOrWhiteSpace(ModLunar.GameDirectory)
+            ? ModLunar.GameDirectory
+            : _gameDirPreview;
         LabCacheDir.Text = LunarClientService.MultiverDirectory(ModLunar.LunarRoot);
         LabJava.Text = string.IsNullOrWhiteSpace(ModLunar.JavaPath)
             ? Lang.Text("Lunar.Field.JavaAuto")
@@ -502,12 +504,60 @@ public partial class PageLunarLaunch
     }
 
     /// <summary>
-    ///     预览这次启动会写进哪个目录：和 <see cref="ModLunar" /> 的取值规则保持一致，
-    ///     都是 MC 根目录 —— Lunar 不跟实例隔离走。
+    ///     预览这次启动会写进哪个目录：和 <see cref="ModLunar" /> 的取值规则保持一致
+    ///     （设置里指定过就用指定的，否则用当前 MC 根目录）—— Lunar 不跟实例隔离走。
     /// </summary>
     private static string PreviewGameDirectory()
     {
-        return ModFolder.mcFolderSelected;
+        return ModLunar.ResolveGameDirectory();
+    }
+
+    /// <summary>换启动目录。选完立刻生效，下次启动就用它。</summary>
+    private void BtnPickGameDir_Click(object sender, EventArgs e)
+    {
+        var folder = SystemDialogs.SelectFolder(Lang.Text("Lunar.Tip.PickGameDir"), PreviewGameDirectory());
+        if (string.IsNullOrWhiteSpace(folder)) return;
+
+        Config.Preference.Lunar.GameDir = folder;
+        _gameDirPreview = folder;
+        RefreshPage();
+    }
+
+    /// <summary>启动目录恢复默认：跟随当前选中的 MC 根目录。</summary>
+    private void BtnResetGameDir_Click(object sender, EventArgs e)
+    {
+        Config.Preference.Lunar.GameDir = "";
+        _gameDirPreview = ModLunar.DefaultGameDirectory;
+        RefreshPage();
+    }
+
+    /// <summary>
+    ///     换物料根目录（相当于官方启动器的 <c>~/.lunarclient</c>）。
+    ///     物料、JRE、账户库都挂在这下面，所以换完要把版本列表和账号重新读一遍。
+    /// </summary>
+    private void BtnPickRoot_Click(object sender, EventArgs e)
+    {
+        var folder = SystemDialogs.SelectFolder(Lang.Text("Lunar.Tip.PickRoot"), ModLunar.LunarRoot);
+        if (string.IsNullOrWhiteSpace(folder)) return;
+
+        Config.Preference.Lunar.Root = folder;
+        ResetAfterRootChanged();
+    }
+
+    /// <summary>物料目录恢复默认：<c>~/.lunarclient</c>。</summary>
+    private void BtnResetRoot_Click(object sender, EventArgs e)
+    {
+        Config.Preference.Lunar.Root = "";
+        ResetAfterRootChanged();
+    }
+
+    private void ResetAfterRootChanged()
+    {
+        // 缓存签名清空，让下拉框按新目录里的内容重建
+        _versionSignature = "";
+        _accountSignature = "";
+        ModLunar.Refresh();
+        RefreshPage();
     }
 
     private static string RedactToken(string commandLine)

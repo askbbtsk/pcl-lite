@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -244,35 +245,67 @@ public partial class PageToolsImport
         {
             if (source.IsCe) ImportCe(source);
             else ImportPcl2(source);
-
-            ModMain.MyMsgBox(Lang.Text("Tools.Import.Done"), Lang.Text("Tools.Import.Title"));
         }
         catch (Exception ex)
         {
             ModBase.Log(ex, "[Import] 导入设置失败", ModBase.LogLevel.Msgbox,
                 userSummary: Lang.Text("Tools.Import.Failed", ex.Message));
+            return;
         }
+
+        // 内容只写进了 .pending，必须重启才换得上：运行中的 provider 会把内存里的旧值写回去
+        ModMain.MyMsgBox(Lang.Text("Tools.Import.Done"), Lang.Text("Tools.Import.Title"), forceWait: true);
+        Restart();
     }
 
-    /// <summary>PCL CE / PCL Lite：整个配置文件加密钥直接复制，密钥不一起过来加密值就解不开。</summary>
+    /// <summary>
+    ///     重启自己。和设置页的「导入设置」一个做法：先起新进程，再强制结束当前进程。
+    /// </summary>
+    private static void Restart()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(Basics.ExecutablePath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Import] 重启失败，请手动重新打开 PCL", ModBase.LogLevel.Msgbox,
+                userSummary: Lang.Text("Tools.Import.RestartFailed"));
+            return;
+        }
+
+        FormMain.EndProgramForce();
+    }
+
+    /// <summary>
+    ///     PCL CE / PCL Lite：整份配置和密钥一起带过去，正版账号就在里面。
+    ///     <para>
+    ///         只能写 <c>.pending</c>。运行中直接覆盖 <c>config.v1.json</c> 是没用的：
+    ///         配置在启动时已经整份读进内存，十来秒后一次落盘就把文件重写回去了 ——
+    ///         以前「转移设置转不了」就是这个原因。
+    ///     </para>
+    /// </summary>
     private static void ImportCe(Source source)
     {
         Directory.CreateDirectory(Paths.SharedData);
-        CopyWithBackup(Path.Combine(source.Folder, "config.v1.json"),
-            Path.Combine(Paths.SharedData, "config.v1.json"));
 
+        var pending = ConfigService.SharedConfigPath + ConfigService.PendingSuffix;
+        File.Copy(Path.Combine(source.Folder, "config.v1.json"), pending, true);
+
+        // 账号、令牌这些是加密存的，没有源那边的钥匙就是一串解不开的密文
         var key = Path.Combine(source.Folder, "UserKey.bin");
-        if (File.Exists(key)) CopyWithBackup(key, Path.Combine(Paths.SharedData, "UserKey.bin"));
+        if (File.Exists(key))
+            File.Copy(key, Path.Combine(Paths.SharedData, "UserKey.bin" + ConfigService.PendingSuffix), true);
     }
 
-    /// <summary>PCL2 原版：setup.ini 是 <c>键:值</c> 的纯文本，逐行写进本地配置。</summary>
+    /// <summary>PCL2 原版：setup.ini 是 <c>键:值</c> 的纯文本，先转成 yml 放进暂存。</summary>
     private static void ImportPcl2(Source source)
     {
         var file = Path.Combine(source.Folder, source.FileName);
-        var target = ConfigService.LocalConfigPath;
-        if (File.Exists(target)) File.Copy(target, target + ".importbak", true);
+        var pending = ConfigService.LocalConfigPath + ConfigService.PendingSuffix;
+        if (File.Exists(pending)) File.Delete(pending);
 
-        var provider = new YamlFileProvider(target);
+        var provider = new YamlFileProvider(pending);
         foreach (var line in File.ReadAllLines(file, Encoding.UTF8))
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
@@ -285,12 +318,6 @@ public partial class PageToolsImport
         }
 
         provider.Sync();
-    }
-
-    private static void CopyWithBackup(string from, string to)
-    {
-        if (File.Exists(to)) File.Copy(to, to + ".importbak", true);
-        File.Copy(from, to, true);
     }
 
     #endregion

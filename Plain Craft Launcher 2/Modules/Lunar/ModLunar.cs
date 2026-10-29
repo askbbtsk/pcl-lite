@@ -85,10 +85,28 @@ public static class ModLunar
 
     public static event Action<string>? LogReceived;
 
-    /// <summary>Lunar 数据根目录。</summary>
-    public static string LunarRoot => LunarClientService.DefaultLunarRoot;
+    /// <summary>Lunar 自带的默认数据根目录（<c>~/.lunarclient</c>）。</summary>
+    public static string DefaultLunarRoot => LunarClientService.DefaultLunarRoot;
 
-    public static bool IsInstalled => LunarClientService.IsInstalled();
+    /// <summary>
+    ///     Lunar 数据根目录。设置里指定过就用指定的，否则用默认的 <c>~/.lunarclient</c>。
+    ///     <para>
+    ///         物料、JRE、账户库全挂在这下面，所以换目录等于换一套环境，需要重新下物料。
+    ///     </para>
+    /// </summary>
+    public static string LunarRoot
+    {
+        get
+        {
+            var custom = Config.Preference.Lunar.Root;
+            return string.IsNullOrWhiteSpace(custom) ? LunarClientService.DefaultLunarRoot : custom;
+        }
+    }
+
+    /// <summary>默认启动目录：当前选中的 MC 根目录。</summary>
+    public static string DefaultGameDirectory => ModFolder.mcFolderSelected;
+
+    public static bool IsInstalled => LunarClientService.IsInstalled(LunarRoot);
 
     public static bool IsBusy
     {
@@ -526,20 +544,17 @@ public static class ModLunar
     }
 
     /// <summary>
-    ///     Lunar 的游戏目录：<b>始终用 MC 根目录</b>，不跟主页面的实例走。
+    ///     这次启动写进哪个目录。设置里指定过就用指定的，否则用当前 MC 根目录。
     ///     <para>
-    ///         Lunar 自己是独立客户端，版本（1.12.2）和主页面选中的实例（比如某个
-    ///         1.21 Fabric 模组包）根本不是一个东西。用实例的隔离目录会直接写坏人家：
+    ///         刻意不跟实例的版本隔离目录走：Lunar 的版本（比如 1.12.2）和主页面选中的实例
+    ///         （比如某个 1.21 Fabric 模组包）根本不是一个东西，用隔离目录会写坏人家：
     ///         <c>options.txt</c> 被低版本覆盖、存档和资源包混进去、模组包的设置全乱。
     ///     </para>
-    ///     <para>
-    ///         官方 Lunar 用的是 <c>%APPDATA%\.minecraft</c>，这里对应到玩家自己选的
-    ///         MC 根目录，存档和资源包跟平时玩的一致。
-    ///     </para>
     /// </summary>
-    private static string ResolveGameDirectory()
+    public static string ResolveGameDirectory()
     {
-        return ModFolder.mcFolderSelected;
+        var custom = Config.Preference.Lunar.GameDir;
+        return string.IsNullOrWhiteSpace(custom) ? ModFolder.mcFolderSelected : custom;
     }
 
     /// <summary>

@@ -3653,14 +3653,15 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Ce">PCL CE / PCL Lite</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 原版</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 可攜版</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Ce">會覆蓋目前的設定和金鑰，匯入後需要重新啟動。</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Pcl2">會寫進本機設定，匯入後需要重新啟動。</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Ce">會覆蓋目前的設定、帳號和金鑰，匯入後啟動器會自動重新啟動。</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">會寫進本機設定，匯入後啟動器會自動重新啟動。</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Title">確認匯入</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Body">從：{0}
 到：{1}
 
 目前的會被覆蓋（原檔案留一份 .importbak）。確定匯入嗎？</sys:String>
-    <sys:String x:Key="Tools.Import.Done">匯入完成。重新啟動 PCL 後生效。</sys:String>
+    <sys:String x:Key="Tools.Import.Done">匯入完成，啟動器將自動重新啟動以生效。</sys:String>
+    <sys:String x:Key="Tools.Import.RestartFailed">自動重新啟動失敗，請手動關掉再開啟 PCL。</sys:String>
     <sys:String x:Key="Tools.Import.Failed">匯入失敗：{0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">這個資料夾裡沒有找到 PCL 的設定檔：{0}</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">移轉 PCL 設定</sys:String>
@@ -3723,4 +3724,8 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.HttpProtocol.Http2.ToolTip">所有檔案下載優先使用 HTTP/2；如果下載來源或代理不支援，會自動回退到 HTTP/1.1。</sys:String>
     <sys:String x:Key="Region.Feature.Restricted">Minecraft 下載、補全與模組包安裝功能在你所在的國家或地區無法使用。</sys:String>
     <sys:String x:Key="Region.Feature.Unknown">無法取得區域資訊，暫時無法使用 Minecraft 下載、補全與模組包安裝功能。</sys:String>
+    <sys:String x:Key="Lunar.Tip.PickGameDir">選一個 .minecraft 目錄當啟動目錄</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetGameDir">恢復預設（跟隨目前 MC 目錄）</sys:String>
+    <sys:String x:Key="Lunar.Tip.PickRoot">選 Lunar 物料根目錄</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetRoot">恢復預設（~/.lunarclient）</sys:String>
 </ResourceDictionary>

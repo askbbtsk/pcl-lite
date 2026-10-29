@@ -3403,14 +3403,15 @@
     <sys:String x:Key="Tools.Import.Kind.Ce">PCL CE / PCL Lite</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 原版</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 便携版</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Ce">会覆盖当前的设置和密钥，导入后需要重启。</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Pcl2">会写进本地设置，导入后需要重启。</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Ce">会覆盖当前的设置、账号和密钥，导入后启动器会自动重启。</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">会写进本地设置，导入后启动器会自动重启。</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Title">确认导入</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Body">从：{0}
 到：{1}
 
 当前的会被覆盖（原文件留一份 .importbak）。确定导入吗？</sys:String>
-    <sys:String x:Key="Tools.Import.Done">导入完成。重启 PCL 后生效。</sys:String>
+    <sys:String x:Key="Tools.Import.Done">导入完成，启动器将自动重启以生效。</sys:String>
+    <sys:String x:Key="Tools.Import.RestartFailed">自动重启失败，请手动关掉再打开 PCL。</sys:String>
     <sys:String x:Key="Tools.Import.Failed">导入失败：{0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">这个文件夹里没有找到 PCL 的配置文件：{0}</sys:String>
 
@@ -3726,4 +3727,8 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Bedrock.Download.Err.NoFe3">连不上 FE3 接口：{0}。检查网络或代理。</sys:String>
     <sys:String x:Key="Lunar.Error.OperationFailed">Lunar 页面操作失败。请查看错误详情。</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">转移 PCL 设置</sys:String>
+    <sys:String x:Key="Lunar.Tip.PickGameDir">选一个 .minecraft 目录当启动目录</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetGameDir">恢复默认（跟随当前 MC 目录）</sys:String>
+    <sys:String x:Key="Lunar.Tip.PickRoot">选 Lunar 物料根目录</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetRoot">恢复默认（~/.lunarclient）</sys:String>
 </ResourceDictionary>

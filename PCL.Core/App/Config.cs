@@ -333,6 +333,25 @@ public static partial class Config
             /// </para>
             /// </summary>
             [ConfigItem<string>("LunarVersionOverrides", "", ConfigSource.Local)] public partial string VersionOverrides { get; set; }
+
+            /// <summary>
+            ///     Lunar 物料根目录（相当于官方启动器的 <c>~/.lunarclient</c>）。空值表示用默认位置。
+            ///     <para>
+            ///         物料、JRE、账户库（<c>settings/game/accounts.json</c>）都挂在这个目录下，
+            ///         换目录等于换一套完整的 Lunar 环境 —— 所以改完要重新下物料。
+            ///         C 盘紧张时把它挪到别的盘就是靠这一项。
+            ///     </para>
+            /// </summary>
+            [ConfigItem<string>("LunarRoot", "", ConfigSource.Local)] public partial string Root { get; set; }
+
+            /// <summary>
+            ///     Lunar 的启动目录（存档、资源包、截图所在）。空值表示用当前 MC 根目录。
+            ///     <para>
+            ///         默认跟 <c>ModFolder.mcFolderSelected</c> 走，也就是玩家平时玩的那个
+            ///         <c>.minecraft</c>。想单独隔离一套 Lunar 存档时可以在这里指定。
+            ///     </para>
+            /// </summary>
+            [ConfigItem<string>("LunarGameDir", "", ConfigSource.Local)] public partial string GameDir { get; set; }
         }
 
         /// <summary>

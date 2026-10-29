@@ -3653,14 +3653,15 @@ Install Lunar Client and launch it at least once first.</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Ce">PCL CE / PCL Lite</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 (original)</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 portable</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Ce">Overwrites the current settings and keys; restart after importing.</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Pcl2">Writes into the local settings; restart after importing.</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Ce">Overwrites the current settings, accounts and keys; the launcher restarts automatically afterwards.</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">Writes into the local settings; the launcher restarts automatically afterwards.</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Title">Confirm import</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Body">From: {0}
 To: {1}
 
 Current files will be overwritten (a .importbak copy is kept). Continue?</sys:String>
-    <sys:String x:Key="Tools.Import.Done">Import complete. Restart PCL to apply.</sys:String>
+    <sys:String x:Key="Tools.Import.Done">Import complete. The launcher will restart to apply it.</sys:String>
+    <sys:String x:Key="Tools.Import.RestartFailed">Automatic restart failed. Please close and reopen PCL manually.</sys:String>
     <sys:String x:Key="Tools.Import.Failed">Import failed: {0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">No PCL config found in this folder: {0}</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">Migrate PCL settings</sys:String>
@@ -3723,4 +3724,8 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Setup.GameManage.Download.HttpProtocol.Http2.ToolTip">Prefer HTTP/2 for all file downloads, falling back to HTTP/1.1 when the source or proxy does not support it.</sys:String>
     <sys:String x:Key="Region.Feature.Restricted">Minecraft downloads, repairs, and modpack installation are unavailable in your country or region.</sys:String>
     <sys:String x:Key="Region.Feature.Unknown">Could not determine region info. Minecraft downloads, repairs, and modpack installation are temporarily unavailable.</sys:String>
+    <sys:String x:Key="Lunar.Tip.PickGameDir">Pick a .minecraft folder as the game directory</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetGameDir">Reset to default (current MC folder)</sys:String>
+    <sys:String x:Key="Lunar.Tip.PickRoot">Pick the Lunar root folder</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetRoot">Reset to default (~/.lunarclient)</sys:String>
 </ResourceDictionary>

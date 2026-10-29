@@ -49,6 +49,11 @@ public sealed partial class ConfigService
     /// </summary>
     public static string LocalConfigPath { get; } = Path.Combine(Paths.Data, "config.v1.yml");
 
+    /// <summary>
+    /// 导入设置时的暂存后缀。导入只写 <c>*.pending</c>，下次启动由 <see cref="_ApplyPendingImport" /> 换上去。
+    /// </summary>
+    public const string PendingSuffix = ".pending";
+
     #region Getters & Setters
 
     /// <summary>
@@ -149,6 +154,42 @@ public sealed partial class ConfigService
             ConfigSource.GameInstance => _instanceConfigProvider!,
             _ => throw new ArgumentException($"Invalid source: {source}")
         };
+    }
+
+    /// <summary>
+    ///     应用上一次「导入设置」留下的暂存文件。
+    ///     <para>
+    ///         导入是在程序运行中做的，直接覆盖配置文件会被内存里的旧值写回去：
+    ///         <see cref="JsonFileProvider" /> 构造时就把整个文件读进内存，<c>Sync()</c> 时整体重写，
+    ///         所以运行中 <c>File.Copy</c> 过去的内容十几秒后就没了 —— 这就是以前「转移设置转不了」的原因。
+    ///     </para>
+    ///     <para>
+    ///         现在导入只写 <c>*.pending</c>，真正替换放到这里 —— 此时 provider 还没构造，不会被覆盖。
+    ///     </para>
+    /// </summary>
+    private static void _ApplyPendingImport()
+    {
+        Apply(SharedConfigPath);
+        Apply(LocalConfigPath);
+        // 加密值（正版账号、令牌）要用源那边的 UserKey 才解得开，所以密钥跟着一起换
+        Apply(Path.Combine(Paths.SharedData, "UserKey.bin"));
+        return;
+
+        static void Apply(string target)
+        {
+            var pending = target + PendingSuffix;
+            if (!File.Exists(pending)) return;
+            try
+            {
+                if (File.Exists(target)) File.Copy(target, target + ".importbak", true);
+                File.Move(pending, target, true);
+                Context.Info($"Applied pending config import: {target}");
+            }
+            catch (Exception ex)
+            {
+                Context.Error($"Failed to apply pending config import: {target} ({ex.Message})");
+            }
+        }
     }
 
     private static void _InitializeProviders()
@@ -271,6 +312,9 @@ public sealed partial class ConfigService
         Context.Info("Config initialization started");
         try
         {
+            // 必须排在读配置项之前：provider 构造时会把整个文件读进内存，
+            // 之后再换文件就没用了（Sync 会拿旧内存整体重写回去）
+            _ApplyPendingImport();
             Context.Trace("Initializing config items...");
             _InitializeConfigItems();
             Context.Debug($"Finished initialize {_Items.Count} item(s)");

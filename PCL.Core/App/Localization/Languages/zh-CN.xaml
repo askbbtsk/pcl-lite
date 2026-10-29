@@ -3387,6 +3387,32 @@
     <sys:String x:Key="Tools.Error.OperationFailed">工具页操作失败。请查看错误详情。</sys:String>
     <sys:String x:Key="Tools.Left.Utilities">奇妙小工具</sys:String>
     <sys:String x:Key="Tools.Left.Utilities.Title">百宝箱</sys:String>
+    <sys:String x:Key="Tools.Left.Import">导入设置</sys:String>
+
+    <!-- Tools.Import -->
+
+    <sys:String x:Key="Tools.Import.Title">导入 PCL2 / PCLCE 的设置</sys:String>
+    <sys:String x:Key="Tools.Import.Desc">把旧 PCL 的设置、账号和密钥复制过来。源文件夹只读，不会动它。</sys:String>
+    <sys:String x:Key="Tools.Import.Rescan">重新搜索</sys:String>
+    <sys:String x:Key="Tools.Import.Pick">选择文件夹</sys:String>
+    <sys:String x:Key="Tools.Import.Found">找到的文件夹</sys:String>
+    <sys:String x:Key="Tools.Import.Empty">没找到。可以自己选一个。</sys:String>
+    <sys:String x:Key="Tools.Import.Picked">导入</sys:String>
+    <sys:String x:Key="Tools.Import.None">还没选</sys:String>
+    <sys:String x:Key="Tools.Import.Action">开始导入</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Ce">PCL CE / PCL Lite</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 原版</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 便携版</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Ce">会覆盖当前的设置和密钥，导入后需要重启。</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">会写进本地设置，导入后需要重启。</sys:String>
+    <sys:String x:Key="Tools.Import.Confirm.Title">确认导入</sys:String>
+    <sys:String x:Key="Tools.Import.Confirm.Body">从：{0}
+到：{1}
+
+当前的会被覆盖（原文件留一份 .importbak）。确定导入吗？</sys:String>
+    <sys:String x:Key="Tools.Import.Done">导入完成。重启 PCL 后生效。</sys:String>
+    <sys:String x:Key="Tools.Import.Failed">导入失败：{0}</sys:String>
+    <sys:String x:Key="Tools.Import.NotPcl">这个文件夹里没有找到 PCL 的配置文件：{0}</sys:String>
 
     <!-- Tools.ServerQuery -->
 
@@ -3580,4 +3606,123 @@
 
     <sys:String x:Key="Region.Feature.Restricted">Minecraft 下载、补全与整合包安装功能在你所在的国家或地区不可用。</sys:String>
     <sys:String x:Key="Region.Feature.Unknown">无法获取区域信息，暂时无法使用 Minecraft 下载、补全与整合包安装功能。</sys:String>
+
+    <!-- Lunar -->
+
+    <sys:String x:Key="Lunar.Left.Launch">启动</sys:String>
+    <sys:String x:Key="Lunar.Left.Status">状态</sys:String>
+    <sys:String x:Key="Lunar.Left.Account">账号</sys:String>
+    <sys:String x:Key="Lunar.Left.Detecting">正在检测 Lunar Client…</sys:String>
+    <sys:String x:Key="Lunar.Launch">启动 Lunar</sys:String>
+    <sys:String x:Key="Lunar.Card.Launch">启动</sys:String>
+    <sys:String x:Key="Lunar.Field.Version">游戏版本</sys:String>
+    <sys:String x:Key="Lunar.Tip.Version">服务端给的全部版本，选完生效。</sys:String>
+    <sys:String x:Key="Lunar.Action.Refresh">刷新列表</sys:String>
+    <sys:String x:Key="Lunar.Tip.Account">可用 PCL 账号或 Lunar 账户，进游戏用 Lunar 的激活账号。</sys:String>
+    <sys:String x:Key="Lunar.Field.GameDir">启动目录</sys:String>
+    <sys:String x:Key="Lunar.Field.CacheDir">物料目录</sys:String>
+    <sys:String x:Key="Lunar.Field.JavaAuto">启动后自动定位</sys:String>
+    <sys:String x:Key="Lunar.Action.OpenDir">打开物料目录</sys:String>
+    <sys:String x:Key="Lunar.Action.CopyCommand">复制启动命令</sys:String>
+    <sys:String x:Key="Lunar.Card.Notes">说明</sys:String>
+    <sys:String x:Key="Lunar.Note.1">不经过 Lunar 启动器，由 PCL 直接拉起游戏。</sys:String>
+    <sys:String x:Key="Lunar.Note.2">Loader 由服务端下发，点一下就能换。默认跟官方一致（1.17.1 默认 Fabric）。</sys:String>
+    <sys:String x:Key="Lunar.Note.3">账号优先用 PCL 里已登录的，不需要先在 Lunar 登录。</sys:String>
+    <sys:String x:Key="Lunar.Note.4">游戏目录用 .minecraft 根目录，不跟实例隔离走。</sys:String>
+    <sys:String x:Key="Lunar.Note.5">物料由 PCL 自己下载校验，首次约 300 MB。</sys:String>
+    <sys:String x:Key="Lunar.Note.6">内存、JVM 参数和 Java 路径在「设置 → Lunar Client」里改。</sys:String>
+    <sys:String x:Key="Lunar.Note.7">会话过期由本地 IPC 自动续期，不用管。</sys:String>
+    <sys:String x:Key="Lunar.Note.8">好友与社交面板还没做，其他功能正常。</sys:String>
+    <sys:String x:Key="Lunar.Card.Log">运行日志</sys:String>
+    <sys:String x:Key="Lunar.Log.Desc">启动过程与游戏输出</sys:String>
+    <sys:String x:Key="Lunar.Action.Copy">复制</sys:String>
+    <sys:String x:Key="Lunar.Action.Export">导出</sys:String>
+    <sys:String x:Key="Lunar.Action.Clear">清空</sys:String>
+    <sys:String x:Key="Lunar.Action.Browse">选择</sys:String>
+    <sys:String x:Key="Lunar.Setup.Java">Java 运行环境</sys:String>
+    <sys:String x:Key="Lunar.Setup.JavaHint">留空 = 用 Lunar 自带的 JRE</sys:String>
+    <sys:String x:Key="Lunar.Setup.JavaDesc">Lunar 会按版本自己下 JRE，只有想换成本机已装的才需要填。</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryTitle">内存与 JVM 参数（全局）</sys:String>
+    <sys:String x:Key="Lunar.Setup.FollowGlobal">跟随 PCL 的全局内存设置</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemory">最大内存（MB）</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemoryHint">例如 4096</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemoryDesc">低于 512 会被抬到 512，上限 131072。</sys:String>
+    <sys:String x:Key="Lunar.Setup.Jvm">附加 JVM 参数</sys:String>
+    <sys:String x:Key="Lunar.Setup.JvmHint">例如 -XX:+UseG1GC</sys:String>
+    <sys:String x:Key="Lunar.Setup.JvmDesc">拼在官方参数之后，重复的以这里为准。</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideTitle">按版本覆盖</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideVersion">版本</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideCheck">为这个版本单独设置</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideHint">留空 = 沿用全局</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideDesc">只影响选中的这个版本。</sys:String>
+    <sys:String x:Key="Lunar.Account.Group.Pcl">PCL 账号</sys:String>
+    <sys:String x:Key="Lunar.Account.Group.Lunar">Lunar 账号</sys:String>
+    <sys:String x:Key="Lunar.Account.Empty">（账户库是空的）</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.Pcl">PCL 登录：{0}</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.PclExpired">PCL 登录：{0}
+令牌已于 {1} 过期，启动前会刷新</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.Lunar">{0}　{1}</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.LunarExpired">{0}　{1}
+Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
+    <sys:String x:Key="Lunar.Account.NameExpired">{0}（会话已过期）</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.LunarExpired">Lunar 会话已于 {0} 过期。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.WillRefresh">启动前会先用 PCL 里的 {0} 刷新一次。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.NoPcl">PCL 里没有这个账号的登录，没法自动续期 —— 请先在主页面登录它。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.PclExpired">PCL 里 {0} 的令牌已于 {1} 过期，启动前会先刷新一次。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.UsingPcl">用 PCL Lite 的登录启动：{0}。游戏内身份取 Lunar 账户库里同一个 UUID 的账号。</sys:String>
+    <sys:String x:Key="Lunar.Action.Stop">强制停止</sys:String>
+    <sys:String x:Key="Lunar.Action.Busy">运行中…</sys:String>
+    <sys:String x:Key="Lunar.Hint.Fetching">正在拉取 Lunar 版本列表…</sys:String>
+    <sys:String x:Key="Lunar.Hint.Fetched">已获取 {0} 个 Lunar 版本</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoAssets">物料目录还不存在，先启动一次游戏。</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoAssets.Title">打开物料目录</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoCommand">还没有启动过，没有命令行可复制。</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoCommand.Title">复制启动命令</sys:String>
+    <sys:String x:Key="Lunar.Hint.CommandCopied">启动命令已复制（accessToken 已打码）</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogEmpty">日志是空的</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogCopied">已复制全部日志</sys:String>
+    <sys:String x:Key="Lunar.Hint.CopyFailed">复制失败：{0}</sys:String>
+    <sys:String x:Key="Lunar.Log.ExportTitle">导出 Lunar 运行日志</sys:String>
+    <sys:String x:Key="Lunar.Log.Filter">日志文件 (*.log)|*.log|文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogSaved">日志已导出到 {0}</sys:String>
+    <sys:String x:Key="Lunar.Msg.WriteFailed">写文件失败：{0}</sys:String>
+    <sys:String x:Key="Lunar.Msg.ExportTitle">导出日志</sys:String>
+    <sys:String x:Key="Lunar.Module.Default">（官方默认）</sys:String>
+    <sys:String x:Key="Lunar.Left.AccountExpiredHint">会话已过期，游戏内会显示 Invalid session。</sys:String>
+    <sys:String x:Key="Lunar.Left.AccountHint">Lunar 账户库里的账号（{0}），进游戏用的就是它。</sys:String>
+    <sys:String x:Key="Lunar.Left.NoAccount">未找到 Lunar 账号</sys:String>
+    <sys:String x:Key="Lunar.Left.NoAccountHint">先在 Lunar 启动器里登录一次，或用 PCL 主页面登录的账号。</sys:String>
+    <sys:String x:Key="Lunar.Msg.NotInstalled">没有找到 {0}。
+请先安装 Lunar Client 并至少启动一次。</sys:String>
+    <sys:String x:Key="Lunar.Msg.NotInstalled.Title">未检测到 Lunar Client</sys:String>
+    <sys:String x:Key="Lunar.Status.NoAssets">还没有下载 Lunar 物料</sys:String>
+    <sys:String x:Key="Lunar.Status.NoAssetsDesc">不用装 Lunar 启动器，点启动会自己下（首次约 300 MB）。</sys:String>
+    <sys:String x:Key="Lunar.Status.MaterialDir">物料目录：{0}</sys:String>
+    <sys:String x:Key="Lunar.Stage.Licenses">许可文件</sys:String>
+    <sys:String x:Key="Lunar.Stage.Textures">外观资源</sys:String>
+    <sys:String x:Key="Lunar.Stage.Assets">原版资源</sys:String>
+    <sys:String x:Key="Lunar.Stage.Artifacts">客户端物料</sys:String>
+    <sys:String x:Key="Lunar.Stage.Jre">Java 运行时</sys:String>
+    <sys:String x:Key="Lunar.Stage.Ui">界面资源</sys:String>
+    <sys:String x:Key="Lunar.Status.Preparing">正在准备{0} {1}/{2}</sys:String>
+    <sys:String x:Key="Lunar.Status.PreparingName">正在准备{0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaDownload">正在下载原版 {0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaDownloadDesc">进度在下载任务栏里。</sys:String>
+    <sys:String x:Key="Lunar.Status.PreparingVersion">正在准备 {0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.FetchManifest">正在获取 Lunar 物料清单…</sys:String>
+    <sys:String x:Key="Lunar.Status.Launching">正在启动…</sys:String>
+    <sys:String x:Key="Lunar.Status.Exited">游戏已退出</sys:String>
+    <sys:String x:Key="Lunar.Status.Crashed">游戏异常退出（退出码 {0}）</sys:String>
+    <sys:String x:Key="Lunar.Status.CrashedDesc">输出已写入 PCL 日志。</sys:String>
+    <sys:String x:Key="Lunar.Status.Running">游戏运行中</sys:String>
+    <sys:String x:Key="Lunar.Status.RunningDesc">由 PCL 直接拉起，未经过 Lunar 启动器</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaPending">正在下载原版 {0} 的依赖…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaPendingDesc">下到 {0}（约 100–200 MB），期间没有窗口是正常的</sys:String>
+    <sys:String x:Key="Lunar.Status.Failed">启动失败</sys:String>
+    <sys:String x:Key="Lunar.Hint.Stalled">一直没有窗口，原版依赖也不再变大，可能卡在下载依赖（它不走系统代理）。配好代理后重试。</sys:String>
+    <sys:String x:Key="Lunar.Hint.SessionExpired">{0} 的会话已过期，没法自动续期 —— 游戏内会显示 Invalid session。请先在主页面登录这个账号。</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.Delisted">{0} 已经不在微软的下载服务里了（不是网络问题）。换更新的版本，或选 GDK 包。</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.Fe3">FE3 接口返回错误（{0}）。稍后重试；一直这样就挂代理。</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.NoFe3">连不上 FE3 接口：{0}。检查网络或代理。</sys:String>
+    <sys:String x:Key="Lunar.Error.OperationFailed">Lunar 页面操作失败。请查看错误详情。</sys:String>
 </ResourceDictionary>

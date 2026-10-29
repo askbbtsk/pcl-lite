@@ -3580,4 +3580,146 @@
 
     <sys:String x:Key="Region.Feature.Restricted">Minecraft downloads, repairs, and modpack installation are unavailable in your country or region.</sys:String>
     <sys:String x:Key="Region.Feature.Unknown">Could not determine region info. Minecraft downloads, repairs, and modpack installation are temporarily unavailable.</sys:String>
+
+    <!-- Lunar -->
+
+    <sys:String x:Key="Lunar.Left.Launch">Launch</sys:String>
+    <sys:String x:Key="Lunar.Left.Status">Status</sys:String>
+    <sys:String x:Key="Lunar.Left.Account">Account</sys:String>
+    <sys:String x:Key="Lunar.Left.Detecting">Checking Lunar Client…</sys:String>
+    <sys:String x:Key="Lunar.Launch">Launch Lunar</sys:String>
+    <sys:String x:Key="Lunar.Card.Launch">Launch</sys:String>
+    <sys:String x:Key="Lunar.Field.Version">Version</sys:String>
+    <sys:String x:Key="Lunar.Tip.Version">All versions from the server.</sys:String>
+    <sys:String x:Key="Lunar.Action.Refresh">Refresh</sys:String>
+    <sys:String x:Key="Lunar.Tip.Account">PCL or Lunar accounts. The game uses Lunar's active account.</sys:String>
+    <sys:String x:Key="Lunar.Field.GameDir">Game folder</sys:String>
+    <sys:String x:Key="Lunar.Field.CacheDir">Files folder</sys:String>
+    <sys:String x:Key="Lunar.Field.JavaAuto">Set on launch</sys:String>
+    <sys:String x:Key="Lunar.Action.OpenDir">Open folder</sys:String>
+    <sys:String x:Key="Lunar.Action.CopyCommand">Copy command</sys:String>
+    <sys:String x:Key="Lunar.Card.Notes">Notes</sys:String>
+    <sys:String x:Key="Lunar.Note.1">PCL starts the game itself, without the Lunar launcher.</sys:String>
+    <sys:String x:Key="Lunar.Note.2">Loader list comes from the server; click to switch.</sys:String>
+    <sys:String x:Key="Lunar.Note.3">Uses the account you signed in with in PCL.</sys:String>
+    <sys:String x:Key="Lunar.Note.4">Uses the .minecraft root, not the instance folder.</sys:String>
+    <sys:String x:Key="Lunar.Note.5">PCL downloads and verifies the files (~300 MB first time).</sys:String>
+    <sys:String x:Key="Lunar.Note.6">Memory, JVM args and Java path live in Settings → Lunar Client.</sys:String>
+    <sys:String x:Key="Lunar.Note.7">Expired sessions refresh over local IPC.</sys:String>
+    <sys:String x:Key="Lunar.Note.8">Friends and social panels are not implemented yet.</sys:String>
+    <sys:String x:Key="Lunar.Card.Log">Log</sys:String>
+    <sys:String x:Key="Lunar.Log.Desc">Startup and game output</sys:String>
+    <sys:String x:Key="Lunar.Action.Copy">Copy</sys:String>
+    <sys:String x:Key="Lunar.Action.Export">Export</sys:String>
+    <sys:String x:Key="Lunar.Action.Clear">Clear</sys:String>
+    <sys:String x:Key="Lunar.Action.Browse">Browse</sys:String>
+    <sys:String x:Key="Lunar.Setup.Java">Java</sys:String>
+    <sys:String x:Key="Lunar.Setup.JavaHint">Empty = bundled JRE</sys:String>
+    <sys:String x:Key="Lunar.Setup.JavaDesc">Lunar downloads its own JRE per version.</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryTitle">Memory and JVM args (global)</sys:String>
+    <sys:String x:Key="Lunar.Setup.FollowGlobal">Follow PCL global memory</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemory">Max memory (MB)</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemoryHint">e.g. 4096</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemoryDesc">Clamped to 512–131072.</sys:String>
+    <sys:String x:Key="Lunar.Setup.Jvm">Extra JVM args</sys:String>
+    <sys:String x:Key="Lunar.Setup.JvmHint">e.g. -XX:+UseG1GC</sys:String>
+    <sys:String x:Key="Lunar.Setup.JvmDesc">Appended after official args; later ones win.</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideTitle">Per-version override</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideVersion">Version</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideCheck">Override for this version</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideHint">Empty = use global</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideDesc">Only affects the selected version.</sys:String>
+    <sys:String x:Key="Lunar.Account.Group.Pcl">PCL account</sys:String>
+    <sys:String x:Key="Lunar.Account.Group.Lunar">Lunar account</sys:String>
+    <sys:String x:Key="Lunar.Account.Empty">(account library is empty)</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.Pcl">PCL sign-in: {0}</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.PclExpired">PCL sign-in: {0}
+Token expired at {1}; it will be refreshed before launch</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.Lunar">{0} {1}</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.LunarExpired">{0} {1}
+Lunar session expired at {2}; renewed over IPC in game</sys:String>
+    <sys:String x:Key="Lunar.Account.NameExpired">{0} (session expired)</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.LunarExpired">Lunar session expired at {0}.</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.WillRefresh">It will be refreshed with PCL account {0} before launch.</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.NoPcl">No matching PCL sign-in, so it cannot be renewed — sign in on the main page first.</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.PclExpired">The PCL token for {0} expired at {1}; it will be refreshed before launch.</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.UsingPcl">Launching with the PCL Lite account {0}. In-game identity comes from the same UUID in Lunar's account library.</sys:String>
+    <sys:String x:Key="Lunar.Action.Stop">Force stop</sys:String>
+    <sys:String x:Key="Lunar.Action.Busy">Running…</sys:String>
+    <sys:String x:Key="Lunar.Hint.Fetching">Fetching Lunar versions…</sys:String>
+    <sys:String x:Key="Lunar.Hint.Fetched">Got {0} Lunar versions</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoAssets">The asset folder does not exist yet; launch the game once first.</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoAssets.Title">Open asset folder</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoCommand">Nothing has been launched yet, so there is no command line to copy.</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoCommand.Title">Copy launch command</sys:String>
+    <sys:String x:Key="Lunar.Hint.CommandCopied">Launch command copied (accessToken redacted)</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogEmpty">The log is empty</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogCopied">Log copied</sys:String>
+    <sys:String x:Key="Lunar.Hint.CopyFailed">Copy failed: {0}</sys:String>
+    <sys:String x:Key="Lunar.Log.ExportTitle">Export Lunar log</sys:String>
+    <sys:String x:Key="Lunar.Log.Filter">Log files (*.log)|*.log|Text files (*.txt)|*.txt|All files (*.*)|*.*</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogSaved">Log exported to {0}</sys:String>
+    <sys:String x:Key="Lunar.Msg.WriteFailed">Failed to write file: {0}</sys:String>
+    <sys:String x:Key="Lunar.Msg.ExportTitle">Export log</sys:String>
+    <sys:String x:Key="Lunar.Module.Default">(official default)</sys:String>
+    <sys:String x:Key="Lunar.Left.AccountExpiredHint">Session expired; the game will show Invalid session.</sys:String>
+    <sys:String x:Key="Lunar.Left.AccountHint">This account from Lunar's account library ({0}) is what the game signs in with.</sys:String>
+    <sys:String x:Key="Lunar.Left.NoAccount">No Lunar account</sys:String>
+    <sys:String x:Key="Lunar.Left.NoAccountHint">Sign in once in the Lunar launcher, or use the account signed in on PCL's main page.</sys:String>
+    <sys:String x:Key="Lunar.Msg.NotInstalled">Could not find {0}.
+Install Lunar Client and launch it at least once first.</sys:String>
+    <sys:String x:Key="Lunar.Msg.NotInstalled.Title">Lunar Client not found</sys:String>
+    <sys:String x:Key="Lunar.Status.NoAssets">Lunar assets not downloaded yet</sys:String>
+    <sys:String x:Key="Lunar.Status.NoAssetsDesc">No Lunar launcher needed; launching downloads them (about 300 MB the first time).</sys:String>
+    <sys:String x:Key="Lunar.Status.MaterialDir">Asset folder: {0}</sys:String>
+    <sys:String x:Key="Lunar.Stage.Licenses">licences</sys:String>
+    <sys:String x:Key="Lunar.Stage.Textures">cosmetics</sys:String>
+    <sys:String x:Key="Lunar.Stage.Assets">vanilla assets</sys:String>
+    <sys:String x:Key="Lunar.Stage.Artifacts">client artifacts</sys:String>
+    <sys:String x:Key="Lunar.Stage.Jre">Java runtime</sys:String>
+    <sys:String x:Key="Lunar.Stage.Ui">UI assets</sys:String>
+    <sys:String x:Key="Lunar.Status.Preparing">Preparing {0} {1}/{2}</sys:String>
+    <sys:String x:Key="Lunar.Status.PreparingName">Preparing {0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaDownload">Downloading vanilla {0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaDownloadDesc">Progress is in the download queue.</sys:String>
+    <sys:String x:Key="Lunar.Status.PreparingVersion">Preparing {0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.FetchManifest">Fetching the Lunar manifest…</sys:String>
+    <sys:String x:Key="Lunar.Status.Launching">Launching…</sys:String>
+    <sys:String x:Key="Lunar.Status.Exited">Game exited</sys:String>
+    <sys:String x:Key="Lunar.Status.Crashed">Game crashed (exit code {0})</sys:String>
+    <sys:String x:Key="Lunar.Status.CrashedDesc">Output was written to the PCL log.</sys:String>
+    <sys:String x:Key="Lunar.Status.Running">Game running</sys:String>
+    <sys:String x:Key="Lunar.Status.RunningDesc">Started directly by PCL, not through the Lunar launcher</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaPending">Downloading vanilla {0} dependencies…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaPendingDesc">Downloading into {0} (about 100–200 MB); no window during this is normal</sys:String>
+    <sys:String x:Key="Lunar.Status.Failed">Launch failed</sys:String>
+    <sys:String x:Key="Lunar.Hint.Stalled">No window appeared and the vanilla files stopped growing — it may be stuck downloading dependencies (which ignore the system proxy). Retry after configuring a proxy.</sys:String>
+    <sys:String x:Key="Lunar.Hint.SessionExpired">The session for {0} expired and cannot be renewed — the game will show Invalid session. Sign in with this account on the main page first.</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.Delisted">{0} is no longer in Microsoft's download service (not a network problem). Pick a newer version or a GDK package.</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.Fe3">The FE3 endpoint returned an error ({0}). Retry later; if it persists, use a proxy.</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.NoFe3">Cannot reach the FE3 endpoint: {0}. Check your network or proxy settings.</sys:String>
+    <sys:String x:Key="Lunar.Error.OperationFailed">The Lunar page failed to perform that action. Check the error details.</sys:String>
+    <sys:String x:Key="Tools.Left.Import">Import settings</sys:String>
+    <sys:String x:Key="Tools.Import.Title">Import PCL2 / PCLCE settings</sys:String>
+    <sys:String x:Key="Tools.Import.Desc">Copy settings, accounts and keys over from an old PCL. The source folder is read-only.</sys:String>
+    <sys:String x:Key="Tools.Import.Rescan">Search again</sys:String>
+    <sys:String x:Key="Tools.Import.Pick">Choose folder</sys:String>
+    <sys:String x:Key="Tools.Import.Found">Folders found</sys:String>
+    <sys:String x:Key="Tools.Import.Empty">Nothing found. You can pick one yourself.</sys:String>
+    <sys:String x:Key="Tools.Import.Picked">Import</sys:String>
+    <sys:String x:Key="Tools.Import.None">Not selected</sys:String>
+    <sys:String x:Key="Tools.Import.Action">Start import</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Ce">PCL CE / PCL Lite</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 (original)</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 portable</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Ce">Overwrites the current settings and keys; restart after importing.</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">Writes into the local settings; restart after importing.</sys:String>
+    <sys:String x:Key="Tools.Import.Confirm.Title">Confirm import</sys:String>
+    <sys:String x:Key="Tools.Import.Confirm.Body">From: {0}
+To: {1}
+
+Current files will be overwritten (a .importbak copy is kept). Continue?</sys:String>
+    <sys:String x:Key="Tools.Import.Done">Import complete. Restart PCL to apply.</sys:String>
+    <sys:String x:Key="Tools.Import.Failed">Import failed: {0}</sys:String>
+    <sys:String x:Key="Tools.Import.NotPcl">No PCL config found in this folder: {0}</sys:String>
 </ResourceDictionary>

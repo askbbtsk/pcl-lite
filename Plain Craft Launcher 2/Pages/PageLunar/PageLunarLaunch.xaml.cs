@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using PCL.Core.App;
+using PCL.Core.App.Localization;
 using PCL.Core.App.Lunar;
 
 namespace PCL;
@@ -82,7 +83,9 @@ public partial class PageLunarLaunch
             ? _gameDirPreview
             : ModLunar.GameDirectory;
         LabCacheDir.Text = LunarClientService.MultiverDirectory(ModLunar.LunarRoot);
-        LabJava.Text = string.IsNullOrWhiteSpace(ModLunar.JavaPath) ? "启动后自动定位" : ModLunar.JavaPath;
+        LabJava.Text = string.IsNullOrWhiteSpace(ModLunar.JavaPath)
+            ? Lang.Text("Lunar.Field.JavaAuto")
+            : ModLunar.JavaPath;
 
         RefreshButtons();
     }
@@ -179,7 +182,7 @@ public partial class PageLunarLaunch
     {
         var text = module.DisplayName;
         if (!string.IsNullOrWhiteSpace(module.Description)) text += "\n" + module.Description;
-        if (module.IsDefault) text += "\n（这个版本的官方默认）";
+        if (module.IsDefault) text += "\n" + Lang.Text("Lunar.Module.Default");
         return text + "\nmodule = " + module.Id;
     }
 
@@ -228,7 +231,7 @@ public partial class PageLunarLaunch
 
             if (pclProfiles.Count > 0)
             {
-                ComboAccount.Items.Add(MakeGroupHeader("PCL Lite 登录账号"));
+                ComboAccount.Items.Add(MakeGroupHeader(Lang.Text("Lunar.Account.Group.Pcl")));
                 foreach (var profile in pclProfiles)
                     ComboAccount.Items.Add(new MyComboBoxItem
                     {
@@ -236,19 +239,20 @@ public partial class PageLunarLaunch
                         Content = profile.UserName,
                         Tag = ModLunar.SelectionTag(profile),
                         ToolTip = profile.IsExpired
-                            ? $"PCL Lite 登录　{profile.Uuid}\n令牌已于 {profile.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm} 过期，启动前会尝试刷新"
-                            : $"PCL Lite 登录　{profile.Uuid}",
+                            ? Lang.Text("Lunar.Account.Tip.PclExpired", profile.Uuid,
+                                profile.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "")
+                            : Lang.Text("Lunar.Account.Tip.Pcl", profile.Uuid),
                         IsSelected = selectedTag == ModLunar.SelectionTag(profile)
                     });
             }
 
-            ComboAccount.Items.Add(MakeGroupHeader("Lunar 启动器账号"));
+            ComboAccount.Items.Add(MakeGroupHeader(Lang.Text("Lunar.Account.Group.Lunar")));
 
             if (accounts.Count == 0)
             {
                 ComboAccount.Items.Add(new MyComboBoxItem
                 {
-                    Content = "（Lunar 账户库是空的）",
+                    Content = Lang.Text("Lunar.Account.Empty"),
                     Tag = "",
                     IsEnabled = false,
                     IsSelected = string.IsNullOrEmpty(selectedTag)
@@ -262,8 +266,9 @@ public partial class PageLunarLaunch
                         Content = account.DisplayName,
                         Tag = ModLunar.SelectionTag(account),
                         ToolTip = account.IsExpired && account.ExpiresAt is { } expires
-                            ? $"{account.Type}　{account.MinecraftUuid}\nLunar 会话已于 {expires.ToLocalTime():yyyy-MM-dd HH:mm} 过期，进游戏后会通过 IPC 续期"
-                            : $"{account.Type}　{account.MinecraftUuid}",
+                            ? Lang.Text("Lunar.Account.Tip.LunarExpired", account.Type, account.MinecraftUuid,
+                                expires.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+                            : Lang.Text("Lunar.Account.Tip.Lunar", account.Type, account.MinecraftUuid),
                         IsSelected = selectedTag == ModLunar.SelectionTag(account)
                     });
             }
@@ -305,18 +310,20 @@ public partial class PageLunarLaunch
         if (account is { IsExpired: true } expired)
         {
             var pcl = ModLunar.MatchPclProfile(expired);
-            text = $"Lunar 会话已于 {expired.ExpiresAt!.Value.ToLocalTime():yyyy-MM-dd HH:mm} 过期。" +
-                   (pcl is not null
-                       ? $"启动前会先用 PCL 里的 {pcl.UserName} 刷新一次，不需要打开 Lunar 启动器。"
-                       : "PCL 里没有这个账号的登录，没法自动续期 —— 请先在主页面登录它。");
+            text = Lang.Text("Lunar.Account.Hint.LunarExpired",
+                       expired.ExpiresAt!.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+                   + (pcl is not null
+                       ? Lang.Text("Lunar.Account.Hint.WillRefresh", pcl.UserName)
+                       : Lang.Text("Lunar.Account.Hint.NoPcl"));
         }
         else if (pclProfile is { IsExpired: true } pcl)
         {
-            text = $"PCL 里 {pcl.UserName} 的令牌已于 {pcl.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm} 过期，启动前会先刷新一次。";
+            text = Lang.Text("Lunar.Account.Hint.PclExpired", pcl.UserName,
+                pcl.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "");
         }
         else if (pclProfile is not null)
         {
-            text = $"用 PCL Lite 的登录启动：{pclProfile.UserName}。游戏内身份仍取 Lunar 账户库里同一个 UUID 的账号。";
+            text = Lang.Text("Lunar.Account.Hint.UsingPcl", pclProfile.UserName);
         }
         else
         {
@@ -334,7 +341,11 @@ public partial class PageLunarLaunch
 
         // 运行中这颗按钮直接变「强制停止」，位置不动。
         // 没装过 Lunar 也能点 —— 物料由 PCL 自己从服务端清单补齐
-        BtnLaunch.Text = running ? "强制停止" : busy ? "运行中…" : "启动 Lunar";
+        BtnLaunch.Text = running
+            ? Lang.Text("Lunar.Action.Stop")
+            : busy
+                ? Lang.Text("Lunar.Action.Busy")
+                : Lang.Text("Lunar.Launch");
         BtnLaunch.IsEnabled = running || !busy;
         BtnLaunch.ColorType = running ? MyButton.ColorState.Red : MyButton.ColorState.Highlight;
 
@@ -370,13 +381,13 @@ public partial class PageLunarLaunch
     private async void BtnRefreshVersions_Click(object sender, MouseButtonEventArgs e)
     {
         BtnRefreshVersions.IsEnabled = false;
-        HintService.Hint("正在拉取 Lunar 版本列表…");
+        HintService.Hint(Lang.Text("Lunar.Hint.Fetching"));
         try
         {
             await ModLunar.RefreshVersionsAsync();
             _versionSignature = ""; // 强制重建下拉框
             RefreshPage();
-            HintService.Hint($"已获取 {ModLunar.Versions.Count} 个 Lunar 版本");
+            HintService.Hint(Lang.Text("Lunar.Hint.Fetched", ModLunar.Versions.Count));
         }
         finally
         {
@@ -403,7 +414,7 @@ public partial class PageLunarLaunch
         var directory = LunarClientService.MultiverDirectory(ModLunar.LunarRoot);
         if (!Directory.Exists(directory))
         {
-            ModMain.MyMsgBox("物料目录还不存在，先启动一次游戏，PCL 会把物料下到这里。", "打开物料目录");
+            ModMain.MyMsgBox(Lang.Text("Lunar.Msg.NoAssets"), Lang.Text("Lunar.Msg.NoAssets.Title"));
             return;
         }
 
@@ -414,14 +425,14 @@ public partial class PageLunarLaunch
     {
         if (string.IsNullOrWhiteSpace(ModLunar.LastCommandLine))
         {
-            ModMain.MyMsgBox("还没有启动过，没有命令行可复制。", "复制启动命令");
+            ModMain.MyMsgBox(Lang.Text("Lunar.Msg.NoCommand"), Lang.Text("Lunar.Msg.NoCommand.Title"));
             return;
         }
 
         // 命令行里有 accessToken，复制出去前先抹掉，免得被顺手贴到群里
         var redacted = RedactToken(ModLunar.LastCommandLine);
         Clipboard.SetText(redacted);
-        HintService.Hint("启动命令已复制（accessToken 已打码）");
+        HintService.Hint(Lang.Text("Lunar.Hint.CommandCopied"));
     }
 
     private void BtnClearLog_Click(object sender, MouseButtonEventArgs e)
@@ -433,20 +444,20 @@ public partial class PageLunarLaunch
     {
         if (string.IsNullOrEmpty(TextLog.Text))
         {
-            HintService.Hint("日志是空的，没有可复制的内容");
+            HintService.Hint(Lang.Text("Lunar.Hint.LogEmpty"));
             return;
         }
 
         try
         {
             Clipboard.SetText(TextLog.Text);
-            HintService.Hint("已复制全部日志");
+            HintService.Hint(Lang.Text("Lunar.Hint.LogCopied"));
         }
         catch (Exception ex)
         {
             // 剪贴板偶尔会被别的程序占住，失败要说出来而不是静默
             ModBase.Log(ex, "[Lunar] 复制日志失败", ModBase.LogLevel.Debug);
-            HintService.Hint("复制失败：" + ex.Message);
+            HintService.Hint(Lang.Text("Lunar.Hint.CopyFailed", ex.Message));
         }
     }
 
@@ -454,27 +465,28 @@ public partial class PageLunarLaunch
     {
         if (string.IsNullOrEmpty(TextLog.Text))
         {
-            HintService.Hint("日志是空的，没有可导出的内容");
+            HintService.Hint(Lang.Text("Lunar.Hint.LogEmpty"));
             return;
         }
 
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "导出 Lunar 运行日志",
+            Title = Lang.Text("Lunar.Log.ExportTitle"),
             FileName = $"Lunar-{DateTime.Now:yyyyMMdd-HHmmss}.log",
             DefaultExt = ".log",
-            Filter = "日志文件 (*.log)|*.log|文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*"
+            Filter = Lang.Text("Lunar.Log.Filter")
         };
         if (dialog.ShowDialog() != true) return;
 
         try
         {
             File.WriteAllText(dialog.FileName, TextLog.Text);
-            HintService.Hint("日志已导出到 " + dialog.FileName);
+            HintService.Hint(Lang.Text("Lunar.Hint.LogSaved", dialog.FileName));
         }
         catch (Exception ex)
         {
-            ModMain.MyMsgBox("写文件失败：" + ex.Message, "导出日志");
+            ModMain.MyMsgBox(Lang.Text("Lunar.Msg.WriteFailed", ex.Message),
+                Lang.Text("Lunar.Msg.ExportTitle"));
         }
     }
 
@@ -490,22 +502,11 @@ public partial class PageLunarLaunch
     }
 
     /// <summary>
-    ///     预览这次启动会写进哪个目录：和 <see cref="ModLunar" /> 的取值规则保持一致。
-    ///     只在进入页面时算一次，避免每次状态刷新都碰实例加载。
+    ///     预览这次启动会写进哪个目录：和 <see cref="ModLunar" /> 的取值规则保持一致，
+    ///     都是 MC 根目录 —— Lunar 不跟实例隔离走。
     /// </summary>
     private static string PreviewGameDirectory()
     {
-        try
-        {
-            var instance = ModInstanceList.McMcInstanceSelected;
-            if (instance is not null && Directory.Exists(instance.PathIndie))
-                return instance.PathIndie;
-        }
-        catch (Exception)
-        {
-            // 实例还没加载完，退回根目录
-        }
-
         return ModFolder.mcFolderSelected;
     }
 

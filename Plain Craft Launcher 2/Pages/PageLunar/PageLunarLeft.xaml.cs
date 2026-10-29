@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using PCL.Core.App.Localization;
 
 namespace PCL;
 
@@ -69,16 +70,16 @@ public partial class PageLunarLeft
         if (account is not null)
         {
             LabAccountName.Text = account.IsExpired
-                ? account.DisplayName + "（会话已过期）"
+                ? Lang.Text("Lunar.Account.NameExpired", account.DisplayName)
                 : account.DisplayName;
             LabAccountHint.Text = account.IsExpired
-                ? "Lunar 会话过期后游戏内会显示 Invalid session，打开一次 Lunar 启动器即可刷新。"
-                : $"Lunar 账户库里的账号（{account.Type}），进游戏用的就是它。";
+                ? Lang.Text("Lunar.Left.AccountExpiredHint")
+                : Lang.Text("Lunar.Left.AccountHint", account.Type);
         }
         else
         {
-            LabAccountName.Text = "未找到 Lunar 账号";
-            LabAccountHint.Text = "先在 Lunar 启动器里登录一次；也可以用 PCL 主页面的登录凭据兜底。";
+            LabAccountName.Text = Lang.Text("Lunar.Left.NoAccount");
+            LabAccountHint.Text = Lang.Text("Lunar.Left.NoAccountHint");
         }
 
         RefreshButton(running);
@@ -86,7 +87,7 @@ public partial class PageLunarLeft
 
     private void RefreshButton(bool running)
     {
-        BtnLaunch.Text = running ? "强制停止" : "启动 Lunar";
+        BtnLaunch.Text = running ? Lang.Text("Lunar.Action.Stop") : Lang.Text("Lunar.Launch");
         BtnLaunch.IsEnabled = running || !ModLunar.IsBusy;
         BtnLaunch.ColorType = running ? MyButton.ColorState.Red : MyButton.ColorState.Highlight;
     }
@@ -106,12 +107,12 @@ public partial class PageLunarLeft
         if (!ModLunar.IsInstalled)
         {
             ModMain.MyMsgBox(
-                $"没有找到 {ModLunar.LunarRoot}。\n请先安装 Lunar Client 并至少启动一次，让它把物料下载下来。",
-                "未检测到 Lunar Client");
+                Lang.Text("Lunar.Msg.NotInstalled", ModLunar.LunarRoot),
+                Lang.Text("Lunar.Msg.NotInstalled.Title"));
             return;
         }
 
-        // 游戏目录由 ModLunar 自己决定（跟随主页面选中实例的隔离目录），这里不再传
+        // 游戏目录由 ModLunar 自己决定（MC 根目录，不跟实例隔离走），这里不再传
         ModLunar.Launch();
     }
 
@@ -144,7 +145,7 @@ public partial class PageLunarLeft
         catch (Exception ex)
         {
             ModBase.Log(ex, $"切换 Lunar 分页面失败（ID {(int)id}）", ModBase.LogLevel.Feedback,
-                userSummary: "切换页面失败");
+                userSummary: Lang.Text("Lunar.Error.OperationFailed"));
         }
         finally
         {

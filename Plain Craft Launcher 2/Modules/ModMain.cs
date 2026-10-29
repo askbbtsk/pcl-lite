@@ -36,6 +36,7 @@ public static class ModMain
     public static PageSpeedRight? frmSpeedRight;
     public static PageToolsLeft? frmToolsLeft;
     public static PageToolsTest? frmToolsTest;
+    public static PageToolsImport? frmToolsImport;
     public static PageBedrockLeft? frmBedrockLeft;
     public static PageBedrockDownload? frmBedrockDownload;
     public static PageBedrockLaunch? frmBedrockLaunch;

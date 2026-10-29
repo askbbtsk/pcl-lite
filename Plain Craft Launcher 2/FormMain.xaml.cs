@@ -1456,6 +1456,11 @@ public partial class FormMain
 
         ToolsTest = 3,
 
+        /// <summary>
+        ///     百宝箱：导入 PCL2 / PCLCE 的设置。
+        /// </summary>
+        ToolsImport = 4,
+
         BedrockDownload = 0,
         BedrockLaunch = 1,
 

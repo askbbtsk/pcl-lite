@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.App;
+using PCL.Core.App.Localization;
 using PCL.Core.Link.Bedrock;
 
 namespace PCL;
@@ -101,11 +102,10 @@ public static class ModBedrockDownload
         throw new InvalidOperationException(result.Failure switch
         {
             ModBedrockUwp.Fe3ResolveFailure.Delisted =>
-                $"{entry.Key} 已经不在微软的下载服务里了（FE3 返回空结果，不是网络问题）。" +
-                "换一个更新的版本，或者选 GDK 形态的包。",
+                Lang.Text("Bedrock.Download.Err.Delisted", entry.Key),
             ModBedrockUwp.Fe3ResolveFailure.HttpError =>
-                $"FE3 接口返回错误（{result.Detail}）。稍后重试；如果一直这样，挂上代理再试。",
-            _ => $"连不上 FE3 接口：{result.Detail}。检查网络或代理设置。"
+                Lang.Text("Bedrock.Download.Err.Fe3", result.Detail),
+            _ => Lang.Text("Bedrock.Download.Err.NoFe3", result.Detail)
         });
     }
 

@@ -3,16 +3,12 @@
                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                    xmlns:local="clr-namespace:PCL"
                    PanScroll="{Binding ElementName=PanBack}">
-    <!--
-        文案暂时直接写中文：这是 nightly 里的实验特性，等协议稳定后再补四语言键，
-        免得先加一堆键、后面改协议又要全删一遍。
-    -->
     <local:MyScrollViewer x:Name="PanBack" HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">
         <StackPanel x:Name="PanMain" Margin="25,10">
 
             <!--  启动  -->
-            <local:MyCard Margin="0,15" Title="启动">
+            <local:MyCard Margin="0,15" Title="{DynamicResource Lunar.Card.Launch}">
                 <StackPanel Margin="20,40,20,18">
 
                     <!--  状态行：圆点 + 主状态 + 补充说明  -->
@@ -27,7 +23,7 @@
                                  Fill="{DynamicResource ColorBrushGray4}" />
                         <StackPanel Grid.Column="1">
                             <TextBlock x:Name="LabStatusLine" FontSize="13.5" FontWeight="Bold"
-                                       TextWrapping="Wrap" Text="正在检测 Lunar Client…" />
+                                       TextWrapping="Wrap" Text="{DynamicResource Lunar.Left.Detecting}" />
                             <TextBlock x:Name="LabStatusDetail" FontSize="11" Opacity="0.62"
                                        Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="15" Text="" />
                         </StackPanel>
@@ -52,16 +48,16 @@
                             </Grid.RowDefinitions>
 
                             <!--  版本  -->
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="游戏版本"
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Lunar.Field.Version}"
                                        VerticalAlignment="Center"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,9" />
                             <local:MyComboBox Grid.Row="0" Grid.Column="1" x:Name="ComboVersion"
                                               Height="28" Margin="0,0,10,9"
                                               SelectionChanged="ComboVersion_SelectionChanged"
-                                              ToolTip="Lunar 服务端当前提供的全部子版本，选完立即生效。" />
+                                              ToolTip="{DynamicResource Lunar.Tip.Version}" />
                             <local:MyButton Grid.Row="0" Grid.Column="2" x:Name="BtnRefreshVersions"
                                             Height="28" MinWidth="72" Margin="0,0,0,9"
-                                            Text="刷新列表" Click="BtnRefreshVersions_Click" />
+                                            Text="{DynamicResource Lunar.Action.Refresh}" Click="BtnRefreshVersions_Click" />
 
                             <!--
                                 Loader：每个版本能选的注入方案不一样（OptiFine / 原版 / Fabric / Forge），
@@ -75,16 +71,16 @@
                                        x:Name="PanLoaders" Margin="0,0,0,9" />
 
                             <!--  账号  -->
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="账号"
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{DynamicResource Lunar.Left.Account}"
                                        VerticalAlignment="Center"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,9" />
                             <local:MyComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                                               x:Name="ComboAccount" Height="28" Margin="0,0,0,9"
                                               SelectionChanged="ComboAccount_SelectionChanged"
-                                              ToolTip="来自 PCL Lite 已登录的账号和 Lunar 的账户库。进游戏用的是 Lunar 的激活账号，选完会同步过去。" />
+                                              ToolTip="{DynamicResource Lunar.Tip.Account}" />
 
                             <!--  启动目录  -->
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="启动目录"
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="{DynamicResource Lunar.Field.GameDir}"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
                             <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabGameDir"
                                        FontSize="11.5" Margin="0,0,0,7"
@@ -92,7 +88,7 @@
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
 
                             <!--  物料目录  -->
-                            <TextBlock Grid.Row="4" Grid.Column="0" Text="物料目录"
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="{DynamicResource Lunar.Field.CacheDir}"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,7" />
                             <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabCacheDir"
                                        FontSize="11.5" Margin="0,0,0,7"
@@ -103,7 +99,7 @@
                             <TextBlock Grid.Row="5" Grid.Column="0" Text="Java"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,0" />
                             <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" x:Name="LabJava"
-                                       FontSize="11.5" TextTrimming="CharacterEllipsis" Text="启动后自动定位"
+                                       FontSize="11.5" TextTrimming="CharacterEllipsis" Text="{DynamicResource Lunar.Field.JavaAuto}"
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                         </Grid>
                     </Border>
@@ -119,46 +115,46 @@
 
                     <WrapPanel Margin="0,14,0,0">
                         <local:MyButton x:Name="BtnLaunch" Height="35" MinWidth="130" Margin="0,0,12,0"
-                                        ColorType="Highlight" Text="启动 Lunar" Click="BtnLaunch_Click" />
+                                        ColorType="Highlight" Text="{DynamicResource Lunar.Launch}" Click="BtnLaunch_Click" />
                         <local:MyButton x:Name="BtnOpenRoot" Height="35" MinWidth="130" Margin="0,0,12,0"
-                                        Text="打开物料目录" Click="BtnOpenRoot_Click" />
+                                        Text="{DynamicResource Lunar.Action.OpenDir}" Click="BtnOpenRoot_Click" />
                         <local:MyButton x:Name="BtnCopyCommand" Height="35" MinWidth="130"
-                                        Text="复制启动命令" Click="BtnCopyCommand_Click" />
+                                        Text="{DynamicResource Lunar.Action.CopyCommand}" Click="BtnCopyCommand_Click" />
                     </WrapPanel>
                 </StackPanel>
             </local:MyCard>
 
             <!--  说明  -->
-            <local:MyCard Margin="0,15" Title="说明">
+            <local:MyCard Margin="0,15" Title="{DynamicResource Lunar.Card.Notes}">
                 <StackPanel Margin="20,40,20,18">
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="不经过 Lunar 启动器，由 PCL 直接拉起游戏进程。物料清单向 Lunar 服务端实时获取，1.7.10 到 26.x 的版本列表以服务端返回为准，启动方式完全一致。" />
+                               Text="{DynamicResource Lunar.Note.1}" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="Loader 那一行由服务端下发，同一个版本可能提供 Lunar + OptiFine、Lunar（原版）、Lunar + Fabric、Lunar + Forge 几种，点一下就换。默认值跟官方启动器一致（例如 1.17.1 官方默认是 Fabric，不是 OptiFine）。换 loader 会重新取一份附件清单，只补差异的部分。" />
+                               Text="{DynamicResource Lunar.Note.2}" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="账号优先用 PCL Lite 里已经登录的账号，不需要先在 Lunar 启动器里登录过。选了 Lunar 账户库里的账号时，会把 Lunar 的激活账号一并改掉，效果等同于在 Lunar 启动器里换号。" />
+                               Text="{DynamicResource Lunar.Note.3}" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="游戏目录跟随主页面当前选中的实例（版本隔离目录），与正常启动完全一致，不会把存档写进 .minecraft 根目录。" />
+                               Text="{DynamicResource Lunar.Note.4}" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="物料由 PCL 自己下载并校验，不需要先装 Lunar 启动器：首次约 300 MB，之后换版本只补差异。缺对应版本的 Java 时会自动下载（1.8.9～1.20.1 用 Java 17，1.20.6～1.21.11 用 Java 21，26.x 用 Java 25）。" />
+                               Text="{DynamicResource Lunar.Note.5}" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="账号下拉框分两组：PCL Lite 登录账号来自启动器自己的档案，Lunar 启动器账号来自 Lunar 的账户库。选 PCL 账号时会把 Lunar 的激活账号一并切到同一个 UUID（找不到同名账号就只换命令行令牌）。列出来只是读本地文件，不会触发重新登录。" />
+                               Text="{DynamicResource Lunar.Note.6}" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="内存、JVM 参数和 Java 路径在「设置 → Lunar Client」里改，可以设全局，也可以只给某一个版本单独设。改完启动时日志里会写明这次实际用了多少内存、哪些参数、以及它们来自哪一层。" />
+                               Text="{DynamicResource Lunar.Note.7}" />
 
                     <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.6" FontSize="11.5"
-                               Text="会话过期不用管：游戏会通过本地 IPC 的 AuthService/RefreshAccount 找启动器续期，PCL 启动前会抢占 127.0.0.1:28190 自己应答（Lunar 启动器开着时让位给它）。好友与社交面板仍未实现。" />
+                               Text="{DynamicResource Lunar.Note.8}" />
                 </StackPanel>
             </local:MyCard>
 
             <!--  运行日志  -->
-            <local:MyCard Margin="0,15" Title="运行日志">
+            <local:MyCard Margin="0,15" Title="{DynamicResource Lunar.Card.Log}">
                 <StackPanel Margin="20,40,20,18">
                     <Grid Margin="6,0,6,8">
                         <Grid.ColumnDefinitions>
@@ -166,14 +162,14 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="11" Opacity="0.55"
-                                   Text="启动阶段与游戏输出（可直接选中复制）" />
+                                   Text="{DynamicResource Lunar.Log.Desc}" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
                             <local:MyButton x:Name="BtnCopyLog" Height="24" MinWidth="60" Margin="0,0,8,0"
-                                            Text="复制" Click="BtnCopyLog_Click" />
+                                            Text="{DynamicResource Lunar.Action.Copy}" Click="BtnCopyLog_Click" />
                             <local:MyButton x:Name="BtnExportLog" Height="24" MinWidth="60" Margin="0,0,8,0"
-                                            Text="导出" Click="BtnExportLog_Click" />
+                                            Text="{DynamicResource Lunar.Action.Export}" Click="BtnExportLog_Click" />
                             <local:MyButton x:Name="BtnClearLog" Height="24" MinWidth="60"
-                                            Text="清空" Click="BtnClearLog_Click" />
+                                            Text="{DynamicResource Lunar.Action.Clear}" Click="BtnClearLog_Click" />
                         </StackPanel>
                     </Grid>
 

@@ -1,0 +1,47 @@
+<local:MyPageRight x:Class="PCL.PageToolsImport"
+                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:local="clr-namespace:PCL"
+                   PanScroll="{Binding ElementName=PanBack}">
+    <local:MyScrollViewer x:Name="PanBack" HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+        <StackPanel x:Name="PanMain" Margin="25,10">
+
+            <local:MyCard Margin="0,15,0,15" Title="{DynamicResource Tools.Import.Title}">
+                <StackPanel Margin="25,40,25,20">
+                    <TextBlock Text="{DynamicResource Tools.Import.Desc}" TextWrapping="Wrap" LineHeight="19" />
+                    <WrapPanel Margin="0,14,0,0">
+                        <local:MyButton x:Name="BtnRescan" MinWidth="100" Margin="0,0,10,0"
+                                        Text="{DynamicResource Tools.Import.Rescan}"
+                                        Click="BtnRescan_Click" />
+                        <local:MyButton x:Name="BtnPick" MinWidth="100"
+                                        Text="{DynamicResource Tools.Import.Pick}"
+                                        Click="BtnPick_Click" />
+                    </WrapPanel>
+                </StackPanel>
+            </local:MyCard>
+
+            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Tools.Import.Found}">
+                <StackPanel Margin="20,40,20,16">
+                    <StackPanel x:Name="PanResults" />
+                    <TextBlock x:Name="LabEmpty" Margin="8,0,8,4" TextWrapping="Wrap" Opacity="0.7"
+                               Text="{DynamicResource Tools.Import.Empty}" />
+                </StackPanel>
+            </local:MyCard>
+
+            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Tools.Import.Picked}">
+                <StackPanel Margin="25,40,25,20">
+                    <TextBlock x:Name="LabSelected" TextWrapping="Wrap" FontSize="12.5"
+                               Text="{DynamicResource Tools.Import.None}" />
+                    <TextBlock x:Name="LabPlan" TextWrapping="Wrap" FontSize="11.5" Opacity="0.65"
+                               Margin="0,6,0,0" Text="" />
+                    <local:MyButton x:Name="BtnImport" MinWidth="120" Margin="0,14,0,0"
+                                    HorizontalAlignment="Left" IsEnabled="False"
+                                    Text="{DynamicResource Tools.Import.Action}"
+                                    Click="BtnImport_Click" />
+                </StackPanel>
+            </local:MyCard>
+
+        </StackPanel>
+    </local:MyScrollViewer>
+</local:MyPageRight>

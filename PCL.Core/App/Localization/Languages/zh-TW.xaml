@@ -3521,4 +3521,146 @@
     <sys:String x:Key="Watcher.WindowLoaded">Minecraft 視窗已載入：{0}（{1}）</sys:String>
     <sys:String x:Key="Watcher.WindowMaximized">已最大化 Minecraft 視窗：{0}</sys:String>
 
+
+    <!-- Lunar -->
+
+    <sys:String x:Key="Lunar.Left.Launch">啟動</sys:String>
+    <sys:String x:Key="Lunar.Left.Status">狀態</sys:String>
+    <sys:String x:Key="Lunar.Left.Account">帳號</sys:String>
+    <sys:String x:Key="Lunar.Left.Detecting">正在偵測 Lunar Client…</sys:String>
+    <sys:String x:Key="Lunar.Launch">啟動 Lunar</sys:String>
+    <sys:String x:Key="Lunar.Card.Launch">啟動</sys:String>
+    <sys:String x:Key="Lunar.Field.Version">遊戲版本</sys:String>
+    <sys:String x:Key="Lunar.Tip.Version">伺服器給的全部版本，選完生效。</sys:String>
+    <sys:String x:Key="Lunar.Action.Refresh">重新整理</sys:String>
+    <sys:String x:Key="Lunar.Tip.Account">可用 PCL 帳號或 Lunar 帳戶，進遊戲用 Lunar 的啟用帳號。</sys:String>
+    <sys:String x:Key="Lunar.Field.GameDir">啟動目錄</sys:String>
+    <sys:String x:Key="Lunar.Field.CacheDir">檔案目錄</sys:String>
+    <sys:String x:Key="Lunar.Field.JavaAuto">啟動後自動定位</sys:String>
+    <sys:String x:Key="Lunar.Action.OpenDir">開啟檔案目錄</sys:String>
+    <sys:String x:Key="Lunar.Action.CopyCommand">複製啟動指令</sys:String>
+    <sys:String x:Key="Lunar.Card.Notes">說明</sys:String>
+    <sys:String x:Key="Lunar.Note.1">不經過 Lunar 啟動器，由 PCL 直接拉起遊戲。</sys:String>
+    <sys:String x:Key="Lunar.Note.2">Loader 由伺服器下發，點一下就能換。</sys:String>
+    <sys:String x:Key="Lunar.Note.3">帳號優先使用 PCL 裡已登入的，不需要先在 Lunar 登入。</sys:String>
+    <sys:String x:Key="Lunar.Note.4">遊戲目錄用 .minecraft 根目錄，不跟實例隔離走。</sys:String>
+    <sys:String x:Key="Lunar.Note.5">檔案由 PCL 自己下載校驗，首次約 300 MB。</sys:String>
+    <sys:String x:Key="Lunar.Note.6">記憶體、JVM 參數和 Java 路徑在「設定 → Lunar Client」裡改。</sys:String>
+    <sys:String x:Key="Lunar.Note.7">工作階段過期由本機 IPC 自動續期。</sys:String>
+    <sys:String x:Key="Lunar.Note.8">好友與社交面板還沒做，其他功能正常。</sys:String>
+    <sys:String x:Key="Lunar.Card.Log">執行日誌</sys:String>
+    <sys:String x:Key="Lunar.Log.Desc">啟動過程與遊戲輸出</sys:String>
+    <sys:String x:Key="Lunar.Action.Copy">複製</sys:String>
+    <sys:String x:Key="Lunar.Action.Export">匯出</sys:String>
+    <sys:String x:Key="Lunar.Action.Clear">清空</sys:String>
+    <sys:String x:Key="Lunar.Action.Browse">選擇</sys:String>
+    <sys:String x:Key="Lunar.Setup.Java">Java 執行環境</sys:String>
+    <sys:String x:Key="Lunar.Setup.JavaHint">留空 = 用 Lunar 自帶的 JRE</sys:String>
+    <sys:String x:Key="Lunar.Setup.JavaDesc">Lunar 會按版本自己下 JRE。</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryTitle">記憶體與 JVM 參數（全域）</sys:String>
+    <sys:String x:Key="Lunar.Setup.FollowGlobal">跟隨 PCL 的全域記憶體設定</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemory">最大記憶體（MB）</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemoryHint">例如 4096</sys:String>
+    <sys:String x:Key="Lunar.Setup.MaxMemoryDesc">低於 512 會被抬到 512，上限 131072。</sys:String>
+    <sys:String x:Key="Lunar.Setup.Jvm">附加 JVM 參數</sys:String>
+    <sys:String x:Key="Lunar.Setup.JvmHint">例如 -XX:+UseG1GC</sys:String>
+    <sys:String x:Key="Lunar.Setup.JvmDesc">拼在官方參數之後，重複的以這裡為準。</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideTitle">按版本覆寫</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideVersion">版本</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideCheck">為這個版本單獨設定</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideHint">留空 = 沿用全域</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideDesc">只影響選中的這個版本。</sys:String>
+    <sys:String x:Key="Lunar.Account.Group.Pcl">PCL 帳號</sys:String>
+    <sys:String x:Key="Lunar.Account.Group.Lunar">Lunar 帳號</sys:String>
+    <sys:String x:Key="Lunar.Account.Empty">（帳戶庫是空的）</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.Pcl">PCL 登入：{0}</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.PclExpired">PCL 登入：{0}
+權杖已於 {1} 過期，啟動前會重新整理</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.Lunar">{0}　{1}</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.LunarExpired">{0}　{1}
+Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
+    <sys:String x:Key="Lunar.Account.NameExpired">{0}（工作階段已過期）</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.LunarExpired">Lunar 工作階段已於 {0} 過期。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.WillRefresh">啟動前會先用 PCL 裡的 {0} 重新整理一次。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.NoPcl">PCL 裡沒有這個帳號的登入，無法自動續期 —— 請先在主頁面登入它。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.PclExpired">PCL 裡 {0} 的權杖已於 {1} 過期，啟動前會先重新整理一次。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.UsingPcl">用 PCL Lite 的登入啟動：{0}。遊戲內身分取 Lunar 帳戶庫裡同一個 UUID 的帳號。</sys:String>
+    <sys:String x:Key="Lunar.Action.Stop">強制停止</sys:String>
+    <sys:String x:Key="Lunar.Action.Busy">執行中…</sys:String>
+    <sys:String x:Key="Lunar.Hint.Fetching">正在取得 Lunar 版本清單…</sys:String>
+    <sys:String x:Key="Lunar.Hint.Fetched">已取得 {0} 個 Lunar 版本</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoAssets">物料目錄還不存在，先啟動一次遊戲。</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoAssets.Title">開啟物料目錄</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoCommand">還沒有啟動過，沒有命令列可複製。</sys:String>
+    <sys:String x:Key="Lunar.Msg.NoCommand.Title">複製啟動命令</sys:String>
+    <sys:String x:Key="Lunar.Hint.CommandCopied">啟動命令已複製（accessToken 已遮蔽）</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogEmpty">日誌是空的</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogCopied">已複製全部日誌</sys:String>
+    <sys:String x:Key="Lunar.Hint.CopyFailed">複製失敗：{0}</sys:String>
+    <sys:String x:Key="Lunar.Log.ExportTitle">匯出 Lunar 執行日誌</sys:String>
+    <sys:String x:Key="Lunar.Log.Filter">日誌檔案 (*.log)|*.log|文字檔案 (*.txt)|*.txt|所有檔案 (*.*)|*.*</sys:String>
+    <sys:String x:Key="Lunar.Hint.LogSaved">日誌已匯出到 {0}</sys:String>
+    <sys:String x:Key="Lunar.Msg.WriteFailed">寫入檔案失敗：{0}</sys:String>
+    <sys:String x:Key="Lunar.Msg.ExportTitle">匯出日誌</sys:String>
+    <sys:String x:Key="Lunar.Module.Default">（官方預設）</sys:String>
+    <sys:String x:Key="Lunar.Left.AccountExpiredHint">工作階段已過期，遊戲內會顯示 Invalid session。</sys:String>
+    <sys:String x:Key="Lunar.Left.AccountHint">Lunar 帳戶庫裡的帳號（{0}），進遊戲用的就是它。</sys:String>
+    <sys:String x:Key="Lunar.Left.NoAccount">未找到 Lunar 帳號</sys:String>
+    <sys:String x:Key="Lunar.Left.NoAccountHint">先在 Lunar 啟動器裡登入一次，或用 PCL 主頁面登入的帳號。</sys:String>
+    <sys:String x:Key="Lunar.Msg.NotInstalled">沒有找到 {0}。
+請先安裝 Lunar Client 並至少啟動一次。</sys:String>
+    <sys:String x:Key="Lunar.Msg.NotInstalled.Title">未偵測到 Lunar Client</sys:String>
+    <sys:String x:Key="Lunar.Status.NoAssets">還沒有下載 Lunar 物料</sys:String>
+    <sys:String x:Key="Lunar.Status.NoAssetsDesc">不用裝 Lunar 啟動器，點啟動會自己下載（首次約 300 MB）。</sys:String>
+    <sys:String x:Key="Lunar.Status.MaterialDir">物料目錄：{0}</sys:String>
+    <sys:String x:Key="Lunar.Stage.Licenses">授權檔案</sys:String>
+    <sys:String x:Key="Lunar.Stage.Textures">外觀資源</sys:String>
+    <sys:String x:Key="Lunar.Stage.Assets">原版資源</sys:String>
+    <sys:String x:Key="Lunar.Stage.Artifacts">用戶端物料</sys:String>
+    <sys:String x:Key="Lunar.Stage.Jre">Java 執行環境</sys:String>
+    <sys:String x:Key="Lunar.Stage.Ui">介面資源</sys:String>
+    <sys:String x:Key="Lunar.Status.Preparing">正在準備{0} {1}/{2}</sys:String>
+    <sys:String x:Key="Lunar.Status.PreparingName">正在準備{0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaDownload">正在下載原版 {0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaDownloadDesc">進度在下載工作列裡。</sys:String>
+    <sys:String x:Key="Lunar.Status.PreparingVersion">正在準備 {0}…</sys:String>
+    <sys:String x:Key="Lunar.Status.FetchManifest">正在取得 Lunar 物料清單…</sys:String>
+    <sys:String x:Key="Lunar.Status.Launching">正在啟動…</sys:String>
+    <sys:String x:Key="Lunar.Status.Exited">遊戲已結束</sys:String>
+    <sys:String x:Key="Lunar.Status.Crashed">遊戲異常結束（退出碼 {0}）</sys:String>
+    <sys:String x:Key="Lunar.Status.CrashedDesc">輸出已寫入 PCL 日誌。</sys:String>
+    <sys:String x:Key="Lunar.Status.Running">遊戲執行中</sys:String>
+    <sys:String x:Key="Lunar.Status.RunningDesc">由 PCL 直接拉起，未經過 Lunar 啟動器</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaPending">正在下載原版 {0} 的依賴…</sys:String>
+    <sys:String x:Key="Lunar.Status.VanillaPendingDesc">下載到 {0}（約 100–200 MB），期間沒有視窗是正常的</sys:String>
+    <sys:String x:Key="Lunar.Status.Failed">啟動失敗</sys:String>
+    <sys:String x:Key="Lunar.Hint.Stalled">一直沒有視窗，原版依賴也不再變大，可能卡在下載依賴（它不走系統代理）。設定好代理後重試。</sys:String>
+    <sys:String x:Key="Lunar.Hint.SessionExpired">{0} 的工作階段已過期，無法自動續期 —— 遊戲內會顯示 Invalid session。請先在主頁面登入這個帳號。</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.Delisted">{0} 已經不在微軟的下載服務裡了（不是網路問題）。換更新的版本，或選 GDK 包。</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.Fe3">FE3 介面回傳錯誤（{0}）。稍後重試；一直這樣就掛代理。</sys:String>
+    <sys:String x:Key="Bedrock.Download.Err.NoFe3">連不上 FE3 介面：{0}。檢查網路或代理。</sys:String>
+    <sys:String x:Key="Lunar.Error.OperationFailed">Lunar 頁面操作失敗。請查看錯誤詳細資料。</sys:String>
+    <sys:String x:Key="Tools.Left.Import">匯入設定</sys:String>
+    <sys:String x:Key="Tools.Import.Title">匯入 PCL2 / PCLCE 的設定</sys:String>
+    <sys:String x:Key="Tools.Import.Desc">把舊 PCL 的設定、帳號和金鑰複製過來。來源資料夾唯讀，不會動它。</sys:String>
+    <sys:String x:Key="Tools.Import.Rescan">重新搜尋</sys:String>
+    <sys:String x:Key="Tools.Import.Pick">選擇資料夾</sys:String>
+    <sys:String x:Key="Tools.Import.Found">找到的資料夾</sys:String>
+    <sys:String x:Key="Tools.Import.Empty">沒找到。可以自己選一個。</sys:String>
+    <sys:String x:Key="Tools.Import.Picked">匯入</sys:String>
+    <sys:String x:Key="Tools.Import.None">還沒選</sys:String>
+    <sys:String x:Key="Tools.Import.Action">開始匯入</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Ce">PCL CE / PCL Lite</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 原版</sys:String>
+    <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 可攜版</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Ce">會覆蓋目前的設定和金鑰，匯入後需要重新啟動。</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">會寫進本機設定，匯入後需要重新啟動。</sys:String>
+    <sys:String x:Key="Tools.Import.Confirm.Title">確認匯入</sys:String>
+    <sys:String x:Key="Tools.Import.Confirm.Body">從：{0}
+到：{1}
+
+目前的會被覆蓋（原檔案留一份 .importbak）。確定匯入嗎？</sys:String>
+    <sys:String x:Key="Tools.Import.Done">匯入完成。重新啟動 PCL 後生效。</sys:String>
+    <sys:String x:Key="Tools.Import.Failed">匯入失敗：{0}</sys:String>
+    <sys:String x:Key="Tools.Import.NotPcl">這個資料夾裡沒有找到 PCL 的設定檔：{0}</sys:String>
 </ResourceDictionary>

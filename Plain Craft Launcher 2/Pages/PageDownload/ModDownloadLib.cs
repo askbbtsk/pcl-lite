@@ -65,13 +65,18 @@ public static class ModDownloadLib
     /// </summary>
     /// <param name="Id">所下载的 Minecraft 的版本名。</param>
     /// <param name="JsonUrl">Json 文件的 Mojang 官方地址。</param>
+    /// <param name="targetMcFolder">
+    ///     装到哪个 MC 目录，默认是当前选中的那个。Lunar 要指定：
+    ///     它的 Genesis 固定往 <c>%APPDATA%\.minecraft</c> 里补原版客户端，
+    ///     不能装进玩家自己的 MC 目录。
+    /// </param>
     public static ModLoader.LoaderCombo<string> McDownloadClient(NetPreDownloadBehaviour behaviour, string id,
-        string jsonUrl = null)
+        string jsonUrl = null, string targetMcFolder = null)
     {
         if (!RestrictedFeaturePolicy.Check("minecraft-client-download")) return null;
         try
         {
-            var versionFolder = Path.Combine(ModFolder.mcFolderSelected, "versions", id);
+            var versionFolder = Path.Combine(targetMcFolder ?? ModFolder.mcFolderSelected, "versions", id);
 
             // 重复任务检查
             foreach (var ongoingLoader in ModLoader.loaderTaskbar.ToList())
@@ -108,7 +113,7 @@ public static class ModDownloadLib
             // 启动
             var loader =
                 new ModLoader.LoaderCombo<string>(Lang.Text("Minecraft.Download.Stage.MinecraftDownload", id),
-                        McDownloadClientLoader(id, jsonUrl))
+                        McDownloadClientLoader(id, jsonUrl, targetMcFolder: targetMcFolder))
                     { OnStateChanged = McInstallState };
             loader.Start(versionFolder);
             ModLoader.LoaderTaskbarAdd(loader);
@@ -198,10 +203,10 @@ public static class ModDownloadLib
     ///     它必须安装到 McFolderSelected，但是可以自定义版本名（不过自定义的实例名不会修改 Json 中的 id 项）。
     /// </summary>
     private static List<ModLoader.LoaderBase> McDownloadClientLoader(string id, string jsonUrl = null,
-        string instanceName = null)
+        string instanceName = null, string targetMcFolder = null)
     {
         instanceName = instanceName ?? id;
-        var instanceFolder = Path.Combine(ModFolder.mcFolderSelected, "versions", instanceName);
+        var instanceFolder = Path.Combine(targetMcFolder ?? ModFolder.mcFolderSelected, "versions", instanceName);
 
         var loaders = new List<ModLoader.LoaderBase>();
 

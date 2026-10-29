@@ -11,7 +11,7 @@
         <StackPanel x:Name="PanMain" Margin="25,10">
 
             <!-- ① Java 运行环境 -->
-            <local:MyCard Margin="0,15" Title="Java 运行环境">
+            <local:MyCard Margin="0,15" Title="{DynamicResource Lunar.Setup.Java}">
                 <Grid Margin="25,40,25,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />
@@ -26,12 +26,12 @@
                     <TextBlock Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Left"
                                Text="java.exe" Margin="0,0,25,0" />
                     <local:MyTextBox x:Name="TextJavaPath" Grid.Row="0" Grid.Column="1"
-                                     HintText="留空 = 使用 Lunar 自带的 JRE"
+                                     HintText="{DynamicResource Lunar.Setup.JavaHint}"
                                      ValidatedTextChanged="TextJavaPath_OnChanged"
-                                     ToolTip="Lunar 会按版本自己下 JRE（1.8.9 要 17、1.21 要 21、26.x 要 25）。只有想换成本机已装的其他 JRE 时才需要填这里。"
+                                     ToolTip="{DynamicResource Lunar.Setup.JavaDesc}"
                                      Margin="0,0,10,0" />
                     <local:MyIconTextButton x:Name="BtnBrowseJava" Grid.Row="0" Grid.Column="2"
-                                            Text="选择" LogoScale="0.9" SvgIcon="lucide/folder-open"
+                                            Text="{DynamicResource Lunar.Action.Browse}" LogoScale="0.9" SvgIcon="lucide/folder-open"
                                             Click="BtnBrowseJava_Click" />
 
                     <local:MyHint x:Name="HintJava" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,9,0,0"
@@ -40,7 +40,7 @@
             </local:MyCard>
 
             <!-- ② 全局内存与 JVM 参数 -->
-            <local:MyCard Margin="0,15" Title="内存与 JVM 参数（全局）">
+            <local:MyCard Margin="0,15" Title="{DynamicResource Lunar.Setup.MemoryTitle}">
                 <Grid Margin="25,40,25,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />
@@ -56,15 +56,15 @@
                     </Grid.RowDefinitions>
 
                     <local:MyCheckBox x:Name="CheckFollowGlobal" Grid.Row="0" Grid.ColumnSpan="2"
-                                      Text="跟随 PCL 的全局内存设置"
+                                      Text="{DynamicResource Lunar.Setup.FollowGlobal}"
                                       Change="CheckFollowGlobal_OnChange" />
 
                     <TextBlock Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Left"
-                               Text="最大内存（MB）" Margin="0,0,25,0" />
+                               Text="{DynamicResource Lunar.Setup.MaxMemory}" Margin="0,0,25,0" />
                     <local:MyTextBox x:Name="TextMemory" Grid.Row="2" Grid.Column="1"
-                                     HintText="例如 4096"
+                                     HintText="{DynamicResource Lunar.Setup.MaxMemoryHint}"
                                      ValidatedTextChanged="TextMemory_OnChanged"
-                                     ToolTip="留给游戏堆的容量。低于 512 会被自动抬到 512，上限 131072。">
+                                     ToolTip="{DynamicResource Lunar.Setup.MaxMemoryDesc}">
                         <local:MyTextBox.ValidateRules>
                             <val:IntValidator Min="512" Max="131072" />
                         </local:MyTextBox.ValidateRules>
@@ -72,10 +72,10 @@
 
                     <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal"
                                 HorizontalAlignment="Left" Margin="0,12,0,6">
-                        <TextBlock Text="附加 JVM 参数" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Lunar.Setup.Jvm}" VerticalAlignment="Center" />
                         <local:MyIconButton Height="23" Margin="6,1,0,0" VerticalAlignment="Center"
                                             x:Name="BtnResetJvm" Click="BtnResetJvm_Click"
-                                            ToolTip="清空" ToolTipService.Placement="Right"
+                                            ToolTip="{DynamicResource Lunar.Action.Clear}" ToolTipService.Placement="Right"
                                             ToolTipService.InitialShowDelay="200" ToolTipService.VerticalOffset="-1"
                                             SvgIcon="lucide/rotate-ccw" LogoScale="0.9" />
                     </StackPanel>
@@ -83,14 +83,14 @@
                                      Height="100" AcceptsReturn="True" TextWrapping="Wrap"
                                      VerticalContentAlignment="Top" Padding="0,5"
                                      VerticalScrollBarVisibility="Auto" MaxLength="4000"
-                                     HintText="例如 -XX:+UseG1GC -XX:+AlwaysPreTouch"
+                                     HintText="{DynamicResource Lunar.Setup.JvmHint}"
                                      ValidatedTextChanged="TextJvm_OnChanged"
-                                     ToolTip="会被拼在 Lunar 按版本下发的 JVM 参数之后。JVM 对重复参数取最后一次，所以这里的 -Xmx、-XX:+UseZGC 之类会盖掉官方值。支持用引号把带空格的参数括起来。" />
+                                     ToolTip="{DynamicResource Lunar.Setup.JvmDesc}" />
                 </Grid>
             </local:MyCard>
 
             <!-- ③ 按版本覆盖 -->
-            <local:MyCard Margin="0,15" Title="按版本覆盖">
+            <local:MyCard Margin="0,15" Title="{DynamicResource Lunar.Setup.OverrideTitle}">
                 <Grid Margin="25,40,25,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />
@@ -106,13 +106,13 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Left"
-                               Text="版本" Margin="0,0,25,0" />
+                               Text="{DynamicResource Lunar.Setup.OverrideVersion}" Margin="0,0,25,0" />
                     <local:MyComboBox x:Name="ComboVersion" Grid.Row="0" Grid.Column="1"
                                       SelectionChanged="ComboVersion_OnSelectionChanged" />
 
                     <local:MyCheckBox x:Name="CheckVersionOverride" Grid.Row="1" Grid.ColumnSpan="2"
                                       Margin="0,9,0,0"
-                                      Text="为这个版本单独设置内存与 JVM 参数"
+                                      Text="{DynamicResource Lunar.Setup.OverrideCheck}"
                                       Change="CheckVersionOverride_OnChange" />
 
                     <StackPanel Grid.Row="2" Grid.ColumnSpan="2" x:Name="PanVersionOptions" Margin="0,12,0,0">
@@ -134,22 +134,22 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="最大内存（MB）" />
+                            <TextBlock Grid.Row="0" Text="{DynamicResource Lunar.Setup.MaxMemory}" />
                             <local:MyTextBox x:Name="TextVersionMemory" Grid.Row="0" Grid.Column="1"
-                                             HintText="留空 = 沿用全局"
+                                             HintText="{DynamicResource Lunar.Setup.OverrideHint}"
                                              ValidatedTextChanged="TextVersionMemory_OnChanged"
-                                             ToolTip="只影响下拉框里选中的这个版本。">
+                                             ToolTip="{DynamicResource Lunar.Setup.OverrideDesc}">
                                 <local:MyTextBox.ValidateRules>
                                     <val:IntValidator Min="512" Max="131072" />
                                 </local:MyTextBox.ValidateRules>
                             </local:MyTextBox>
 
-                            <TextBlock Grid.Row="2" Text="附加 JVM 参数" Margin="0,12,25,6" />
+                            <TextBlock Grid.Row="2" Text="{DynamicResource Lunar.Setup.Jvm}" Margin="0,12,25,6" />
                             <local:MyTextBox x:Name="TextVersionJvm" Grid.Row="2" Grid.Column="1"
                                              Height="80" AcceptsReturn="True" TextWrapping="Wrap"
                                              VerticalContentAlignment="Top" Padding="0,5"
                                              VerticalScrollBarVisibility="Auto" MaxLength="4000"
-                                             HintText="留空 = 沿用全局"
+                                             HintText="{DynamicResource Lunar.Setup.OverrideHint}"
                                              ValidatedTextChanged="TextVersionJvm_OnChanged" />
                         </Grid>
                     </StackPanel>

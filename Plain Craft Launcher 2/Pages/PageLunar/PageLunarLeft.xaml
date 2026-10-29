@@ -7,10 +7,6 @@
                   mc:Ignorable="d"
                   Width="260">
     <!--
-        文案暂时直接写中文：这是 nightly 里的实验特性，等协议稳定后再补四语言键，
-        免得先加一堆键、后面改协议又要全删一遍。
-    -->
-    <!--
         宽度写死，理由同 PageBedrockLeft：FormMain 里左栏那列是 Auto，
         状态文字一长（「游戏异常退出（退出码 -1）」之类）就会把左栏撑开，
         右边页面被压成一条缝。
@@ -37,11 +33,11 @@
                                   Check="PageCheck"
                                   MinPaddingRight="35" Height="36"
                                   VerticalAlignment="Top"
-                                  Title="启动"
+                                  Title="{DynamicResource Lunar.Left.Launch}"
                                   LogoScale="0.85"
                                   SvgIcon="lucide/play" />
 
-                <TextBlock Text="状态"
+                <TextBlock Text="{DynamicResource Lunar.Left.Status}"
                            Margin="13,10,5,4" Opacity="0.6" FontSize="12" />
                 <Border Background="{DynamicResource ColorBrushTransparentBackground}"
                         CornerRadius="5" Padding="12,11" Margin="0,0,0,0">
@@ -59,7 +55,7 @@
                                        FontSize="13" FontWeight="Bold"
                                        TextWrapping="Wrap" MaxHeight="36"
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
-                                       Text="正在检测 Lunar Client…" />
+                                       Text="{DynamicResource Lunar.Left.Detecting}" />
                         </Grid>
                         <TextBlock x:Name="LabDetail" Text="" FontSize="10.5" Margin="16,4,0,0"
                                    TextWrapping="Wrap" MaxHeight="60" LineHeight="14"
@@ -68,7 +64,7 @@
                     </StackPanel>
                 </Border>
 
-                <TextBlock Text="账号"
+                <TextBlock Text="{DynamicResource Lunar.Left.Account}"
                            Margin="13,12,5,4" Opacity="0.6" FontSize="12" />
                 <Border Background="{DynamicResource ColorBrushTransparentBackground}"
                         CornerRadius="5" Padding="12,10">
@@ -88,7 +84,7 @@
 
         <Grid Grid.Row="1" Margin="0,10,0,0">
             <local:MyButton x:Name="BtnLaunch" Height="54" Margin="20,0"
-                            Text="启动 Lunar"
+                            Text="{DynamicResource Lunar.Launch}"
                             ColorType="Highlight"
                             Click="BtnLaunch_Click"
                             Padding="30,0,30,15" />

@@ -17,6 +17,14 @@
                           Title="{DynamicResource Tools.Left.Utilities.Title}" Check="PageCheck"
                           LogoScale="0.9"
                           SvgIcon="lucide/tool-case" />
+        <local:MyListItem x:Name="ItemImport"
+                          IsScaleAnimationEnabled="False"
+                          Type="RadioBox" Tag="4"
+                          MinPaddingRight="35" Height="36"
+                          VerticalAlignment="Top"
+                          Title="{DynamicResource Tools.Left.Import}" Check="PageCheck"
+                          LogoScale="0.9"
+                          SvgIcon="lucide/folder-input" />
 
     </StackPanel>
 </local:MyPageLeft>

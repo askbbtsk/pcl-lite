@@ -6,10 +6,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.App;
+using PCL.Core.App.Localization;
 using PCL.Core.App.Lunar;
 using PCL.Core.Minecraft.Profile;
 using PCL.Core.Minecraft.Profile.Authentication;
 using PCL.Core.Minecraft.Profile.Models;
+using PCL.Network;
 
 namespace PCL;
 
@@ -292,8 +294,8 @@ public static class ModLunar
 
         if (!IsInstalled)
         {
-            StatusText = "还没有下载 Lunar 物料";
-            DetailText = "不需要装 Lunar 启动器。点「启动 Lunar」，PCL 会自己把物料下到本机（首次约 300 MB）。";
+            StatusText = Lang.Text("Lunar.Status.NoAssets");
+            DetailText = Lang.Text("Lunar.Status.NoAssetsDesc");
             RaiseStateChanged();
             return;
         }
@@ -301,7 +303,7 @@ public static class ModLunar
         StatusText = SelectedModule is { } module
             ? $"Lunar Client {SelectedSubVersion}（{module.DisplayName}）"
             : $"Lunar Client {SelectedSubVersion}";
-        DetailText = $"物料目录：{LunarClientService.MultiverDirectory(LunarRoot)}";
+        DetailText = Lang.Text("Lunar.Status.MaterialDir", LunarClientService.MultiverDirectory(LunarRoot));
         RaiseStateChanged();
     }
 
@@ -424,18 +426,18 @@ public static class ModLunar
 
         var name = progress.Stage switch
         {
-            LunarInstaller.StageLicenses => "许可文件",
-            LunarInstaller.StageTextures => "外观资源",
-            LunarInstaller.StageAssets => "原版资源",
-            LunarInstaller.StageArtifacts => "客户端物料",
-            LunarInstaller.StageJre => "Java 运行时",
-            LunarInstaller.StageUi => "界面资源",
+            LunarInstaller.StageLicenses => Lang.Text("Lunar.Stage.Licenses"),
+            LunarInstaller.StageTextures => Lang.Text("Lunar.Stage.Textures"),
+            LunarInstaller.StageAssets => Lang.Text("Lunar.Stage.Assets"),
+            LunarInstaller.StageArtifacts => Lang.Text("Lunar.Stage.Artifacts"),
+            LunarInstaller.StageJre => Lang.Text("Lunar.Stage.Jre"),
+            LunarInstaller.StageUi => Lang.Text("Lunar.Stage.Ui"),
             _ => progress.Stage
         };
 
         StatusText = progress.Total > 0
-            ? $"正在准备{name} {progress.Done}/{progress.Total}"
-            : $"正在准备{name}…";
+            ? Lang.Text("Lunar.Status.Preparing", name, progress.Done, progress.Total)
+            : Lang.Text("Lunar.Status.PreparingName", name);
         RaiseStateChanged();
     }
 
@@ -524,27 +526,67 @@ public static class ModLunar
     }
 
     /// <summary>
-    ///     和正常启动用同一个游戏目录：优先取当前实例的版本隔离目录，
-    ///     取不到才退回整个 .minecraft。
+    ///     Lunar 的游戏目录：<b>始终用 MC 根目录</b>，不跟主页面的实例走。
     ///     <para>
-    ///         之前这里写死 <c>ModFolder.mcFolderSelected</c>，导致「主页面选的是
-    ///         实例 A、Lunar 却写进 .minecraft 根目录」，存档和配置全混在一起。
+    ///         Lunar 自己是独立客户端，版本（1.12.2）和主页面选中的实例（比如某个
+    ///         1.21 Fabric 模组包）根本不是一个东西。用实例的隔离目录会直接写坏人家：
+    ///         <c>options.txt</c> 被低版本覆盖、存档和资源包混进去、模组包的设置全乱。
+    ///     </para>
+    ///     <para>
+    ///         官方 Lunar 用的是 <c>%APPDATA%\.minecraft</c>，这里对应到玩家自己选的
+    ///         MC 根目录，存档和资源包跟平时玩的一致。
     ///     </para>
     /// </summary>
     private static string ResolveGameDirectory()
     {
+        return ModFolder.mcFolderSelected;
+    }
+
+    /// <summary>
+    ///     把 Lunar 需要的原版客户端补到 <see cref="VanillaRoot" />。
+    ///     <para>
+    ///         走 PCL 自己的下载任务，进度会出现在下载任务栏里。以前是让 Genesis 在后台
+    ///         闷头下，界面上什么都没有，玩家只能看着「进程活着但没窗口」猜。
+    ///     </para>
+    ///     <para>
+    ///         下载失败不阻断启动：Genesis 自己还会再试一次，只是慢、且没进度。
+    ///     </para>
+    /// </summary>
+    private static async Task EnsureVanillaAsync(string version, CancellationToken cancellationToken)
+    {
+        if (IsVanillaReady(version)) return;
+
         try
         {
-            var instance = ModInstanceList.McMcInstanceSelected;
-            if (instance is not null && Directory.Exists(instance.PathIndie))
-                return instance.PathIndie;
+            Log($"本机还没有原版 {version}，交给 PCL 下载到 {VanillaRoot}");
+
+            ModLoader.LoaderCombo<string>? loader = null;
+            ModBase.RunInUiWait(() => loader = ModDownloadLib.McDownloadClient(
+                NetPreDownloadBehaviour.ExitWhileExistsOrDownloading, version, null, VanillaRoot));
+
+            if (loader is null)
+            {
+                Log("原版下载任务没能启动（可能被功能限制拦下了），改由 Lunar 自己下载");
+                return;
+            }
+
+            StatusText = Lang.Text("Lunar.Status.VanillaDownload", version);
+            DetailText = Lang.Text("Lunar.Status.VanillaDownloadDesc");
+            RaiseStateChanged();
+
+            var input = Path.Combine(VanillaRoot, "versions", version);
+            await Task.Run(() => loader.WaitForExit(input), cancellationToken).ConfigureAwait(false);
+
+            Log(IsVanillaReady(version)
+                ? $"原版 {version} 已就绪"
+                : $"原版 {version} 下载完了但文件还是不齐，剩下的交给 Lunar 自己补");
         }
         catch (Exception ex)
         {
-            ModBase.Log(ex, "[Lunar] 读取当前实例目录失败，退回 .minecraft 根目录", ModBase.LogLevel.Debug);
+            // 下不下来也别拦着启动，Genesis 会自己再下一次
+            ModBase.Log(ex, "[Lunar] 原版客户端下载失败，改由 Lunar 自己下载", ModBase.LogLevel.Debug);
+            Log("原版客户端下载失败：" + ex.Message + "，改由 Lunar 自己下载");
         }
-
-        return ModFolder.mcFolderSelected;
     }
 
     private static async Task LaunchCoreAsync(string gameDirectory)
@@ -558,7 +600,7 @@ public static class ModLunar
             var settings = LunarLaunchProfile.Resolve(subVersion, ResolvePclGlobalMemoryMb());
             LogSettings(settings);
 
-            StatusText = $"正在准备 {subVersion}…";
+            StatusText = Lang.Text("Lunar.Status.PreparingVersion", subVersion);
             DetailText = "";
             RaiseStateChanged();
 
@@ -571,7 +613,11 @@ public static class ModLunar
                 : $"Loader：{module.DisplayName}（{module.Id}，该版本共 {Modules.Count} 种可选）");
             Log($"游戏目录：{gameDirectory}");
 
-            StatusText = "正在获取 Lunar 物料清单…";
+            // 首次用某个版本时 Genesis 要先把原版客户端下到 %APPDATA%\.minecraft，
+            // 这一步以前是它自己在后台闷头下，现在改成由 PCL 下（有进度、能看见）
+            await EnsureVanillaAsync(subVersion, CancellationToken.None).ConfigureAwait(false);
+
+            StatusText = Lang.Text("Lunar.Status.FetchManifest");
             RaiseStateChanged();
 
             var installationId = ReadInstallationId();
@@ -642,7 +688,7 @@ public static class ModLunar
 
             LastCommandLine = startInfo.FileName + " " + string.Join(' ', startInfo.ArgumentList);
 
-            StatusText = "正在启动…";
+            StatusText = Lang.Text("Lunar.Status.Launching");
             RaiseStateChanged();
 
             lock (_recentOutputLock) _recentOutput.Clear();
@@ -692,9 +738,9 @@ public static class ModLunar
                 }
 
                 StatusText = exitCode == 0
-                    ? "游戏已退出"
-                    : $"游戏异常退出（退出码 {exitCode}）";
-                DetailText = exitCode == 0 ? "" : "子进程输出已写入 PCL 日志，可反馈给开发者定位";
+                    ? Lang.Text("Lunar.Status.Exited")
+                    : Lang.Text("Lunar.Status.Crashed", exitCode);
+                DetailText = exitCode == 0 ? "" : Lang.Text("Lunar.Status.CrashedDesc");
                 RaiseStateChanged();
             };
 
@@ -706,10 +752,12 @@ public static class ModLunar
 
             // 首次启动某个版本时 Genesis 要先把原版客户端下下来，这期间不会有窗口，
             // 所以状态文案得说实话，不然用户只会看到「游戏运行中」却什么都没有
-            StatusText = vanillaReady ? "游戏运行中" : $"正在下载原版 {subVersion} 的依赖…";
+            StatusText = vanillaReady
+                ? Lang.Text("Lunar.Status.Running")
+                : Lang.Text("Lunar.Status.VanillaPending", subVersion);
             DetailText = vanillaReady
-                ? "由 PCL 直接拉起，未经过 Lunar 启动器"
-                : $"Lunar 需要先把原版客户端下到 {VanillaRoot}（约 100–200 MB），期间没有窗口是正常的";
+                ? Lang.Text("Lunar.Status.RunningDesc")
+                : Lang.Text("Lunar.Status.VanillaPendingDesc", VanillaRoot);
             RaiseStateChanged();
         }
         catch (Exception ex)
@@ -717,7 +765,7 @@ public static class ModLunar
             _process = null;
             IsBusy = false;
             StopIpc();
-            StatusText = "启动失败";
+            StatusText = Lang.Text("Lunar.Status.Failed");
             DetailText = ex.Message;
             RaiseStateChanged();
             ModBase.Log(ex, "[Lunar] 启动失败", ModBase.LogLevel.Msgbox, userSummary: ex.Message);
@@ -776,10 +824,7 @@ public static class ModLunar
                     if (stalled < 5) continue; // 前 100 秒不下结论，Genesis 有解压/校验的空窗期
 
                     Log($"启动 {round * 20} 秒后既没有窗口、原版依赖也没有再变大 —— 大概率是 Genesis 在下载依赖时被网络卡住了");
-                    HintService.Hint(
-                        "Lunar 启动后一直没有窗口，而且原版依赖也没有再变大，可能卡在下载依赖（它不走系统代理）。" +
-                        "给 PCL 配一个可用代理后重试。",
-                        HintType.Warning);
+                    HintService.Hint(Lang.Text("Lunar.Hint.Stalled"), HintType.Warning);
                     return;
                 }
             }
@@ -929,9 +974,8 @@ public static class ModLunar
                 Log($"Lunar 会话已于 {account.ExpiresAt!.Value.ToLocalTime():yyyy-MM-dd HH:mm} 过期，" +
                     "PCL 里也没有能替它续期的登录。");
                 Log("请在主页面用这个账号登录一次（或者打开 Lunar 启动器重新登录），否则游戏里会显示 Invalid session。");
-                HintService.Hint(
-                    $"{account.DisplayName} 的会话已过期，而且没法自动续期 —— 游戏内会显示 Invalid session。" +
-                    "请在主页面用这个账号登录一次再启动。", HintType.Warning);
+                HintService.Hint(Lang.Text("Lunar.Hint.SessionExpired", account.DisplayName),
+                    HintType.Warning);
             }
             else
             {

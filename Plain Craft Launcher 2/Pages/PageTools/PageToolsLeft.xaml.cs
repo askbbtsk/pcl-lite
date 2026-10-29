@@ -74,6 +74,12 @@ public partial class PageToolsLeft
                     ModMain.frmToolsTest = new PageToolsTest();
                 return ModMain.frmToolsTest;
             }
+            case FormMain.PageSubType.ToolsImport:
+            {
+                if (ModMain.frmToolsImport is null)
+                    ModMain.frmToolsImport = new PageToolsImport();
+                return ModMain.frmToolsImport;
+            }
             default:
             {
                 throw new Exception("未知的更多子页面种类：" + (int)id);

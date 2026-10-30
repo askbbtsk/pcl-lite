@@ -305,4 +305,43 @@ public class LunarIpcDispatcherTest
     }
 
     #endregion
+
+    #region 推送（启动器 → 游戏）
+
+    [TestMethod]
+    public void EncodePush_ShouldWrapTypeUrlInAny()
+    {
+        var message = LunarIpcProtocol.EncodePush(LunarIpcPush.ExitGame.TypeUrl, LunarIpcPush.ExitGame.Payload);
+
+        // GameboundIPCMessage { push_notification = 2 { type_url = 1, value = 2 } }
+        Assert.IsTrue(LunarIpcProtocol.TryGetMessage(message, 2, out var any), "外层必须是 push_notification");
+        Assert.IsTrue(LunarIpcProtocol.TryGetString(any, 1, out var typeUrl));
+        Assert.AreEqual("type.googleapis.com/lunarclient.gameipc.launch.v1.ExitGamePush", typeUrl);
+
+        // ExitGamePush 没有字段，value 应当整个省略（protobuf 的「默认值不编码」）
+        Assert.IsFalse(LunarIpcProtocol.TryGetMessage(any, 2, out _), "空消息不该写 value");
+    }
+
+    [TestMethod]
+    public void PlayServerPush_ShouldCarryServerIp()
+    {
+        var push = LunarIpcPush.PlayServer("mc.example.com:25565");
+        var message = LunarIpcProtocol.EncodePush(push.TypeUrl, push.Payload);
+
+        Assert.IsTrue(LunarIpcProtocol.TryGetMessage(message, 2, out var any));
+        Assert.IsTrue(LunarIpcProtocol.TryGetString(any, 1, out var typeUrl));
+        Assert.AreEqual("type.googleapis.com/lunarclient.gameipc.launch.v1.PlayServerPush", typeUrl);
+
+        Assert.IsTrue(LunarIpcProtocol.TryGetMessage(any, 2, out var value), "有字段的推送必须带 value");
+        Assert.IsTrue(LunarIpcProtocol.TryGetString(value, 1, out var ip));
+        Assert.AreEqual("mc.example.com:25565", ip);
+    }
+
+    [TestMethod]
+    public void PlayServerPush_ShouldRejectEmptyIp()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => LunarIpcPush.PlayServer(" "));
+    }
+
+    #endregion
 }

@@ -56,12 +56,25 @@ public static class ModLunar
     /// <summary>
     ///     这次退出是不是我们自己按的「结束游戏」。
     ///     <para>
-    ///         <see cref="Stop" /> 走的是 <c>Process.Kill</c>，Windows 给这种进程的退出码是 <c>-1</c>。
-    ///         以前只判断「退出码非 0」，于是玩家自己点停止也会被报成「游戏异常退出（退出码 -1）」，
-    ///         白白吓一跳。
+    ///         主动结束时退出码可能是 <c>-1</c>（<c>Process.Kill</c>），也可能是 <c>0</c>
+    ///         （请游戏自己退出）。以前只判断「退出码非 0」，于是玩家自己点停止也会被报成
+    ///         「游戏异常退出（退出码 -1）」，白白吓一跳。
     ///     </para>
     /// </summary>
     private static volatile bool _stopRequested;
+
+    /// <summary>正在执行停止流程，防止连点两次发两遍退出请求。</summary>
+    private static bool _stopping;
+    private static readonly object StopLock = new();
+
+    /// <summary>
+    ///     请游戏自己退出之后等多久。超时才强制结束。
+    ///     <para>
+    ///         Minecraft 存档落盘通常一两秒，但区块多、硬盘慢的时候会明显变久；
+    ///         10 秒是「够它写完」和「别让用户以为卡住」之间的折中。
+    ///     </para>
+    /// </summary>
+    private static readonly TimeSpan ExitGracePeriod = TimeSpan.FromSeconds(10);
 
     /// <summary>
     ///     子进程最近若干行输出。游戏在 Minecraft 初始化前就静默退出时（1.17.1 踩过），
@@ -569,19 +582,60 @@ public static class ModLunar
     }
 
     /// <summary>
-    ///     强制结束游戏进程（连同它派生的子进程）。
+    ///     结束游戏进程。
+    ///     <para>
+    ///         先请游戏自己退出（<see cref="LunarIpcPush.ExitGame" />）：游戏端收到后走的是
+    ///         Minecraft 的正常关闭流程 —— 存档落盘、跑 shutdown hook、退出码 0。
+    ///         等 <see cref="ExitGracePeriod" /> 还没退，才 <c>Kill</c> 兜底。
+    ///     </para>
+    ///     <para>
+    ///         以前是直接 Kill：正在保存的世界会留下半截 region 文件。只有 IPC 不在 PCL
+    ///         手里（端口被 Lunar 启动器占着）时才退回老做法。
+    ///     </para>
     /// </summary>
     public static void Stop()
     {
         var process = _process;
         if (process is null) return;
 
+        lock (StopLock)
+        {
+            if (_stopping) return;
+            _stopping = true;
+        }
+
+        // 先立牌子再动手：Exited 事件可能在 Kill 返回前就排上队了
+        _stopRequested = true;
+        _ = Task.Run(() => StopCoreAsync(process));
+    }
+
+    private static async Task StopCoreAsync(Process process)
+    {
         try
         {
+            var sent = await TrySendExitPushAsync().ConfigureAwait(false);
+
+            if (sent > 0)
+            {
+                Log($"已请游戏自行退出，最多等 {ExitGracePeriod.TotalSeconds:F0} 秒");
+
+                // 等待期间界面上要有个说法，否则最长 10 秒里按钮还写着「强制停止」，
+                // 用户会以为没点着又点一次
+                StatusText = Lang.Text("Lunar.Status.Stopping");
+                DetailText = "";
+                RaiseStateChanged();
+
+                if (await WaitForExitAsync(process, ExitGracePeriod).ConfigureAwait(false))
+                {
+                    Log("游戏已自行退出（存档已落盘）");
+                    return;
+                }
+
+                Log("游戏没有在限定时间内退出，改为强制结束");
+            }
+
             if (!process.HasExited)
             {
-                // 先立牌子再动手：Exited 事件可能在 Kill 返回前就排上队了
-                _stopRequested = true;
                 process.Kill(entireProcessTree: true);
                 Log("已强制结束游戏进程");
             }
@@ -590,6 +644,118 @@ public static class ModLunar
         {
             _stopRequested = false;
             Log("结束进程失败：" + ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _stopRequested = false;
+            Log("结束进程时出错：" + ex);
+        }
+        finally
+        {
+            lock (StopLock) _stopping = false;
+        }
+    }
+
+    /// <summary>
+    ///     给游戏推一条 <c>ExitGamePush</c>，返回送达的连接数。
+    ///     <para>
+    ///         IPC 不在 PCL 手里时直接返回 0：那种情况游戏连的是 Lunar 启动器，
+    ///         PCL 没有通道能跟它说话。
+    ///     </para>
+    /// </summary>
+    private static async Task<int> TrySendExitPushAsync()
+    {
+        var server = _ipcServer;
+        if (server is null)
+        {
+            Log("IPC 不在 PCL 手里（端口被 Lunar 启动器占着），没法请游戏自己退出");
+            return 0;
+        }
+
+        try
+        {
+            return await server.SendPushAsync(LunarIpcPush.ExitGame).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log("发送退出请求失败：" + ex.Message);
+            return 0;
+        }
+    }
+
+    /// <summary>等进程退出，超时返回 <c>false</c>（不抛异常）。</summary>
+    private static async Task<bool> WaitForExitAsync(Process process, TimeSpan timeout)
+    {
+        using var cts = new CancellationTokenSource(timeout);
+        try
+        {
+            await process.WaitForExitAsync(cts.Token).ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            // 进程对象已经失效，说明它确实没了
+            return true;
+        }
+    }
+
+    /// <summary>
+    ///     把游戏窗口切到前台（<c>FocusGamePush</c>）。
+    ///     <para>
+    ///         返回 <c>false</c> 表示没送到 —— 游戏没连上 IPC（刚启动的头几秒，
+    ///         或者 IPC 被 Lunar 启动器占着）。
+    ///     </para>
+    /// </summary>
+    public static async Task<bool> FocusGameAsync()
+    {
+        var server = _ipcServer;
+        if (server is null) return false;
+
+        try
+        {
+            var sent = await server.SendPushAsync(LunarIpcPush.FocusGame).ConfigureAwait(false);
+            if (sent > 0) Log("已请游戏窗口切到前台");
+            return sent > 0;
+        }
+        catch (Exception ex)
+        {
+            Log("请游戏切到前台失败：" + ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     让已经在跑的游戏直接连某个服务器（<c>PlayServerPush</c>）。
+    ///     <para>
+    ///         游戏端要求当前**已经进了世界**，否则它只打一条日志就忽略 —— 这个判断
+    ///         在游戏那边，PCL 看不到，所以返回 <c>true</c> 只代表「推过去了」。
+    ///     </para>
+    ///     <para>
+    ///         PCL 没有服务器列表页，现在没有调用方；留着给「直接进服」这类入口。
+    ///     </para>
+    /// </summary>
+    /// <param name="serverIp">形如 <c>mc.example.com</c> 或 <c>mc.example.com:25565</c>。</param>
+    public static async Task<bool> JoinServerAsync(string serverIp)
+    {
+        if (string.IsNullOrWhiteSpace(serverIp)) return false;
+
+        var server = _ipcServer;
+        if (server is null) return false;
+
+        try
+        {
+            var sent = await server.SendPushAsync(LunarIpcPush.PlayServer(serverIp)).ConfigureAwait(false);
+            if (sent > 0) Log($"已请游戏直连服务器 {serverIp}");
+            return sent > 0;
+        }
+        catch (Exception ex)
+        {
+            Log($"请游戏直连服务器失败：{ex.Message}");
+            return false;
         }
     }
 

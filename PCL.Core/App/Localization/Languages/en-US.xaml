@@ -3605,6 +3605,9 @@
     <sys:String x:Key="Lunar.Field.JavaAuto">Set on launch</sys:String>
     <sys:String x:Key="Lunar.Action.OpenDir">Open folder</sys:String>
     <sys:String x:Key="Lunar.Action.CopyCommand">Copy command</sys:String>
+    <sys:String x:Key="Lunar.Action.FocusGame">Back to game</sys:String>
+    <sys:String x:Key="Lunar.Hint.Focused">Game window brought to front</sys:String>
+    <sys:String x:Key="Lunar.Hint.FocusFailed">The game has not connected to the launcher yet, so the window cannot be focused. Try again after it reaches the main menu</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">Notes</sys:String>
     <sys:String x:Key="Lunar.Note.1">PCL starts the game itself, without the Lunar launcher.</sys:String>
     <sys:String x:Key="Lunar.Note.2">Loader list comes from the server; click to switch.</sys:String>
@@ -3698,6 +3701,7 @@ Install Lunar Client and launch it at least once first.</sys:String>
     <sys:String x:Key="Lunar.Status.FetchManifest">Fetching the Lunar manifest…</sys:String>
     <sys:String x:Key="Lunar.Status.Launching">Launching…</sys:String>
     <sys:String x:Key="Lunar.Status.Exited">Game exited</sys:String>
+    <sys:String x:Key="Lunar.Status.Stopping">Closing the game (waiting for it to save)…</sys:String>
     <sys:String x:Key="Lunar.Status.Stopped">Game stopped</sys:String>
     <sys:String x:Key="Lunar.Status.Crashed">Game crashed (exit code {0})</sys:String>
     <sys:String x:Key="Lunar.Status.CrashedDesc">Output was written to the PCL log.</sys:String>

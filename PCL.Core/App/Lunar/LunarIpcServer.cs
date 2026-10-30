@@ -52,8 +52,24 @@ public sealed class LunarIpcServer : IDisposable
     private readonly ILunarIpcHost? _host;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
-    private readonly List<TcpClient> _connections = [];
+    private readonly List<LunarIpcConnection> _connections = [];
     private readonly TcpListener _listener;
+
+    /// <summary>
+    ///     一条已握手的游戏连接。
+    ///     <para>
+    ///         <see cref="WriteGate" /> 是必需的：响应由帧循环写、推送由别的线程写，
+    ///         两个线程同时往一个 <see cref="NetworkStream" /> 写会把帧切碎，
+    ///         游戏侧收到半截消息直接判定协议错误断开。
+    ///     </para>
+    /// </summary>
+    private sealed class LunarIpcConnection(NetworkStream stream, string name, TcpClient client)
+    {
+        public NetworkStream Stream { get; } = stream;
+        public string Name { get; } = name;
+        public TcpClient Client { get; } = client;
+        public SemaphoreSlim WriteGate { get; } = new(1, 1);
+    }
 
     private LunarIpcServer(TcpListener listener, int port, string installationId,
         Func<Guid, CancellationToken, Task<LunarRefreshResult>> refresh, Action<string> log,
@@ -80,6 +96,40 @@ public sealed class LunarIpcServer : IDisposable
         {
             lock (_connections) return _connections.Count;
         }
+    }
+
+    /// <summary>
+    ///     给所有连着的游戏端推一条通知，返回写成功的连接数。
+    ///     <para>
+    ///         返回 0 不算错误：游戏刚起来的头几秒还没连上来，这时候推什么都会落空。
+    ///         调用方要按「没送到」处理，别以为游戏已经收到了。
+    ///     </para>
+    /// </summary>
+    public async Task<int> SendPushAsync(LunarIpcPush push, CancellationToken token = default)
+    {
+        LunarIpcConnection[] targets;
+        lock (_connections) targets = _connections.ToArray();
+        if (targets.Length == 0) return 0;
+
+        var message = LunarIpcProtocol.EncodePush(push.TypeUrl, push.Payload);
+        var sent = 0;
+
+        foreach (var connection in targets)
+        {
+            try
+            {
+                await WriteFrameAsync(connection, OpcodeBinary, message, token).ConfigureAwait(false);
+                sent++;
+            }
+            catch (Exception ex) when (ex is IOException or SocketException
+                                           or ObjectDisposedException or OperationCanceledException)
+            {
+                Log($"推送 {push.TypeUrl} 到 {connection.Name} 失败：{ex.Message}");
+            }
+        }
+
+        if (sent > 0) Log($"已推送 {push.TypeUrl}（{sent} 个连接）");
+        return sent;
     }
 
     /// <summary>
@@ -164,7 +214,6 @@ public sealed class LunarIpcServer : IDisposable
                 continue;
             }
 
-            lock (_connections) _connections.Add(client);
             _ = Task.Run(() => HandleConnectionAsync(client, token), CancellationToken.None);
         }
     }
@@ -172,6 +221,7 @@ public sealed class LunarIpcServer : IDisposable
     private async Task HandleConnectionAsync(TcpClient client, CancellationToken token)
     {
         var name = "未知客户端";
+        LunarIpcConnection? connection = null;
         try
         {
             client.NoDelay = true;
@@ -210,7 +260,12 @@ public sealed class LunarIpcServer : IDisposable
             }
 
             await AcceptWebSocketAsync(stream, key, token).ConfigureAwait(false);
-            await FrameLoopAsync(stream, name, token).ConfigureAwait(false);
+
+            // 握手完成才算「可推送的连接」：之前写推送会把没升级的 HTTP 连接写坏
+            connection = new LunarIpcConnection(stream, name, client);
+            lock (_connections) _connections.Add(connection);
+
+            await FrameLoopAsync(connection, token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -226,7 +281,12 @@ public sealed class LunarIpcServer : IDisposable
         }
         finally
         {
-            lock (_connections) _connections.Remove(client);
+            if (connection is not null)
+            {
+                lock (_connections) _connections.Remove(connection);
+                connection.WriteGate.Dispose();
+            }
+
             try
             {
                 client.Close();
@@ -238,8 +298,9 @@ public sealed class LunarIpcServer : IDisposable
         }
     }
 
-    private async Task FrameLoopAsync(NetworkStream stream, string name, CancellationToken token)
+    private async Task FrameLoopAsync(LunarIpcConnection connection, CancellationToken token)
     {
+        var stream = connection.Stream;
         var fragments = new MemoryStream();
 
         while (!token.IsCancellationRequested)
@@ -250,13 +311,14 @@ public sealed class LunarIpcServer : IDisposable
             switch (frame.Value.Opcode)
             {
                 case OpcodeClose:
-                    await WriteFrameAsync(stream, OpcodeClose, ReadOnlyMemory<byte>.Empty, token)
+                    await WriteFrameAsync(connection, OpcodeClose, ReadOnlyMemory<byte>.Empty, token)
                         .ConfigureAwait(false);
-                    Log($"游戏端断开：{name}");
+                    Log($"游戏端断开：{connection.Name}");
                     return;
 
                 case OpcodePing:
-                    await WriteFrameAsync(stream, OpcodePong, frame.Value.Payload, token).ConfigureAwait(false);
+                    await WriteFrameAsync(connection, OpcodePong, frame.Value.Payload, token)
+                        .ConfigureAwait(false);
                     continue;
 
                 case OpcodePong:
@@ -280,11 +342,11 @@ public sealed class LunarIpcServer : IDisposable
             var payload = fragments.ToArray();
             if (payload.Length == 0) continue;
 
-            await DispatchAsync(stream, payload, token).ConfigureAwait(false);
+            await DispatchAsync(connection, payload, token).ConfigureAwait(false);
         }
     }
 
-    private async Task DispatchAsync(NetworkStream stream, byte[] payload, CancellationToken token)
+    private async Task DispatchAsync(LunarIpcConnection connection, byte[] payload, CancellationToken token)
     {
         if (!LunarIpcProtocol.TryDecodeRequest(payload, out var request))
         {
@@ -300,14 +362,14 @@ public sealed class LunarIpcServer : IDisposable
             // 其余八个服务交给 LunarIpcDispatcher。回空响应也是合法的 —— protobuf 解空内容
             // 得到全默认实例，游戏侧不会抛异常，只是「什么都没发生」。
             var output = LunarIpcDispatcher.Dispatch(request, _host, Log);
-            await SendAsync(stream, request.RequestId, output, token).ConfigureAwait(false);
+            await SendAsync(connection, request.RequestId, output, token).ConfigureAwait(false);
             return;
         }
 
         if (!LunarIpcProtocol.TryDecodeRefreshAccountRequest(request.Input, out var uuid))
         {
             Log("RefreshAccount 的入参里没有可用的 UUID");
-            await SendRefreshResultAsync(stream, request.RequestId,
+            await SendRefreshResultAsync(connection, request.RequestId,
                 LunarRefreshResult.Fail(LunarAccountError.Unspecified, "入参无法解析"), token)
                 .ConfigureAwait(false);
             return;
@@ -318,7 +380,7 @@ public sealed class LunarIpcServer : IDisposable
         if (!await _refreshGate.WaitAsync(0, token).ConfigureAwait(false))
         {
             Log("已经有一次续期在进行，回 ALREADY_REFRESHING");
-            await SendRefreshResultAsync(stream, request.RequestId,
+            await SendRefreshResultAsync(connection, request.RequestId,
                 LunarRefreshResult.Fail(LunarAccountError.AlreadyRefreshing, "已有续期在进行"), token)
                 .ConfigureAwait(false);
             return;
@@ -343,21 +405,21 @@ public sealed class LunarIpcServer : IDisposable
             ? $"账号 {uuid} 续期成功：{result.Message}"
             : $"账号 {uuid} 续期失败（{result.Error}）：{result.Message}");
 
-        await SendRefreshResultAsync(stream, request.RequestId, result, token).ConfigureAwait(false);
+        await SendRefreshResultAsync(connection, request.RequestId, result, token).ConfigureAwait(false);
     }
 
-    private static Task SendRefreshResultAsync(NetworkStream stream, byte[] requestId,
+    private static Task SendRefreshResultAsync(LunarIpcConnection connection, byte[] requestId,
         LunarRefreshResult result, CancellationToken token)
     {
         var output = LunarIpcProtocol.EncodeRefreshAccountResponse(result.Success, result.Error);
-        return SendAsync(stream, requestId, output, token);
+        return SendAsync(connection, requestId, output, token);
     }
 
-    private static Task SendAsync(NetworkStream stream, byte[] requestId, byte[] output,
+    private static Task SendAsync(LunarIpcConnection connection, byte[] requestId, byte[] output,
         CancellationToken token)
     {
         var message = LunarIpcProtocol.EncodeRpcResponse(requestId, output);
-        return WriteFrameAsync(stream, OpcodeBinary, message, token);
+        return WriteFrameAsync(connection, OpcodeBinary, message, token);
     }
 
     #region WebSocket 握手与帧
@@ -499,6 +561,31 @@ public sealed class LunarIpcServer : IDisposable
         await stream.FlushAsync(token).ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///     带写锁的版本。响应和推送来自不同线程，必须串行化，
+    ///     否则两帧的字节会交错，游戏侧解出来的就是垃圾。
+    /// </summary>
+    private static async Task WriteFrameAsync(LunarIpcConnection connection, int opcode,
+        ReadOnlyMemory<byte> payload, CancellationToken token)
+    {
+        await connection.WriteGate.WaitAsync(token).ConfigureAwait(false);
+        try
+        {
+            await WriteFrameAsync(connection.Stream, opcode, payload, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            try
+            {
+                connection.WriteGate.Release();
+            }
+            catch (ObjectDisposedException)
+            {
+                // 服务端正在关，连接对象已经释放过了
+            }
+        }
+    }
+
     private static async Task<bool> ReadExactlyAsync(NetworkStream stream, byte[] buffer,
         CancellationToken token)
     {
@@ -586,16 +673,18 @@ public sealed class LunarIpcServer : IDisposable
 
         lock (_connections)
         {
-            foreach (var client in _connections)
+            foreach (var connection in _connections)
             {
                 try
                 {
-                    client.Close();
+                    connection.Client.Close();
                 }
                 catch (Exception ex) when (ex is IOException or ObjectDisposedException)
                 {
                     // 忽略
                 }
+
+                connection.WriteGate.Dispose();
             }
 
             _connections.Clear();

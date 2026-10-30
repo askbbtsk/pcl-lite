@@ -3546,6 +3546,9 @@
     <sys:String x:Key="Lunar.Field.JavaAuto">啟動後自動定位</sys:String>
     <sys:String x:Key="Lunar.Action.OpenDir">開啟檔案目錄</sys:String>
     <sys:String x:Key="Lunar.Action.CopyCommand">複製啟動指令</sys:String>
+    <sys:String x:Key="Lunar.Action.FocusGame">回到遊戲</sys:String>
+    <sys:String x:Key="Lunar.Hint.Focused">已把遊戲視窗切到前景</sys:String>
+    <sys:String x:Key="Lunar.Hint.FocusFailed">遊戲還沒連上啟動器，切不了視窗；等它進到主選單再試</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">說明</sys:String>
     <sys:String x:Key="Lunar.Note.1">不經過 Lunar 啟動器，由 PCL 直接拉起遊戲。</sys:String>
     <sys:String x:Key="Lunar.Note.2">Loader 由伺服器下發，點一下就能換。</sys:String>
@@ -3639,6 +3642,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Lunar.Status.FetchManifest">正在取得 Lunar 物料清單…</sys:String>
     <sys:String x:Key="Lunar.Status.Launching">正在啟動…</sys:String>
     <sys:String x:Key="Lunar.Status.Exited">遊戲已結束</sys:String>
+    <sys:String x:Key="Lunar.Status.Stopping">正在退出遊戲（等它存檔）…</sys:String>
     <sys:String x:Key="Lunar.Status.Stopped">遊戲已停止</sys:String>
     <sys:String x:Key="Lunar.Status.Crashed">遊戲異常結束（退出碼 {0}）</sys:String>
     <sys:String x:Key="Lunar.Status.CrashedDesc">輸出已寫入 PCL 日誌。</sys:String>

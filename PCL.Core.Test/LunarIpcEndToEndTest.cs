@@ -256,4 +256,47 @@ public class LunarIpcEndToEndTest
             Assert.AreEqual(1, refreshCalls);
         }
     }
+
+    [TestMethod]
+    public async Task SendPush_ShouldReachConnectedGame()
+    {
+        var port = FindFreePort();
+        var result = await LunarIpcServer.StartAsync(port, "test-installation", NoRefresh, _ => { });
+
+        using (result.Server)
+        {
+            Assert.IsNotNull(result.Server);
+            using var client = new TcpClient();
+            var stream = await HandshakeAsync(client, port);
+
+            // 服务端是在写完 101 之后才把连接登记进表的，握手刚返回时可能还差一拍
+            for (var i = 0; i < 100 && result.Server!.ConnectionCount == 0; i++)
+                await Task.Delay(10);
+
+            var sent = await result.Server!.SendPushAsync(LunarIpcPush.ExitGame);
+            Assert.AreEqual(1, sent, "应当送到唯一那条连接上");
+
+            var frame = await ReadServerFrameAsync(stream);
+            Assert.IsNotNull(frame, "客户端没有收到推送帧");
+
+            // GameboundIPCMessage { push_notification = 2 { type_url = 1, value = 2 } }
+            Assert.IsTrue(LunarIpcProtocol.TryGetMessage(frame!, 2, out var any),
+                "推送必须放在 push_notification 里，不能借用 rpc_response");
+            Assert.IsTrue(LunarIpcProtocol.TryGetString(any, 1, out var typeUrl));
+            Assert.AreEqual("type.googleapis.com/lunarclient.gameipc.launch.v1.ExitGamePush", typeUrl);
+        }
+    }
+
+    [TestMethod]
+    public async Task SendPush_ShouldReturnZeroWhenNobodyConnected()
+    {
+        var port = FindFreePort();
+        var result = await LunarIpcServer.StartAsync(port, "test-installation", NoRefresh, _ => { });
+
+        using (result.Server)
+        {
+            Assert.AreEqual(0, await result.Server!.SendPushAsync(LunarIpcPush.ExitGame),
+                "没有连接时应当老实返回 0，而不是假装送到了");
+        }
+    }
 }

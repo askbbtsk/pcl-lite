@@ -153,6 +153,27 @@ internal static class LunarIpcProtocol
         return envelope.ToArray();
     }
 
+    /// <summary>
+    ///     拼 <c>GameboundIPCMessage { push_notification { type_url, value } }</c>。
+    ///     <para>
+    ///         这是反方向的消息：启动器主动推给游戏，不需要 request_id，也没有响应。
+    ///         游戏端按 <c>type_url</c> 末尾的类型名在自己的处理器表里找消费者，
+    ///         找不到就打一条「No push handler found」然后丢掉 —— 所以推一个游戏
+    ///         不认识的消息是绝对安全的，只是没有任何效果。
+    ///     </para>
+    /// </summary>
+    public static byte[] EncodePush(string typeUrl, ReadOnlySpan<byte> payload)
+    {
+        // google.protobuf.Any { string type_url = 1; bytes value = 2; }
+        using var any = new MemoryStream();
+        WriteString(any, 1, typeUrl);
+        if (!payload.IsEmpty) WriteBytes(any, 2, payload);
+
+        using var envelope = new MemoryStream();
+        WriteBytes(envelope, 2, any.ToArray());
+        return envelope.ToArray();
+    }
+
     /// <summary>拼 <c>RefreshAccountResponse</c>。成功时只写 <c>success = true</c>。</summary>
     public static byte[] EncodeRefreshAccountResponse(bool success, LunarAccountError error)
     {

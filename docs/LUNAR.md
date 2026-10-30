@@ -721,13 +721,42 @@ LaunchGameRequest_LaunchSource  UNSPECIFIED=0  MAIN_MENU_SWITCHER=1
 反过来 `OpenTebexJsCheckoutResponse.status` 要的是 `2`，不写就是 `0`，
 游戏会以为还在处理 —— 这类非默认值必须显式编码。
 
-另外还有一批**反方向**的推送（启动器 → 游戏，`GameboundIPCMessage.push_notification`），
-PCL 一个都不发：`ExitGamePush`、`PlayServerPush`、`SendChatPush`、`FocusGamePush`、
-`StartStorePreviewSessionPush`、`PendingPromotionUpdatePush`、`Styngr*Update`、
-`PayNowJsCheckoutClosed`、`TebexJsCheckoutClosed`。
-这些都需要启动器自己有对应的界面（服务器列表、聊天面板、商店）才有意义，
-PCL 没有这些界面，所以不发也不会缺功能 —— 唯一的例外是想让 PCL 主动优雅关游戏时
-得用 `ExitGamePush`，现在只能 `Kill`。
+### 反方向：启动器 → 游戏（`push_notification`）
+
+`GameboundIPCMessage { push_notification = 2 }` 里的 `google.protobuf.Any`：
+`type_url = "type.googleapis.com/" + 消息全名`，`value` 是消息体。
+游戏端在 `onOpen` 里把类型注册进一张 `Map<Class, Consumer>`，收到后按类型找处理器；
+**找不到就只打一条日志然后丢掉** —— 所以推一条游戏不认识的消息绝对安全，只是没有效果。
+
+判断「这个推送有没有用」不能只看 `app.asar` 里有没有消息定义，得看 `lunar.jar` 里
+有没有注册处理器。实测（`javap` 反编译 `com.moonsworth.lunar.client.*` 的 IPC 客户端）：
+
+| 推送 | 游戏端处理器 | PCL |
+| --- | --- | --- |
+| `launch.v1.ExitGamePush` | `bridge$shutdownMinecraftApplet()` —— 走 Minecraft 正常关闭，存档落盘 | ✅ 停止游戏时先发它 |
+| `location.v1.FocusGamePush` | 把游戏窗口切到前台 | ✅ 接在「回到游戏」按钮上 |
+| `launch.v1.PlayServerPush` | 连服务器；**当前没有 session 就只打日志忽略** | 🟡 API 已就绪，PCL 没有服务器列表页，暂未接入口 |
+| `chat.v1.SendChatPush` | **没有注册处理器**，只有消息定义 | ❌ 发了等于没发，没实现 |
+| `promotion.v1.PendingPromotionUpdatePush` | 更新推广状态 | ⬜ PCL 没有推广模块 |
+| `store.v1.StartStorePreviewSessionPush` | 开商店预览会话 | ⬜ PCL 没有商店 |
+| `tebex.v1.TebexJsCheckoutClosed` / `paynow.v1.PayNowJsCheckoutClosed` | 关掉结账界面 | ⬜ PCL 从不打开结账界面 |
+| `styngr.v1.StyngrTrack*Update` | 推电台播放状态 | ⬜ PCL 没有电台 |
+
+字段号（同样是反编译出来的）：
+
+```
+Any                       { string type_url = 1; bytes value = 2; }
+ExitGamePush              { }                       // 空消息
+FocusGamePush             { }                       // 空消息
+PlayServerPush            { string autoJoinServerIp = 1; }
+SendChatPush              { string message = 1; }    // 游戏端无处理器
+StartStorePreviewSessionPush { string basketIdent = 1; int32 packageId = 2; string currency = 3; }
+PendingPromotionUpdatePush { bool hasPendingPromotion = 1; repeated int32 pendingPromotions = 2; }
+```
+
+> 官方启动器自己**从来不发 `ExitGamePush`**（`sendPush(` 的调用点里没有它），
+> 它结束游戏还是走进程退出。但游戏端的处理器是实打实注册了的，所以 PCL 发它
+> 能让游戏自己存盘退出 —— 这条比 `Process.Kill` 强，是 PCL 独有的收益。
 
 `AuthService` 的 `NotifySwitchAccount` / `OpenMicrosoftPopup` 只有消息定义，
 连官方启动器都没给它们绑定客户端方法，实测不会出现在 IPC 上，不用管。

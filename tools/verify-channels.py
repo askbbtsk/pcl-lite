@@ -46,6 +46,9 @@ def level_from_name(name):
     if "-" not in t:
         return 0
     suffix = t.split("-", 1)[1].split("+", 1)[0].lower()
+    # hotfix 打在同号正式版**之上**，属于正式版通道（和 C# 的 UpdateChannelLevels 保持一致）
+    if "hotfix" in suffix:
+        return 0
     if "nightly" in suffix:
         return 3
     if "snapshot" in suffix:
@@ -55,13 +58,36 @@ def level_from_name(name):
 
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?(?:-([0-9A-Za-z.\-]+))?(?:\+[0-9A-Za-z.\-]+)?$")
 
+#: 后缀档位：hotfix 高于正式版，其余预发布都在正式版之下。
+#: 必须和 PCL.Core/App/Updates/UpdateVersion.cs 里的 Rank* 常量一致。
+_SUFFIX_RANK = {"hotfix": 1, "stable": 0, "pre": -1, "snapshot": -2, "nightly": -3}
+
+
+def _suffix_parts(suffix):
+    """拆出（档位, 序号, 家族）。`hotfix-2` → (1, 2, 'hotfix')，没写序号按 1 算。"""
+    low = suffix.lower()
+    if "hotfix" in low:
+        rank = _SUFFIX_RANK["hotfix"]
+    elif "nightly" in low:
+        rank = _SUFFIX_RANK["nightly"]
+    elif "snapshot" in low:
+        rank = _SUFFIX_RANK["snapshot"]
+    else:
+        rank = _SUFFIX_RANK["pre"]
+    m = re.search(r"(?:^|[.\-])(\d+)$", low)
+    if m:
+        return rank, int(m.group(1)), low[: m.start()].rstrip(".-")
+    return rank, 1, low
+
 
 def semver_key(name):
-    """返回可直接比较的元组。无后缀 > 有后缀（SemVer 2.0 §11.3）。
+    """返回可直接比较的元组，语义对齐 C# 的 UpdateVersion。
 
-    允许省略 patch 位：`v1.5` 等价于 `1.5.0`。启动器那边的正则要求三段，
-    所以线上 tag 现在都是三段；这里放宽只是为了让脚本在写错 tag 时给出
-    有意义的断言结果，而不是抛异常。
+    和标准 SemVer 的区别只有一处：**hotfix 高于同号正式版**。
+    SemVer 2.0 §11.3 规定带后缀一律低于同号正式版，直接照搬会把
+    `1.6.1-hotfix-1` 判成比 `1.6.1` 旧，热修复就永远发不出去。
+
+    允许省略 patch 位：`v1.5` 等价于 `1.5.0`。
     """
     m = SEMVER_RE.match(normalize_tag(name))
     if not m:
@@ -70,11 +96,9 @@ def semver_key(name):
     patch = int(m.group(3) or 0)
     pre = m.group(4)
     if pre is None:
-        return (major, minor, patch, 1, ())
-    ids = []
-    for part in pre.split("."):
-        ids.append((0, int(part)) if part.isdigit() else (1, part))
-    return (major, minor, patch, 0, tuple(ids))
+        return (major, minor, patch, 0, 0, "")
+    rank, seq, family = _suffix_parts(pre)
+    return (major, minor, patch, rank, seq, family)
 
 
 def pick(releases, channel_level):

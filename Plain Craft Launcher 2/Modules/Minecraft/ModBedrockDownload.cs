@@ -1,8 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.App;
@@ -25,11 +24,6 @@ namespace PCL;
 /// </summary>
 public static class ModBedrockDownload
 {
-    private static readonly HttpClient Client = new()
-    {
-        Timeout = TimeSpan.FromMinutes(30)
-    };
-
     private static IReadOnlyList<BedrockVersionEntry> _cache = [];
 
     public static string RootDirectory
@@ -109,53 +103,67 @@ public static class ModBedrockDownload
         });
     }
 
-    /// <summary>下载到本地，返回文件路径。已有同名文件且大小一致时直接复用。</summary>
-    public static async Task<string> DownloadAsync(BedrockVersionEntry entry, string url,
-        IProgress<(long Received, long Total)>? progress = null, CancellationToken token = default)
+    /// <summary>
+    ///     用 PCL 自己的下载器把原包拉下来，返回本地路径。
+    ///     <para>
+    ///         走 <c>LoaderDownload</c> + <c>DownloadFile</c> 而不是自己开 <c>HttpClient</c>：
+    ///         这样才会出现在右下角的下载任务栏里（进度、速度、线程数、可中止），
+    ///         也才吃得到分段并发、失败重试、镜像与代理这一整套。
+    ///         以前这里是一条裸 <c>ReadAsync</c> 循环，断流就只能整包重下，
+    ///         用户也完全看不出在下载什么。
+    ///     </para>
+    /// </summary>
+    /// <param name="entry">目标版本。</param>
+    /// <param name="url">已经解析好的直链。</param>
+    /// <param name="onProgress">进度回调，参数是 0～100 的百分比，可能在任意线程触发。</param>
+    /// <param name="token">取消令牌。</param>
+    public static async Task<string> DownloadWithLoaderAsync(BedrockVersionEntry entry, string url,
+        Action<double>? onProgress = null, CancellationToken token = default)
     {
         var target = GetPackagePath(entry);
-        var temp = target + ".downloading";
+        Directory.CreateDirectory(PackagesDirectory);
 
-        using var response = await Client
-            .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token)
-            .ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+        // 列表给了 MD5 就按 MD5 复用已存在的文件（FileChecker 会按哈希长度自己认出 MD5）；
+        // 没给就只要求「文件非空」，否则每次点都会整包重下。
+        var checker = string.IsNullOrWhiteSpace(entry.Md5)
+            ? new ModBase.FileChecker(minSize: 1)
+            : new ModBase.FileChecker(hash: entry.Md5);
 
-        var total = response.Content.Headers.ContentLength ?? -1;
-        long received = 0;
+        var file = new PCL.Network.DownloadFile([url], target, checker);
+        var download = new PCL.Network.Loaders.LoaderDownload(
+            Lang.Text("Bedrock.Download.Task.Download", entry.Key), [file]) { ProgressWeight = 10d };
 
-        try
+        var loader = new ModLoader.LoaderCombo<string>(
+            Lang.Text("Bedrock.Download.Task.Download", entry.Key), [download]);
+
+        var completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        if (onProgress is not null)
+            download.ProgressChanged += (newProgress, _) => onProgress(newProgress * 100d);
+
+        loader.OnStateChangedThread += (_, state, _) =>
         {
-            await using (var source = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false))
-            await using (var destination = File.Create(temp))
+            switch (state)
             {
-                var buffer = new byte[81920];
-                int read;
-                while ((read = await source.ReadAsync(buffer, token).ConfigureAwait(false)) > 0)
-                {
-                    await destination.WriteAsync(buffer.AsMemory(0, read), token).ConfigureAwait(false);
-                    received += read;
-                    progress?.Report((received, total));
-                }
+                case ModBase.LoadState.Finished:
+                    completion.TrySetResult(target);
+                    break;
+                case ModBase.LoadState.Failed:
+                    completion.TrySetException(loader.Error ?? new Exception(Lang.Text("Bedrock.Download.Md5Failed")));
+                    break;
+                case ModBase.LoadState.Aborted:
+                    completion.TrySetCanceled();
+                    break;
             }
+        };
+        loader.hasOnStateChangedThread = true;
 
-            if (File.Exists(target)) File.Delete(target);
-            File.Move(temp, target);
+        using var registration = token.Register(loader.Abort);
 
-            ModBase.Log($"[Bedrock] 已下载 {entry.Key}（{received / 1024d / 1024d:0.0} MB）");
-            return target;
-        }
-        finally
-        {
-            try
-            {
-                if (File.Exists(temp)) File.Delete(temp);
-            }
-            catch (Exception)
-            {
-                // 临时文件删不掉不影响结果
-            }
-        }
+        ModLoader.LoaderTaskbarAdd(loader);
+        loader.Start();
+
+        return await completion.Task.ConfigureAwait(false);
     }
 
     /// <summary>下载后按官方 MD5 校验。列表没给 MD5 时直接放行。</summary>

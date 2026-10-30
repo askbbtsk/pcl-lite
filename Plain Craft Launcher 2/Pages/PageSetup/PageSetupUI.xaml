@@ -186,7 +186,11 @@
                                     <UniformGrid x:Name="PanCustomPreview" Rows="1" />
                                 </Border>
                             </Grid>
-                            <Grid Height="35">
+                            <!--
+                                用 MinHeight 而不是 Height：右边那句提示是 Wrap 的，
+                                窄窗口（810/820）下英文版会折成两行，定高 35 会把第二行裁掉。
+                            -->
+                            <Grid MinHeight="35">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" SharedSizeGroup="Name1" />
                                     <ColumnDefinition Width="*" />

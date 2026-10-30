@@ -67,8 +67,14 @@
                             <local:MyComboBoxItem Content="UWP" Tag="1" />
                             <local:MyComboBoxItem Content="GDK" Tag="2" />
                         </local:MyComboBox>
-                        <local:MyTextBox Grid.Column="3" x:Name="TextSearch" Width="170" Height="28"
-                                         HorizontalAlignment="Right" HintText="{DynamicResource Bedrock.Download.Filter.Search}"
+                        <!--
+                            搜索框不能写死 Width + 右对齐：它所在的列是 *，窄窗口（820 / 850）下
+                            列宽会小于写死的宽度，右对齐的控件于是往左溢出，直接压在左边的
+                            「全部」下拉框上。交给 * 列自己撑开就不会重叠。
+                        -->
+                        <local:MyTextBox Grid.Column="3" x:Name="TextSearch" Height="28"
+                                         Margin="12,0,0,0"
+                                         HintText="{DynamicResource Bedrock.Download.Filter.Search}"
                                          TextChanged="TextSearch_TextChanged" />
                     </Grid>
 

@@ -3268,6 +3268,7 @@
     <sys:String x:Key="Bedrock.Download.Status.LoadFailed">取得版本列表失敗：{0}</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Resolving">正在解析下載位址…</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Downloading">正在下載：{0:0.0}%</sys:String>
+    <sys:String x:Key="Bedrock.Download.Task.Download">下載基岩版 {0}</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.DownloadingUnknown">正在下載：{0:0.0} MB</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Verifying">正在校驗檔案…</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Installing">正在安裝…</sys:String>

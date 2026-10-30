@@ -230,16 +230,16 @@ public partial class PageBedrockDownload
                 var url = await ModBedrockDownload.ResolveUrlAsync(view.Entry);
 
                 view.SetStatus(Lang.Text("Bedrock.Download.Status.Downloading", 0d));
-                var progress = new Progress<(long Received, long Total)>(p =>
-                {
-                    var percent = p.Total > 0 ? p.Received * 100d / p.Total : 0d;
-                    view.SetProgress(percent);
-                    view.SetStatus(p.Total > 0
-                        ? Lang.Text("Bedrock.Download.Status.Downloading", percent)
-                        : Lang.Text("Bedrock.Download.Status.DownloadingUnknown", p.Received / 1024d / 1024d));
-                });
 
-                packagePath = await ModBedrockDownload.DownloadAsync(view.Entry, url, progress);
+                // 下载交给 PCL 自己的下载器：右下角任务栏会显示进度、速度和线程数，
+                // 断流能重试、能中止，也吃得到镜像与代理。这里只同步一下行内进度条。
+                packagePath = await ModBedrockDownload.DownloadWithLoaderAsync(
+                    view.Entry, url,
+                    percent => ModBase.RunInUi(() =>
+                    {
+                        view.SetProgress(percent);
+                        view.SetStatus(Lang.Text("Bedrock.Download.Status.Downloading", percent));
+                    }));
             }
 
             view.SetProgress(100d);

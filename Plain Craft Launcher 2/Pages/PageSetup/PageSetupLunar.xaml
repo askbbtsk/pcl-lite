@@ -51,7 +51,6 @@
                         <RowDefinition Height="28" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="9" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
@@ -81,8 +80,13 @@
                     <local:MyHint x:Name="HintMemory" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,9,0,0"
                                   Theme="Blue" Text="" />
 
-                    <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal"
-                                HorizontalAlignment="Left" Margin="0,0,0,6">
+                    <!--
+                        这一行必须 Auto：里面有个 23px 高的图标按钮，塞进定高行会被裁掉，
+                        按钮还会溢出到上下两行去（窄窗口下表现为「附加 JVM 参数」被压扁、
+                        和上面的提示条叠在一起）。
+                    -->
+                    <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal"
+                                HorizontalAlignment="Left" Margin="0,12,0,6">
                         <TextBlock Text="{DynamicResource Lunar.Setup.Jvm}" VerticalAlignment="Center" />
                         <local:MyIconButton Height="23" Margin="6,1,0,0" VerticalAlignment="Center"
                                             x:Name="BtnResetJvm" Click="BtnResetJvm_Click"
@@ -90,7 +94,7 @@
                                             ToolTipService.InitialShowDelay="200" ToolTipService.VerticalOffset="-1"
                                             SvgIcon="lucide/rotate-ccw" LogoScale="0.9" />
                     </StackPanel>
-                    <local:MyTextBox x:Name="TextJvm" Grid.Row="4" Grid.ColumnSpan="3"
+                    <local:MyTextBox x:Name="TextJvm" Grid.Row="3" Grid.ColumnSpan="3"
                                      Height="100" AcceptsReturn="True" TextWrapping="Wrap"
                                      VerticalContentAlignment="Top" Padding="0,5"
                                      VerticalScrollBarVisibility="Auto" MaxLength="4000"

@@ -88,6 +88,12 @@ PCL Lite 始终建议使用最新版本的操作系统以获得最佳体验。
 - **地域限制**：中国大陆用户请勿使用
 - **协议可变**：本协议可能随时更新，且不提前通知；更新只对之后获取的版本生效，**已经 fork 或已经分发的版本不受影响**
 
+**第三方移植部分另有许可证**：基岩版（下载 + 安装 + 启动）移植自
+[PCL-Symbio-Edition](https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition)，该部分仍受
+**Apache-2.0** 约束（依据其第 4 条），全文见 [`LICENSE-APACHE`](LICENSE-APACHE)。
+它只覆盖移植来的那部分代码，不改变本项目整体的许可证。
+完整的代码来源与第三方库清单见[开源项目清单](docs/CREDITS.md)。
+
 
 
 ## ❤️ 致谢

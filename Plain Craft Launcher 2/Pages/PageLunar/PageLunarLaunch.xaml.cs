@@ -639,6 +639,16 @@ public partial class PageLunarLaunch
     private bool _socialBusy;
 
     /// <summary>
+    ///     好友头像的接口。这是 Lunar 官方启动器自己用的那个（<c>skins.mcstats.com</c>），
+    ///     直连可通、无皮肤时回默认皮肤，不会 404。
+    /// </summary>
+    private const string AvatarEndpoint = "https://skins.mcstats.com/face/";
+
+    /// <summary>UUID → 本地缓存路径。<c>null</c> 表示下过但失败了，别再试。</summary>
+    private readonly System.Collections.Generic.Dictionary<string, string?> _avatars =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     ///     上一条消息的日期，用来决定要不要插一条日期分隔。
     ///     <para>默认值（<c>0001-01-01</c>）表示「还一条都没画」，第一条消息必定插分隔。</para>
     /// </summary>
@@ -718,14 +728,94 @@ public partial class PageLunarLaunch
                 Type = MyListItem.CheckType.RadioBox,
                 Height = 38,
                 Margin = new Thickness(0, 0, 0, 2),
-                SvgIcon = friend.IsOnline ? "lucide/user-round" : "lucide/user",
                 Tag = friend,
                 Checked = _selectedFriend?.Uuid == friend.Uuid
             };
+            ApplyAvatar(item, friend);
             item.Check += FriendItem_Check;
             PanFriends.Children.Add(item);
         }
     }
+
+    /// <summary>
+    ///     给一行塞头像：有缓存就直出，没有就先挂 SVG 图标并排队下载。
+    ///     <para>
+    ///         头像走 <see cref="MyImage" /> 那套缓存（<c>Cache/Images/&lt;md5&gt;.png</c>），
+    ///         所以第二次进页面是本地读，不会每次都打网络。
+    ///     </para>
+    /// </summary>
+    private void ApplyAvatar(MyListItem item, LunarFriend friend)
+    {
+        var path = ResolveAvatar(friend);
+        if (path is null)
+        {
+            item.SvgIcon = friend.IsOnline ? "lucide/user-round" : "lucide/user";
+            item.Logo = string.Empty;
+            return;
+        }
+
+        item.SvgIcon = string.Empty;
+        item.Logo = path;
+    }
+
+    /// <summary>拿本地头像路径；没有就返回 <see langword="null" /> 并顺手排一个下载。</summary>
+    private string? ResolveAvatar(LunarFriend friend)
+    {
+        if (friend.Uuid.Length == 0) return null;
+        if (_avatars.TryGetValue(friend.Uuid, out var known)) return known;
+
+        var url = AvatarUrl(friend);
+        var path = MyImage.GetTempPath(url);
+        if (File.Exists(path) && new FileInfo(path).Length > 0L)
+        {
+            _avatars[friend.Uuid] = path;
+            return path;
+        }
+
+        // 先记成「没有」，免得同一轮重建里反复排队
+        _avatars[friend.Uuid] = null;
+        _ = DownloadAvatarAsync(friend.Uuid, url);
+        return null;
+    }
+
+    private async Task DownloadAvatarAsync(string uuid, string url)
+    {
+        string path;
+        try
+        {
+            path = await MyImage.DownloadImageAsync(url).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, $"[Lunar] 下载好友头像失败（{uuid}）", ModBase.LogLevel.Debug);
+            path = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(path))
+        {
+            // 失败就把「没有」这条记录清掉，下次刷新还能再试一次；
+            // 留着的话会一直显示图标，直到重启 PCL
+            await Dispatcher.BeginInvoke(new Action(() => _avatars.Remove(uuid)));
+            return;
+        }
+
+        await Dispatcher.BeginInvoke(new Action(() =>
+        {
+            _avatars[uuid] = path;
+
+            // 只换那一行的图，不整表重建 —— 重建会把用户正在点的选中态一起刷掉
+            foreach (var row in PanFriends.Children.OfType<MyListItem>())
+            {
+                if (row.Tag is not LunarFriend friend || friend.Uuid != uuid) continue;
+                row.SvgIcon = string.Empty;
+                row.Logo = path;
+                break;
+            }
+        }));
+    }
+
+    private static string AvatarUrl(LunarFriend friend) =>
+        AvatarEndpoint + friend.Uuid.Replace("-", "", StringComparison.Ordinal) + "?size=64";
 
     private async void FriendItem_Check(object sender, ModBase.RouteEventArgs e)
     {

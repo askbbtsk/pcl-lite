@@ -910,6 +910,20 @@ common.v1.Uuid            { fixed64 high64 = 1; fixed64 low64 = 2 }
 >
 > 注意 `offlineFriends` 名字有误导性 —— 它装的其实是**全部好友**，不只是离线的。
 
+**好友头像**用 Lunar 自己的接口，和官方启动器一致：
+
+```
+https://skins.mcstats.com/face/<uuid 去掉连字符>?size=<边长>
+```
+
+官方那边是 `dYe=(e,t=32)=>\`https://skins.mcstats.com/face/${e}?size=${t}\``，
+在「Hosted World」里用它取主持人头像（`size=128`）。实测直连可通（约 1 秒），
+**没有皮肤的 UUID 也返回 200 + 默认 Steve 头像**，不会 404，所以不需要额外的兜底图。
+
+PCL 这边交给 `MyImage` 那套缓存：`Cache/Images/<md5(url)>.png`，14 天过期，
+第二次进页面是本地读。先查本地文件存在就直接用，没有才排队下载，
+下载完只替换对应那一行（不整表重建，免得刷掉选中态）。
+
 ```
 conversation.v1.ConversationReference { Uuid friendUuid = 1; Uuid conversationReference = 2 }
 conversation.v1.Conversation { ConversationReference conversationReference = 1;

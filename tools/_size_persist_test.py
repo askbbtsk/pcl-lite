@@ -136,7 +136,7 @@ cfg_size()
 click_shot(win["hwnd"], 705, 38)
 time.sleep(1.5)
 # 设置页左侧「个性化」
-click_shot(win["hwnd"], 95, 300)
+click_shot(win["hwnd"], 95, 510)
 time.sleep(1.8)
 shot(win["hwnd"], "size-test-settings")
 

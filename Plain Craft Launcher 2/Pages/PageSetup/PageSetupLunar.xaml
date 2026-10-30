@@ -45,23 +45,19 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />
                         <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="9" />
                         <RowDefinition Height="28" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="9" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <local:MyCheckBox x:Name="CheckFollowGlobal" Grid.Row="0" Grid.ColumnSpan="2"
-                                      Text="{DynamicResource Lunar.Setup.FollowGlobal}"
-                                      Change="CheckFollowGlobal_OnChange" />
-
-                    <TextBlock Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Left"
+                    <TextBlock Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Left"
                                Text="{DynamicResource Lunar.Setup.MaxMemory}" Margin="0,0,25,0" />
-                    <local:MyTextBox x:Name="TextMemory" Grid.Row="2" Grid.Column="1"
+                    <local:MyTextBox x:Name="TextMemory" Grid.Row="0" Grid.Column="1" Margin="0,0,10,0"
                                      HintText="{DynamicResource Lunar.Setup.MaxMemoryHint}"
                                      ValidatedTextChanged="TextMemory_OnChanged"
                                      ToolTip="{DynamicResource Lunar.Setup.MaxMemoryDesc}">
@@ -69,9 +65,24 @@
                             <val:IntValidator Min="512" Max="131072" />
                         </local:MyTextBox.ValidateRules>
                     </local:MyTextBox>
+                    <!--
+                        MyIconButton.Click 的第二个参数是 EventArgs（不是 RoutedEventArgs）。
+                        写错了编译期查不出来，打开设置页才抛 XamlParseException。
+                    -->
+                    <local:MyIconButton x:Name="BtnLoadLunarMemory" Grid.Row="0" Grid.Column="2"
+                                        Height="23" VerticalAlignment="Center"
+                                        Click="BtnLoadLunarMemory_Click"
+                                        ToolTip="{DynamicResource Lunar.Setup.LoadNative}"
+                                        ToolTipService.Placement="Right"
+                                        ToolTipService.InitialShowDelay="200" ToolTipService.VerticalOffset="-1"
+                                        SvgIcon="lucide/rotate-ccw" LogoScale="0.9" />
 
-                    <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal"
-                                HorizontalAlignment="Left" Margin="0,12,0,6">
+                    <!-- 这个数字是从哪儿来的，直接写在下面，省得用户猜「我 Lunar 里设的 8G 去哪了」 -->
+                    <local:MyHint x:Name="HintMemory" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,9,0,0"
+                                  Theme="Blue" Text="" />
+
+                    <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal"
+                                HorizontalAlignment="Left" Margin="0,0,0,6">
                         <TextBlock Text="{DynamicResource Lunar.Setup.Jvm}" VerticalAlignment="Center" />
                         <local:MyIconButton Height="23" Margin="6,1,0,0" VerticalAlignment="Center"
                                             x:Name="BtnResetJvm" Click="BtnResetJvm_Click"
@@ -79,7 +90,7 @@
                                             ToolTipService.InitialShowDelay="200" ToolTipService.VerticalOffset="-1"
                                             SvgIcon="lucide/rotate-ccw" LogoScale="0.9" />
                     </StackPanel>
-                    <local:MyTextBox x:Name="TextJvm" Grid.Row="5" Grid.ColumnSpan="2"
+                    <local:MyTextBox x:Name="TextJvm" Grid.Row="4" Grid.ColumnSpan="3"
                                      Height="100" AcceptsReturn="True" TextWrapping="Wrap"
                                      VerticalContentAlignment="Top" Padding="0,5"
                                      VerticalScrollBarVisibility="Auto" MaxLength="4000"
@@ -89,7 +100,7 @@
                 </Grid>
             </local:MyCard>
 
-            <!-- ③ 按版本覆盖 -->
+            <!-- ③ 启动版本 + 按版本覆盖 -->
             <local:MyCard Margin="0,15" Title="{DynamicResource Lunar.Setup.OverrideTitle}">
                 <Grid Margin="25,40,25,16">
                     <Grid.ColumnDefinitions>
@@ -100,7 +111,6 @@
                         <RowDefinition Height="28" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="28" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
@@ -110,12 +120,20 @@
                     <local:MyComboBox x:Name="ComboVersion" Grid.Row="0" Grid.Column="1"
                                       SelectionChanged="ComboVersion_OnSelectionChanged" />
 
-                    <local:MyCheckBox x:Name="CheckVersionOverride" Grid.Row="1" Grid.ColumnSpan="2"
+                    <!--
+                        选版本的地方只该有一个：这个下拉框既决定「Lunar 板块启动哪个版本」，
+                        也决定下面这块覆盖设置编辑的是谁。以前它只管覆盖，启动版本得跑到
+                        Lunar 板块再选一次，两边不同步时就会出现「设置里选了 A、启动的是 B」。
+                    -->
+                    <local:MyHint x:Name="HintVersion" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,9,0,0"
+                                  Theme="Blue" Text="{DynamicResource Lunar.Setup.VersionHint}" />
+
+                    <local:MyCheckBox x:Name="CheckVersionOverride" Grid.Row="2" Grid.ColumnSpan="2"
                                       Margin="0,9,0,0"
                                       Text="{DynamicResource Lunar.Setup.OverrideCheck}"
                                       Change="CheckVersionOverride_OnChange" />
 
-                    <StackPanel Grid.Row="2" Grid.ColumnSpan="2" x:Name="PanVersionOptions" Margin="0,12,0,0">
+                    <StackPanel Grid.Row="3" Grid.ColumnSpan="2" x:Name="PanVersionOptions" Margin="0,12,0,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />
@@ -168,7 +186,7 @@
                         </Grid>
                     </StackPanel>
 
-                    <local:MyHint x:Name="HintEffective" Grid.Row="5" Grid.ColumnSpan="2" Margin="0,14,0,0"
+                    <local:MyHint x:Name="HintEffective" Grid.Row="4" Grid.ColumnSpan="2" Margin="0,14,0,0"
                                   Theme="Blue" Text="" />
                 </Grid>
             </local:MyCard>

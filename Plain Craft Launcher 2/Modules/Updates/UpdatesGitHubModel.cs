@@ -314,8 +314,10 @@ public class UpdatesGitHubModel : IUpdateSource
     public bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)
     {
         var latest = GetLatestVersion(channel, arch);
-        // 走 UpdateVersion：hotfix 比同号正式版新，SemVer 的规则正好相反
-        return UpdateVersion.IsAtLeast(latest.VersionName, currentVersion.ToString());
+        // IsLatest 问的是「我是不是已经最新了」，也就是「远程没有比当前更新的」。
+        // 写成 IsAtLeast(latest, current) 会把 hotfix 判成「已是最新」：
+        // 1.6.1-hotfix-1 ≥ 1.6.1 成立，于是有更新也被当成没有。
+        return UpdateVersion.IsUpToDate(latest.VersionName, currentVersion.ToString());
     }
 
     public VersionAnnouncementDataModel GetAnnouncementList()

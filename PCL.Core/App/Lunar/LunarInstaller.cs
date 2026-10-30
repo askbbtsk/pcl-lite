@@ -381,10 +381,18 @@ public static class LunarInstaller
 
         if (data.UiAssets is not { } uiAssets) return;
 
+        // 这些物料必须落到 <ui>/assets/ 下，不能落到 <ui>/ 根目录。
+        // Lunar 的 index.html 里写的是 href="/assets/index.css"、src="/static/index.js"，
+        // 而 ui.assets 索引里的相对路径是平的（bg.png、index.css、DMSans-*.ttf…），
+        // 官方启动器就是把这份索引下载到 ui/<sha1>/assets/（反编译 main.js：
+        // destination = join(uiDir, "assets")）。写进根目录的话 assets/ 永远不存在，
+        // WebOSR 加载不到 CSS 和背景图，主界面就成了透明的一片。
+        var uiAssetsDirectory = Path.Combine(uiDirectory, "assets");
+
         var count = await EnsureIndexedAsync(
             uiAssets,
             lunarRoot,
-            uiDirectory,
+            uiAssetsDirectory,
             $"uiIndex-{data.UiSha1}.txt",
             StageUi,
             log,

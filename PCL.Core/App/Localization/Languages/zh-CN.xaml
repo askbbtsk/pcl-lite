@@ -3652,15 +3652,20 @@
     <sys:String x:Key="Lunar.Setup.JavaHint">留空 = 用 Lunar 自带的 JRE</sys:String>
     <sys:String x:Key="Lunar.Setup.JavaDesc">Lunar 会按版本自己下 JRE，只有想换成本机已装的才需要填。</sys:String>
     <sys:String x:Key="Lunar.Setup.MemoryTitle">内存与 JVM 参数（全局）</sys:String>
-    <sys:String x:Key="Lunar.Setup.FollowGlobal">跟随 PCL 的全局内存设置</sys:String>
+    <sys:String x:Key="Lunar.Setup.LoadNative">读取 Lunar 启动器里的内存</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemory">最大内存（MB）</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemoryHint">例如 4096</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemoryDesc">低于 512 会被抬到 512，上限 131072。</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryCustom">这个值只用于 PCL 启动的 Lunar，不会改到 Lunar 启动器自己的设置。</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryFromLunar">当前沿用 Lunar 启动器里的 {0} MB。在这里改只影响 PCL，不会写回 Lunar 启动器。</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryNoNative">没读到 Lunar 启动器的设置（没装，或者没在那边调过内存），先用内置默认 3072 MB。</sys:String>
     <sys:String x:Key="Lunar.Setup.Jvm">附加 JVM 参数</sys:String>
     <sys:String x:Key="Lunar.Setup.JvmHint">例如 -XX:+UseG1GC</sys:String>
     <sys:String x:Key="Lunar.Setup.JvmDesc">拼在官方参数之后，重复的以这里为准。</sys:String>
-    <sys:String x:Key="Lunar.Setup.OverrideTitle">按版本覆盖</sys:String>
-    <sys:String x:Key="Lunar.Setup.OverrideVersion">版本</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideTitle">启动版本与按版本覆盖</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideVersion">启动版本</sys:String>
+    <sys:String x:Key="Lunar.Setup.VersionHint">Lunar 板块启动时用这个版本。默认 1.8.9，是 Lunar 支持最久、最稳的版本。</sys:String>
+    <sys:String x:Key="Lunar.Setup.VersionEmpty">（还没拿到版本列表，正在尝试获取…）</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideCheck">为这个版本单独设置</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideHint">留空 = 沿用全局</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideDesc">只影响选中的这个版本。</sys:String>

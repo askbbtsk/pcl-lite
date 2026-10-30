@@ -3562,15 +3562,20 @@
     <sys:String x:Key="Lunar.Setup.JavaHint">Empty = bundled JRE</sys:String>
     <sys:String x:Key="Lunar.Setup.JavaDesc">Lunar downloads its own JRE per version.</sys:String>
     <sys:String x:Key="Lunar.Setup.MemoryTitle">Memory and JVM args (global)</sys:String>
-    <sys:String x:Key="Lunar.Setup.FollowGlobal">Follow PCL global memory</sys:String>
+    <sys:String x:Key="Lunar.Setup.LoadNative">Read memory from the Lunar launcher</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemory">Max memory (MB)</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemoryHint">e.g. 4096</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemoryDesc">Clamped to 512–131072.</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryCustom">Used only when PCL launches Lunar; the Lunar launcher's own setting is left untouched.</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryFromLunar">Currently using {0} MB from the Lunar launcher. Editing here affects PCL only and is not written back.</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryNoNative">No Lunar launcher settings found (not installed, or memory never changed) — using the built-in 3072 MB.</sys:String>
     <sys:String x:Key="Lunar.Setup.Jvm">Extra JVM args</sys:String>
     <sys:String x:Key="Lunar.Setup.JvmHint">e.g. -XX:+UseG1GC</sys:String>
     <sys:String x:Key="Lunar.Setup.JvmDesc">Appended after official args; later ones win.</sys:String>
-    <sys:String x:Key="Lunar.Setup.OverrideTitle">Per-version override</sys:String>
-    <sys:String x:Key="Lunar.Setup.OverrideVersion">Version</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideTitle">Launch version and overrides</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideVersion">Launch version</sys:String>
+    <sys:String x:Key="Lunar.Setup.VersionHint">Used when launching from the Lunar tab. Defaults to 1.8.9, the longest-supported and most stable version.</sys:String>
+    <sys:String x:Key="Lunar.Setup.VersionEmpty">(Version list not loaded yet, fetching…)</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideCheck">Override for this version</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideHint">Empty = use global</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideDesc">Only affects the selected version.</sys:String>

@@ -68,6 +68,17 @@ public static class UpdateVersion
     /// <summary><paramref name="candidate"/> 是否不比 <paramref name="reference"/> 旧。</summary>
     public static bool IsAtLeast(string? candidate, string? reference) => Compare(candidate, reference) >= 0;
 
+    /// <summary>
+    ///     远程版本 <paramref name="remote"/> 是否不比本地 <paramref name="current"/> 新，也就是「已经是最新」。
+    ///     <para>
+    ///         单独抽出来是因为这里极容易写反：判断「已是最新」时随手写成
+    ///         <see cref="IsAtLeast" />(remote, current)，看着像「远程够新」，实际含义是
+    ///         「远程 ≥ 当前」，于是 `1.6.1-hotfix-1` 对着 `1.6.1` 会直接判成已是最新，
+    ///         热修复永远发不出去。方向只有一个：远程比当前新 → 不是最新。
+    ///     </para>
+    /// </summary>
+    public static bool IsUpToDate(string? remote, string? current) => !IsNewer(remote, current);
+
     /// <summary>把一个版本名拆成可比较的键。</summary>
     public static bool TryParse(string? name, out Key key)
     {

@@ -164,6 +164,18 @@ public static class ModLunar
     /// <summary>可选的 Lunar 子版本，未拉到版本列表时为空。</summary>
     public static IReadOnlyList<LunarVersion> Versions => LunarVersionCatalog.Versions;
 
+    /// <summary>
+    ///     版本下拉框里那一项的悬停说明：大版本名，外加「官方默认」标记。
+    ///     <para>
+    ///         两个页面（Lunar 板块、设置页）都用它，免得一处写「官方默认」、另一处忘了写。
+    ///     </para>
+    /// </summary>
+    public static string DescribeVersion(LunarVersion version)
+    {
+        var name = string.IsNullOrWhiteSpace(version.ParentName) ? version.Id : version.ParentName;
+        return version.IsDefault ? name + " " + Lang.Text("Lunar.Module.Default") : name;
+    }
+
     /// <summary>Lunar 账户库里的账号。</summary>
     public static IReadOnlyList<LunarAccount> Accounts => _accounts;
 
@@ -173,6 +185,15 @@ public static class ModLunar
     /// <summary>
     ///     当前选中的子版本。存在配置里，没选过时用 <see cref="DefaultSubVersion" />；
     ///     如果配置里那个版本已经不在服务端列表里（Lunar 会下线老版本），也退回默认值。
+    ///     <para>
+    ///         兜底顺序：配置 → <see cref="DefaultSubVersion" />（1.8.9，Lunar 最稳的版本）
+    ///         → 服务端标了 <c>default</c> 的那个 → 列表里版本号最大的。
+    ///     </para>
+    ///     <para>
+    ///         特意把 1.8.9 排在官方默认之前：官方默认是「最新 drop」（现在是 26.3），
+    ///         换 drop 时 loader 清单会跟着变，用户点开 Lunar 板块就被丢进一个没下过物料的新版本。
+    ///         官方那个只在 1.8.9 也被下线时才用得上。
+    ///     </para>
     /// </summary>
     public static string SelectedSubVersion
     {
@@ -186,6 +207,8 @@ public static class ModLunar
                 return configured;
             if (LunarVersionCatalog.Find(DefaultSubVersion) is not null)
                 return DefaultSubVersion;
+            if (LunarVersionCatalog.DefaultVersion is { } official)
+                return official.Id;
 
             // 列表里既没有配置值也没有默认值（服务端下线了 1.8.9 这类老版本）。
             // 这里必须返回一个**列表里真的有**的 id：界面上「下拉框选中项」是按它反查的，

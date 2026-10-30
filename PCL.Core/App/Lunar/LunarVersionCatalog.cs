@@ -46,6 +46,12 @@ public sealed record LunarModule(
 /// <param name="AssetIndexUrl">索引文件地址。</param>
 /// <param name="AssetIndexSha1">索引文件 SHA-1。</param>
 /// <param name="Modules">这个版本可选的 loader，按服务端 <c>sort</c> 升序。可能为空。</param>
+/// <param name="IsDefault">
+///     服务端标了 <c>default: true</c> 的那个子版本。官方启动器就是按这个标记决定首次启动用哪个版本
+///     （反编译 <c>app.asar</c> 里的 <c>SB()</c>：先在 <c>versions</c> 里找 <c>default</c>，再在
+///     <c>subversions</c> 里找 <c>default</c>，两级都没有才退回第一个）。忽略它就会变成
+///     「按版本号降序取第一个」，那通常是最新的快照版。
+/// </param>
 public sealed record LunarVersion(
     string Id,
     string ParentId,
@@ -53,7 +59,8 @@ public sealed record LunarVersion(
     string AssetIndexId,
     string AssetIndexUrl,
     string AssetIndexSha1,
-    IReadOnlyList<LunarModule> Modules)
+    IReadOnlyList<LunarModule> Modules,
+    bool IsDefault = false)
 {
     /// <summary>下拉框里显示的文字。</summary>
     public string DisplayName => Id;
@@ -125,6 +132,16 @@ public static class LunarVersionCatalog
 
     public static LunarVersion? Find(string id) =>
         _versions.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    ///     官方启动器会默认选中的那个版本（服务端标了 <c>default: true</c>）。
+    ///     <para>
+    ///         只用来兜底：PCL 自己有一套「先 1.8.9 再官方默认」的偏好，
+    ///         因为 1.8.9 是 Lunar 支持最久、物料最全的稳定版本，官方默认反而是最新 drop，
+    ///         换 drop 时经常连 loader 清单都一起变。见 <c>ModLunar.SelectedSubVersion</c>。
+    ///     </para>
+    /// </summary>
+    public static LunarVersion? DefaultVersion => _versions.FirstOrDefault(x => x.IsDefault);
 
     /// <summary>
     ///     同步读磁盘缓存，供界面首帧使用（不能在这里发请求，否则会卡 UI）。
@@ -213,12 +230,16 @@ public static class LunarVersionCatalog
         if (node is not JsonArray versions) return null;
 
         var result = new List<LunarVersion>();
+        // 顶层 version 上的 default：官方启动器先按它挑大版本，再在它下面挑子版本。
+        // 两级标记都要读，只认子版本会漏掉「大版本才是默认」的情况
+        var defaultParents = new List<string>();
         foreach (var version in versions)
         {
             if (version?["subversions"] is not JsonArray subversions) continue;
 
             var parentId = version["id"]?.GetValue<string>() ?? string.Empty;
             var parentName = version["name"]?.GetValue<string>() ?? string.Empty;
+            if (version["default"]?.GetValue<bool>() == true) defaultParents.Add(parentId);
 
             foreach (var subversion in subversions)
             {
@@ -235,8 +256,17 @@ public static class LunarVersionCatalog
                     assets?["id"]?.GetValue<string>() ?? string.Empty,
                     assets?["url"]?.GetValue<string>() ?? string.Empty,
                     assets?["sha1"]?.GetValue<string>() ?? string.Empty,
-                    ParseModules(subversion["modules"])));
+                    ParseModules(subversion["modules"]),
+                    subversion["default"]?.GetValue<bool>() == true));
             }
+        }
+
+        // 一个子版本都没标默认，但有大版本标了：取那个大版本下的第一个
+        if (result.All(x => !x.IsDefault) && defaultParents.Count > 0)
+        {
+            var fallback = result.FirstOrDefault(x => defaultParents.Contains(x.ParentId));
+            if (fallback is not null)
+                result[result.IndexOf(fallback)] = fallback with { IsDefault = true };
         }
 
         result.Sort((a, b) => LunarVersion.Compare(b.Id, a.Id));
@@ -271,7 +301,8 @@ public static class LunarVersionCatalog
                 version["assetIndexId"]?.GetValue<string>() ?? string.Empty,
                 version["assetIndexUrl"]?.GetValue<string>() ?? string.Empty,
                 version["assetIndexSha1"]?.GetValue<string>() ?? string.Empty,
-                ParseModules(version["modules"])));
+                ParseModules(version["modules"]),
+                version["isDefault"]?.GetValue<bool>() == true));
         }
 
         if (result.Count == 0) return null;
@@ -337,6 +368,9 @@ public static class LunarVersionCatalog
                     ["assetIndexId"] = version.AssetIndexId,
                     ["assetIndexUrl"] = version.AssetIndexUrl,
                     ["assetIndexSha1"] = version.AssetIndexSha1,
+                    // 官方默认标记必须落盘：读回来的时候要靠它决定「没有配置时用哪个」，
+                    // 丢了就退化成「版本号最大的那个」（通常是最新的 drop）
+                    ["isDefault"] = version.IsDefault,
                     ["modules"] = modules
                 });
             }

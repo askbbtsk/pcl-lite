@@ -159,4 +159,35 @@ public class UpdateVersionTest
         Assert.AreEqual(UpdateChannelLevels.Snapshot, UpdateChannelLevels.FromVersionName("1.6.0-snapshot-1"));
         Assert.AreEqual(UpdateChannelLevels.Latest, UpdateChannelLevels.FromVersionName("1.6.0-nightly"));
     }
+
+    // ─────────────────────────────────────────────────────────────
+    //  「已是最新」的判定方向
+    // ─────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void HotfixShouldNotBeConsideredUpToDate()
+    {
+        // 装了 1.6.1，仓库里最新是 1.6.1-hotfix-1：这不是「已是最新」，必须提示更新。
+        // 曾经这里写成 IsAtLeast(remote, current)，1.6.1-hotfix-1 ≥ 1.6.1 成立，
+        // 于是热修复永远发不出去（界面上一直显示「已是最新版本」）。
+        Assert.IsFalse(UpdateVersion.IsUpToDate("1.6.1-hotfix-1", "1.6.1"));
+        Assert.IsFalse(UpdateVersion.IsUpToDate("1.6.1-hotfix-2", "1.6.1-hotfix-1"));
+        Assert.IsFalse(UpdateVersion.IsUpToDate("1.6.2", "1.6.1"));
+    }
+
+    [TestMethod]
+    public void SameVersionShouldBeUpToDate()
+    {
+        Assert.IsTrue(UpdateVersion.IsUpToDate("1.6.1", "1.6.1"));
+        Assert.IsTrue(UpdateVersion.IsUpToDate("1.6.1-hotfix-1", "1.6.1-hotfix-1"));
+        Assert.IsTrue(UpdateVersion.IsUpToDate("v1.6.1", "1.6.1"));
+    }
+
+    [TestMethod]
+    public void NewerLocalShouldNotPromptDowngrade()
+    {
+        // 从激进通道切回稳定版：手里的 nightly 比稳定版最新还新，不能提示「降级」。
+        Assert.IsTrue(UpdateVersion.IsUpToDate("1.6.1", "1.6.2-nightly-1"));
+        Assert.IsTrue(UpdateVersion.IsUpToDate("1.6.1-hotfix-1", "1.6.2"));
+    }
 }

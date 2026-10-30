@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using PCL.Core.App;
+using PCL.Core.App.Localization;
 using PCL.Core.App.Lunar;
 
 namespace PCL;
@@ -25,6 +26,11 @@ public partial class PageSetupLunar
     ///     程序化改控件时置位，避免把「界面初始化」当成「用户改动」写回配置。
     /// </summary>
     private bool _suppress;
+
+    /// <summary>
+    ///     官方 Lunar 启动器的设置快照。界面初始化时读一次，点「读取」按钮时再读一次。
+    /// </summary>
+    private LunarLauncherSettings _lunarLauncher = LunarLauncherSettings.Empty;
 
     public PageSetupLunar()
     {
@@ -72,9 +78,10 @@ public partial class PageSetupLunar
             TextJavaPath.Text = lunar.JavaPath ?? string.Empty;
             TextJvm.Text = lunar.JvmArgs ?? string.Empty;
 
-            var followGlobal = lunar.MemoryMb <= 0;
-            CheckFollowGlobal.Checked = followGlobal;
-            TextMemory.Text = (followGlobal ? _CurrentPclGlobalMemoryMb() : lunar.MemoryMb).ToString();
+            // 官方启动器那份设置只读不写：PCL 没填的时候沿用它，
+            // 这样「Lunar 启动器里设的 8G」不会在换 PCL 启动时凭空变成 3G
+            _lunarLauncher = LunarLauncherConfig.Read(LunarLauncherConfig.ResolveRoot(lunar.Root));
+            TextMemory.Text = _DisplayedMemory(lunar.MemoryMb).ToString();
 
             RefreshVersionCombo();
         }
@@ -85,6 +92,7 @@ public partial class PageSetupLunar
 
         RefreshJavaHint();
         RefreshEnabledState();
+        RefreshMemoryHint();
         LoadVersionOverride();
         RefreshEffectiveHint();
 
@@ -97,31 +105,36 @@ public partial class PageSetupLunar
         var wanted = ModLunar.SelectedSubVersion;
 
         ComboVersion.Items.Clear();
+        MyComboBoxItem? selected = null;
         foreach (var version in ModLunar.Versions)
         {
             var item = new MyComboBoxItem
             {
                 Content = BuildVersionLabel(version.Id),
-                Tag = version.Id
+                Tag = version.Id,
+                ToolTip = ModLunar.DescribeVersion(version)
             };
             ComboVersion.Items.Add(item);
             if (string.Equals(version.Id, wanted, StringComparison.OrdinalIgnoreCase))
-                ComboVersion.SelectedItem = item;
+                selected = item;
         }
 
         if (ComboVersion.Items.Count == 0)
         {
             ComboVersion.Items.Add(new MyComboBoxItem
             {
-                Content = "（还没拿到版本列表，正在尝试获取…）",
+                Content = Lang.Text("Lunar.Setup.VersionEmpty"),
                 IsEnabled = false,
                 Tag = null
             });
             ComboVersion.SelectedIndex = 0;
         }
-        else if (ComboVersion.SelectedItem is null)
+        else
         {
-            ComboVersion.SelectedIndex = 0;
+            // 和 Lunar 板块一样，选中项在全部加完之后显式指定：
+            // 逐项 Add 时 Selector 会自己选中第一项，而列表是版本号降序的，
+            // 第一项正好是最新的 drop —— 那就成了「默认选了最新版」
+            ComboVersion.SelectedItem = selected ?? ComboVersion.Items[0];
         }
     }
 
@@ -130,7 +143,8 @@ public partial class PageSetupLunar
 
     private async void _EnsureVersionsAsync()
     {
-        if (ModLunar.Versions.Count > 0 || !ModLunar.IsInstalled) return;
+        // 没装 Lunar 也要拉：版本列表是「选哪个版本」的前提，物料由 PCL 自己补
+        if (ModLunar.Versions.Count > 0) return;
 
         try
         {
@@ -188,15 +202,37 @@ public partial class PageSetupLunar
 
     private void RefreshEnabledState()
     {
-        if (TextMemory is not null)
-            TextMemory.IsEnabled = CheckFollowGlobal.Checked != true;
-
         if (PanVersionOptions is not null)
             // 用折叠而不是 IsEnabled=false：禁用态的输入框在深色主题下会变成两条黑条，
             // 里面还留着「留空 = 沿用全局」的占位文字，看着像出了 bug
             PanVersionOptions.Visibility = CheckVersionOverride.Checked == true
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    ///     说明这个数字是哪来的。
+    ///     <para>
+    ///         用户最常问的就是「我在 Lunar 启动器里调成 8G，怎么换 PCL 启动就变回去了」，
+    ///         所以这里必须写清楚：现在用的是哪一份、改了会不会影响到官方启动器。
+    ///     </para>
+    /// </summary>
+    private void RefreshMemoryHint()
+    {
+        if (HintMemory is null) return;
+
+        var configured = Config.Preference.Lunar.MemoryMb;
+        HintMemory.Theme = MyHint.Themes.Blue;
+
+        if (configured > 0)
+        {
+            HintMemory.Text = Lang.Text("Lunar.Setup.MemoryCustom");
+            return;
+        }
+
+        HintMemory.Text = _lunarLauncher.HasMemory
+            ? string.Format(Lang.Text("Lunar.Setup.MemoryFromLunar"), _lunarLauncher.AllocatedMemoryMb)
+            : Lang.Text("Lunar.Setup.MemoryNoNative");
     }
 
     private void RefreshJavaHint()
@@ -232,7 +268,7 @@ public partial class PageSetupLunar
             return;
         }
 
-        var settings = LunarLaunchProfile.Resolve(id, ModLunar.ResolvePclGlobalMemoryMb());
+        var settings = LunarLaunchProfile.Resolve(id, ModLunar.ResolvePclGlobalMemoryMb(), _lunarLauncher);
         var memorySource = LunarLaunchProfile.DescribeSource(settings.MemorySource);
         var jvmSource = LunarLaunchProfile.DescribeSource(settings.JvmSource);
         var jvmCount = settings.JvmArguments.Count;
@@ -279,46 +315,54 @@ public partial class PageSetupLunar
         }
     }
 
-    private void CheckFollowGlobal_OnChange(object sender, bool user)
-    {
-        if (_suppress || !user) return;
-
-        _suppress = true;
-        try
-        {
-            if (CheckFollowGlobal.Checked == true)
-            {
-                // 跟随：配置里存 0，显示当前换算出来的值
-                Config.Preference.Lunar.MemoryMb = 0;
-                TextMemory.Text = _CurrentPclGlobalMemoryMb().ToString();
-            }
-            else
-            {
-                // 取消跟随：把眼下显示的数字落成独立设置，
-                // 否则用户会看到「勾去掉了但值还是那个值」，以为没生效
-                var memory = _ParseMemory(TextMemory.Text, LunarLaunchProfile.DefaultMemoryMb);
-                Config.Preference.Lunar.MemoryMb = memory;
-                TextMemory.Text = memory.ToString();
-            }
-        }
-        finally
-        {
-            _suppress = false;
-        }
-
-        RefreshEnabledState();
-        RefreshEffectiveHint();
-    }
-
+    /// <summary>
+    ///     内存是「自定义」的：这里填什么，启动时就用什么。
+    ///     <para>
+    ///         以前这一项带一个「跟随 PCL 全局」的勾，默认勾上 —— 结果共用 <c>~/.lunarclient</c>
+    ///         的用户会发现 Lunar 启动器里设的 8G 被换成了 PCL 全局的 2G/3G，看起来就像
+    ///         PCL 把 Lunar 的设置覆盖掉了。现在默认直接沿用官方启动器里的数字，
+    ///         想改就在这里改。
+    ///     </para>
+    /// </summary>
     private void TextMemory_OnChanged(object sender, RoutedEventArgs e)
     {
         if (_suppress) return;
 
         TextMemory.Validate();
         if (!TextMemory.IsValidated) return;
-        if (CheckFollowGlobal.Checked == true) return;
 
         Config.Preference.Lunar.MemoryMb = _ParseMemory(TextMemory.Text, LunarLaunchProfile.DefaultMemoryMb);
+        RefreshMemoryHint();
+        RefreshEffectiveHint();
+    }
+
+    /// <summary>
+    ///     把官方 Lunar 启动器里的分配内存抄过来，落成 PCL 的自定义值。
+    /// </summary>
+    private void BtnLoadLunarMemory_Click(object sender, EventArgs e)
+    {
+        _lunarLauncher = LunarLauncherConfig.Read(LunarLauncherConfig.ResolveRoot(Config.Preference.Lunar.Root));
+
+        if (!_lunarLauncher.HasMemory)
+        {
+            // 没有可抄的东西就明确说一声，别让按钮看起来「点了没反应」
+            HintMemory.Theme = MyHint.Themes.Yellow;
+            HintMemory.Text = Lang.Text("Lunar.Setup.MemoryNoNative");
+            return;
+        }
+
+        _suppress = true;
+        try
+        {
+            TextMemory.Text = _lunarLauncher.AllocatedMemoryMb.ToString();
+            Config.Preference.Lunar.MemoryMb = _lunarLauncher.AllocatedMemoryMb;
+        }
+        finally
+        {
+            _suppress = false;
+        }
+
+        RefreshMemoryHint();
         RefreshEffectiveHint();
     }
 
@@ -341,9 +385,20 @@ public partial class PageSetupLunar
 
     #region 按版本覆盖
 
+    /// <summary>
+    ///     换版本：既改「Lunar 板块启动哪个版本」，也换下面这块覆盖设置编辑的对象。
+    ///     <para>
+    ///         以前这里只切覆盖项，启动版本还得去 Lunar 板块再选一次，两边不同步就会
+    ///         出现「设置里明明选了 1.8.9，启动出来是别的版本」。
+    ///     </para>
+    /// </summary>
     private void ComboVersion_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_suppress) return;
+
+        if (SelectedVersionId is { } id)
+            ModLunar.SelectedSubVersion = id;
+
         LoadVersionOverride();
         RefreshEffectiveHint();
     }
@@ -351,6 +406,22 @@ public partial class PageSetupLunar
     private void CheckVersionOverride_OnChange(object sender, bool user)
     {
         if (_suppress || !user) return;
+
+        // 刚勾上时把「现在实际生效的那个数字」填进去：留空虽然等价于沿用全局，
+        // 但一个空框看不出自己继承到了多少，用户只能再去别处找
+        if (CheckVersionOverride.Checked == true && string.IsNullOrWhiteSpace(TextVersionMemory.Text))
+        {
+            _suppress = true;
+            try
+            {
+                TextVersionMemory.Text = _DisplayedMemory(Config.Preference.Lunar.MemoryMb).ToString();
+            }
+            finally
+            {
+                _suppress = false;
+            }
+        }
+
         _SaveVersionOverride();
         RefreshEnabledState();
     }
@@ -389,13 +460,14 @@ public partial class PageSetupLunar
     #endregion
 
     /// <summary>
-    ///     PCL 全局内存换算出来的 MB 值；算不出来就退回内置默认，
-    ///     免得文本框里出现 0 然后被校验器判红。
+    ///     文本框里该显示哪个数字：PCL 自己配过就用配置值，否则用官方 Lunar 启动器里的，
+    ///     都没有才退回内置默认。一律给具体数字，不让输入框空着被校验器判红。
     /// </summary>
-    private static int _CurrentPclGlobalMemoryMb()
+    private int _DisplayedMemory(int configuredMb)
     {
-        var value = ModLunar.ResolvePclGlobalMemoryMb();
-        return value > 0 ? value : LunarLaunchProfile.DefaultMemoryMb;
+        if (configuredMb > 0) return configuredMb;
+        if (_lunarLauncher.HasMemory) return _lunarLauncher.AllocatedMemoryMb;
+        return LunarLaunchProfile.DefaultMemoryMb;
     }
 
     /// <summary>

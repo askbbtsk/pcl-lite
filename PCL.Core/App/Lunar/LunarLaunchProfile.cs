@@ -19,6 +19,9 @@ public enum LunarSettingSource
     /// <summary>跟随 PCL 的全局内存设置。</summary>
     PclGlobal,
 
+    /// <summary>官方 Lunar 启动器自己的 <c>settings/launcher.json</c>。</summary>
+    LunarLauncher,
+
     /// <summary>Lunar 分组里的全局设置。</summary>
     LunarGlobal,
 
@@ -60,15 +63,20 @@ public sealed record LunarEffectiveSettings(
 ///         但默认仍然跟随 PCL 的全局内存，免得用户以为改了全局却没作用。
 ///     </para>
 ///     <para>
-///         分层顺序：版本覆盖 → Lunar 全局 → PCL 全局 → 内置默认。
+///         分层顺序：版本覆盖 → Lunar 全局 → 官方 Lunar 启动器 → PCL 全局 → 内置默认。
+///         官方启动器那一层是 1.6.2 加的：两边共用 <c>~/.lunarclient</c> 时，
+///         用户在 Lunar 启动器里调过的内存和 JVM 参数不该被 PCL 的默认值盖掉。
 ///     </para>
 /// </summary>
 public static class LunarLaunchProfile
 {
-    /// <summary>兜底堆上限。Lunar 官方启动器默认给的就是 2G。</summary>
-    public const int DefaultMemoryMb = 2048;
+    /// <summary>兜底堆上限。Lunar 官方启动器默认给的就是 3G。</summary>
+    public const int DefaultMemoryMb = 3072;
 
-    /// <summary>低于这个值基本起不来，直接夹住。</summary>
+    /// <summary>
+    ///     允许的最小堆。和设置页校验器的下限保持一致 —— 两边不一致的话，
+    ///     用户填 512 会看到界面上写着 512、实际启动却是 1024，说不清谁对。
+    /// </summary>
     public const int MinMemoryMb = 512;
 
     /// <summary>再大也没有意义，防止手滑输个天文数字把 JVM 干崩。</summary>
@@ -192,17 +200,32 @@ public static class LunarLaunchProfile
     /// <param name="pclGlobalMemoryMb">
     ///     PCL 全局内存设置换算出来的 MB 值。传 <c>0</c> 表示算不出来，直接用内置默认。
     /// </param>
-    public static LunarEffectiveSettings Resolve(string? subVersion, int pclGlobalMemoryMb)
+    /// <param name="lunarLauncher">
+    ///     官方 Lunar 启动器的设置。<see langword="null" /> 表示现读一次磁盘。
+    ///     调用方已经读过就传进来，省一次 IO。
+    /// </param>
+    public static LunarEffectiveSettings Resolve(string? subVersion, int pclGlobalMemoryMb,
+        LunarLauncherSettings? lunarLauncher = null)
     {
         var lunarConfig = Config.Preference.Lunar;
+        var native = lunarLauncher ?? LunarLauncherConfig.Read(LunarLauncherConfig.ResolveRoot(lunarConfig.Root));
 
-        // 内存：Lunar 全局 > PCL 全局 > 内置默认
+        // 内存：Lunar 全局 > 官方启动器 > PCL 全局 > 内置默认
+        //
+        // 官方启动器排在 PCL 全局前面，是因为两边共用 ~/.lunarclient 时，用户在
+        // Lunar 启动器里调过的内存才是他真正的意图。以前不看这个文件，
+        // 就变成了「Lunar 里设的 8G，换 PCL 启动只有 3G」。
         int memory;
         LunarSettingSource memorySource;
         if (lunarConfig.MemoryMb > 0)
         {
             memory = ClampMemory(lunarConfig.MemoryMb);
             memorySource = LunarSettingSource.LunarGlobal;
+        }
+        else if (native.HasMemory)
+        {
+            memory = ClampMemory(native.AllocatedMemoryMb);
+            memorySource = LunarSettingSource.LunarLauncher;
         }
         else if (pclGlobalMemoryMb > 0)
         {
@@ -215,10 +238,16 @@ public static class LunarLaunchProfile
             memorySource = LunarSettingSource.Default;
         }
 
+        // JVM 参数同理：PCL 侧没填就沿用官方启动器里那一行
         var jvmRaw = lunarConfig.JvmArgs;
         var jvmSource = string.IsNullOrWhiteSpace(jvmRaw)
             ? LunarSettingSource.Default
             : LunarSettingSource.LunarGlobal;
+        if (string.IsNullOrWhiteSpace(jvmRaw) && native.HasJvmArgs)
+        {
+            jvmRaw = native.JvmArgs;
+            jvmSource = LunarSettingSource.LunarLauncher;
+        }
 
         // 版本覆盖：只盖它明确写了的字段
         var over = GetOverride(subVersion);
@@ -340,6 +369,7 @@ public static class LunarLaunchProfile
     public static string DescribeSource(LunarSettingSource source) => source switch
     {
         LunarSettingSource.PclGlobal => "跟随 PCL 全局设置",
+        LunarSettingSource.LunarLauncher => "Lunar 启动器的设置",
         LunarSettingSource.LunarGlobal => "Lunar 全局设置",
         LunarSettingSource.VersionOverride => "此版本的单独设置",
         _ => "内置默认"

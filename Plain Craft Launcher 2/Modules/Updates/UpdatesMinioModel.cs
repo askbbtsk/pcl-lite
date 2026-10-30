@@ -54,7 +54,8 @@ public class UpdatesMinioModel : IUpdateSource // 社区自己的更新系统格
         if (_remoteCache is null)
             RefreshCache();
         var latestVersion = GetChannelInfo(channel, arch);
-        return UpdateVersion.IsAtLeast(latestVersion.VersionName, currentVersion.ToString());
+        // 「远程没有比当前更新的」才算已是最新。反着写会把 hotfix 当成已是最新
+        return UpdateVersion.IsUpToDate(latestVersion.VersionName, currentVersion.ToString());
     }
 
     public VersionAnnouncementDataModel GetAnnouncementList()

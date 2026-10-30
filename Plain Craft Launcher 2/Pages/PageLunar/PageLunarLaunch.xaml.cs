@@ -95,6 +95,10 @@ public partial class PageLunarLaunch
     /// <summary>
     ///     版本下拉框。只在列表内容真的变了才重建 —— 启动过程中状态每秒变好几次，
     ///     每次都重建会把用户的选中状态和展开状态一起冲掉。
+    ///     <para>
+    ///         选中项则每次都对齐：设置页里也能改版本，改完回到这里不能还显示旧的。
+    ///         对齐只改 <c>SelectedItem</c>、不重建列表，所以不会打断展开中的下拉面板。
+    ///     </para>
     /// </summary>
     private void RefreshVersionCombo()
     {
@@ -102,37 +106,66 @@ public partial class PageLunarLaunch
         var signature = versions.Count == 0
             ? "single:" + ModLunar.SelectedSubVersion
             : string.Join(",", versions.Select(x => x.Id));
-        if (signature == _versionSignature) return;
-        _versionSignature = signature;
+
+        if (signature != _versionSignature)
+        {
+            _versionSignature = signature;
+            _suppressComboEvents = true;
+            try
+            {
+                ComboVersion.Items.Clear();
+                if (versions.Count == 0)
+                {
+                    // 版本列表还没拉到：先显示配置里的那个，保证界面不空
+                    ComboVersion.Items.Add(new MyComboBoxItem
+                    {
+                        Content = ModLunar.SelectedSubVersion,
+                        Tag = ModLunar.SelectedSubVersion
+                    });
+                }
+                else
+                {
+                    foreach (var version in versions)
+                        ComboVersion.Items.Add(new MyComboBoxItem
+                        {
+                            Content = version.DisplayName,
+                            Tag = version.Id,
+                            ToolTip = ModLunar.DescribeVersion(version)
+                        });
+                }
+            }
+            finally
+            {
+                _suppressComboEvents = false;
+            }
+        }
+
+        SyncVersionSelection();
+    }
+
+    /// <summary>
+    ///     让下拉框的选中项等于 <see cref="ModLunar.SelectedSubVersion" />。
+    ///     <para>
+    ///         必须在**列表加完之后**显式指定：往空 ComboBox 里逐项 Add 时，WPF 的 Selector
+    ///         会自己把第一项选上，而这里的列表是版本号降序的 —— 第一项正好是最新的 drop
+    ///         （26.3）。以前靠「Add 之前先设 IsSelected」压不住它，于是界面显示 26.3、
+    ///         点启动却按配置里的 1.8.9 走，看起来就是「默认选了预览版」。
+    ///     </para>
+    /// </summary>
+    private void SyncVersionSelection()
+    {
+        if (ComboVersion.Items.Count == 0) return;
+
+        var wanted = ModLunar.SelectedSubVersion;
+        var match = ComboVersion.Items.OfType<MyComboBoxItem>()
+            .FirstOrDefault(x => string.Equals(x.Tag as string, wanted, StringComparison.OrdinalIgnoreCase));
+        var target = match ?? ComboVersion.Items[0];
+        if (ReferenceEquals(ComboVersion.SelectedItem, target)) return;
 
         _suppressComboEvents = true;
         try
         {
-            ComboVersion.Items.Clear();
-            if (versions.Count == 0)
-            {
-                // 版本列表还没拉到：先显示配置里的那个，保证界面不空
-                ComboVersion.Items.Add(new MyComboBoxItem
-                {
-                    Content = ModLunar.SelectedSubVersion,
-                    Tag = ModLunar.SelectedSubVersion,
-                    IsSelected = true
-                });
-            }
-            else
-            {
-                foreach (var version in versions)
-                    ComboVersion.Items.Add(new MyComboBoxItem
-                    {
-                        Content = version.DisplayName,
-                        Tag = version.Id,
-                        ToolTip = version.ParentName,
-                        IsSelected = version.Id == ModLunar.SelectedSubVersion
-                    });
-
-                if (ComboVersion.SelectedItem is null && ComboVersion.Items.Count > 0)
-                    ComboVersion.SelectedIndex = 0;
-            }
+            ComboVersion.SelectedItem = target;
         }
         finally
         {

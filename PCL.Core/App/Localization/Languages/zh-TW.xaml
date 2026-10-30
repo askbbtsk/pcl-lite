@@ -3562,15 +3562,20 @@
     <sys:String x:Key="Lunar.Setup.JavaHint">留空 = 用 Lunar 自帶的 JRE</sys:String>
     <sys:String x:Key="Lunar.Setup.JavaDesc">Lunar 會按版本自己下 JRE。</sys:String>
     <sys:String x:Key="Lunar.Setup.MemoryTitle">記憶體與 JVM 參數（全域）</sys:String>
-    <sys:String x:Key="Lunar.Setup.FollowGlobal">跟隨 PCL 的全域記憶體設定</sys:String>
+    <sys:String x:Key="Lunar.Setup.LoadNative">讀取 Lunar 啟動器裡的記憶體</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemory">最大記憶體（MB）</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemoryHint">例如 4096</sys:String>
     <sys:String x:Key="Lunar.Setup.MaxMemoryDesc">低於 512 會被抬到 512，上限 131072。</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryCustom">這個值只用於 PCL 啟動的 Lunar，不會改到 Lunar 啟動器自己的設定。</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryFromLunar">目前沿用 Lunar 啟動器裡的 {0} MB。在這裡改只影響 PCL，不會寫回 Lunar 啟動器。</sys:String>
+    <sys:String x:Key="Lunar.Setup.MemoryNoNative">沒讀到 Lunar 啟動器的設定（沒裝，或者沒在那邊調過記憶體），先用內建預設 3072 MB。</sys:String>
     <sys:String x:Key="Lunar.Setup.Jvm">附加 JVM 參數</sys:String>
     <sys:String x:Key="Lunar.Setup.JvmHint">例如 -XX:+UseG1GC</sys:String>
     <sys:String x:Key="Lunar.Setup.JvmDesc">拼在官方參數之後，重複的以這裡為準。</sys:String>
-    <sys:String x:Key="Lunar.Setup.OverrideTitle">按版本覆寫</sys:String>
-    <sys:String x:Key="Lunar.Setup.OverrideVersion">版本</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideTitle">啟動版本與按版本覆寫</sys:String>
+    <sys:String x:Key="Lunar.Setup.OverrideVersion">啟動版本</sys:String>
+    <sys:String x:Key="Lunar.Setup.VersionHint">Lunar 板塊啟動時用這個版本。預設 1.8.9，是 Lunar 支援最久、最穩定的版本。</sys:String>
+    <sys:String x:Key="Lunar.Setup.VersionEmpty">（還沒拿到版本列表，正在嘗試取得…）</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideCheck">為這個版本單獨設定</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideHint">留空 = 沿用全域</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideDesc">只影響選中的這個版本。</sys:String>

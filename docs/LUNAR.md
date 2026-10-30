@@ -899,6 +899,17 @@ common.v1.Uuid            { fixed64 high64 = 1; fixed64 low64 = 2 }
 `localServer`、`singlePlayer`、`minecraftRealms`、`inMenus`、`inLauncher`、`inGame`
 这几个有展示价值。
 
+> **两个好友列表会重叠，必须按 UUID 去重。** 实测一个在线好友同时出现在
+> `onlineFriends`(11) 和 `offlineFriends`(2) 里，**UUID 完全一样**（`LoginResponse`
+> 只有 190 字节，两个列表各 1 条，指的是同一个人）。直接 `Add` 两次，界面上就是
+> 两个同名好友 —— 一个显示「启动器」、一个显示「离线」。
+>
+> 正确做法：以 `offlineFriends` 为底（它带全量好友），再用 `onlineFriends` 按 UUID
+> 覆盖状态与位置。冲突时优先在线条目，但它偶尔不带 `rankName`，那种情况保留离线
+> 条目里的（`OfflineFriend.rankName` 在字段 8）。
+>
+> 注意 `offlineFriends` 名字有误导性 —— 它装的其实是**全部好友**，不只是离线的。
+
 ```
 conversation.v1.ConversationReference { Uuid friendUuid = 1; Uuid conversationReference = 2 }
 conversation.v1.Conversation { ConversationReference conversationReference = 1;

@@ -347,10 +347,20 @@ internal static class LunarSocialProtocol
     /// <summary><c>FriendService/Login</c> 的请求体是空消息。</summary>
     public static byte[] EncodeEmptyMessage() => [];
 
-    /// <summary>解析 <c>friend.v1.LoginResponse</c>。</summary>
+    /// <summary>
+    ///     解析 <c>friend.v1.LoginResponse</c>。
+    ///     <para>
+    ///         <b>服务端会把同一个人同时塞进两个列表</b>：实测一个在线好友在
+    ///         <c>onlineFriends</c>(11) 和 <c>offlineFriends</c>(2) 里各出现一次，
+    ///         连 UUID 都一模一样。直接拼起来列表里就是两个同名好友（一个「启动器」、
+    ///         一个「离线」）。所以这里以 <c>offlineFriends</c> 为底，
+    ///         再用 <c>onlineFriends</c> 按 UUID 覆盖状态与位置。
+    ///     </para>
+    /// </summary>
     public static IReadOnlyList<LunarFriend> DecodeFriendLoginResponse(ReadOnlySpan<byte> payload)
     {
-        var friends = new List<LunarFriend>();
+        var online = new List<LunarFriend>();
+        var offline = new List<LunarFriend>();
         var reader = new ProtoReader(payload);
         while (reader.TryReadTag(out var field, out var wire))
         {
@@ -361,11 +371,53 @@ internal static class LunarSocialProtocol
             }
 
             var nested = reader.ReadBytes();
-            if (field == 11) friends.Add(DecodeFriend(nested, true));
-            else if (field == 2) friends.Add(DecodeFriend(nested, false));
+            if (field == 11) online.Add(DecodeFriend(nested, true));
+            else if (field == 2) offline.Add(DecodeFriend(nested, false));
         }
 
-        return friends;
+        return MergeFriends(online, offline);
+    }
+
+    /// <summary>
+    ///     合并两个好友列表，同一个 UUID 只留一条。
+    ///     <para>
+    ///         <c>onlineFriends</c> 带状态和所在位置（<c>OfflineFriend</c> 没有这两个字段），
+    ///         所以冲突时用它覆盖；但它偶尔不带 <c>rankName</c>，那种情况保留离线列表里的。
+    ///     </para>
+    /// </summary>
+    private static IReadOnlyList<LunarFriend> MergeFriends(List<LunarFriend> online, List<LunarFriend> offline)
+    {
+        var merged = new List<LunarFriend>(offline.Count + online.Count);
+        var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var friend in offline)
+        {
+            if (friend.Uuid.Length == 0)
+            {
+                merged.Add(friend);
+                continue;
+            }
+
+            index[friend.Uuid] = merged.Count;
+            merged.Add(friend);
+        }
+
+        foreach (var friend in online)
+        {
+            if (friend.Uuid.Length > 0 && index.TryGetValue(friend.Uuid, out var at))
+            {
+                merged[at] = friend with
+                {
+                    RankName = string.IsNullOrEmpty(friend.RankName) ? merged[at].RankName : friend.RankName
+                };
+                continue;
+            }
+
+            if (friend.Uuid.Length > 0) index[friend.Uuid] = merged.Count;
+            merged.Add(friend);
+        }
+
+        return merged;
     }
 
     private static LunarFriend DecodeFriend(ReadOnlySpan<byte> payload, bool online)

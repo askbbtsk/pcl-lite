@@ -17,6 +17,16 @@ namespace PCL.Core.Test;
 public class LunarSocialProtocolTest
 {
     private static readonly LunarUuid Sample = LunarUuid.Parse("ca7514be-86d6-4f29-be39-850f3cad12f7");
+    private static readonly LunarUuid Other = LunarUuid.Parse("11111111-2222-3333-4444-555555555555");
+
+    /// <summary><c>UuidAndUsername</c>：uuid = 1，username = 2。</summary>
+    private static ProtoWriter PlayerOf(LunarUuid uuid, string name)
+    {
+        var player = new ProtoWriter();
+        LunarSocialProtocol.WriteUuid(player, 1, uuid);
+        player.String(2, name);
+        return player;
+    }
 
     [TestMethod]
     public void Uuid_ShouldRoundTripDashedAndCompact()
@@ -113,17 +123,13 @@ public class LunarSocialProtocolTest
     {
         // 一个在线好友（字段 11）和一个离线好友（字段 2），字段 2 的重复编号
         // 在本消息里是「离线好友列表」，不是「status」—— 官方定义就是这么排的。
-        var player = new ProtoWriter();
-        LunarSocialProtocol.WriteUuid(player, 1, Sample);
-        player.String(2, "DeobfJar");
-
         var online = new ProtoWriter();
-        online.Message(1, player.ToArray());
+        online.Message(1, PlayerOf(Sample, "DeobfJar").ToArray());
         online.Int32(2, (int)LunarFriendStatus.Away);
         online.String(13, "MVP");
 
         var offline = new ProtoWriter();
-        offline.Message(1, player.ToArray());
+        offline.Message(1, PlayerOf(Other, "SomeoneElse").ToArray());
         offline.String(8, "VIP");
 
         var response = new ProtoWriter();
@@ -132,14 +138,73 @@ public class LunarSocialProtocolTest
 
         var friends = LunarSocialProtocol.DecodeFriendLoginResponse(response.ToArray());
         Assert.AreEqual(2, friends.Count);
-        Assert.AreEqual(LunarFriendStatus.Away, friends[0].Status);
-        Assert.AreEqual("DeobfJar", friends[0].Name);
-        Assert.AreEqual("MVP", friends[0].RankName);
-        Assert.IsTrue(friends[0].IsOnline);
 
-        Assert.AreEqual(LunarFriendStatus.Unknown, friends[1].Status);
-        Assert.IsFalse(friends[1].IsOnline);
-        Assert.AreEqual("VIP", friends[1].RankName);
+        var onlineFriend = friends.Single(x => x.Uuid == Sample.ToString());
+        Assert.AreEqual(LunarFriendStatus.Away, onlineFriend.Status);
+        Assert.AreEqual("DeobfJar", onlineFriend.Name);
+        Assert.AreEqual("MVP", onlineFriend.RankName);
+        Assert.IsTrue(onlineFriend.IsOnline);
+
+        var offlineFriend = friends.Single(x => x.Uuid == Other.ToString());
+        Assert.AreEqual(LunarFriendStatus.Unknown, offlineFriend.Status);
+        Assert.IsFalse(offlineFriend.IsOnline);
+        Assert.AreEqual("VIP", offlineFriend.RankName);
+    }
+
+    [TestMethod]
+    public void FriendLoginResponse_ShouldNotDuplicateSamePersonInBothLists()
+    {
+        // 实测：同一个在线好友会同时出现在 onlineFriends(11) 和 offlineFriends(2) 里，
+        // UUID 完全一致。不去重的话界面上就是两个同名好友（一个「启动器」、一个「离线」）。
+        var player = PlayerOf(Sample, "DeobfJar").ToArray();
+
+        // Location 是 oneof，字段 7 = inLauncher，写成零长度的嵌套消息
+        var location = new ProtoWriter();
+        location.EmptyMessage(7);
+
+        var online = new ProtoWriter();
+        online.Message(1, player);
+        online.Int32(2, (int)LunarFriendStatus.Online);
+        online.Message(3, location.ToArray());
+        online.String(13, "MVP");
+
+        var offline = new ProtoWriter();
+        offline.Message(1, player);
+        offline.String(8, "VIP");
+
+        var response = new ProtoWriter();
+        response.Message(11, online.ToArray());
+        response.Message(2, offline.ToArray());
+
+        var friends = LunarSocialProtocol.DecodeFriendLoginResponse(response.ToArray());
+
+        Assert.AreEqual(1, friends.Count, "同一个人只能出现一次");
+        Assert.AreEqual(LunarFriendStatus.Online, friends[0].Status);
+        Assert.AreEqual("启动器", friends[0].Where);
+        Assert.AreEqual("MVP", friends[0].RankName);
+    }
+
+    [TestMethod]
+    public void FriendLoginResponse_ShouldKeepRankFromOfflineListWhenOnlineOmitsIt()
+    {
+        var player = PlayerOf(Sample, "DeobfJar").ToArray();
+
+        var online = new ProtoWriter();
+        online.Message(1, player);
+        online.Int32(2, (int)LunarFriendStatus.Online);
+
+        var offline = new ProtoWriter();
+        offline.Message(1, player);
+        offline.String(8, "VIP");
+
+        var response = new ProtoWriter();
+        response.Message(11, online.ToArray());
+        response.Message(2, offline.ToArray());
+
+        var friends = LunarSocialProtocol.DecodeFriendLoginResponse(response.ToArray());
+
+        Assert.AreEqual(1, friends.Count);
+        Assert.AreEqual("VIP", friends[0].RankName, "在线条目没带 rankName 时要补上离线条目里的");
     }
 
     [TestMethod]

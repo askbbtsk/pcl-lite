@@ -1,13 +1,16 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.App.Lunar;
+using PCL.Core.App.Lunar.Social;
 using PCL.Core.Minecraft.Profile;
 using PCL.Core.Minecraft.Profile.Authentication;
 using PCL.Core.Minecraft.Profile.Models;
@@ -47,6 +50,21 @@ public static class ModLunar
     private static bool _isBusy;
     private static LunarIpcServer? _ipcServer;
 
+    /// <summary>
+    ///     子进程最后一次吐字的时间（<see cref="Environment.TickCount64" />）。
+    ///     <para>
+    ///         卡死判定最可靠的信号。Genesis 从「Starting game!」到窗口出现之间什么都不打印，
+    ///         但**一旦开始正常启动就一定会持续刷日志**；反过来真被网络卡住时是彻底静默。
+    ///         以前只看 <c>logs/latest.log</c>，而 Lunar 自带的 log4j 配置会让文件 appender
+    ///         起不来（日志里那几行 <c>Unable to locate appender</c>），于是游戏都进世界了
+    ///         还在报「疑似卡死」。
+    ///     </para>
+    /// </summary>
+    private static long _lastOutputTicks = Environment.TickCount64;
+
+    /// <summary>上次看门狗轮询时子进程累计占用的 CPU 时间，用来判断它是不是还在干活。</summary>
+    private static TimeSpan _lastCpuTime;
+
     /// <summary>IPC 里除续期之外那些请求的落地实现（开链接、切账号页、重开提示）。</summary>
     private static readonly LunarIpcHost IpcHost = new();
 
@@ -68,13 +86,30 @@ public static class ModLunar
     private static readonly object StopLock = new();
 
     /// <summary>
-    ///     请游戏自己退出之后等多久。超时才强制结束。
+    ///     请游戏自己退出之后，先安静等多久再改口说「正在保存存档」。
+    ///     <para>绝大多数情况一两秒就退了，这个阶段不打扰用户。</para>
+    /// </summary>
+    private static readonly TimeSpan ExitQuietPeriod = TimeSpan.FromSeconds(15);
+
+    /// <summary>
+    ///     等游戏自己退出的上限。
     ///     <para>
-    ///         Minecraft 存档落盘通常一两秒，但区块多、硬盘慢的时候会明显变久；
-    ///         10 秒是「够它写完」和「别让用户以为卡住」之间的折中。
+    ///         以前是 10 秒 —— <b>太短了</b>。实测 1.8.9 在装了整合包的情况下，收到
+    ///         <c>ExitGamePush</c> 之后要走完「停集成服务器 → 存档落盘 → 关资源包 → 关声音」，
+    ///         十几秒很正常；10 秒一到就被 <c>Kill</c>，等于存档只写了一半，
+    ///         这跟直接强杀没区别，白白浪费了这条推送的意义。
+    ///         现在给到两分钟，但只有在进程真的一动不动时才提前放弃。
     ///     </para>
     /// </summary>
-    private static readonly TimeSpan ExitGracePeriod = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan ExitMaxWait = TimeSpan.FromSeconds(120);
+
+    /// <summary>
+    ///     连续多久「既没有输出、也没有 CPU 时间推进」就判定它卡死了。
+    ///     <para>
+    ///         存档是重活，CPU 会一直跳；真卡住时（比如被弹窗挡住）两者会同时熄火。
+    ///     </para>
+    /// </summary>
+    private static readonly TimeSpan ExitIdleLimit = TimeSpan.FromSeconds(30);
 
     /// <summary>
     ///     子进程最近若干行输出。游戏在 Minecraft 初始化前就静默退出时（1.17.1 踩过），
@@ -85,6 +120,17 @@ public static class ModLunar
     private static readonly object _recentOutputLock = new();
 
     private const int RecentOutputLimit = 80;
+
+    /// <summary>
+    ///     Lunar 后端（好友 / 私聊）的连接。没有连接时为 <see langword="null" />。
+    ///     <para>
+    ///         刻意挂在静态类上而不是页面上：翻到别的页面再翻回来时连接不能断，
+    ///         否则好友列表要重新拉一遍、私聊推送也会漏。
+    ///     </para>
+    /// </summary>
+    private static LunarSocialClient? _social;
+
+    private static readonly object SocialLock = new();
 
     /// <summary>
     ///     本次启动实际交给游戏的 Lunar 账号（<c>localId</c>）。
@@ -426,6 +472,8 @@ public static class ModLunar
     {
         if (string.IsNullOrWhiteSpace(line)) return;
 
+        Interlocked.Exchange(ref _lastOutputTicks, Environment.TickCount64);
+
         lock (_recentOutputLock)
         {
             _recentOutput.Enqueue(line);
@@ -586,7 +634,7 @@ public static class ModLunar
     ///     <para>
     ///         先请游戏自己退出（<see cref="LunarIpcPush.ExitGame" />）：游戏端收到后走的是
     ///         Minecraft 的正常关闭流程 —— 存档落盘、跑 shutdown hook、退出码 0。
-    ///         等 <see cref="ExitGracePeriod" /> 还没退，才 <c>Kill</c> 兜底。
+    ///         等它自己退完（最长 <see cref="ExitMaxWait" />，一动不动才会提前放弃），才 <c>Kill</c> 兜底。
     ///     </para>
     ///     <para>
     ///         以前是直接 Kill：正在保存的世界会留下半截 region 文件。只有 IPC 不在 PCL
@@ -617,21 +665,21 @@ public static class ModLunar
 
             if (sent > 0)
             {
-                Log($"已请游戏自行退出，最多等 {ExitGracePeriod.TotalSeconds:F0} 秒");
+                Log($"已请游戏自行退出，最多等 {ExitMaxWait.TotalSeconds:F0} 秒（它一动不动才会提前强杀）");
 
-                // 等待期间界面上要有个说法，否则最长 10 秒里按钮还写着「强制停止」，
+                // 等待期间界面上要有个说法，否则按钮还写着「强制停止」，
                 // 用户会以为没点着又点一次
                 StatusText = Lang.Text("Lunar.Status.Stopping");
                 DetailText = "";
                 RaiseStateChanged();
 
-                if (await WaitForExitAsync(process, ExitGracePeriod).ConfigureAwait(false))
+                if (await WaitForGracefulExitAsync(process).ConfigureAwait(false))
                 {
                     Log("游戏已自行退出（存档已落盘）");
                     return;
                 }
 
-                Log("游戏没有在限定时间内退出，改为强制结束");
+                Log("游戏既没退出也没有任何动静，判定为卡住，改为强制结束");
             }
 
             if (!process.HasExited)
@@ -683,6 +731,64 @@ public static class ModLunar
         }
     }
 
+    /// <summary>
+    ///     等游戏自己退完，等到「真退」或者「真卡死」为止。
+    ///     <para>
+    ///         不能只给一个固定超时：存档要多久取决于世界大小和硬盘，10 秒远远不够，
+    ///         而给两分钟固定超时又会在真卡住时让用户干等。所以改成看动静 ——
+    ///         只要还在吐日志或者还在烧 CPU 就继续等，两个都熄火
+    ///         <see cref="ExitIdleLimit" /> 才判定卡住。
+    ///     </para>
+    ///     <para>前 <see cref="ExitQuietPeriod" /> 秒不打扰用户，之后把界面文案换成「正在保存存档」。</para>
+    /// </summary>
+    private static async Task<bool> WaitForGracefulExitAsync(Process process)
+    {
+        var startedAt = Environment.TickCount64;
+        var lastActivity = startedAt;
+        var lastCpu = ReadCpuTime(process);
+        var lastOutput = Interlocked.Read(ref _lastOutputTicks);
+        var announced = false;
+
+        while (true)
+        {
+            if (await WaitForExitAsync(process, TimeSpan.FromSeconds(1)).ConfigureAwait(false)) return true;
+
+            var now = Environment.TickCount64;
+            var cpu = ReadCpuTime(process);
+            var output = Interlocked.Read(ref _lastOutputTicks);
+
+            // 判定「还在干活」：CPU 时间涨了，或者子进程又吐了新的一行
+            if (output != lastOutput || cpu - lastCpu > TimeSpan.FromMilliseconds(100))
+            {
+                lastOutput = output;
+                lastCpu = cpu;
+                lastActivity = now;
+            }
+
+            var elapsed = now - startedAt;
+            if (!announced && elapsed >= (long)ExitQuietPeriod.TotalMilliseconds)
+            {
+                announced = true;
+                Log("游戏还在退出流程里（存档 / 关资源包），继续等它自己退完");
+                StatusText = Lang.Text("Lunar.Status.Saving");
+                DetailText = Lang.Text("Lunar.Status.SavingDesc");
+                RaiseStateChanged();
+            }
+
+            if (now - lastActivity >= (long)ExitIdleLimit.TotalMilliseconds)
+            {
+                Log($"游戏已经 {ExitIdleLimit.TotalSeconds:F0} 秒没有任何输出、也没占用 CPU，判定为卡死");
+                return false;
+            }
+
+            if (elapsed >= (long)ExitMaxWait.TotalMilliseconds)
+            {
+                Log($"等了 {ExitMaxWait.TotalSeconds:F0} 秒还没退完，放弃等待");
+                return false;
+            }
+        }
+    }
+
     /// <summary>等进程退出，超时返回 <c>false</c>（不抛异常）。</summary>
     private static async Task<bool> WaitForExitAsync(Process process, TimeSpan timeout)
     {
@@ -704,29 +810,190 @@ public static class ModLunar
     }
 
     /// <summary>
-    ///     把游戏窗口切到前台（<c>FocusGamePush</c>）。
+    ///     把游戏窗口切到前台。
     ///     <para>
-    ///         返回 <c>false</c> 表示没送到 —— 游戏没连上 IPC（刚启动的头几秒，
-    ///         或者 IPC 被 Lunar 启动器占着）。
+    ///         光发 <c>FocusGamePush</c> <b>不够</b>：游戏那边的处理器只做 AWT 层面的
+    ///         <c>toFront()</c>，被 Windows 的前台锁定挡住时不会真把窗口抬起来。实测日志里
+    ///         能看到 <c>Received focus game push, focusing window</c> 一行接一行，窗口却纹丝
+    ///         不动。所以真正的抬升由 PCL 用 Win32 做（必要时把输入队列挂到当前前台线程上），
+    ///         推送只当辅助信号，让游戏自己也把内部焦点切过去。
     ///     </para>
+    ///     <para>返回 <see langword="false" /> 表示既没找到窗口，也没能把它抬起来。</para>
     /// </summary>
     public static async Task<bool> FocusGameAsync()
     {
-        var server = _ipcServer;
-        if (server is null) return false;
+        var process = _process;
+        if (process is null) return false;
 
         try
         {
-            var sent = await server.SendPushAsync(LunarIpcPush.FocusGame).ConfigureAwait(false);
-            if (sent > 0) Log("已请游戏窗口切到前台");
-            return sent > 0;
+            if (process.HasExited) return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+
+        // 先让游戏自己聚焦（顺带把键盘输入交回给画布），再抬窗口
+        var server = _ipcServer;
+        if (server is not null)
+        {
+            try
+            {
+                await server.SendPushAsync(LunarIpcPush.FocusGame).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "[Lunar] 发送前台切换请求失败", ModBase.LogLevel.Debug);
+            }
+        }
+
+        var handle = TryGetGameWindow(process.Id);
+        if (handle == nint.Zero)
+        {
+            Log("没能把游戏窗口提到前台：还没找到游戏窗口");
+            return false;
+        }
+
+        if (BringToForeground(handle))
+        {
+            Log("已把游戏窗口提到前台");
+            return true;
+        }
+
+        Log("没能把游戏窗口提到前台：系统拒绝了前台切换");
+        return false;
+    }
+
+    /// <summary>
+    ///     找游戏的主窗口。
+    ///     <para>
+    ///         按窗口类名认（<c>LWJGL</c> = 1.8.9 这类老版本，<c>GLFW30</c> = 新版本，
+    ///         <c>SunAwtFrame</c> = 走 AWT 的情况），再核对进程号，最后按尺寸排掉
+    ///         GLFW 那个 0×0 的消息窗口。
+    ///     </para>
+    /// </summary>
+    private static nint TryGetGameWindow(int processId)
+    {
+        var found = nint.Zero;
+        try
+        {
+            EnumWindows((hwnd, _) =>
+            {
+                if (!IsWindowVisible(hwnd)) return true;
+
+                var owner = 0;
+                GetWindowThreadProcessId(hwnd, ref owner);
+                if (owner != processId) return true;
+
+                var buffer = new StringBuilder(64);
+                GetClassName(hwnd, buffer, buffer.Capacity);
+                var className = buffer.ToString();
+                if (className is not ("LWJGL" or "GLFW30" or "SunAwtFrame")) return true;
+
+                if (!GetWindowRect(hwnd, out var rect)) return true;
+                if (rect.Right - rect.Left < 100 || rect.Bottom - rect.Top < 100) return true;
+
+                found = hwnd;
+                return false;
+            }, nint.Zero);
         }
         catch (Exception ex)
         {
-            Log("请游戏切到前台失败：" + ex.Message);
+            ModBase.Log(ex, "[Lunar] 枚举游戏窗口失败", ModBase.LogLevel.Debug);
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    ///     把窗口抬到最前。最小化过就先还原。
+    ///     <para>
+    ///         直接 <c>SetForegroundWindow</c> 经常被系统拒绝（「不允许抢前台」），
+    ///         惯用解法是把自己的输入队列临时挂到当前前台线程上，抬完再摘掉。
+    ///     </para>
+    /// </summary>
+    private static bool BringToForeground(nint handle)
+    {
+        try
+        {
+            if (IsIconic(handle)) ShowWindow(handle, SwRestore);
+            if (GetForegroundWindow() == handle) return true;
+
+            var foreground = GetForegroundWindow();
+            var foregroundThread = 0;
+            if (foreground != nint.Zero) GetWindowThreadProcessId(foreground, ref foregroundThread);
+            var currentThread = GetCurrentThreadId();
+
+            var attached = foregroundThread != 0 && foregroundThread != currentThread &&
+                           AttachThreadInput(currentThread, foregroundThread, true);
+            try
+            {
+                BringWindowToTop(handle);
+                SetForegroundWindow(handle);
+            }
+            finally
+            {
+                if (attached) AttachThreadInput(currentThread, foregroundThread, false);
+            }
+
+            return GetForegroundWindow() == handle;
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 切换游戏窗口到前台失败", ModBase.LogLevel.Debug);
             return false;
         }
     }
+
+    private const uint SwRestore = 9;
+
+    private delegate bool EnumWindowsProc(nint hwnd, nint lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Rect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [DllImport("user32")]
+    private static extern bool EnumWindows(EnumWindowsProc callback, nint lParam);
+
+    [DllImport("user32", EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode)]
+    private static extern int GetClassName(nint hwnd, StringBuilder buffer, int maxCount);
+
+    [DllImport("user32")]
+    private static extern int GetWindowThreadProcessId(nint hwnd, ref int processId);
+
+    [DllImport("user32")]
+    private static extern bool IsWindowVisible(nint hwnd);
+
+    [DllImport("user32")]
+    private static extern bool IsIconic(nint hwnd);
+
+    [DllImport("user32")]
+    private static extern bool GetWindowRect(nint hwnd, out Rect rect);
+
+    [DllImport("user32")]
+    private static extern bool ShowWindow(nint hwnd, uint command);
+
+    [DllImport("user32")]
+    private static extern nint GetForegroundWindow();
+
+    [DllImport("user32")]
+    private static extern bool SetForegroundWindow(nint hwnd);
+
+    [DllImport("user32")]
+    private static extern bool BringWindowToTop(nint hwnd);
+
+    [DllImport("user32")]
+    private static extern bool AttachThreadInput(int attach, int attachTo, bool doAttach);
+
+    [DllImport("kernel32")]
+    private static extern int GetCurrentThreadId();
 
     /// <summary>
     ///     让已经在跑的游戏直接连某个服务器（<c>PlayServerPush</c>）。
@@ -758,6 +1025,118 @@ public static class ModLunar
             return false;
         }
     }
+
+    #region 好友与私聊
+
+    /// <summary>连接状态变了（连上 / 断开 / 正在连）。</summary>
+    public static event Action? SocialStateChanged;
+
+    /// <summary>好友列表刷新了。</summary>
+    public static event Action? SocialFriendsChanged;
+
+    /// <summary>收到一条私聊消息（会话 id、消息）。</summary>
+    public static event Action<string, LunarChatMessage>? SocialMessageReceived;
+
+    /// <summary>当前连接。没连上时是 <see langword="null" />。</summary>
+    public static LunarSocialClient? Social => _social;
+
+    /// <summary>正在连接。</summary>
+    public static bool IsSocialBusy { get; private set; }
+
+    public static bool IsSocialConnected => _social?.IsConnected == true;
+
+    /// <summary>
+    ///     连上 Lunar 后端并拉一次好友列表。
+    ///     <para>
+    ///         账号走的是启动时那套解析顺序（Lunar 账户库 → PCL 登录 → 兜底），
+    ///         因为 Lunar 后端只认「这个账号的 Minecraft 令牌」，和游戏用哪个账号是同一件事。
+    ///     </para>
+    /// </summary>
+    public static async Task ConnectSocialAsync()
+    {
+        if (IsSocialBusy) return;
+        IsSocialBusy = true;
+        SocialStateChanged?.Invoke();
+
+        try
+        {
+            var (name, uuidText, token) = await ResolveCredentialsAsync().ConfigureAwait(false);
+            var uuid = LunarUuid.Parse(uuidText);
+            if (uuid.IsEmpty) throw new LunarSocialException("拿不到账号 UUID，没法登录 Lunar 后端");
+
+            LunarSocialClient client;
+            lock (SocialLock)
+            {
+                if (_social is null)
+                {
+                    _social = new LunarSocialClient(ReadOrCreateInstallationId());
+                    _social.StateChanged += () => SocialStateChanged?.Invoke();
+                    _social.FriendsChanged += () => SocialFriendsChanged?.Invoke();
+                    _social.MessageReceived += (id, message) => SocialMessageReceived?.Invoke(id, message);
+                }
+
+                client = _social;
+            }
+
+            Log($"正在登录 Lunar 后端（账号 {name}）…");
+            await client.ConnectAsync(token, uuid, name).ConfigureAwait(false);
+            Log($"Lunar 后端已连上，好友 {client.Friends.Count} 个");
+        }
+        catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
+        {
+            Log("登录 Lunar 后端失败：" + ex.Message);
+            throw;
+        }
+        finally
+        {
+            IsSocialBusy = false;
+            SocialStateChanged?.Invoke();
+        }
+    }
+
+    /// <summary>断开并释放连接。</summary>
+    public static async Task DisconnectSocialAsync()
+    {
+        LunarSocialClient? client;
+        lock (SocialLock)
+        {
+            client = _social;
+            _social = null;
+        }
+
+        if (client is null) return;
+        await client.DisposeAsync().ConfigureAwait(false);
+        SocialStateChanged?.Invoke();
+    }
+
+    /// <summary>
+    ///     Lunar 的「安装 ID」。官方启动器装一次生成一次，服务端拿它区分设备。
+    ///     <para>PCL 没有这个文件，就在共享数据目录里自己存一份，删了会重新生成。</para>
+    /// </summary>
+    private static string ReadOrCreateInstallationId()
+    {
+        try
+        {
+            var path = Path.Combine(Paths.SharedLocalData, "lunar-installation.id");
+            if (File.Exists(path))
+            {
+                var existing = File.ReadAllText(path).Trim();
+                if (existing.Length == 32) return existing;
+            }
+
+            var generated = Guid.NewGuid().ToString("N");
+            Directory.CreateDirectory(Paths.SharedLocalData);
+            File.WriteAllText(path, generated);
+            return generated;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ModBase.Log(ex, "[Lunar] 读写安装 ID 失败，改用临时值", ModBase.LogLevel.Debug);
+            return Guid.NewGuid().ToString("N");
+        }
+    }
+
+    #endregion
 
     /// <summary>
     ///     这次启动写进哪个目录。设置里指定过就用指定的，否则用当前 MC 根目录。
@@ -930,6 +1309,9 @@ public static class ModLunar
 
             lock (_recentOutputLock) _recentOutput.Clear();
             var startedAt = DateTime.Now;
+            // 上一轮的时间戳留着会让看门狗以为「刚吐过字」，必须归零
+            Interlocked.Exchange(ref _lastOutputTicks, Environment.TickCount64);
+            _lastCpuTime = TimeSpan.Zero;
 
             // 必须在 Start 之前问：Genesis 一起来就会开始写 versions/<ver>，事后再问就永远是「已就绪」
             var vanillaReady = IsVanillaReady(subVersion);
@@ -1026,18 +1408,18 @@ public static class ModLunar
     }
 
     /// <summary>
-    ///     看门狗：启动后一直没窗口时，判断到底是「在下原版依赖」还是「网络卡死」。
+    ///     看门狗：启动后一直没窗口时，判断到底是「在正常启动」还是「网络卡死」。
     ///     <para>
-    ///         实测 1.17.1 弹不出窗口的真正原因是：<b>Genesis 在 <c>ClientGameBootstrap</c> 里
-    ///         把整个原版客户端下到 <c>%APPDATA%\.minecraft</c></b>（<c>versions/&lt;ver&gt;</c>
-    ///         的 jar/json 加 <c>libraries</c> 里上百个文件，约 100–200 MB）。
-    ///         这期间它既不打印进度、也不建窗口，从外面看就是「进程活着但什么都没有」——
-    ///         本机 1.17.1 那次就是这么被当成卡死、在下载到一半时被杀掉的。
+    ///         以前只看 <c>logs/latest.log</c> 和原版目录体积，于是踩了两个坑：
+    ///         ① Lunar 自带的 log4j 配置会让文件 appender 起不来（日志里那几行
+    ///         <c>Unable to locate appender</c>），<c>latest.log</c> 根本不写，游戏都进世界了
+    ///         还在报「疑似卡死」；
+    ///         ② 物料齐了以后体积本来就不再涨，于是「没涨」被当成「卡住」。
     ///     </para>
     ///     <para>
-    ///         所以这里改成看 <c>libraries</c> + <c>versions</c> 的体积有没有涨：
-    ///         涨就是在下载，只记一行进度继续等；连续 90 秒一动不动才是真卡住。
-    ///         判断「已经进游戏」仍然用游戏目录里的 <c>latest.log</c>（MC 一进主循环就写）。
+    ///         现在按四个信号判断活着，任意一个成立就继续等：<b>窗口出来了</b>、
+    ///         <b>最近 90 秒吐过字</b>、<b>原版目录还在变大</b>、<b>进程还在烧 CPU</b>。
+    ///         四个同时熄火连续三轮（约 60 秒）才提示，也就是说真卡死时大约两分半报出来。
     ///     </para>
     /// </summary>
     private static void WatchFirstWindow(Process process, string gameDirectory, DateTime startedAt, string subVersion,
@@ -1052,6 +1434,7 @@ public static class ModLunar
                         "这期间不会有窗口，属正常现象，别关进程。");
 
                 var lastBytes = MeasureVanillaFootprint().Bytes;
+                _lastCpuTime = ReadCpuTime(process);
                 var stalled = 0;
 
                 // 每 20 秒看一次，最多看 10 分钟：大文件下载慢的时候也不至于提前下结论
@@ -1059,12 +1442,22 @@ public static class ModLunar
                 {
                     await Task.Delay(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
                     if (process.HasExited) return;
+
+                    // 已经进游戏了，看门狗可以收工
+                    if (TryGetGameWindow(process.Id) != nint.Zero) return;
                     if (HasGameLog(gameDirectory, startedAt)) return;
 
+                    // ① 还在吐字。Genesis / MC 正常启动时会一直刷日志，彻底静默才有嫌疑
+                    if (Environment.TickCount64 - Interlocked.Read(ref _lastOutputTicks) < 90_000)
+                    {
+                        stalled = 0;
+                        continue;
+                    }
+
+                    // ② 还在补原版依赖
                     var footprint = MeasureVanillaFootprint();
                     if (footprint.Bytes > lastBytes + 512 * 1024)
                     {
-                        // 还在下：报个进度，让用户知道没死
                         Log($"Lunar 自己在补原版依赖（PCL 那边没补完）：已 {footprint.Bytes / 1024d / 1024d:F0} MB、" +
                             $"{footprint.Files} 个文件，继续等待…");
                         lastBytes = footprint.Bytes;
@@ -1072,11 +1465,22 @@ public static class ModLunar
                         continue;
                     }
 
+                    // ③ 还在烧 CPU：解压、校验、生成 baked classes 这些都不打印日志
+                    var cpu = ReadCpuTime(process);
+                    if (cpu - _lastCpuTime > TimeSpan.FromSeconds(1))
+                    {
+                        _lastCpuTime = cpu;
+                        lastBytes = footprint.Bytes;
+                        stalled = 0;
+                        continue;
+                    }
+
                     lastBytes = footprint.Bytes;
                     stalled += 1;
-                    if (stalled < 5) continue; // 前 100 秒不下结论，Genesis 有解压/校验的空窗期
+                    if (stalled < 3) continue;
 
-                    Log($"启动 {round * 20} 秒后既没有窗口、原版依赖也没有再变大 —— 大概率是 Genesis 在下载依赖时被网络卡住了");
+                    Log($"启动 {round * 20} 秒后既没有窗口、没有日志、原版依赖也不再变大 —— " +
+                        "大概率是 Genesis 在下载依赖时被网络卡住了");
                     HintService.Hint(Lang.Text("Lunar.Hint.Stalled"), HintType.Warning);
                     return;
                 }
@@ -1086,6 +1490,19 @@ public static class ModLunar
                 ModBase.Log(ex, "[Lunar] 首窗检查失败", ModBase.LogLevel.Debug);
             }
         });
+    }
+
+    /// <summary>读子进程累计 CPU 时间；进程刚退出或没有权限时返回零。</summary>
+    private static TimeSpan ReadCpuTime(Process process)
+    {
+        try
+        {
+            return process.TotalProcessorTime;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException or System.ComponentModel.Win32Exception)
+        {
+            return TimeSpan.Zero;
+        }
     }
 
     /// <summary>

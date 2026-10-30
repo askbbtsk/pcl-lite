@@ -761,6 +761,131 @@ PendingPromotionUpdatePush { bool hasPendingPromotion = 1; repeated int32 pendin
 `AuthService` 的 `NotifySwitchAccount` / `OpenMicrosoftPopup` 只有消息定义，
 连官方启动器都没给它们绑定客户端方法，实测不会出现在 IPC 上，不用管。
 
+## 后端通道（好友 / 私聊）
+
+`lunarclient.websocket.*` 那一批服务**不走本地 IPC**，走的是 Lunar 自己的
+WebSocket 后端。PCL 现在接上了其中两个：`FriendService` 和 `ConversationService`。
+
+### 认证：拿 Minecraft 令牌换启动器 JWT
+
+Lunar 后端不认 Minecraft 令牌，只认它自己签的 JWT。换法是一条三段式握手，
+和 Mojang 的服务器加密握手一模一样，只是把「连服务器」换成了「连 Lunar」：
+
+```
+① 连 wss://authenticator.lunarclientprod.com/launcher-v3
+   头：User-Agent: Lunar Client Launcher v<版本>、Accept: application/x-protobuf、
+       X-Initiator: LAUNCHER_WEBSOCKET
+   发 ServerboundWebSocketMessage { hello { identity { uuid, username }, initiator } }
+
+② 收 ClientboundWebSocketMessage { encryptionRequest { publicKey, randomBytes } }
+
+③ sharedSecret = random(16)
+   serverId = sha1(sharedSecret ‖ publicKey) 的补码十六进制（Mojang 的 ServerHash）
+   POST https://sessionserver.mojang.com/session/minecraft/join
+        { accessToken, selectedProfile: <32 位无连字符 uuid>, serverId }   → 必须 204
+   回 encryptionResponse { secretKey: RSA_PKCS1(sharedSecret),
+                           publicKey: RSA_PKCS1(randomBytes) }
+
+④ 收 authSuccess { encryptedJwt }，用 sharedSecret 做 AES-128-GCM 解密
+   （nonce 12 字节 ‖ 密文 ‖ tag 16 字节）→ JWT
+```
+
+`AuthSuccessMessage` 有两个字段：`jwt`（1，明文，一般空）和 `encryptedJwt`（2）。
+真正要用的永远是 2。
+
+### 连资产服务器
+
+```
+wss://websocket.lunarclientprod.com/launcher-v3
+头：Accept: application/x-protobuf（不发 User-Agent）
+```
+
+连上先发**一条裸的 `Handshake`**（没有信封），然后才是 RPC：
+
+```
+Handshake {
+  MinecraftIdentity identity = 1 { UuidAndUsername player = 1; int32 type = 2;
+                                   string authenticatorJwt = 3; ... }
+  LauncherVersion launcherVersion = 2 { string semver = 1 }
+  string installationId = 3
+  string operatingSystem = 5        // "win32"
+  string cpuArchitecture = 6        // "x64"
+  Language language = 7 { string iso6393Code = 1; string minecraftCode = 2 }
+  LauncherHandshake launcherHandshake = 9 { string environment = 1 ("production"); ... }
+}
+```
+
+`identity.type` 是 `MinecraftIdentity_Type.TYPE_MICROSOFT = 2`。
+
+> **`launcherVersion.semver` 填错会被直接踢**：关码 1008
+> `Unsupported launcher version`。要填**官方启动器**的版本（当前 3.7.27，
+> 从 `Lunar Client.exe` 的文件版本读），不是游戏日志里那个 `--launcherVersion`。
+
+### 信封与 RPC
+
+```
+ServerboundWebSocketMessage { bytes request_id = 1; string service = 2;
+                              string method = 3; bytes input = 4; }
+ClientboundWebSocketMessage { WebSocketRpcResponse rpc_response = 1;
+                              google.protobuf.Any push_notification = 2; }
+WebSocketRpcResponse        { bytes request_id = 1; bytes output = 2; }
+```
+
+`request_id` 就是自增计数器的十进制字符串的 UTF-8 字节。`method` 是裸方法名
+（`Login` / `GetConversations` / …），`service` 是全名：
+
+```
+lunarclient.websocket.friend.v1.FriendService
+lunarclient.websocket.conversation.v1.ConversationService
+```
+
+### 好友与私聊用到的消息
+
+```
+friend.v1.LoginResponse   { int32 status = 1; repeated OfflineFriend offlineFriends = 2;
+                            bool = 3; ...; repeated OnlineFriend onlineFriends = 11 }
+friend.v1.OnlineFriend    { UuidAndUsername player = 1; int32 status = 2; Location location = 3;
+                            string rankName = 13; string countryCode = 14 }
+friend.v1.OfflineFriend   { UuidAndUsername player = 1; string rankName = 8 }   // 注意是 8，不是 13
+common.v1.UuidAndUsername { Uuid uuid = 1; string username = 2 }
+common.v1.Uuid            { fixed64 high64 = 1; fixed64 low64 = 2 }
+```
+
+`OnlineFriendStatus`：1 在线、2 离开、3 忙、4 隐身。
+`Location` 是 11 分支的 oneof，只有 `publicServer`（名字在 2、地址在 3）、
+`localServer`、`singlePlayer`、`minecraftRealms`、`inMenus`、`inLauncher`、`inGame`
+这几个有展示价值。
+
+```
+conversation.v1.ConversationReference { Uuid friendUuid = 1; Uuid conversationReference = 2 }
+conversation.v1.Conversation { ConversationReference conversationReference = 1;
+                               repeated ConversationParticipant participants = 2;
+                               int32 type = 3; ConversationMessage latestMessage = 14; ... }
+conversation.v1.ConversationMessage { Uuid id = 1; Timestamp sentAt = 2;
+                                      ConversationSender sender = 3;
+                                      ConversationMessageContents contents = 4 }
+conversation.v1.ConversationMessageContents { string plainText = 1; ... }
+conversation.v1.CreateConversationRequest { int32 type = 1; repeated Uuid participantUuids = 2 }
+conversation.v1.SendConversationMessageRequest { ConversationReference ref = 1;
+                                                 ConversationMessageContents messageContents = 2 }
+```
+
+`ConversationType`：1 = 一对一（`CONVERSATION_TYPE_FRIEND`）、2 = 群聊。
+`SendConversationMessageResponse.status`：0 未指定、**1 成功**、2 会话不存在、
+3 内容不合适、4 超长。
+
+### 踩过的坑
+
+- **`LoadConversation` 只按会话 id 找**，只给 `friendUuid` 会返回 0 条。
+  所以顺序必须是：`GetConversations` → 拿 id → `LoadConversation`；
+  第一次跟某个好友说话要先 `CreateConversation`（已存在时服务端会把原来那个还回来）。
+- **`Conversation.participants` 里包含自己**，要按自己的 UUID 排掉才是对方。
+- `GetConversations` 返回的 `ConversationReference` 只有会话 id，`friendUuid` 是空的，
+  别指望从那里拿好友。
+- 消息发送成功后服务端会把这条消息**当推送再回一遍**（`ConversationMessagePush`），
+  客户端按「发送者是不是自己」渲染即可，不用去重。
+- 认证服务和资产服务是**两条独立连接**：前者换完 JWT 就可以关，后者常驻。
+
 ## 还没解决的点
 
 1. **`LaunchGame` 不自动重启**：官方启动器是先回响应、再延迟 1 秒调自己的

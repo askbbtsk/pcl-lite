@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -9,6 +9,7 @@ using System.Windows.Media;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.App.Lunar;
+using PCL.Core.App.Lunar.Social;
 using PCL.Core.UI;
 
 namespace PCL;
@@ -40,6 +41,7 @@ public partial class PageLunarLaunch
         ModLunar.StateChanged += RefreshPage;
         ModLunar.LogReceived += AppendLog;
         _subscribed = true;
+        SubscribeSocial();
 
         _gameDirPreview = PreviewGameDirectory();
         ModLunar.Refresh();
@@ -57,6 +59,7 @@ public partial class PageLunarLaunch
         if (!_subscribed) return;
         ModLunar.StateChanged -= RefreshPage;
         ModLunar.LogReceived -= AppendLog;
+        UnsubscribeSocial();
         _subscribed = false;
     }
 
@@ -629,4 +632,308 @@ public partial class PageLunarLaunch
 
         return commandLine[..start] + "[REDACTED]" + commandLine[end..];
     }
+
+    #region 好友与私聊
+
+    private IReadOnlyList<LunarFriend> _friends = [];
+    private LunarFriend? _selectedFriend;
+    private string _selectedConversation = "";
+    private bool _socialSubscribed;
+    private bool _socialBusy;
+
+    /// <summary>订阅 <see cref="ModLunar" /> 的社交事件。页面每次显示都要重新挂。</summary>
+    private void SubscribeSocial()
+    {
+        if (_socialSubscribed) return;
+        ModLunar.SocialStateChanged += RefreshSocial;
+        ModLunar.SocialFriendsChanged += RefreshSocial;
+        ModLunar.SocialMessageReceived += OnSocialMessage;
+        _socialSubscribed = true;
+        RefreshSocial();
+    }
+
+    private void UnsubscribeSocial()
+    {
+        if (!_socialSubscribed) return;
+        ModLunar.SocialStateChanged -= RefreshSocial;
+        ModLunar.SocialFriendsChanged -= RefreshSocial;
+        ModLunar.SocialMessageReceived -= OnSocialMessage;
+        _socialSubscribed = false;
+    }
+
+    private void RefreshSocial()
+    {
+        // 事件是从连接线程上抛出来的，必须切回 UI 线程再动控件
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(RefreshSocial));
+            return;
+        }
+
+        if (!IsLoaded) return;
+
+        var client = ModLunar.Social;
+        var connected = ModLunar.IsSocialConnected;
+
+        LabSocialStatus.Text = _socialBusy || ModLunar.IsSocialBusy
+            ? Lang.Text("Lunar.Social.Connecting")
+            : connected
+                ? Lang.Text("Lunar.Social.Online")
+                : Lang.Text("Lunar.Social.Offline");
+
+        LabSocialDetail.Text = connected
+            ? Lang.Text("Lunar.Social.OnlineDesc", client?.Friends.Count ?? 0)
+            : Lang.Text("Lunar.Social.OfflineDesc");
+
+        BtnSocialConnect.Text = connected
+            ? Lang.Text("Lunar.Social.Disconnect")
+            : Lang.Text("Lunar.Social.Connect");
+        BtnSocialConnect.IsEnabled = !(_socialBusy || ModLunar.IsSocialBusy);
+        BtnSocialRefresh.IsEnabled = connected;
+
+        _friends = client?.Friends ?? [];
+        RebuildFriendRows();
+    }
+
+    private void RebuildFriendRows()
+    {
+        PanFriends.Children.Clear();
+        LabFriendsEmpty.Visibility = _friends.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        foreach (var friend in _friends.OrderByDescending(f => f.IsOnline).ThenBy(f => f.Name))
+        {
+            var detail = friend.IsOnline
+                ? string.IsNullOrEmpty(friend.Where)
+                    ? Lang.Text("Lunar.Social.WhereOnline")
+                    : friend.Where
+                : Lang.Text("Lunar.Social.WhereOffline");
+
+            var item = new MyListItem
+            {
+                Title = friend.Name,
+                Info = detail,
+                Type = MyListItem.CheckType.RadioBox,
+                Height = 38,
+                Margin = new Thickness(0, 0, 0, 2),
+                SvgIcon = friend.IsOnline ? "lucide/user-round" : "lucide/user",
+                Tag = friend,
+                Checked = _selectedFriend?.Uuid == friend.Uuid
+            };
+            item.Check += FriendItem_Check;
+            PanFriends.Children.Add(item);
+        }
+    }
+
+    private async void FriendItem_Check(object sender, ModBase.RouteEventArgs e)
+    {
+        if (sender is not MyListItem { Tag: LunarFriend friend }) return;
+        await OpenChatAsync(friend);
+    }
+
+    private async Task OpenChatAsync(LunarFriend friend)
+    {
+        _selectedFriend = friend;
+        _selectedConversation = "";
+        PanChat.Visibility = Visibility.Visible;
+        LabChatTitle.Text = friend.Name;
+        PanMessages.Children.Clear();
+
+        var client = ModLunar.Social;
+        if (client is null || !client.IsConnected)
+        {
+            AddSystemLine(Lang.Text("Lunar.Social.NeedConnect"));
+            return;
+        }
+
+        AddSystemLine(Lang.Text("Lunar.Social.Loading"));
+
+        try
+        {
+            _selectedConversation = await client.OpenConversationAsync(friend.Uuid);
+            var messages = await client.LoadMessagesAsync(friend.Uuid, _selectedConversation);
+            PanMessages.Children.Clear();
+            foreach (var message in messages) AddMessageRow(message);
+            if (messages.Count == 0) AddSystemLine(Lang.Text("Lunar.Social.NoMessages"));
+            PanChatScroll.ScrollToEnd();
+        }
+        catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
+        {
+            PanMessages.Children.Clear();
+            AddSystemLine(ex.Message);
+        }
+    }
+
+    private void OnSocialMessage(string conversationId, LunarChatMessage message)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(() => OnSocialMessage(conversationId, message)));
+            return;
+        }
+
+        if (conversationId != _selectedConversation) return;
+        AddMessageRow(message);
+        PanChatScroll.ScrollToEnd();
+    }
+
+    private void AddSystemLine(string text)
+    {
+        var block = new TextBlock
+        {
+            Text = text,
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 11.5,
+            Opacity = 0.55,
+            Margin = new Thickness(2, 2, 2, 6)
+        };
+        PanMessages.Children.Add(block);
+    }
+
+    /// <summary>
+    ///     一行消息。自己发的靠右、用主题色底 + 反白字；别人的靠左、用透明底。
+    ///     <para>文字颜色都显式给，深色主题下才不会出现黑字黑底。</para>
+    /// </summary>
+    private void AddMessageRow(LunarChatMessage message)
+    {
+        var caption = message.Mine
+            ? Lang.Text("Lunar.Social.Me") + " · " + message.SentAt.ToLocalTime().ToString("HH:mm")
+            : message.SenderName + " · " + message.SentAt.ToLocalTime().ToString("HH:mm");
+
+        var stack = new StackPanel();
+        var captionBlock = new TextBlock
+        {
+            Text = caption,
+            FontSize = 10.5,
+            Opacity = 0.55,
+            Margin = new Thickness(2, 0, 2, 2),
+            HorizontalAlignment = message.Mine ? HorizontalAlignment.Right : HorizontalAlignment.Left
+        };
+        captionBlock.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrush1");
+        stack.Children.Add(captionBlock);
+
+        var text = new TextBlock
+        {
+            Text = message.Text,
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12
+        };
+        text.SetResourceReference(TextBlock.ForegroundProperty, message.Mine ? "ColorBrush8" : "ColorBrush1");
+
+        var bubble = new Border
+        {
+            CornerRadius = new CornerRadius(5),
+            Padding = new Thickness(10, 6, 10, 6),
+            MaxWidth = 360,
+            HorizontalAlignment = message.Mine ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+            Child = text
+        };
+        bubble.SetResourceReference(Border.BackgroundProperty,
+            message.Mine ? "ColorBrush3" : "ColorBrushTransparentBackground");
+        stack.Children.Add(bubble);
+
+        stack.Margin = new Thickness(0, 0, 0, 8);
+        PanMessages.Children.Add(stack);
+    }
+
+    private async void BtnSocialConnect_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (_socialBusy) return;
+
+        if (ModLunar.IsSocialConnected)
+        {
+            _socialBusy = true;
+            RefreshSocial();
+            try
+            {
+                await ModLunar.DisconnectSocialAsync();
+            }
+            finally
+            {
+                _socialBusy = false;
+                PanChat.Visibility = Visibility.Collapsed;
+                RefreshSocial();
+            }
+
+            return;
+        }
+
+        _socialBusy = true;
+        RefreshSocial();
+        try
+        {
+            await ModLunar.ConnectSocialAsync();
+        }
+        catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
+        {
+            HintService.Hint(ex.Message, HintType.Warning);
+        }
+        finally
+        {
+            _socialBusy = false;
+            RefreshSocial();
+        }
+    }
+
+    private async void BtnSocialRefresh_Click(object sender, MouseButtonEventArgs e)
+    {
+        var client = ModLunar.Social;
+        if (client is null || !client.IsConnected) return;
+
+        BtnSocialRefresh.IsEnabled = false;
+        try
+        {
+            await client.LoadFriendsAsync();
+        }
+        catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
+        {
+            HintService.Hint(ex.Message, HintType.Warning);
+        }
+        finally
+        {
+            BtnSocialRefresh.IsEnabled = true;
+            RefreshSocial();
+        }
+    }
+
+    private async void BtnChatSend_Click(object sender, MouseButtonEventArgs e) => await SendChatAsync();
+
+    private async void TxtChatInput_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        e.Handled = true;
+        await SendChatAsync();
+    }
+
+    private async Task SendChatAsync()
+    {
+        var text = TxtChatInput.Text.Trim();
+        if (text.Length == 0) return;
+        if (_selectedFriend is null || _selectedConversation.Length == 0) return;
+
+        var client = ModLunar.Social;
+        if (client is null || !client.IsConnected)
+        {
+            HintService.Hint(Lang.Text("Lunar.Social.NeedConnect"), HintType.Warning);
+            return;
+        }
+
+        TxtChatInput.Text = "";
+        BtnChatSend.IsEnabled = false;
+        try
+        {
+            await client.SendMessageAsync(_selectedFriend.Uuid, _selectedConversation, text);
+        }
+        catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
+        {
+            // 发失败就把内容放回去，别让用户白打一遍
+            TxtChatInput.Text = text;
+            HintService.Hint(ex.Message, HintType.Warning);
+        }
+        finally
+        {
+            BtnChatSend.IsEnabled = true;
+        }
+    }
+
+    #endregion
 }

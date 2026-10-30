@@ -3638,7 +3638,7 @@
     <sys:String x:Key="Lunar.Action.CopyCommand">复制启动命令</sys:String>
     <sys:String x:Key="Lunar.Action.FocusGame">回到游戏</sys:String>
     <sys:String x:Key="Lunar.Hint.Focused">已把游戏窗口切到前台</sys:String>
-    <sys:String x:Key="Lunar.Hint.FocusFailed">还没找到游戏窗口，切不过去；等窗口出来再试</sys:String>
+    <sys:String x:Key="Lunar.Hint.FocusFailed">游戏还没连上 PCL，前台切换请求送不出去；等游戏进到主界面再试</sys:String>
     <sys:String x:Key="Lunar.Card.Social">好友与私聊</sys:String>
     <sys:String x:Key="Lunar.Social.Offline">未连接</sys:String>
     <sys:String x:Key="Lunar.Social.Online">已连接 Lunar 后端</sys:String>
@@ -3656,6 +3656,7 @@
     <sys:String x:Key="Lunar.Social.Loading">正在拉取聊天记录…</sys:String>
     <sys:String x:Key="Lunar.Social.NoMessages">还没有消息，说点什么吧。</sys:String>
     <sys:String x:Key="Lunar.Social.Me">我</sys:String>
+    <sys:String x:Key="Lunar.Social.Placeholder">输入消息，回车发送…</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">说明</sys:String>
     <sys:String x:Key="Lunar.Note.1">不经过 Lunar 启动器，由 PCL 直接拉起游戏。</sys:String>
     <sys:String x:Key="Lunar.Note.2">Loader 由服务端下发，点一下就能换。默认跟官方一致（1.17.1 默认 Fabric）。</sys:String>

@@ -189,27 +189,37 @@
                         <TextBlock x:Name="LabChatTitle" Margin="6,0,6,8" FontSize="12" FontWeight="Bold"
                                    TextTrimming="CharacterEllipsis" Text="" />
 
+                        <!--
+                            消息区。右侧的 10 像素内边距是留给滚动条的：
+                            PCL 的 ScrollBar 模板是浮在内容上的，不留出来就会把右对齐的
+                            气泡压住（滑块盖在「我」发的消息上面）。
+                        -->
                         <Border Background="{DynamicResource ColorBrushTransparentBackground}"
-                                CornerRadius="5" Padding="10">
-                            <ScrollViewer x:Name="PanChatScroll" Height="200"
+                                CornerRadius="5" Padding="10,10,0,10">
+                            <ScrollViewer x:Name="PanChatScroll" Height="220"
                                           VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled">
-                                <StackPanel x:Name="PanMessages" />
+                                <StackPanel x:Name="PanMessages" Margin="0,0,10,0" />
                             </ScrollViewer>
                         </Border>
 
-                        <Grid Margin="0,8,0,0">
+                        <!--
+                            输入行。用 MyTextBox 而不是原生 TextBox：原生 TextBox 在深色主题下
+                            是「白底 + 白字」，打进去的字完全看不见；MyTextBox 自带主题背景、
+                            圆角和 HintText 占位提示。
+                        -->
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="TxtChatInput" Grid.Column="0" Height="30" Margin="0,0,8,0"
-                                     MaxLength="500" VerticalContentAlignment="Center"
-                                     Foreground="{DynamicResource ColorBrush1}"
-                                     CaretBrush="{DynamicResource ColorBrush1}"
-                                     SelectionBrush="{DynamicResource ColorBrush2}"
-                                     KeyDown="TxtChatInput_KeyDown" />
-                            <local:MyButton x:Name="BtnChatSend" Grid.Column="1" Height="30" MinWidth="76"
+                            <local:MyTextBox x:Name="TxtChatInput" Grid.Column="0" Height="32" Margin="0,0,10,0"
+                                             MaxLength="500" FontSize="12.5" CornerRadius="4"
+                                             HintText="{DynamicResource Lunar.Social.Placeholder}"
+                                             ShowValidateResult="False"
+                                             KeyDown="TxtChatInput_KeyDown" />
+                            <local:MyButton x:Name="BtnChatSend" Grid.Column="1" Height="32" MinWidth="80"
+                                            ColorType="Highlight"
                                             Text="{DynamicResource Lunar.Social.Send}" Click="BtnChatSend_Click" />
                         </Grid>
                     </StackPanel>

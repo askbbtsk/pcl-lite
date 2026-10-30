@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.WebSockets;
@@ -25,6 +25,7 @@ public sealed class LunarSocialClient : IAsyncDisposable
     private static readonly TimeSpan RpcTimeout = TimeSpan.FromSeconds(20);
 
     private readonly string _installationId;
+    private readonly string _launcherVersion;
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly Dictionary<string, TaskCompletionSource<byte[]>> _pending = new(StringComparer.Ordinal);
     private readonly object _pendingLock = new();
@@ -38,10 +39,13 @@ public sealed class LunarSocialClient : IAsyncDisposable
     private string _selfName = string.Empty;
     private volatile bool _connected;
 
-    public LunarSocialClient(string installationId)
+    public LunarSocialClient(string installationId, string? launcherVersion = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(installationId);
         _installationId = installationId;
+        _launcherVersion = string.IsNullOrWhiteSpace(launcherVersion)
+            ? LunarSocialProtocol.ResolveLauncherVersion()
+            : launcherVersion;
     }
 
     /// <summary>连接状态变了（连上 / 断开）。</summary>
@@ -75,7 +79,8 @@ public sealed class LunarSocialClient : IAsyncDisposable
         _selfUuid = uuid;
         _selfName = username;
 
-        var jwt = await LunarAuthenticator.GetLauncherJwtAsync(accessToken, uuid, username, cancellationToken)
+        var jwt = await LunarAuthenticator.GetLauncherJwtAsync(accessToken, uuid, username, _launcherVersion,
+                cancellationToken)
             .ConfigureAwait(false);
 
         var socket = new ClientWebSocket();
@@ -94,7 +99,7 @@ public sealed class LunarSocialClient : IAsyncDisposable
 
         _socket = socket;
         var handshake = LunarSocialProtocol.EncodeHandshake(jwt, uuid, username, _installationId,
-            LunarHandshakeVersion);
+            _launcherVersion);
         await SendRawAsync(socket, handshake, cancellationToken).ConfigureAwait(false);
 
         _connected = true;
@@ -106,9 +111,6 @@ public sealed class LunarSocialClient : IAsyncDisposable
         await CallAsync(LunarSocialProtocol.ConversationService, "Login",
             LunarSocialProtocol.EncodeConversationLogin(), cancellationToken).ConfigureAwait(false);
     }
-
-    /// <summary>握手时上报的启动器版本，和认证用的一致。</summary>
-    private const string LunarHandshakeVersion = "3.7.27";
 
     public async Task DisconnectAsync()
     {

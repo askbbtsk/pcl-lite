@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
@@ -36,16 +36,6 @@ public static class LunarAuthenticator
 {
     private const string SessionJoinUrl = "https://sessionserver.mojang.com/session/minecraft/join";
 
-    /// <summary>
-    ///     上报给 Lunar 的启动器版本号。
-    ///     <para>
-    ///         这不是 PCL 的版本，是<b>对方</b>启动器的版本 —— 握手里的
-    ///         <c>launcherVersion.semver</c> 和 User-Agent 都填它，服务端会照着它决定下发
-    ///         哪些功能。填低了拿不到好友/私聊，填一个不存在的高版本又可能被拒。
-    ///     </para>
-    /// </summary>
-    private const string ReportedLauncherVersion = "3.7.27";
-
     private static readonly HttpClient Http = new()
     {
         Timeout = TimeSpan.FromSeconds(20)
@@ -60,13 +50,14 @@ public static class LunarAuthenticator
     /// <param name="cancellationToken">取消令牌。</param>
     /// <exception cref="LunarSocialException">认证被拒、超时或网络失败。</exception>
     public static async Task<string> GetLauncherJwtAsync(string accessToken, LunarUuid uuid, string username,
-        CancellationToken cancellationToken = default)
+        string launcherVersion, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(accessToken);
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        ArgumentException.ThrowIfNullOrWhiteSpace(launcherVersion);
 
         using var socket = new ClientWebSocket();
-        socket.Options.SetRequestHeader("User-Agent", "Lunar Client Launcher v" + ReportedLauncherVersion);
+        socket.Options.SetRequestHeader("User-Agent", "Lunar Client Launcher v" + launcherVersion);
         socket.Options.SetRequestHeader("Accept", "application/x-protobuf");
         socket.Options.SetRequestHeader("X-Initiator", LunarSocialProtocol.LauncherInitiator);
 

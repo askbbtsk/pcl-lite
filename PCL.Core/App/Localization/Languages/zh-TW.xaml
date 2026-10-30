@@ -3548,7 +3548,7 @@
     <sys:String x:Key="Lunar.Action.CopyCommand">複製啟動指令</sys:String>
     <sys:String x:Key="Lunar.Action.FocusGame">回到遊戲</sys:String>
     <sys:String x:Key="Lunar.Hint.Focused">已把遊戲視窗切到前景</sys:String>
-    <sys:String x:Key="Lunar.Hint.FocusFailed">還沒找到遊戲視窗，切不過去；等視窗出來再試</sys:String>
+    <sys:String x:Key="Lunar.Hint.FocusFailed">遊戲還沒連上 PCL，前景切換請求送不出去；等遊戲進到主畫面再試</sys:String>
     <sys:String x:Key="Lunar.Card.Social">好友與私聊</sys:String>
     <sys:String x:Key="Lunar.Social.Offline">未連線</sys:String>
     <sys:String x:Key="Lunar.Social.Online">已連上 Lunar 後端</sys:String>
@@ -3566,6 +3566,7 @@
     <sys:String x:Key="Lunar.Social.Loading">正在取得聊天記錄…</sys:String>
     <sys:String x:Key="Lunar.Social.NoMessages">還沒有訊息，說點什麼吧。</sys:String>
     <sys:String x:Key="Lunar.Social.Me">我</sys:String>
+    <sys:String x:Key="Lunar.Social.Placeholder">輸入訊息，Enter 送出…</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">說明</sys:String>
     <sys:String x:Key="Lunar.Note.1">不經過 Lunar 啟動器，由 PCL 直接拉起遊戲。</sys:String>
     <sys:String x:Key="Lunar.Note.2">Loader 由伺服器下發，點一下就能換。</sys:String>

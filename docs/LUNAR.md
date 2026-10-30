@@ -1,4 +1,4 @@
-# Lunar Client 启动链路（1.7.10 → 26.x）
+﻿# Lunar Client 启动链路（1.7.10 → 26.x）
 
 本文记录「不启动 Lunar 启动器、直接拉起 Lunar 游戏」所需的全部事实。
 结论来自对本机 Lunar Client 启动器（Electron）`resources/app.asar` 的静态分析、
@@ -754,9 +754,29 @@ StartStorePreviewSessionPush { string basketIdent = 1; int32 packageId = 2; stri
 PendingPromotionUpdatePush { bool hasPendingPromotion = 1; repeated int32 pendingPromotions = 2; }
 ```
 
-> 官方启动器自己**从来不发 `ExitGamePush`**（`sendPush(` 的调用点里没有它），
-> 它结束游戏还是走进程退出。但游戏端的处理器是实打实注册了的，所以 PCL 发它
-> 能让游戏自己存盘退出 —— 这条比 `Process.Kill` 强，是 PCL 独有的收益。
+官方启动器「结束游戏」和「回到游戏」的真实路径（`dist-electron/electron/main.js`）：
+
+- **结束游戏**：启动时给 spawn 出来的子进程挂
+  `abortController.signal.addEventListener('abort', () => { stdout.destroy(); stderr.destroy(); child.kill(); })`
+  —— 点退出就是**直接杀进程**，既不发 `ExitGamePush`，也不等存档落盘。
+  整个 asar 里 `ExitGamePush` 只出现在 protobuf 定义块，一处 `sendPush` 调用都没有。
+- **回到游戏**：`ipcMain.handle('misc:focusGame')` 里只有一句
+  `gameipc.sendPush(FocusGamePush.create({}))`，没有任何 Win32 动作。
+
+> **PCL 现在与官方完全一致**：`Stop()` 直接 `process.Kill()`；
+> `FocusGameAsync()` 只发一条 `FocusGamePush`，发出去就算成功。
+>
+> 曾经试过两条「比官方更好」的路，都因为副作用撤掉了：
+> ① 结束前先发 `ExitGamePush` 请游戏自己存盘、再按「吐日志 / 烧 CPU / 写盘」三个信号
+> 判断它是在存盘还是卡死 —— 游戏没理推送时界面会卡在「正在保存存档」；
+> ② 自己 `EnumWindows` 找窗口再 `SetForegroundWindow` 抬前台 —— 匹配不上时
+> 只能报「未找到游戏窗口」，而官方的做法根本不需要知道窗口在哪。
+>
+> 结论：这两个功能**不要**再自己加逻辑。官方只靠 IPC 推送，PCL 也只靠 IPC 推送。
+
+`HasGameWindow()` 还留着，但只给启动看门狗用（「窗口出来了就收工」），
+不参与任何前台切换。判据是 `_process.Id` + 类名（`LWJGL` / `GLFW*` / `SunAwtFrame`）
++ 尺寸 ≥ 100×100。
 
 `AuthService` 的 `NotifySwitchAccount` / `OpenMicrosoftPopup` 只有消息定义，
 连官方启动器都没给它们绑定客户端方法，实测不会出现在 IPC 上，不用管。

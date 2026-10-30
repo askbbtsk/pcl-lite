@@ -1,6 +1,8 @@
-using System;
+﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace PCL.Core.App.Lunar.Social;
@@ -37,6 +39,46 @@ internal static class LunarSocialProtocol
 
     /// <summary><c>MinecraftIdentity_Type.TYPE_MICROSOFT</c>。</summary>
     private const int IdentityMicrosoft = 2;
+
+    /// <summary>
+    ///     读不到官方启动器时用的兜底版本号。
+    ///     <para>
+    ///         握手里的 <c>launcherVersion.semver</c> 填低了会被服务端直接踢掉
+    ///         （关码 1008 <c>Unsupported launcher version</c>），所以正常路径是去读
+    ///         本机装的 <c>Lunar Client.exe</c> 的文件版本，这个常量只在读不到时兜底。
+    ///     </para>
+    /// </summary>
+    private const string FallbackLauncherVersion = "3.7.27";
+
+    /// <summary>
+    ///     上报给 Lunar 的启动器版本。
+    ///     <para>
+    ///         <b>这不是 PCL 的版本</b>，是对方启动器的版本 —— 服务端照着它决定下发哪些功能，
+    ///         而且校验很硬：对不上就直接关连接。Lunar 自己更新很勤，所以这里每次都去读
+    ///         本机装的官方启动器，读不到才用兜底值。
+    ///     </para>
+    /// </summary>
+    public static string ResolveLauncherVersion()
+    {
+        try
+        {
+            var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var path = System.IO.Path.Combine(local, "Programs", "Lunar Client", "Lunar Client.exe");
+            if (!System.IO.File.Exists(path)) return FallbackLauncherVersion;
+
+            // 形如 "3.7.27-ow"，只留数字和点
+            var raw = System.Diagnostics.FileVersionInfo.GetVersionInfo(path).FileVersion;
+            if (string.IsNullOrWhiteSpace(raw)) return FallbackLauncherVersion;
+
+            var cleaned = new string(raw.TakeWhile(c => char.IsDigit(c) || c == '.').ToArray()).Trim('.');
+            var parts = cleaned.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length >= 2 ? cleaned : FallbackLauncherVersion;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return FallbackLauncherVersion;
+        }
+    }
 
     /// <summary><c>LauncherHandshake_ElectronBinariesType.ELECTRON_BINARIES_TYPE_ELECTRON</c>。</summary>
     private const int ElectronBinariesElectron = 2;

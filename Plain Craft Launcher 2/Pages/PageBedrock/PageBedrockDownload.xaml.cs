@@ -237,6 +237,8 @@ public partial class PageBedrockDownload
                     view.Entry, url,
                     percent => ModBase.RunInUi(() =>
                     {
+                        // 取消之后 PCL 的下载线程可能还会推几次进度，别把已经清空的行内状态又写回去
+                        if (!view.IsBusy) return;
                         view.SetProgress(percent);
                         view.SetStatus(Lang.Text("Bedrock.Download.Status.Downloading", percent));
                     }));
@@ -260,19 +262,53 @@ public partial class PageBedrockDownload
             // 结果就是解包完了启动页还是看不到新版本。
             ModBedrockRuntime.Refresh(force: true);
         }
+        catch (OperationCanceledException)
+        {
+            // 用户在右下角任务列表里点了 ×。取消是正常操作，不是安装失败：
+            // 不弹错误框、不写失败状态，把行内进度和按钮恢复成「可以重新开始」。
+            view.SetBusy(false);
+            view.RefreshState();
+            LabStatus.Text = Lang.Text("Bedrock.Download.Cancelled", view.Entry.Key);
+            ModBase.Log($"[Bedrock] 已取消 {view.Entry.Key} 的下载");
+        }
         catch (Exception ex)
         {
             view.SetBusy(false);
             view.RefreshState();
-            LabStatus.Text = Lang.Text("Bedrock.Download.Failed", ex.Message);
-            ModBedrockRuntime.SetState(Lang.Text("Bedrock.Download.Failed", ex.Message), view.Entry.Key);
+            var reason = DescribeError(ex);
+            LabStatus.Text = Lang.Text("Bedrock.Download.Failed", reason);
+            ModBedrockRuntime.SetState(Lang.Text("Bedrock.Download.Failed", reason), view.Entry.Key);
             ModBase.Log(ex, $"[Bedrock] 安装 {view.Entry.Key} 失败", ModBase.LogLevel.Msgbox,
-                userSummary: Lang.Text("Bedrock.Download.Failed", ex.Message));
+                userSummary: Lang.Text("Bedrock.Download.Failed", reason));
         }
         finally
         {
             _busy = false;
             BtnRefresh.IsEnabled = true;
+        }
+    }
+
+    /// <summary>
+    ///     把下载链路里套了几层的异常拆开，给用户一句能看懂的原因。
+    ///     <c>FileDownloader</c> 最后统一抛 <c>IOException("下载失败：&lt;本地路径&gt;")</c>，
+    ///     真正的原因藏在 InnerException 里，直接显示外层那句话等于什么都没说。
+    /// </summary>
+    private static string DescribeError(Exception ex)
+    {
+        switch (ex)
+        {
+            case AggregateException { InnerExceptions.Count: > 0 } agg:
+                return DescribeError(agg.InnerExceptions[0]);
+            case IOException { InnerException: { } inner }:
+                return DescribeError(inner);
+            case OperationCanceledException:
+                // 正常取消在 BtnAction_Click 里已经单独接走了，这里只是别把
+                // 英文的 "A task was canceled." 甩到用户脸上
+                return Lang.Text("Bedrock.Download.CancelledShort");
+            case TimeoutException { InnerException: { } inner }:
+                return DescribeError(inner);
+            default:
+                return string.IsNullOrWhiteSpace(ex.Message) ? ex.GetType().Name : ex.Message;
         }
     }
 

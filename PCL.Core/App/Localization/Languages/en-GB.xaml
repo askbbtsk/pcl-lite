@@ -3256,6 +3256,8 @@
     <sys:String x:Key="Bedrock.Download.Busy">Another download or install is already running. Wait for it to finish.</sys:String>
     <sys:String x:Key="Bedrock.Download.Done">{0} installed: {1}</sys:String>
     <sys:String x:Key="Bedrock.Download.Failed">Install failed: {0}</sys:String>
+    <sys:String x:Key="Bedrock.Download.Cancelled">Cancelled downloading {0}</sys:String>
+    <sys:String x:Key="Bedrock.Download.CancelledShort">Download cancelled</sys:String>
     <sys:String x:Key="Bedrock.Download.Md5Failed">The downloaded file does not match the official MD5. It is probably corrupted, please try again.</sys:String>
     <sys:String x:Key="Bedrock.Download.UrlFailed">Could not resolve the download URL for {0}. Store packages need the Microsoft FE3 endpoint to return the real URL, which may be blocked on this network.</sys:String>
     <sys:String x:Key="Bedrock.Download.AlreadyInstalled">{0} is already installed. Open the Launch page to start it.</sys:String>

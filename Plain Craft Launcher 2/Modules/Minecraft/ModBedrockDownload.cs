@@ -152,6 +152,9 @@ public static class ModBedrockDownload
                     completion.TrySetException(loader.Error ?? new Exception(Lang.Text("Bedrock.Download.Md5Failed")));
                     break;
                 case ModBase.LoadState.Aborted:
+                    // 目前只有两条路会走到这里：点任务列表卡片上的 ×，或退出程序时强行停止任务。
+                    // 两者都不是失败，上层按取消处理，别弹错误框。
+                    ModBase.Log($"[Bedrock] 下载被中止：{entry.Key}");
                     completion.TrySetCanceled();
                     break;
             }

@@ -3313,6 +3313,8 @@
     <sys:String x:Key="Bedrock.Download.Busy">已经有一个下载或安装任务在跑了，等它结束再点。</sys:String>
     <sys:String x:Key="Bedrock.Download.Done">{0} 安装完成：{1}</sys:String>
     <sys:String x:Key="Bedrock.Download.Failed">安装失败：{0}</sys:String>
+    <sys:String x:Key="Bedrock.Download.Cancelled">已取消下载 {0}</sys:String>
+    <sys:String x:Key="Bedrock.Download.CancelledShort">下载已取消</sys:String>
     <sys:String x:Key="Bedrock.Download.Md5Failed">下载到的文件 MD5 与官方值不一致，文件可能已损坏，请重试。</sys:String>
     <sys:String x:Key="Bedrock.Download.UrlFailed">没能拿到 {0} 的下载地址。商店包需要用微软 FE3 接口换真实地址，可能被网络拦截了。</sys:String>
     <sys:String x:Key="Bedrock.Download.AlreadyInstalled">{0} 已经装好了，去「启动」页就能直接开。</sys:String>

@@ -72,6 +72,16 @@ public static class UpdateManager
 
     public static void UpdateStart(UpdateEnums.UpdateType type, string receivedKey = null, bool forceValidated = false)
     {
+        // 同一个更新流程只能有一个。以前没有这道门，用户在更新页上连点两下
+        // （或者一边自动下载一边手点安装）就会起出两个加载器，
+        // 它们往同一个临时文件和同一个目标 exe 上写，轻则哈希校验失败，重则装出半个文件。
+        if (type == UpdateEnums.UpdateType.UpdateNow &&
+            updateLoader is { State: ModBase.LoadState.Loading })
+        {
+            ModBase.Log("[Update] 已有更新任务在跑，忽略本次请求");
+            return;
+        }
+
         var dlTargetPath = ModBase.exePath + @"PCL\Plain Craft Launcher Community Edition.exe";
         ModBase.RunInNewThread(() =>
         {

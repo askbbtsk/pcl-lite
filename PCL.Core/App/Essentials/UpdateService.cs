@@ -55,8 +55,17 @@ public sealed class UpdateService : GeneralService
             {
                 var oldProcess = Process.GetProcessById(oldProcessId);
                 Context.Debug("正在等待旧版本进程退出");
-                oldProcess.WaitForExit();
-                Context.Trace("旧版本进程已退出");
+                // 必须给超时。旧进程若在关闭流程里被某个服务卡住，这里会无限期挂着：
+                // 用户看到的现象是「点了更新，启动器窗口没了，进程还在，再点启动也没反应」，
+                // 而且没有任何日志能说明它在等谁。等不到就照常往下走，让替换和重启先完成。
+                if (!oldProcess.WaitForExit(30000))
+                {
+                    Context.Warn("旧版本进程 30 秒内没有退出，不再等待，继续替换文件");
+                }
+                else
+                {
+                    Context.Trace("旧版本进程已退出");
+                }
             }
             catch
             {

@@ -1,0 +1,9 @@
+{
+  "schema": 2,
+  "sources": [
+    {
+      "repo": "askbbtsk/pcl-lite",
+      "tier": "official"
+    }
+  ]
+}

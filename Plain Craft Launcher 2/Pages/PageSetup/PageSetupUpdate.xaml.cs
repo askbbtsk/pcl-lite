@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using PCL.Core.App;
 using PCL.Core.Utils;
 using PCL.Core.App.Localization;
@@ -12,10 +13,19 @@ public partial class PageSetupUpdate
 {
     public VersionDataModel updateInfo;
 
+    /// <summary>
+    ///     进度刷新计时器。以前这里是一个 <c>while + Thread.Sleep</c> 的忙等循环，
+    ///     而且直接跑在 UI 线程上——只要进页面时正好有更新在下载，整个窗口就再也画不动，
+    ///     连「取消」都点不了（UI 线程不泵消息，动画线程的 RunInUiWait 也跟着一起堵死）。
+    ///     现在改成 DispatcherTimer：每 200ms 回一次 UI 线程刷文案，期间界面照常响应。
+    /// </summary>
+    private DispatcherTimer? _updateProgressTimer;
+
     public PageSetupUpdate()
     {
         InitializeComponent();
         Loaded += (_, _) => Init();
+        Unloaded += (_, _) => _StopUpdateProgressTimer();
     }
 
     private void Init()
@@ -120,8 +130,10 @@ public partial class PageSetupUpdate
                 Exception checkUpdateEx = null;
                 try
                 {
-                    updateInfo = UpdateManager.remoteServer.GetLatestVersion(
-                        UpdateManager.TargetChannel, SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64);
+                    // 取版本详情要读缓存里的 Release 列表，缓存刚好过期时会真的发一次网络请求。
+                    // 这里原本是同步调用，等于把网络 IO 放在 UI 线程上——断网时窗口直接假死。
+                    updateInfo = await Task.Run(() => UpdateManager.remoteServer.GetLatestVersion(
+                        UpdateManager.TargetChannel, SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64));
                     TextUpdateName.Text = "PCL Lite " + VersionNameFormat(updateInfo.VersionName);
                     var summary = updateInfo.Changelog.Between("<summary>", "</summary>");
                     if (!updateInfo.Changelog.Contains("<summary>") || string.IsNullOrWhiteSpace(summary.Trim()))
@@ -154,8 +166,10 @@ public partial class PageSetupUpdate
 
                 if (UpdateManager.updateLoader is not null && UpdateManager.updateLoader.State == ModBase.LoadState.Loading)
                 {
-                    BtnUpdate_Timer();
+                    // 先把按钮按住再开计时器：以前顺序反了，阻塞期间按钮还是可点的，
+                    // 用户等得不耐烦就会连点，起出一堆并发下载
                     BtnUpdate.IsEnabled = false;
+                    _StartUpdateProgressTimer();
                 }
                 else if (UpdateManager.isUpdateWaitingRestart)
                 {
@@ -191,18 +205,56 @@ public partial class PageSetupUpdate
         }
     }
 
-    public void BtnUpdate_Timer()
+    /// <summary>
+    ///     开始刷新按钮上的下载进度。
+    ///     <para>
+    ///     绝对不能写成 <c>while (State == Loading) { ...; Thread.Sleep(200); }</c>：
+    ///     这个方法是从 <see cref="CheckUpdateAsync"/> 里调的，那里 await 之后回到了 UI 线程，
+    ///     忙等就等于把消息泵掐死——窗口变「无响应」，动画线程卡在 RunInUiWait，
+    ///     任务管理里的取消按钮也永远收不到点击。加载器本身还在后台跑，
+    ///     所以看起来是「点更新卡死、点取消也卡死」。
+    ///     </para>
+    /// </summary>
+    private void _StartUpdateProgressTimer()
     {
-        while (UpdateManager.updateLoader is not null && UpdateManager.updateLoader.State == ModBase.LoadState.Loading)
+        _StopUpdateProgressTimer();
+        _updateProgressTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            ModBase.RunInUi(() => BtnUpdate.Text = Lang.Number(UpdateManager.updateLoader.Progress, "P2"));
-            Thread.Sleep(200);
-        }
+            Interval = TimeSpan.FromMilliseconds(200)
+        };
+        _updateProgressTimer.Tick += (_, _) =>
+        {
+            if (UpdateManager.updateLoader is null ||
+                UpdateManager.updateLoader.State != ModBase.LoadState.Loading)
+            {
+                // 加载器结束了：停止计时，把按钮交还给正常的收尾流程
+                _StopUpdateProgressTimer();
+                return;
+            }
+
+            BtnUpdate.Text = Lang.Number(UpdateManager.updateLoader.Progress, "P2");
+        };
+        _updateProgressTimer.Start();
+    }
+
+    private void _StopUpdateProgressTimer()
+    {
+        if (_updateProgressTimer is null) return;
+        _updateProgressTimer.Stop();
+        _updateProgressTimer = null;
     }
 
     private void BtnUpdate_Click(object sender, MouseButtonEventArgs e)
     {
-        if (UpdateManager.isUpdateWaitingRestart) UpdateManager.UpdateRestart(true);
+        // 已经下载好了：这一下是「重启并安装」，走完就直接结束程序。
+        // 以前没有 return，UpdateRestart 里 EndProgram 都跑了还会继续往下执行
+        // UpdateStart(UpdateNow)，等于一边关程序一边又起一个下载加载器
+        if (UpdateManager.isUpdateWaitingRestart)
+        {
+            UpdateManager.UpdateRestart(true);
+            return;
+        }
+
         // 开始更新流程
         UpdateManager.UpdateStart(UpdateEnums.UpdateType.UpdateNow);
     }

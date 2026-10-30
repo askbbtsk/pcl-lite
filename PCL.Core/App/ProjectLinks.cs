@@ -114,6 +114,27 @@ public static class ProjectLinks
     public static string ServiceRepository => $"https://github.com/{ServiceOwner}/{ServiceRepo}";
 
     // ─────────────────────────────────────────────────────────────
+    //  多源清单 updatev2.json
+    // ─────────────────────────────────────────────────────────────
+
+    /// <summary>v1 清单文件名：单指针，老客户端只认这个，<b>永远不能删</b>。</summary>
+    public const string ManifestV1FileName = "update.json";
+
+    /// <summary>
+    /// v2 清单文件名：多源 + 权重。
+    /// <para>
+    /// 用<b>另一个文件</b>而不是往 v1 里加字段，是因为老客户端的解析器对形状很严
+    /// （顶层对象里出现多个字符串值就判失败）。同一个文件既当单指针又当多源列表，
+    /// 必然有一边要妥协。分文件之后两边各读各的，互不影响。
+    /// </para>
+    /// <para>
+    /// 新客户端先试这个文件，404 / 写坏 / 超时都退回 v1。所以发布顺序上，
+    /// <b>v2 文件没推上去也不影响任何人</b>——只是退化成单源而已。
+    /// </para>
+    /// </summary>
+    public const string ManifestV2FileName = "updatev2.json";
+
+    // ─────────────────────────────────────────────────────────────
     //  备用锚点：让「锚点本身没了」也有救
     // ─────────────────────────────────────────────────────────────
 
@@ -136,16 +157,16 @@ public static class ProjectLinks
     public static readonly string[] ExtraServiceAnchors = [];
 
     /// <summary>某个锚点的清单原始地址。</summary>
-    public static string ManifestRaw(string owner, string repo) =>
-        $"https://raw.githubusercontent.com/{owner}/{repo}/main/update.json";
+    public static string ManifestRaw(string owner, string repo, string fileName = ManifestV1FileName) =>
+        $"https://raw.githubusercontent.com/{owner}/{repo}/main/{fileName}";
 
     /// <summary>某个锚点的 jsDelivr 镜像地址。</summary>
-    public static string ManifestMirror(string owner, string repo) =>
-        $"https://cdn.jsdelivr.net/gh/{owner}/{repo}@main/update.json";
+    public static string ManifestMirror(string owner, string repo, string fileName = ManifestV1FileName) =>
+        $"https://cdn.jsdelivr.net/gh/{owner}/{repo}@main/{fileName}";
 
     /// <summary>某个锚点的 Contents API 地址。</summary>
-    public static string ManifestApi(string owner, string repo) =>
-        $"https://api.github.com/repos/{owner}/{repo}/contents/update.json";
+    public static string ManifestApi(string owner, string repo, string fileName = ManifestV1FileName) =>
+        $"https://api.github.com/repos/{owner}/{repo}/contents/{fileName}";
 
     /// <summary>
     /// 所有锚点（主锚点在前，随后是 <see cref="ExtraServiceAnchors"/>）。

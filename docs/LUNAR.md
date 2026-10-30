@@ -837,9 +837,32 @@ Handshake {
 
 `identity.type` 是 `MinecraftIdentity_Type.TYPE_MICROSOFT = 2`。
 
-> **`launcherVersion.semver` 填错会被直接踢**：关码 1008
-> `Unsupported launcher version`。要填**官方启动器**的版本（当前 3.7.27，
-> 从 `Lunar Client.exe` 的文件版本读），不是游戏日志里那个 `--launcherVersion`。
+> **`launcherVersion.semver` 填低了会被直接踢**：关码 1008
+> `Unsupported launcher version`。要填**官方启动器**的版本，不是游戏日志里那个
+> `--launcherVersion`（那个是 3.3.0，填进来必被踢）。
+
+**实测服务端只校验下限，没有上限**（2026-10 逐版本探过一遍）：
+
+| 上报版本 | 结果 |
+| --- | --- |
+| 3.3.0 / 3.4.0 / 3.5.0 / 3.6.0 / 3.7.0 | 关码 1008 `Unsupported launcher version` |
+| 3.7.20 / 3.7.25 / 3.7.26 / 3.7.27 | 放行 |
+| 3.8.0 / 4.0.0 / 9.9.9 / 99.0.0 | 放行 |
+
+另外认证服务（`authenticator.lunarclientprod.com`）**完全不看版本**：`User-Agent`
+里的版本号从 3.3.0 到 99.0.0 一律回 `encryptionRequest`。所以校验只发生在资产服务器的
+握手阶段，被拒时 JWT 还能继续用，不必重新走 Mojang session join。
+
+> **下限会随官方启动器更新往上抬**（3.7.0 这次就已经被拒了）。而 PCL 用户大多
+> **没装官方启动器** —— 物料是 PCL 自己下的，根本不需要那个 Electron 壳。所以
+> 只读本机 `Lunar Client.exe` 是不够的，没装的人会拿到一个必然过期的值。
+>
+> 现在的做法（`LunarSocialProtocol.GetLauncherVersionCandidates`）：
+> ① 首选本机官方启动器版本，没装就用兜底 `4.0.0`（离当前下限有余量）；
+> ② 握手被 1008 拒掉就自动改用 `99.0.0` 重连一次。既然没有上限，报个远高于
+> 任何真实版本的号必然满足下限。
+>
+> 实测：强制传 `3.7.0` 时自动升到 `99.0.0`，好友 / 会话 / 历史 / 发消息全部正常。
 
 ### 信封与 RPC
 

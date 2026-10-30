@@ -41,43 +41,73 @@ internal static class LunarSocialProtocol
     private const int IdentityMicrosoft = 2;
 
     /// <summary>
-    ///     读不到官方启动器时用的兜底版本号。
+    ///     没装官方启动器时用的版本号。
     ///     <para>
-    ///         握手里的 <c>launcherVersion.semver</c> 填低了会被服务端直接踢掉
-    ///         （关码 1008 <c>Unsupported launcher version</c>），所以正常路径是去读
-    ///         本机装的 <c>Lunar Client.exe</c> 的文件版本，这个常量只在读不到时兜底。
+    ///         <b>PCL 用户大多数没装官方启动器</b> —— 物料是 PCL 自己从服务端下的，
+    ///         根本不需要那个 Electron 壳。所以这条不是边缘分支，是主路径。
+    ///     </para>
+    ///     <para>
+    ///         服务端只校验<b>下限</b>，没有上限：实测 3.7.0 被关码 1008 拒绝、
+    ///         3.7.20 起放行，4.0.0 与 99.0.0 同样放行。所以兜底值要挑一个离当前
+    ///         下限有余量的，不能填刚好卡在边上的值 —— 填 3.7.27 那种，Lunar 下一次
+    ///         抬下限就整条链路失效。
     ///     </para>
     /// </summary>
-    private const string FallbackLauncherVersion = "3.7.27";
+    private const string FallbackLauncherVersion = "4.0.0";
 
     /// <summary>
-    ///     上报给 Lunar 的启动器版本。
+    ///     首选版本被服务端拒掉之后，退而求其次报的版本号。
     ///     <para>
-    ///         <b>这不是 PCL 的版本</b>，是对方启动器的版本 —— 服务端照着它决定下发哪些功能，
-    ///         而且校验很硬：对不上就直接关连接。Lunar 自己更新很勤，所以这里每次都去读
-    ///         本机装的官方启动器，读不到才用兜底值。
+    ///         既然只有下限没有上限，报一个远高于任何真实版本的号必然满足下限。
+    ///         只在 <c>1008 Unsupported launcher version</c> 之后才用，常态下不会走到。
     ///     </para>
     /// </summary>
-    public static string ResolveLauncherVersion()
+    private const string EscalatedLauncherVersion = "99.0.0";
+
+    /// <summary>
+    ///     本机官方启动器的版本号，没装就是 <see langword="null" />。
+    ///     <para>形如 <c>3.7.27-ow</c>，只留数字和点。</para>
+    /// </summary>
+    private static string? ResolveLocalLauncherVersion()
     {
         try
         {
             var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var path = System.IO.Path.Combine(local, "Programs", "Lunar Client", "Lunar Client.exe");
-            if (!System.IO.File.Exists(path)) return FallbackLauncherVersion;
+            if (!System.IO.File.Exists(path)) return null;
 
-            // 形如 "3.7.27-ow"，只留数字和点
             var raw = System.Diagnostics.FileVersionInfo.GetVersionInfo(path).FileVersion;
-            if (string.IsNullOrWhiteSpace(raw)) return FallbackLauncherVersion;
+            if (string.IsNullOrWhiteSpace(raw)) return null;
 
             var cleaned = new string(raw.TakeWhile(c => char.IsDigit(c) || c == '.').ToArray()).Trim('.');
             var parts = cleaned.Split('.', StringSplitOptions.RemoveEmptyEntries);
-            return parts.Length >= 2 ? cleaned : FallbackLauncherVersion;
+            return parts.Length >= 2 ? cleaned : null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
         {
-            return FallbackLauncherVersion;
+            return null;
         }
+    }
+
+    /// <summary>
+    ///     首选的上报版本：装过官方启动器就报它的真实版本，没装就用兜底值。
+    /// </summary>
+    public static string ResolveLauncherVersion() => ResolveLocalLauncherVersion() ?? FallbackLauncherVersion;
+
+    /// <summary>
+    ///     按优先级排列的候选版本。握手被服务端以「版本不受支持」拒掉时依次往后试。
+    ///     <para>
+    ///         长度最多 2：首选版本 + <see cref="EscalatedLauncherVersion" />。
+    ///         每次重试都要重连一次，多列几个只会白白撞上服务端的连接限流。
+    ///     </para>
+    /// </summary>
+    /// <param name="preferred">首选版本；留空则用 <see cref="ResolveLauncherVersion" />。</param>
+    public static IReadOnlyList<string> GetLauncherVersionCandidates(string? preferred = null)
+    {
+        var first = string.IsNullOrWhiteSpace(preferred) ? ResolveLauncherVersion() : preferred;
+        return first == EscalatedLauncherVersion
+            ? [first]
+            : [first, EscalatedLauncherVersion];
     }
 
     /// <summary><c>LauncherHandshake_ElectronBinariesType.ELECTRON_BINARIES_TYPE_ELECTRON</c>。</summary>

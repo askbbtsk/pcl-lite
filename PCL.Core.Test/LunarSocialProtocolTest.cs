@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -300,6 +300,38 @@ public class LunarSocialProtocolTest
         Assert.IsTrue(text.Contains("3.7.27"));
         Assert.IsTrue(text.Contains("production"));
         Assert.IsTrue(text.Contains("win32"));
+    }
+
+    [TestMethod]
+    public void LauncherVersion_ShouldNeverBeEmptyAndLookLikeSemver()
+    {
+        var version = LunarSocialProtocol.ResolveLauncherVersion();
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(version));
+        Assert.IsTrue(version.Split('.').Length >= 2, version);
+        Assert.IsTrue(version.All(c => char.IsDigit(c) || c == '.'), version);
+    }
+
+    [TestMethod]
+    public void Candidates_ShouldStartWithPreferredAndEndWithEscalation()
+    {
+        var candidates = LunarSocialProtocol.GetLauncherVersionCandidates("3.7.0");
+
+        Assert.AreEqual("3.7.0", candidates[0]);
+        Assert.IsTrue(candidates.Count >= 2, "被拒之后必须有更高版本的退路");
+        Assert.AreEqual(candidates.Count, candidates.Distinct().Count(), "候选不能重复，否则会白撞限流");
+
+        // 退路必须明显高于任何真实版本，才不会再撞上服务端抬起来的下限
+        var fallback = candidates[^1].Split('.').Select(int.Parse).ToArray();
+        Assert.IsTrue(fallback[0] >= 10, candidates[^1]);
+    }
+
+    [TestMethod]
+    public void Candidates_ShouldNotDuplicateTheEscalatedVersion()
+    {
+        var escalated = LunarSocialProtocol.GetLauncherVersionCandidates("99.0.0");
+        Assert.AreEqual(1, escalated.Count);
+        Assert.AreEqual("99.0.0", escalated[0]);
     }
 
     [TestMethod]

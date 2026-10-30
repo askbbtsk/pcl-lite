@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
+using PCL.Core.Logging;
 
 namespace PCL.Core.App.Lunar.Social;
 
@@ -25,7 +26,7 @@ public sealed class LunarSocialClient : IAsyncDisposable
     private static readonly TimeSpan RpcTimeout = TimeSpan.FromSeconds(20);
 
     private readonly string _installationId;
-    private readonly string _launcherVersion;
+    private string _launcherVersion;
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly Dictionary<string, TaskCompletionSource<byte[]>> _pending = new(StringComparer.Ordinal);
     private readonly object _pendingLock = new();
@@ -79,10 +80,62 @@ public sealed class LunarSocialClient : IAsyncDisposable
         _selfUuid = uuid;
         _selfName = username;
 
+        // 认证服务不看版本号（实测 3.3.0 到 99.0.0 一律放行），只有资产服务器的握手校验。
+        // 所以 JWT 只换一次，版本被拒时不必重新认证，省掉一次 Mojang session join。
         var jwt = await LunarAuthenticator.GetLauncherJwtAsync(accessToken, uuid, username, _launcherVersion,
                 cancellationToken)
             .ConfigureAwait(false);
 
+        var candidates = LunarSocialProtocol.GetLauncherVersionCandidates(_launcherVersion);
+        var preferred = _launcherVersion;
+        ClientWebSocket? socket = null;
+        var rejected = new List<string>(candidates.Count);
+
+        foreach (var candidate in candidates)
+        {
+            socket = await TryOpenSocketAsync(candidate, jwt, uuid, username, rejected, cancellationToken)
+                .ConfigureAwait(false);
+            if (socket is null) continue;
+
+            if (candidate != preferred)
+                LogWrapper.Info("Lunar", $"服务端不认启动器版本 {preferred}，改用 {candidate} 握手成功");
+            _launcherVersion = candidate;
+            break;
+        }
+
+        if (socket is null)
+        {
+            throw new LunarSocialException(rejected.Count == 0
+                ? "连不上 Lunar 后端"
+                : "Lunar 服务端拒绝了当前启动器版本（试过 " + string.Join(" / ", rejected) +
+                  "）。通常是 Lunar 刚更新、把最低版本提高了，等 PCL 更新即可。");
+        }
+
+        _socket = socket;
+        _connected = true;
+        _receiveLoop = Task.Run(() => ReceiveLoopAsync(socket, _lifetime.Token), CancellationToken.None);
+        StateChanged?.Invoke();
+
+        // 官方启动器是「所有服务并行 Login」，这里两个服务互相独立，顺序来也不会更慢
+        await LoadFriendsAsync(cancellationToken).ConfigureAwait(false);
+        await CallAsync(LunarSocialProtocol.ConversationService, "Login",
+            LunarSocialProtocol.EncodeConversationLogin(), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     用指定版本号握一次手。
+    ///     <para>
+    ///         成功返回已经收下第一帧的 socket；版本被服务端拒掉返回 <see langword="null" />
+    ///         （同时把这次用的版本记进 <paramref name="rejected" />），其它失败直接抛。
+    ///     </para>
+    ///     <para>
+    ///         握手成功的第一帧是 <c>SessionIdentifyPush</c>，这里就地交给
+    ///         <see cref="HandleFrame" />，免得启动收包循环之后把它漏掉。
+    ///     </para>
+    /// </summary>
+    private async Task<ClientWebSocket?> TryOpenSocketAsync(string version, string jwt, LunarUuid uuid,
+        string username, List<string> rejected, CancellationToken cancellationToken)
+    {
         var socket = new ClientWebSocket();
         socket.Options.SetRequestHeader("Accept", "application/x-protobuf");
 
@@ -97,19 +150,38 @@ public sealed class LunarSocialClient : IAsyncDisposable
             throw new LunarSocialException("连不上 Lunar 后端：" + ex.Message, ex);
         }
 
-        _socket = socket;
-        var handshake = LunarSocialProtocol.EncodeHandshake(jwt, uuid, username, _installationId,
-            _launcherVersion);
-        await SendRawAsync(socket, handshake, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var handshake = LunarSocialProtocol.EncodeHandshake(jwt, uuid, username, _installationId, version);
+            await SendRawAsync(socket, handshake, cancellationToken).ConfigureAwait(false);
 
-        _connected = true;
-        _receiveLoop = Task.Run(() => ReceiveLoopAsync(socket, _lifetime.Token), CancellationToken.None);
-        StateChanged?.Invoke();
+            var buffer = new byte[64 * 1024];
+            var (frame, closeReason) = await ReceiveFrameAsync(socket, buffer, cancellationToken)
+                .ConfigureAwait(false);
 
-        // 官方启动器是「所有服务并行 Login」，这里两个服务互相独立，顺序来也不会更慢
-        await LoadFriendsAsync(cancellationToken).ConfigureAwait(false);
-        await CallAsync(LunarSocialProtocol.ConversationService, "Login",
-            LunarSocialProtocol.EncodeConversationLogin(), cancellationToken).ConfigureAwait(false);
+            if (frame is not null)
+            {
+                HandleFrame(frame);
+                return socket;
+            }
+
+            socket.Dispose();
+            LastCloseReason = closeReason;
+
+            if (closeReason is not null &&
+                closeReason.Contains("Unsupported launcher version", StringComparison.OrdinalIgnoreCase))
+            {
+                rejected.Add(version);
+                return null;
+            }
+
+            throw new LunarSocialException("Lunar 后端在握手阶段就断开了连接（" + closeReason + "）");
+        }
+        catch
+        {
+            socket.Dispose();
+            throw;
+        }
     }
 
     public async Task DisconnectAsync()

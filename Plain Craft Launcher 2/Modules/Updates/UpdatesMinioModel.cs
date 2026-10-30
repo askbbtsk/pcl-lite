@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text.Json.Serialization;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
+using PCL.Core.App.Updates;
 using PCL.Core.Utils;
 using PCL.Core.Utils.Diff;
 using PCL.Network;
@@ -53,7 +54,7 @@ public class UpdatesMinioModel : IUpdateSource // 社区自己的更新系统格
         if (_remoteCache is null)
             RefreshCache();
         var latestVersion = GetChannelInfo(channel, arch);
-        return currentVersion >= SemVer.Parse(latestVersion.VersionName);
+        return UpdateVersion.IsAtLeast(latestVersion.VersionName, currentVersion.ToString());
     }
 
     public VersionAnnouncementDataModel GetAnnouncementList()

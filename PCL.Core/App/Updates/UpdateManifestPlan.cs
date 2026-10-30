@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PCL.Core.Utils;
 
 namespace PCL.Core.App.Updates;
 
@@ -101,7 +100,7 @@ public static class UpdateManifestPlanner
 public static class UpdateSourceSelector
 {
     /// <summary>一个候选源报上来的版本。</summary>
-    /// <param name="VersionName">版本号原文，需要是合法 SemVer。</param>
+    /// <param name="VersionName">版本号原文，需要能被 <see cref="UpdateVersion"/> 解析。</param>
     /// <param name="Weight">源权重。</param>
     /// <param name="Index">调用方自己的下标，用来把结果映射回去。</param>
     public sealed record Candidate(string VersionName, int Weight, int Index);
@@ -129,18 +128,19 @@ public static class UpdateSourceSelector
     /// </summary>
     public static IReadOnlyList<int> OrderByPreference(IEnumerable<Candidate> candidates)
     {
-        var parsed = new List<(SemVer Version, int Weight, int Index)>();
+        var parsed = new List<(string Version, int Weight, int Index)>();
 
         foreach (var candidate in candidates)
         {
             // 版本号解析不了的直接丢：拿它比大小没有意义，留着还可能排到最前面
-            if (!SemVer.TryParse(candidate.VersionName, out var version) || version is null) continue;
-            parsed.Add((version, candidate.Weight, candidate.Index));
+            if (!UpdateVersion.TryParse(candidate.VersionName, out _)) continue;
+            parsed.Add((candidate.VersionName, candidate.Weight, candidate.Index));
         }
 
         return parsed
             .OrderByDescending(x => x.Weight)
-            .ThenByDescending(x => x.Version)
+            // 用 UpdateVersion 而不是 SemVer：同档内要能认出 hotfix 比同号正式版新
+            .ThenByDescending(x => x.Version, UpdateVersion.Comparer)
             .ThenBy(x => x.Index)
             .Select(x => x.Index)
             .ToList();

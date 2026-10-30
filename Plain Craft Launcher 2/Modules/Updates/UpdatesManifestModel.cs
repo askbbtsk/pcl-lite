@@ -110,8 +110,9 @@ public class UpdatesManifestModel : IUpdateSource
 
     public bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)
     {
-        // 和 GetLatestVersion 用同一个结论，否则会出现「显示已是最新、点检查又提示有新版」
-        return currentVersion >= SemVer.Parse(_PickBest(channel, arch).Version.VersionName);
+        // 和 GetLatestVersion 用同一个结论，否则会出现「显示已是最新、点检查又提示有新版」。
+        // 比较走 UpdateVersion：它认得 hotfix 比同号正式版新，SemVer 不认
+        return UpdateVersion.IsAtLeast(_PickBest(channel, arch).Version.VersionName, currentVersion.ToString());
     }
 
     public VersionAnnouncementDataModel GetAnnouncementList()

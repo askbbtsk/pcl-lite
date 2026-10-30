@@ -5,7 +5,7 @@
 # PCL Lite
 
 Preface: PCL and its guard squad keep saying we "touched the cake", and hand out labels while they're at it. I'd like to know — does this hat factory have some grudge against the bakery? How come the hat factory is the one always touching the cake?
-https://github.com/askbbtsk/pcl-lite/readmedlc
+[A mysterious article, courtesy of cubk](https://github.com/askbbtsk/pcl-lite/blob/main/readmedlc.md)
 
 [![Stars](https://img.shields.io/github/stars/askbbtsk/pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/askbbtsk/pcl-lite/stargazers)
 [![Release](https://img.shields.io/github/v/release/askbbtsk/pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/askbbtsk/pcl-lite/releases)
@@ -35,7 +35,7 @@ Get the latest build from [Releases](https://github.com/askbbtsk/pcl-lite/releas
 |---|---|---|
 | x64 | `PCL-Lite_[version]-[tag]_x64.exe` | Single file, no extraction needed |
 
-`[tag]` is one of `pre`, `snapshot`, or `nightly`. Builds without a tag are stable releases.
+`[tag]` is one of `pre`, `snapshot`, `nightly`, or `hotfix` (a patch on the stable release, e.g. `1.6.0-hotfix-1`). Builds without a tag are stable releases.
 
 - Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
 - The launcher updates itself from this repository's Releases
@@ -90,7 +90,13 @@ This project is released under the **[MIT License](LICENSE)** with the additiona
 - **Regional restriction**: do not use this project if you are located in mainland China
 - **License may change**: this license may be updated at any time without prior notice; updates apply only to versions obtained afterwards, and **already forked or already distributed versions are unaffected**
 
-
+**Portions ported from third parties carry their own licence**: the Bedrock Edition support
+(download + install + launch) is ported from
+[PCL-Symbio-Edition](https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition), and that part remains
+under **Apache-2.0** (per its clause 4). The full text is in [`LICENSE-APACHE`](LICENSE-APACHE).
+It covers only the ported code and does not change the licence of the project as a whole.
+A complete inventory of code sources and third-party libraries is in
+[the open-source inventory](docs/CREDITS.md).
 
 ## ❤️ Credits
 <img width="403" height="310" alt="ab4950f140f8c215f12435cd3dc3b667" src="https://github.com/user-attachments/assets/8fc63b73-d03c-4db3-8251-f93f7db93807" />

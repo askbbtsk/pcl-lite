@@ -94,7 +94,9 @@ public static class UpdateManager
 
                 ModBase.WriteFile($"{ModBase.pathTemp}CEUpdateLog.md", version.Changelog);
                 ModBase.Log($"[Update] 远程最新版本: {version.VersionName}, 当前版本: {ModBase.versionBaseName}");
-                if (!(SemVer.Parse(version.VersionName) > SemVer.Parse(ModBase.versionBaseName)))
+                // 用 UpdateVersion 而不是 SemVer：热修复（1.6.0-hotfix-1）必须比同号正式版新，
+                // SemVer 的规则正好相反，拿它比会让热修复永远装不上
+                if (!UpdateVersion.IsNewer(version.VersionName, ModBase.versionBaseName))
                     return;
                 if (type == UpdateEnums.UpdateType.PromptOnly)
                 {

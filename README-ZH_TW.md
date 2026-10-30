@@ -5,7 +5,7 @@
 # PCL Lite
 
 前言：pcl 和它的護衛隊天天說動了蛋糕，順手扣帽子，我想知道 pcl 這個帽子工廠和烘焙店是有仇嗎 怎麼帽子工廠天天動蛋糕？
-https://github.com/askbbtsk/pcl-lite/readmedlc
+[神祕文章來自 cubk](https://github.com/askbbtsk/pcl-lite/blob/main/readmedlc.md)
 
 [![Stars](https://img.shields.io/github/stars/askbbtsk/pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/askbbtsk/pcl-lite/stargazers)
 [![Release](https://img.shields.io/github/v/release/askbbtsk/pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/askbbtsk/pcl-lite/releases)
@@ -35,7 +35,7 @@ PCL Lite 是基於 PCL 開放原始碼開發的衍生版本，在上游功能的
 |---|---|---|
 | x64 | `PCL-Lite_[version]-[tag]_x64.exe` | 單一檔案、免解壓縮 |
 
-`[tag]` 為 `pre`、`snapshot` 或 `nightly`；沒有 tag 的是穩定版。
+`[tag]` 為 `pre`、`snapshot`、`nightly` 或 `hotfix`（熱修復，如 `1.6.0-hotfix-1`）；沒有 tag 的是穩定版。
 
 - 需要已安裝 [.NET 10 桌面執行階段](https://dotnet.microsoft.com/download/dotnet/10.0)
 - 啟動器內建自動更新，更新來源指向本儲存庫的 Releases
@@ -88,7 +88,11 @@ PCL Lite 始終建議使用最新版本的作業系統以獲得最佳體驗。
 - **地域限制**：中國大陸使用者請勿使用
 - **協議可變**：本協議可能隨時更新，且不提前通知；更新只對之後取得的版本生效，**已經 fork 或已經分發的版本不受影響**
 
-
+**第三方移植部分另有授權條款**：基岩版（下載 + 安裝 + 啟動）移植自
+[PCL-Symbio-Edition](https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition)，該部分仍受
+**Apache-2.0** 約束（依據其第 4 條），全文見 [`LICENSE-APACHE`](LICENSE-APACHE)。
+它只涵蓋移植來的那部分程式碼，不改變本專案整體的授權條款。
+完整的程式碼來源與第三方函式庫清單見[開源專案清單](docs/CREDITS.md)。
 
 ## ❤️ 致謝
 <img width="403" height="310" alt="ab4950f140f8c215f12435cd3dc3b667" src="https://github.com/user-attachments/assets/8fc63b73-d03c-4db3-8251-f93f7db93807" />

@@ -40,6 +40,11 @@ public static class UpdateChannelLevels
         var text = suffix.Trim().TrimStart('-', '.').Trim();
         if (text.Length == 0) return Stable;
 
+        // 热修复（hotfix-1 / hotfix-2 …）打在**同号正式版之上**，属于正式版通道的东西。
+        // 不单独判的话会掉进下面那条兜底规则变成「预览版」，稳定版通道的用户就永远收不到它——
+        // 而热修复恰恰是要推给所有人的。判定必须排在兜底之前。
+        if (text.Contains("hotfix", StringComparison.OrdinalIgnoreCase)) return Stable;
+
         if (text.Contains("nightly", StringComparison.OrdinalIgnoreCase)) return Latest;
         if (text.Contains("snapshot", StringComparison.OrdinalIgnoreCase)) return Snapshot;
         return Preview;

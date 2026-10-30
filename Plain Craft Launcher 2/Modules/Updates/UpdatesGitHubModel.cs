@@ -314,7 +314,8 @@ public class UpdatesGitHubModel : IUpdateSource
     public bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)
     {
         var latest = GetLatestVersion(channel, arch);
-        return currentVersion >= SemVer.Parse(latest.VersionName);
+        // 走 UpdateVersion：hotfix 比同号正式版新，SemVer 的规则正好相反
+        return UpdateVersion.IsAtLeast(latest.VersionName, currentVersion.ToString());
     }
 
     public VersionAnnouncementDataModel GetAnnouncementList()
@@ -366,13 +367,18 @@ public class UpdatesGitHubModel : IUpdateSource
 
     /// <summary>
     ///     从 tag 猜它是不是预发布版。只用于 Atom 降级通道——那条路拿不到 prerelease 字段。
-    ///     SemVer 里 <c>-</c> 之后就是预发布标识（<c>1.2.1-beta</c>），<c>+</c> 之后是构建元数据。
+    ///     <para>
+    ///         SemVer 里 <c>-</c> 之后就是预发布标识（<c>1.2.1-beta</c>），<c>+</c> 之后是构建元数据。
+    ///         但 <c>hotfix</c> 是个例外：它打在同号正式版**之上**，属于正式版通道的东西，
+    ///         猜成预发布会让稳定版通道的用户永远收不到热修复。
+    ///     </para>
     /// </summary>
     private static bool _LooksPrerelease(string? tag)
     {
         if (string.IsNullOrWhiteSpace(tag)) return false;
         var value = tag.Trim();
         if (value.StartsWith('v') || value.StartsWith('V')) value = value[1..];
+        if (value.Contains("hotfix", StringComparison.OrdinalIgnoreCase)) return false;
         return value.Contains('-');
     }
 
@@ -398,7 +404,7 @@ public class UpdatesGitHubModel : IUpdateSource
     ///         选了「始终最新」的人不会因为手里是 nightly 就收不到新发的正式版。
     ///     </para>
     ///     <para>
-    ///         排序按 SemVer 降序，不用 API 返回顺序——GitHub 是按创建时间倒序给的，
+    ///         排序按 <see cref="UpdateVersion"/> 降序（不是 API 返回顺序）——GitHub 是按创建时间倒序给的，
     ///         补发一个旧版本的预发布包就会把顺序搞乱，进而把旧版当成最新推出去。
     ///     </para>
     /// </summary>
@@ -406,7 +412,7 @@ public class UpdatesGitHubModel : IUpdateSource
     {
         if (_releases is null) RefreshCache();
 
-        var candidates = new List<(SemVer Version, JsonObject Release)>();
+        var candidates = new List<(string VersionName, JsonObject Release)>();
         foreach (var item in _releases!)
         {
             if (item is not JsonObject release) continue;
@@ -434,9 +440,9 @@ public class UpdatesGitHubModel : IUpdateSource
                 level = UpdateChannelLevels.Preview;
 
             if (level > (int)channel) continue;
-            if (!SemVer.TryParse(versionName, out var semVer) || semVer is null) continue;
+            if (!UpdateVersion.TryParse(versionName, out _)) continue;
 
-            candidates.Add((semVer, release));
+            candidates.Add((versionName, release));
         }
 
         if (candidates.Count == 0)
@@ -444,7 +450,7 @@ public class UpdatesGitHubModel : IUpdateSource
                 ? "仓库里没有正式版 Release，只有预发布版本。"
                 : "仓库里没有任何符合当前更新通道的 Release。");
 
-        return candidates.OrderByDescending(x => x.Version).First().Release;
+        return candidates.OrderByDescending(x => x.VersionName, UpdateVersion.Comparer).First().Release;
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿<local:MyPageRight
+<local:MyPageRight
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:PCL"
@@ -32,45 +32,46 @@
                                             Tag="UiLauncherTransparent" MaxValue="600" ValueByKey="10" Grid.Column="1"
                                             Change="SliderChange" />
                         </Grid>
-                        <!-- 窗口大小：预设 + 自定义，改完立刻套到主窗口上，不用重启 -->
-                        <Grid Height="28" Margin="0,0,0,7">
+                        <!-- 窗口大小：预设 + 自定义，改完立刻套到主窗口上，不用重启。
+                             行高比别的设置项高一档：这一行有下拉框 + 两个输入框，28 会显得挤。 -->
+                        <Grid Height="34" Margin="0,0,0,7">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" SharedSizeGroup="Name1" />
-                                <ColumnDefinition />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left"
                                        Text="{DynamicResource Setup.Ui.Window.Size}" Margin="0,0,20,0" />
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <!-- 宽度必须写死：MyComboBox 的模板里下拉框宽度是 Width="{TemplateBinding Width}"，
-                                     不给 Width 会让下拉面板塌成 0 宽。150 装不下「紧凑 820 × 520」，
-                                     文案会顶到右边那颗箭头上（箭头固定占 21.5px），所以留到 200。 -->
-                                <local:MyComboBox x:Name="ComboWindowSize" Width="200"
-                                                  SelectionChanged="ComboWindowSize_Change">
-                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Classic}" Tag="850x500" />
-                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Compact}" Tag="800x520" />
-                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Default}" Tag="900x550" />
-                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Large}" Tag="1080x650" />
-                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Huge}" Tag="1280x760" />
-                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Custom}" Tag="custom" />
-                                </local:MyComboBox>
-                                <StackPanel x:Name="PanWindowSizeCustom" Orientation="Horizontal"
-                                            VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed">
-                                    <local:MyTextBox x:Name="TextWindowWidth" Width="64" Height="28"
-                                                     HorizontalContentAlignment="Center"
-                                                     ValidatedTextChanged="WindowSizeText_Change">
-                                        <local:MyTextBox.ValidateRules>
-                                            <val:IntValidator Min="810" Max="2560" />
-                                        </local:MyTextBox.ValidateRules>
-                                    </local:MyTextBox>
-                                    <TextBlock Text="×" VerticalAlignment="Center" Margin="8,0" />
-                                    <local:MyTextBox x:Name="TextWindowHeight" Width="64" Height="28"
-                                                     HorizontalContentAlignment="Center"
-                                                     ValidatedTextChanged="WindowSizeText_Change">
-                                        <local:MyTextBox.ValidateRules>
-                                            <val:IntValidator Min="470" Max="1440" />
-                                        </local:MyTextBox.ValidateRules>
-                                    </local:MyTextBox>
-                                </StackPanel>
+                            <!-- 宽度交给外层 Grid 的 * 列去拉，和下面「深色模式」那些对齐。
+                                 下拉面板的宽度在模板里绑的是 ActualWidth，所以这里不用再写死 Width。 -->
+                            <local:MyComboBox Grid.Column="1" x:Name="ComboWindowSize"
+                                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                              ToolTip="{DynamicResource Setup.Ui.Window.Size.Hint}"
+                                              SelectionChanged="ComboWindowSize_Change">
+                                <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Classic}" Tag="850x500" />
+                                <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Compact}" Tag="800x520" />
+                                <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Default}" Tag="900x550" />
+                                <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Large}" Tag="1080x650" />
+                                <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Huge}" Tag="1280x760" />
+                                <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Custom}" Tag="custom" />
+                            </local:MyComboBox>
+                            <StackPanel Grid.Column="2" x:Name="PanWindowSizeCustom" Orientation="Horizontal"
+                                        VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed">
+                                <local:MyTextBox x:Name="TextWindowWidth" Width="64" Height="28"
+                                                 HorizontalContentAlignment="Center"
+                                                 ValidatedTextChanged="WindowSizeText_Change">
+                                    <local:MyTextBox.ValidateRules>
+                                        <val:IntValidator Min="810" Max="2560" />
+                                    </local:MyTextBox.ValidateRules>
+                                </local:MyTextBox>
+                                <TextBlock Text="×" VerticalAlignment="Center" Margin="8,0" />
+                                <local:MyTextBox x:Name="TextWindowHeight" Width="64" Height="28"
+                                                 HorizontalContentAlignment="Center"
+                                                 ValidatedTextChanged="WindowSizeText_Change">
+                                    <local:MyTextBox.ValidateRules>
+                                        <val:IntValidator Min="470" Max="1440" />
+                                    </local:MyTextBox.ValidateRules>
+                                </local:MyTextBox>
                             </StackPanel>
                         </Grid>
                         <Grid Height="28" Margin="0,0,0,7">
@@ -121,7 +122,10 @@
                                 <StackPanel Margin="16,12">
                                     <TextBlock Text="{DynamicResource Setup.Ui.Basic.ThemeHint}" FontSize="13"
                                                TextWrapping="Wrap" />
-                                    <UniformGrid x:Name="PanThemePresets" Rows="1" Margin="0,11,0,0" />
+                                    <!--  色卡用 WrapPanel 而不是 UniformGrid Rows="1"：
+                                          窄窗口（紧凑 820 × 520）下格子会被压到 29px 而色卡固定 32px，
+                                          直接溢出压到上面那行提示文字上。WrapPanel 会自动换行。  -->
+                                    <WrapPanel x:Name="PanThemePresets" Margin="0,11,0,0" />
                                 </StackPanel>
                             </Border>
                             <Grid Margin="0,0,0,4">

@@ -451,7 +451,7 @@
                                         <Border Background="{DynamicResource ColorBrushWhite}" CornerRadius="3" />
                                         <Border x:Name="dropDownBorder" CornerRadius="3"
                                                 BorderBrush="{TemplateBinding Foreground}" BorderThickness="1"
-                                                Width="{TemplateBinding Width}"
+                                                Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                                 MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                             <local:MyScrollViewer x:Name="DropDownScrollViewer"
                                                                   SnapsToDevicePixels="False"
@@ -497,7 +497,7 @@
                                                 <Border Background="{DynamicResource ColorBrushWhite}" CornerRadius="3" />
                                                 <Border x:Name="dropDownBorder" SnapsToDevicePixels="False"
                                                         CornerRadius="3" BorderBrush="{TemplateBinding Foreground}"
-                                                        BorderThickness="1" Width="{TemplateBinding Width}"
+                                                        BorderThickness="1" Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                                         MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                                     <local:MyScrollViewer x:Name="DropDownScrollViewer"
                                                                           Style="{DynamicResource ScrollViewerFullMargin}"

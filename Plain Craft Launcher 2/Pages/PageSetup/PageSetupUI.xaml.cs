@@ -719,10 +719,11 @@ public partial class PageSetupUI
     private const double MinWindowHeight = 470;
 
     /// <summary>
-    ///     把当前窗口尺寸同步到下拉框：对得上某个预设就选它，对不上就是「自定义」。
+    ///     把配置里的「启动默认尺寸」同步到下拉框：对得上某个预设就选它，对不上就是「自定义」。
     ///     <para>
-    ///         不额外存「上次选的是哪个预设」—— 用户拖过窗口边界后尺寸就变了，
-    ///         存下来的编号会跟实际尺寸对不上，直接按尺寸反推最省事。
+    ///         读的是 <c>States.UI</c> 里存的值，不是主窗口当前的 Width / Height。
+    ///         用户随手拖动窗口不会写回配置（见 <c>FormMain_SizeChanged</c>），所以这里
+    ///         显示的一直是「下次启动会是多大」，不会因为拖了两下就跳成「自定义」。
     ///     </para>
     /// </summary>
     private void RefreshWindowSize()

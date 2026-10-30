@@ -186,7 +186,6 @@ public partial class FormMain
         // 更改窗口
         // Top = (GetWPFSize(My.Computer.Screen.WorkingArea.Height) - Height) / 2
         // Left = (GetWPFSize(My.Computer.Screen.WorkingArea.Width) - Width) / 2
-        isSizeSaveable = true;
         ShowWindowToTop();
         var hwndSource = (HwndSource)PresentationSource.FromVisual(this);
         hwndSource.AddHook(WndProc);
@@ -590,19 +589,12 @@ public partial class FormMain
     }
 
     // 改变大小
-    /// <summary>
-    ///     是否可以向注册表储存尺寸改变信息。以此避免初始化时误储存。
-    /// </summary>
-    public bool isSizeSaveable;
-
     private void FormMain_SizeChanged(object? sender = null, EventArgs? e = null)
     {
-        if (isSizeSaveable)
-        {
-            States.UI.WindowHeight = Height;
-            States.UI.WindowWidth = Width;
-        }
-
+        // 拖窗口只改「这一次」的尺寸，不写回配置。
+        // 设置里的「窗口大小」才是下次启动的默认值，随手拖两下不该把它冲掉
+        // （否则选了「PCL 经典」，拖一下窗口再进设置页就变成「自定义」了）。
+        // 用户主动选预设 / 填自定义尺寸时走 ApplyWindowSize，那条路自己会写 States.UI。
         if (PanBack is not null)
         {
             RectForm.Rect = new Rect(0d, 0d, PanBack.ActualWidth, PanBack.ActualHeight);

@@ -2968,6 +2968,7 @@
     <sys:String x:Key="Setup.Ui.Basic.Opacity">Opacity</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size">Window size</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Classic">PCL classic</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Hint">Next launch only</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Compact">Compact 820 × 520</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Default">Standard 900 × 550</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Large">Wide 1080 × 650</sys:String>

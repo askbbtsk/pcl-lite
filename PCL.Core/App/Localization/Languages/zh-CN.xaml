@@ -3025,6 +3025,7 @@
     <sys:String x:Key="Setup.Ui.Basic.Opacity">不透明度</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size">窗口大小</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Classic">PCL 经典</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Hint">仅影响下次启动</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Compact">紧凑 820 × 520</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Default">标准 900 × 550</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Large">宽屏 1080 × 650</sys:String>

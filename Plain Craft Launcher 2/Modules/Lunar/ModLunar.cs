@@ -179,9 +179,19 @@ public static class ModLunar
         get
         {
             var configured = Config.Preference.Lunar.SubVersion;
-            if (string.IsNullOrWhiteSpace(configured)) return DefaultSubVersion;
-            if (LunarVersionCatalog.IsEmpty) return configured;
-            return LunarVersionCatalog.Find(configured) is null ? DefaultSubVersion : configured;
+            if (LunarVersionCatalog.IsEmpty)
+                return string.IsNullOrWhiteSpace(configured) ? DefaultSubVersion : configured;
+
+            if (!string.IsNullOrWhiteSpace(configured) && LunarVersionCatalog.Find(configured) is not null)
+                return configured;
+            if (LunarVersionCatalog.Find(DefaultSubVersion) is not null)
+                return DefaultSubVersion;
+
+            // 列表里既没有配置值也没有默认值（服务端下线了 1.8.9 这类老版本）。
+            // 这里必须返回一个**列表里真的有**的 id：界面上「下拉框选中项」是按它反查的，
+            // 返回列表外的值会让下拉框退化成 SelectedIndex = 0，于是显示 A、实际启动 B。
+            var versions = LunarVersionCatalog.Versions;
+            return versions.Count > 0 ? versions[0].Id : DefaultSubVersion;
         }
         set
         {

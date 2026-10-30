@@ -257,11 +257,38 @@ public static class LunarClientService
     ///         <c>--uiDir</c> 必须指到这一层。只给 <c>ui/</c> 的话 Genesis 找不到
     ///         <c>index.html</c>，游戏内菜单整块不显示（HUD 和模组都还在，很容易误判）。
     ///     </para>
+    ///     <para>
+    ///         服务端换了 ui 版本、而本地那份还没重下时，<c>ui/&lt;sha1&gt;</c> 是不存在的，
+    ///         指过去等于把背景、按钮贴图全丢掉（界面会退化成纯文字）。这种情况下退回到
+    ///         <c>ui/</c> 下唯一的那份：资源版本对不上顶多是细节有出入，比整块没有强。
+    ///     </para>
     /// </summary>
-    public static string UiDirectory(string lunarRoot, string uiSha1) =>
-        string.IsNullOrWhiteSpace(uiSha1)
-            ? Path.Combine(lunarRoot, "ui")
-            : Path.Combine(lunarRoot, "ui", uiSha1);
+    public static string UiDirectory(string lunarRoot, string uiSha1)
+    {
+        var root = Path.Combine(lunarRoot, "ui");
+        if (!string.IsNullOrWhiteSpace(uiSha1))
+        {
+            var exact = Path.Combine(root, uiSha1);
+            if (Directory.Exists(exact)) return exact;
+        }
+
+        try
+        {
+            if (Directory.Exists(root))
+            {
+                var candidates = Directory.GetDirectories(root);
+                if (candidates.Length == 1) return candidates[0];
+                if (candidates.Length > 1)
+                    return candidates.OrderByDescending(Directory.GetLastWriteTimeUtc).First();
+            }
+        }
+        catch (IOException)
+        {
+            // 目录读不了就走下面的老路，让游戏自己决定怎么退化
+        }
+
+        return root;
+    }
 
     /// <summary>
     ///     本机是否装过 Lunar Client。

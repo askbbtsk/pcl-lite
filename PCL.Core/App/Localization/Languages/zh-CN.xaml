@@ -3748,4 +3748,7 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetGameDir">恢复默认（跟随当前 MC 目录）</sys:String>
     <sys:String x:Key="Lunar.Tip.PickRoot">选 Lunar 物料根目录</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetRoot">恢复默认（~/.lunarclient）</sys:String>
+    <sys:String x:Key="Lunar.Ipc.AddAccount">游戏里点了「添加账号」。PCL 不能代替游戏登录，请在这里登录微软账号后再启动。</sys:String>
+    <sys:String x:Key="Lunar.Ipc.LaunchGame">游戏请求切换到 {0}。请在启动页确认版本后重新启动。</sys:String>
+    <sys:String x:Key="Lunar.Ipc.LaunchUnknown">（未指定版本）</sys:String>
 </ResourceDictionary>

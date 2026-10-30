@@ -20,9 +20,14 @@ namespace PCL.Core.App.Lunar;
 ///         没人应答，游戏就会弹 <c>Invalid session</c>。
 ///     </para>
 ///     <para>
+///         续期之外还有八个服务（打开链接、换版本重开、结账能力探测、电台状态……），
+///         统一交给 <see cref="LunarIpcDispatcher" /> 分派，具体动作由注入的
+///         <see cref="ILunarIpcHost" /> 落地。协议细节见 <c>docs/LUNAR.md</c>。
+///     </para>
+///     <para>
 ///         这里的做法是：启动前先抢 <see cref="DefaultPort" />。抢到了就自己当服务端；
 ///         抢不到说明 Lunar 启动器正开着（它固定占 28190），那就让位，把端口原样交给游戏，
-///         由启动器去处理。协议细节见 <c>docs/LUNAR.md</c>。
+///         由启动器去处理。
 ///     </para>
 /// </summary>
 public sealed class LunarIpcServer : IDisposable
@@ -44,17 +49,20 @@ public sealed class LunarIpcServer : IDisposable
 
     private readonly Func<Guid, CancellationToken, Task<LunarRefreshResult>> _refresh;
     private readonly Action<string> _log;
+    private readonly ILunarIpcHost? _host;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private readonly List<TcpClient> _connections = [];
     private readonly TcpListener _listener;
 
     private LunarIpcServer(TcpListener listener, int port, string installationId,
-        Func<Guid, CancellationToken, Task<LunarRefreshResult>> refresh, Action<string> log)
+        Func<Guid, CancellationToken, Task<LunarRefreshResult>> refresh, Action<string> log,
+        ILunarIpcHost? host)
     {
         _listener = listener;
         _refresh = refresh;
         _log = log;
+        _host = host;
         Port = port;
         InstallationId = installationId;
     }
@@ -93,6 +101,7 @@ public sealed class LunarIpcServer : IDisposable
         Func<Guid, CancellationToken, Task<LunarRefreshResult>> refresh,
         Action<string> log,
         IReadOnlyList<int>? fallbackPorts = null,
+        ILunarIpcHost? host = null,
         CancellationToken cancellationToken = default)
     {
         var candidates = new List<int> { port };
@@ -107,7 +116,7 @@ public sealed class LunarIpcServer : IDisposable
             {
                 var listener = new TcpListener(IPAddress.Loopback, candidate);
                 listener.Start();
-                var server = new LunarIpcServer(listener, candidate, installationId, refresh, log);
+                var server = new LunarIpcServer(listener, candidate, installationId, refresh, log, host);
                 server.StartAcceptLoop();
                 return new LunarIpcStartResult(server, candidate, LunarIpcPortState.Served,
                     candidate == port
@@ -288,10 +297,10 @@ public sealed class LunarIpcServer : IDisposable
 
         if (!isRefresh)
         {
-            // 其余服务（Launch / Chat / Browser / Tebex …）PCL 都没有实现。
-            // 回一个空响应，让游戏的 RPC 立刻结束，而不是挂着等超时。
-            Log($"未实现的 IPC 调用：{request.Service}/{request.Method}，回空响应");
-            await SendAsync(stream, request.RequestId, [], token).ConfigureAwait(false);
+            // 其余八个服务交给 LunarIpcDispatcher。回空响应也是合法的 —— protobuf 解空内容
+            // 得到全默认实例，游戏侧不会抛异常，只是「什么都没发生」。
+            var output = LunarIpcDispatcher.Dispatch(request, _host, Log);
+            await SendAsync(stream, request.RequestId, output, token).ConfigureAwait(false);
             return;
         }
 

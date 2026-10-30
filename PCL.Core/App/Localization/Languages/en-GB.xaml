@@ -3745,4 +3745,7 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Lunar.Tip.ResetGameDir">Reset to default (current MC folder)</sys:String>
     <sys:String x:Key="Lunar.Tip.PickRoot">Pick the Lunar root folder</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetRoot">Reset to default (~/.lunarclient)</sys:String>
+    <sys:String x:Key="Lunar.Ipc.AddAccount">The game asked to add an account. PCL cannot sign in on its behalf — sign in with your Microsoft account here first.</sys:String>
+    <sys:String x:Key="Lunar.Ipc.LaunchGame">The game asked to switch to {0}. Check the version on the launch page, then start it again.</sys:String>
+    <sys:String x:Key="Lunar.Ipc.LaunchUnknown">(no version given)</sys:String>
 </ResourceDictionary>

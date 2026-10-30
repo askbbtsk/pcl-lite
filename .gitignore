@@ -364,3 +364,6 @@ MaskFiles/
 # Lunar 启动实测脚本的临时产物
 tools/lunar-test-game/
 tools/lunar-*.log
+
+# 助手工作区数据，不进版本库
+.workbuddy-ai/

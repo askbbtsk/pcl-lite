@@ -648,23 +648,78 @@ Lunar 是往 `ProcessStartInfo.ArgumentList` 里逐项塞的，
 
 ## IPC 服务支持矩阵
 
-游戏进程连上 `--ipcPort` 之后，能向启动器发起的 RPC 一共 9 个服务。
-这张表是从官方启动器的 `app.asar`（`dist-electron/electron/main.js`）里
-把所有 `class extends CQ { constructor(e) { super(<x>.XxxServiceName, e) } }`
-抓出来得到的 —— 那批类就是启动器注册的服务端实现，没被实现的 RPC 游戏调了也没用。
+游戏进程连上 `--ipcPort` 之后，能向启动器发起的 RPC 分布在 9 个服务里。PCL 侧一共应答
+32 个方法名（下表），其中 22 个是官方启动器服务端真正实现过的 —— 剩下那些属于
+启动器 → 游戏方向，游戏不会调用，PCL 也备了默认答复以防万一。
+这张表是从官方启动器的 `app.asar`（`dist-electron/electron/main.js`）里反编译出来的：
+把所有 `class extends HY { constructor(e) { super(<ns>.XxxServiceServiceName, e) } }`
+抓出来得到服务端实现，再从配套的 protobufjs 生成代码里取 RPC 名与字段号。
 
-| 服务（`lunarclient.gameipc.` 前缀） | RPC | PCL | 不做会怎样 |
+> `lunarclient.websocket.*` 那一批（Friend / Cosmetic / Store / Notification…）
+> 是**启动器连自家后端**用的，不走本地 IPC，跟 `--ipcPort` 无关。
+
+图例：✅ 真做了 · 🟡 明确降级（有响应、行为确定，只是没有对应界面）· ❌ 未实现
+
+| 服务（`lunarclient.gameipc.` 前缀） | RPC | PCL | 说明 |
 | --- | --- | --- | --- |
-| `auth.v1.AuthService` | `RefreshAccount` | ✅ 已实现 | 会话过期后游戏内联机失败，且会一直重试 |
-| `auth.v1.AuthService` | `AddAccount` | ❌ 回空响应 | 游戏内「添加账号」无效 |
-| `browser.v1.BrowserService` | `OpenUrl` | ❌ 回空响应 | 游戏内点商店 / 公告 / 帮助链接不会用系统浏览器打开 |
-| `chat.v1.ChatService` | `ReceiveMessage` | ❌ 回空响应 | 游戏内聊天面板发消息给启动器没反应 |
-| `launch.v1.LaunchService` | `LaunchGame` | ❌ 回空响应 | 游戏内「换版本重开」不会真的重开 |
-| `location.v1.LocationService` | `UpdateLocation` / `UpdateFocus` | ❌ 回空响应 | 启动器侧拿不到「在哪个服务器 / 在菜单」，只影响启动器展示 |
-| `promotion.v1.PromotionService` | `CheckPendingPromotion` / `PlayPromotion` | ❌ 回空响应 | 活动推广不弹 |
-| `tebex.v1.TebexService` | `CheckTebexCapabilities` / `OpenTebexJsCheckout` | ❌ 回空响应 | 游戏内 Tebex 商店结账打不开 |
-| `paynow.v1.PayNowService` | `CheckPayNowCapabilities` / `OpenPayNowJsCheckout` | ❌ 回空响应 | 同上，PayNow 那条通道 |
-| `styngr.v1.StyngrRadioService` | `SetMuted` / `SetPlaying` / `SetVolume` / `StartPlaylist` | ❌ 回空响应 | 游戏内电台（Styngr）的播放控制无效 |
+| `auth.v1.AuthService` | `RefreshAccount` | ✅ | 用 PCL 登录的微软账号刷令牌写回 `accounts.json` |
+| `auth.v1.AuthService` | `AddAccount` | 🟡 | 把窗口切到启动页并提示去登录，回 `success = false` |
+| `browser.v1.BrowserService` | `OpenUrl` | ✅ | 用系统默认浏览器打开（只放行 http / https） |
+| `chat.v1.ChatService` | `ReceiveMessage` | 🟡 | 落到日志，PCL 没有启动器聊天面板 |
+| `launch.v1.LaunchService` | `LaunchGame` | 🟡 | 解析版本 / 模块 / 服务器并提示，**不自动杀进程重启** |
+| `location.v1.LocationService` | `UpdateFocus` | 🟡 | 记日志 |
+| `location.v1.LocationService` | `UpdateLocation` | 🟡 | 记日志（嵌套的 `Location` 定义在别的包里，不解析） |
+| `promotion.v1.PromotionService` | `CheckPendingPromotion` | 🟡 | 回「没有待播活动」 |
+| `promotion.v1.PromotionService` | `PlayPromotion` / `Login` / `Start|EndPromotionView` / `Claim*` | 🟡 | 空响应 |
+| `tebex.v1.TebexService` | `CheckTebexCapabilities` | 🟡 | 回 `embeddedCheckout = UNSPECIFIED`（不支持） |
+| `tebex.v1.TebexService` | `OpenTebexJsCheckout` | 🟡 | 回 `STATUS_INTERNAL_ERROR`，游戏走自己的降级提示 |
+| `tebex.v1.TebexService` | `TebexJsCheckoutOpened` / `Closed` | 🟡 | 空响应 |
+| `paynow.v1.PayNowService` | `CheckPayNowCapabilities` | 🟡 | 同 Tebex |
+| `paynow.v1.PayNowService` | `OpenPayNowJsCheckout` | 🟡 | 同 Tebex |
+| `paynow.v1.PayNowService` | `PayNowCheckoutOpened` / `Closed` | 🟡 | 空响应 |
+| `styngr.v1.StyngrRadioService` | `FetchState` | 🟡 | 回「未播放 + 已静音」，界面显示不可用而不是转圈 |
+| `styngr.v1.StyngrRadioService` | `FetchPlaylists` | 🟡 | 空列表 + `premium = false` |
+| `styngr.v1.StyngrRadioService` | `SetMuted` / `SetPlaying` / `SetVolume` / `NextTrack` / `ToggleLiked` / `StartPlaylist` / `OpenSelector` | 🟡 | 接受但无操作 |
+
+实现在 `PCL.Core/App/Lunar/LunarIpcDispatcher.cs`（协议 → 动作）和
+`Plain Craft Launcher 2/Modules/Lunar/LunarIpcHost.cs`（动作 → UI）。
+
+### 字段号（从 `app.asar` 的 protobufjs 生成代码里提取）
+
+只列 PCL 用到的那几个，都是反编译出来的，不是猜的：
+
+```
+OpenUrlRequest            { string url = 1; Initiator initiator = 2; OpenType openType = 3; }
+LaunchGameRequest         { string version = 1; string module = 2; string autoJoinServerIp = 3;
+                            LaunchSource launchSource = 4; PlayerModpack modpack = 5; }
+UpdateFocusRequest        { bool focused = 1; }
+ReceiveMessageRequest     { UuidAndUsername sender = 1; string content = 2; }
+CheckTebexCapabilitiesResponse { EmbeddedCheckout embeddedCheckout = 1; }
+OpenTebexJsCheckoutRequest  { string basketIdent = 1; string locale = 2; }
+OpenTebexJsCheckoutResponse { Status status = 1; bool openMinecraftScreen = 2; }
+FetchStateResponse        { StyngrTrackState track = 1; StyngrControlsState controls = 2;
+                            StyngrProgressState progress = 3; }
+StyngrControlsState       { bool playing = 1; bool muted = 2; float volume = 3; }
+FetchPlaylistsResponse    { repeated Playlist playlists = 1; bool premium = 2; }
+```
+
+枚举：
+
+```
+OpenUrlRequest_OpenType   UNSPECIFIED=0  FORCE_EMBEDDED=1  FORCE_EXTERNAL=2
+OpenUrlRequest_Initiator  UNSPECIFIED=0  COSMETICS=1  ALERT=2  AUTH=3  BLOG=4
+                          SOCIAL_LINK=5  HOME_BUTTON=6  LINK_CONFIRM=7
+                          SCREENSHOT_UPLOAD=8  HOME_CTA=9  STORE_PREVIEW=10
+EmbeddedCheckout          UNSPECIFIED=0  OVERWOLF_OVERLAY=1  ELECTRON_WINDOW=2
+Tebex/PayNow Response.Status  UNSPECIFIED=0  OK=1  INTERNAL_ERROR=2
+LaunchGameRequest_LaunchSource  UNSPECIFIED=0  MAIN_MENU_SWITCHER=1
+                                SERVER_KICK_PROMPT=2  SERVER_MODPACK_RECOMMENDATION=3
+```
+
+**注意 protobuf 的「等于默认值就不编码」**：空 `output` 解出来就是全默认实例。
+所以能力探测类请求回空字节 = 回 `0` = 不支持，这是**有意义的响应**，不是偷懒。
+反过来 `OpenTebexJsCheckoutResponse.status` 要的是 `2`，不写就是 `0`，
+游戏会以为还在处理 —— 这类非默认值必须显式编码。
 
 另外还有一批**反方向**的推送（启动器 → 游戏，`GameboundIPCMessage.push_notification`），
 PCL 一个都不发：`ExitGamePush`、`PlayServerPush`、`SendChatPush`、`FocusGamePush`、
@@ -674,27 +729,25 @@ PCL 一个都不发：`ExitGamePush`、`PlayServerPush`、`SendChatPush`、`Focu
 PCL 没有这些界面，所以不发也不会缺功能 —— 唯一的例外是想让 PCL 主动优雅关游戏时
 得用 `ExitGamePush`，现在只能 `Kill`。
 
-**回空响应是安全的**：`IPCRpcResponse.output` 是空字节，游戏侧按目标消息类型解析
-得到的是一个全默认实例，不会抛异常，只是「什么都没发生」。比不回（RPC 挂到超时）好。
-
 `AuthService` 的 `NotifySwitchAccount` / `OpenMicrosoftPopup` 只有消息定义，
 连官方启动器都没给它们绑定客户端方法，实测不会出现在 IPC 上，不用管。
 
 ## 还没解决的点
 
-1. **`--ipcPort` 只实现了 `AuthService/RefreshAccount`**：启动器会在该端口起一个
-   WebSocket 服务（实测默认 28190），注册上表那 9 个服务。
-   PCL 只应答续期那一条，其余回空响应，具体影响见上面的矩阵。
-   游戏本体、单人、多人、模组都正常。
+1. **`LaunchGame` 不自动重启**：官方启动器是先回响应、再延迟 1 秒调自己的
+   `launch` 模块重启。PCL 没有强杀运行中游戏的道理（会丢未保存的世界），
+   所以只解析参数、切到启动页、弹一条提示。想改成真重启，入口是
+   `LunarIpcHost.RequestLaunchGame`。
 
-   传 `0` 时游戏**不会卡住**，只是每 5 秒重试一次并打日志：
+2. **`--ipcPort 0`**：端口被别的程序占着又不响应 WebSocket 时才会传 `0`。
+   这时游戏**不会卡住**，只是每 5 秒重试一次并打日志：
 
    ```
    [Bridge] Found IPC port: 0
    [WebSocketConnectReadThread-78] ERROR Lunar Client - [LC IPC] WS-Error: Cannot assign requested address: connect
    ```
 
-2. **`canaryToken`**：实测返回 `control:<hash>,<hash>` 形式，看起来是
+3. **`canaryToken`**：实测返回 `control:<hash>,<hash>` 形式，看起来是
    防篡改/灰度开关。原样透传即可，实测未触发校验。
 
 ## 实测记录

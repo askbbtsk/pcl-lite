@@ -37,6 +37,34 @@ internal static class LunarIpcProtocol
     /// <summary>续期方法名。</summary>
     public const string RefreshAccountMethod = "RefreshAccount";
 
+    // 以下服务名全部来自官方启动器 app.asar 里 protobufjs 生成代码的常量，
+    // 不是猜的。注意 lunarclient.websocket.* 那一批是启动器连自家后端的，
+    // 不走本地 IPC，跟这里无关。
+
+    /// <summary>游戏内点链接（商店 / 公告 / 帮助 / 社交链接）。</summary>
+    public const string BrowserService = "lunarclient.gameipc.browser.v1.BrowserService";
+
+    /// <summary>游戏内聊天面板把消息转给启动器。</summary>
+    public const string ChatService = "lunarclient.gameipc.chat.v1.ChatService";
+
+    /// <summary>游戏内「换版本重开」。</summary>
+    public const string LaunchService = "lunarclient.gameipc.launch.v1.LaunchService";
+
+    /// <summary>游戏把「在哪个服务器 / 是否聚焦」告诉启动器。</summary>
+    public const string LocationService = "lunarclient.gameipc.location.v1.LocationService";
+
+    /// <summary>PayNow 结账通道。</summary>
+    public const string PayNowService = "lunarclient.gameipc.paynow.v1.PayNowService";
+
+    /// <summary>活动推广。</summary>
+    public const string PromotionService = "lunarclient.gameipc.promotion.v1.PromotionService";
+
+    /// <summary>游戏内电台（Styngr）。</summary>
+    public const string StyngrRadioService = "lunarclient.gameipc.styngr.v1.StyngrRadioService";
+
+    /// <summary>Tebex 商店结账通道。</summary>
+    public const string TebexService = "lunarclient.gameipc.tebex.v1.TebexService";
+
     private const int WireVarint = 0;
     private const int WireFixed64 = 1;
     private const int WireLengthDelimited = 2;
@@ -78,6 +106,39 @@ internal static class LunarIpcProtocol
     {
         WriteTag(stream, field, WireVarint);
         WriteVarint(stream, (ulong)value);
+    }
+
+    // 给各服务的响应体用的公开写入器。protobuf 的规矩是「等于默认值就不写」，
+    // 所以这些方法都会先跟默认值比一次：少写几个字节，游戏侧解出来是同一个对象。
+
+    public static void WriteStringField(Stream stream, int field, string value)
+    {
+        if (!string.IsNullOrEmpty(value)) WriteString(stream, field, value);
+    }
+
+    public static void WriteBoolField(Stream stream, int field, bool value)
+    {
+        if (value) WriteBool(stream, field, true);
+    }
+
+    public static void WriteInt32Field(Stream stream, int field, int value)
+    {
+        if (value != 0) WriteEnum(stream, field, value);
+    }
+
+    public static void WriteFloatField(Stream stream, int field, float value)
+    {
+        if (value == 0f) return;
+        WriteTag(stream, field, WireFixed32);
+        Span<byte> buffer = stackalloc byte[4];
+        BinaryPrimitives.WriteSingleLittleEndian(buffer, value);
+        stream.Write(buffer);
+    }
+
+    /// <summary>写一个嵌套消息（长度前缀 + 已编码好的字节）。</summary>
+    public static void WriteMessageField(Stream stream, int field, ReadOnlySpan<byte> payload)
+    {
+        if (!payload.IsEmpty) WriteBytes(stream, field, payload);
     }
 
     /// <summary>拼 <c>GameboundIPCMessage { rpc_response { request_id, output } }</c>。</summary>
@@ -234,6 +295,106 @@ internal static class LunarIpcProtocol
         return true;
     }
 
+    // 通用单字段读取：各服务的请求都是扁平的几十字节消息，没必要为每个都写一个
+    // 专用解析器。找不到字段就返回 false，调用方按「游戏没传这个值」处理。
+
+    /// <summary>读一个 <c>string</c> 字段。</summary>
+    public static bool TryGetString(ReadOnlySpan<byte> payload, int field, out string value)
+    {
+        value = string.Empty;
+        var reader = new Reader(payload);
+        while (reader.TryReadTag(out var current, out var wireType))
+        {
+            if (current == field && wireType == WireLengthDelimited)
+            {
+                value = reader.ReadString();
+                return true;
+            }
+
+            if (!reader.Skip(wireType)) return false;
+        }
+
+        return false;
+    }
+
+    /// <summary>读一个 <c>bool</c> 字段。</summary>
+    public static bool TryGetBool(ReadOnlySpan<byte> payload, int field, out bool value)
+    {
+        value = false;
+        var reader = new Reader(payload);
+        while (reader.TryReadTag(out var current, out var wireType))
+        {
+            if (current == field && wireType == WireVarint)
+            {
+                if (!reader.TryReadVarint(out var raw)) return false;
+                value = raw != 0;
+                return true;
+            }
+
+            if (!reader.Skip(wireType)) return false;
+        }
+
+        return false;
+    }
+
+    /// <summary>读一个 <c>int32</c> / 枚举字段。</summary>
+    public static bool TryGetInt32(ReadOnlySpan<byte> payload, int field, out int value)
+    {
+        value = 0;
+        var reader = new Reader(payload);
+        while (reader.TryReadTag(out var current, out var wireType))
+        {
+            if (current == field && wireType == WireVarint)
+            {
+                if (!reader.TryReadVarint(out var raw)) return false;
+                value = (int)raw;
+                return true;
+            }
+
+            if (!reader.Skip(wireType)) return false;
+        }
+
+        return false;
+    }
+
+    /// <summary>读一个 <c>float</c> 字段。</summary>
+    public static bool TryGetFloat(ReadOnlySpan<byte> payload, int field, out float value)
+    {
+        value = 0f;
+        var reader = new Reader(payload);
+        while (reader.TryReadTag(out var current, out var wireType))
+        {
+            if (current == field && wireType == WireFixed32)
+            {
+                value = reader.ReadFixed32();
+                return true;
+            }
+
+            if (!reader.Skip(wireType)) return false;
+        }
+
+        return false;
+    }
+
+    /// <summary>读一个嵌套消息字段的原始字节（调用方再用同样的方法往里解）。</summary>
+    public static bool TryGetMessage(ReadOnlySpan<byte> payload, int field, out byte[] nested)
+    {
+        nested = [];
+        var reader = new Reader(payload);
+        while (reader.TryReadTag(out var current, out var wireType))
+        {
+            if (current == field && wireType == WireLengthDelimited)
+            {
+                nested = reader.ReadLengthDelimited().ToArray();
+                return true;
+            }
+
+            if (!reader.Skip(wireType)) return false;
+        }
+
+        return false;
+    }
+
     /// <summary>只读游标，读坏了就返回 <c>false</c>，不抛异常。</summary>
     private ref struct Reader(ReadOnlySpan<byte> data)
     {
@@ -252,7 +413,7 @@ internal static class LunarIpcProtocol
             return field > 0;
         }
 
-        private bool TryReadVarint(out ulong value)
+        public bool TryReadVarint(out ulong value)
         {
             value = 0;
             var shift = 0;
@@ -274,6 +435,15 @@ internal static class LunarIpcProtocol
             if (_position + 8 > _data.Length) return 0;
             var value = BinaryPrimitives.ReadUInt64LittleEndian(_data.Slice(_position, 8));
             _position += 8;
+            return value;
+        }
+
+        /// <summary>读 <c>fixed32</c>（float 用它传）。</summary>
+        public float ReadFixed32()
+        {
+            if (_position + 4 > _data.Length) return 0f;
+            var value = BinaryPrimitives.ReadSingleLittleEndian(_data.Slice(_position, 4));
+            _position += 4;
             return value;
         }
 

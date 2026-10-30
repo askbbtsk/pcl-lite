@@ -46,6 +46,10 @@ public static class ModLunar
     private static Process? _process;
     private static bool _isBusy;
     private static LunarIpcServer? _ipcServer;
+
+    /// <summary>IPC 里除续期之外那些请求的落地实现（开链接、切账号页、重开提示）。</summary>
+    private static readonly LunarIpcHost IpcHost = new();
+
     private static IReadOnlyList<LunarAccount> _accounts = [];
     private static string _activeAccountLocalId = string.Empty;
 
@@ -1214,7 +1218,7 @@ public static class ModLunar
 
         var result = await LunarIpcServer
             .StartAsync(LunarIpcServer.DefaultPort, installationId, RefreshLunarAccountAsync, Log,
-                fallbackPorts: fallback)
+                fallbackPorts: fallback, host: IpcHost)
             .ConfigureAwait(false);
 
         _ipcServer = result.Server;

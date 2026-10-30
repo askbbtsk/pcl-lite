@@ -70,8 +70,10 @@ public partial class NetworkService
             .ConfigurePrimaryHttpMessageHandler(_GetSocketsHttpHandler)
             .AddHttpMessageHandler(() => new NetworkGuardHandler())
             .ConfigureHttpClient(c => c.DefaultRequestHeaders
-                // 不带版本号：见 HttpSenderExtension，统一只报产品名
-                .UserAgent.Add(new ProductInfoHeaderValue("PCL-Lite")))
+                // 不带版本号：见 HttpSenderExtension，统一只报产品名。
+                // 必须走双参数重载并显式传 null —— 单参数的 ProductInfoHeaderValue 是「注释」重载，
+                // 要求值是 "(注释)" 形式，塞 "PCL-Lite" 会抛 FormatException，一进下载页就炸
+                .UserAgent.Add(new ProductInfoHeaderValue("PCL-Lite", null)))
             .SetHandlerLifetime(TimeSpan.FromMinutes(LifeTime)));
         
         // 默认的 HTTP Client

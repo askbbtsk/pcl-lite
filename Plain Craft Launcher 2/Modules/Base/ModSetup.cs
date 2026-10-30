@@ -251,7 +251,61 @@ public class ModSetup
 
     public static void UiLauncherTheme(int value)
     {
+        // PCL2 里编号 42 是「极客蓝」的另一个编号（和 11 同色），预设表里没单列。
+        // 直接规范成 11，否则纹理和颜色都对不上
+        if (value == 42)
+        {
+            Config.Preference.Theme.ThemeSelected = 11;
+            value = 11;
+        }
+
+        SyncPresetThemeArgs(value);
         ThemeManager.ThemeRefresh(value);
+    }
+
+    /// <summary>
+    ///     把主题编号对应的预设配色参数补齐。
+    ///     <para>
+    ///         在设置页点预设时，<c>PageSetupUI.ApplyPreset</c> 会先写
+    ///         <c>UiLauncherHue/Sat/Light/Delta</c> 再写编号，两者不会脱节。
+    ///         但「转移 PCL 设置」只会搬 <c>UiLauncherTheme</c> 这一个键 —— 那是 PCL2 的存法，
+    ///         它一个编号同时决定颜色和纹理；而这里拆成了「编号管纹理」+「参数管颜色」。
+    ///         于是导入后纹理换了、颜色没换，非得回设置页重选一次才好。
+    ///     </para>
+    ///     <para>
+    ///         这里补上：编号指向某个预设、但参数跟它对不上时，按预设重写一遍参数。
+    ///         参数已经一致时什么都不做，所以正常点预设不会被重复覆盖。
+    ///     </para>
+    /// </summary>
+    private static void SyncPresetThemeArgs(int index)
+    {
+        if (PclThemePresets.ByIndex(index) is not { } preset) return;
+
+        var config = Config.Preference.Theme;
+        var args = preset.Args;
+        // 「欧皇彩」每次进都换色相，任何色相都算对，所以保留现值，只补另外三项
+        var hue = preset.IsRandom ? config.WindowHue : args.Hue;
+        var light = args.LightAdjust + 20;
+        var delta = args.TopbarDelta + 90;
+        var triple = args.TopbarHueTriple is { Length: 3 } tripleArgs ? string.Join(",", tripleArgs) : "";
+
+        if (config.CustomThemeEnabled
+            && config.WindowHue == hue
+            && config.WindowSat == args.Saturation
+            && config.WindowLight == light
+            && config.WindowDelta == delta
+            && config.WindowDeltaTriple == triple)
+            return;
+
+        config.CustomThemeEnabled = true;
+        config.WindowHue = hue;
+        config.WindowSat = args.Saturation;
+        config.WindowLight = light;
+        config.WindowDelta = delta;
+        config.WindowDeltaTriple = triple;
+
+        ModBase.Log($"[Theme] 主题编号 {index} 的配色参数与预设「{preset.Name}」不一致，已按预设补齐",
+            ModBase.LogLevel.Developer);
     }
 
     public static void UiBackgroundColorful(bool value)

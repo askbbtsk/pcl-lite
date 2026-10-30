@@ -3023,6 +3023,12 @@
     <sys:String x:Key="Setup.Ui.Basic.GetSnapshot">获取官方快照版</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.LockWindow">锁定启动器大小</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity">不透明度</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size">窗口大小</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Compact">紧凑 820 × 520</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Default">标准 900 × 550</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Large">宽屏 1080 × 650</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Huge">超大 1280 × 760</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Custom">自定义</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">不透明度</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">打开启动器时显示 PCL Lite 图标</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在启动游戏时显示"你知道吗"</sys:String>
@@ -3394,6 +3400,7 @@
     <sys:String x:Key="Tools.Import.Pick">选择文件夹</sys:String>
     <sys:String x:Key="Tools.Import.Found">找到的文件夹</sys:String>
     <sys:String x:Key="Tools.Import.Empty">没找到。可以自己选一个。</sys:String>
+    <sys:String x:Key="Tools.Import.Scanning">正在继续搜索其它磁盘，找到会自动列出来…（也可以直接点「选择文件夹」）</sys:String>
     <sys:String x:Key="Tools.Import.Picked">导入</sys:String>
     <sys:String x:Key="Tools.Import.None">还没选</sys:String>
     <sys:String x:Key="Tools.Import.Action">开始导入</sys:String>
@@ -3401,17 +3408,18 @@
     <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 原版</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 便携版</sys:String>
     <sys:String x:Key="Tools.Import.Plan.Ce">会覆盖当前的设置、账号和密钥，导入后启动器会自动重启。</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Pcl2">会写进本地设置，导入后启动器会自动重启。</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">会读 setup.ini 和注册表里的设置项，写进本地设置；导入后启动器会自动重启。</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Title">确认导入</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Body">从：{0}
 到：{1}
 
 当前的会被覆盖（原文件留一份 .importbak）。确定导入吗？</sys:String>
     <sys:String x:Key="Tools.Import.Done">导入完成，启动器将自动重启以生效。</sys:String>
+    <sys:String x:Key="Tools.Import.Done.Accounts">另外发现 {0} 个 PCL2 账号没有搬过来：PCL2 不保存长期登录凭据，搬过来也只能用一天。请到账号页重新登录一次。</sys:String>
     <sys:String x:Key="Tools.Import.RestartFailed">自动重启失败，请手动关掉再打开 PCL。</sys:String>
     <sys:String x:Key="Tools.Import.Failed">导入失败：{0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">这个文件夹里没有找到 PCL 的配置文件：{0}</sys:String>
-    <sys:String x:Key="Tools.Import.NoKeys">这个 setup.ini 里的设置项一个都认不出来：{0}</sys:String>
+    <sys:String x:Key="Tools.Import.NoKeys">这个来源里的设置项一个都认不出来：{0}</sys:String>
 
     <!-- Tools.ServerQuery -->
 

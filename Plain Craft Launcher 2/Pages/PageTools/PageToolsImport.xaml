@@ -32,6 +32,9 @@
                     <StackPanel x:Name="PanResults" />
                     <TextBlock x:Name="LabEmpty" Margin="8,0,8,4" TextWrapping="Wrap" Opacity="0.7"
                                Text="{DynamicResource Tools.Import.Empty}" />
+                    <TextBlock x:Name="LabScanHint" Margin="8,4,8,0" TextWrapping="Wrap" Opacity="0.55"
+                               FontSize="11.5" Visibility="Collapsed"
+                               Text="{DynamicResource Tools.Import.Scanning}" />
                 </StackPanel>
             </local:MyCard>
 

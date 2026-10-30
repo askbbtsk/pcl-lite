@@ -32,6 +32,43 @@
                                             Tag="UiLauncherTransparent" MaxValue="600" ValueByKey="10" Grid.Column="1"
                                             Change="SliderChange" />
                         </Grid>
+                        <!-- 窗口大小：预设 + 自定义，改完立刻套到主窗口上，不用重启 -->
+                        <Grid Height="28" Margin="0,0,0,7">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Name1" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                       Text="{DynamicResource Setup.Ui.Window.Size}" Margin="0,0,20,0" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <local:MyComboBox x:Name="ComboWindowSize" Width="150"
+                                                  SelectionChanged="ComboWindowSize_Change">
+                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Compact}" Tag="800x520" />
+                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Default}" Tag="900x550" />
+                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Large}" Tag="1080x650" />
+                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Huge}" Tag="1280x760" />
+                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Custom}" Tag="custom" />
+                                </local:MyComboBox>
+                                <StackPanel x:Name="PanWindowSizeCustom" Orientation="Horizontal"
+                                            VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed">
+                                    <local:MyTextBox x:Name="TextWindowWidth" Width="64" Height="28"
+                                                     HorizontalContentAlignment="Center"
+                                                     ValidatedTextChanged="WindowSizeText_Change">
+                                        <local:MyTextBox.ValidateRules>
+                                            <val:IntValidator Min="810" Max="2560" />
+                                        </local:MyTextBox.ValidateRules>
+                                    </local:MyTextBox>
+                                    <TextBlock Text="×" VerticalAlignment="Center" Margin="8,0" />
+                                    <local:MyTextBox x:Name="TextWindowHeight" Width="64" Height="28"
+                                                     HorizontalContentAlignment="Center"
+                                                     ValidatedTextChanged="WindowSizeText_Change">
+                                        <local:MyTextBox.ValidateRules>
+                                            <val:IntValidator Min="470" Max="1440" />
+                                        </local:MyTextBox.ValidateRules>
+                                    </local:MyTextBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
                         <Grid Height="28" Margin="0,0,0,7">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" SharedSizeGroup="Name1" />

@@ -2966,6 +2966,12 @@
     <sys:String x:Key="Setup.Ui.Basic.GetSnapshot">取得官方快照版</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.LockWindow">鎖定啟動器大小</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity">不透明度</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size">視窗大小</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Compact">緊湊 820 × 520</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Default">標準 900 × 550</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Large">寬螢幕 1080 × 650</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Huge">超大 1280 × 760</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Custom">自訂</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">不透明度</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">開啟啟動器時顯示 PCL Lite 圖示</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在啟動遊戲時顯示"你知道嗎"</sys:String>
@@ -3645,6 +3651,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Tools.Import.Pick">選擇資料夾</sys:String>
     <sys:String x:Key="Tools.Import.Found">找到的資料夾</sys:String>
     <sys:String x:Key="Tools.Import.Empty">沒找到。可以自己選一個。</sys:String>
+    <sys:String x:Key="Tools.Import.Scanning">正在繼續搜尋其它磁碟，找到會自動列出來…（也可以直接點「選擇資料夾」）</sys:String>
     <sys:String x:Key="Tools.Import.Picked">匯入</sys:String>
     <sys:String x:Key="Tools.Import.None">還沒選</sys:String>
     <sys:String x:Key="Tools.Import.Action">開始匯入</sys:String>
@@ -3652,17 +3659,18 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 原版</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 可攜版</sys:String>
     <sys:String x:Key="Tools.Import.Plan.Ce">會覆蓋目前的設定、帳號和金鑰，匯入後啟動器會自動重新啟動。</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Pcl2">會寫進本機設定，匯入後啟動器會自動重新啟動。</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">會讀 setup.ini 和登錄檔裡的設定項，寫進本機設定；匯入後啟動器會自動重新啟動。</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Title">確認匯入</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Body">從：{0}
 到：{1}
 
 目前的會被覆蓋（原檔案留一份 .importbak）。確定匯入嗎？</sys:String>
     <sys:String x:Key="Tools.Import.Done">匯入完成，啟動器將自動重新啟動以生效。</sys:String>
+    <sys:String x:Key="Tools.Import.Done.Accounts">另外發現 {0} 個 PCL2 帳號沒有搬過來：PCL2 不保存長期登入憑證，搬過來也只能用一天。請到帳號頁重新登入一次。</sys:String>
     <sys:String x:Key="Tools.Import.RestartFailed">自動重新啟動失敗，請手動關掉再開啟 PCL。</sys:String>
     <sys:String x:Key="Tools.Import.Failed">匯入失敗：{0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">這個資料夾裡沒有找到 PCL 的設定檔：{0}</sys:String>
-    <sys:String x:Key="Tools.Import.NoKeys">這個 setup.ini 裡的設定項一個都認不出來：{0}</sys:String>
+    <sys:String x:Key="Tools.Import.NoKeys">這個來源裡的設定項一個都認不出來：{0}</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">移轉 PCL 設定</sys:String>
     <sys:String x:Key="Crash.Report.JarInJarMod.WarningSection">=== 依賴警告（缺少前置 / 版本不符）===</sys:String>
     <sys:String x:Key="Crash.Report.JarInJarMod.WarningNone">未發現依賴問題。</sys:String>

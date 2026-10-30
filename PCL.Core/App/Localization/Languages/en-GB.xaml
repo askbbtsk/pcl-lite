@@ -2966,6 +2966,12 @@
     <sys:String x:Key="Setup.Ui.Basic.GetSnapshot">Get official snapshot build</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.LockWindow">Lock launcher size</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity">Opacity</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size">Window size</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Compact">Compact 820 × 520</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Default">Standard 900 × 550</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Large">Wide 1080 × 650</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Huge">Extra large 1280 × 760</sys:String>
+    <sys:String x:Key="Setup.Ui.Window.Size.Custom">Custom</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">Opacity</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">Display the PCL Lite logo whilst opening the launcher</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">Show 'Trivia' when launching the game</sys:String>
@@ -3645,6 +3651,7 @@ Install Lunar Client and launch it at least once first.</sys:String>
     <sys:String x:Key="Tools.Import.Pick">Choose folder</sys:String>
     <sys:String x:Key="Tools.Import.Found">Folders found</sys:String>
     <sys:String x:Key="Tools.Import.Empty">Nothing found. You can pick one yourself.</sys:String>
+    <sys:String x:Key="Tools.Import.Scanning">Still searching other drives; anything found will appear here… (or pick the folder manually)</sys:String>
     <sys:String x:Key="Tools.Import.Picked">Import</sys:String>
     <sys:String x:Key="Tools.Import.None">Not selected</sys:String>
     <sys:String x:Key="Tools.Import.Action">Start import</sys:String>
@@ -3652,17 +3659,18 @@ Install Lunar Client and launch it at least once first.</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 (original)</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Portable">PCL2 portable</sys:String>
     <sys:String x:Key="Tools.Import.Plan.Ce">Overwrites the current settings, accounts and keys; the launcher restarts automatically afterwards.</sys:String>
-    <sys:String x:Key="Tools.Import.Plan.Pcl2">Writes into the local settings; the launcher restarts automatically afterwards.</sys:String>
+    <sys:String x:Key="Tools.Import.Plan.Pcl2">Reads settings from both setup.ini and the registry, then writes them into the local settings; the launcher restarts automatically afterwards.</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Title">Confirm import</sys:String>
     <sys:String x:Key="Tools.Import.Confirm.Body">From: {0}
 To: {1}
 
 Current files will be overwritten (a .importbak copy is kept). Continue?</sys:String>
     <sys:String x:Key="Tools.Import.Done">Import complete. The launcher will restart to apply it.</sys:String>
+    <sys:String x:Key="Tools.Import.Done.Accounts">{0} PCL2 account(s) could not be imported: PCL2 does not store long-lived credentials, so they would stop working within a day. Please sign in again on the accounts page.</sys:String>
     <sys:String x:Key="Tools.Import.RestartFailed">Automatic restart failed. Please close and reopen PCL manually.</sys:String>
     <sys:String x:Key="Tools.Import.Failed">Import failed: {0}</sys:String>
     <sys:String x:Key="Tools.Import.NotPcl">No PCL config found in this folder: {0}</sys:String>
-    <sys:String x:Key="Tools.Import.NoKeys">None of the settings in this setup.ini are recognised: {0}</sys:String>
+    <sys:String x:Key="Tools.Import.NoKeys">None of the settings in this source are recognised: {0}</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">Migrate PCL settings</sys:String>
     <sys:String x:Key="Crash.Report.JarInJarMod.WarningSection">=== Dependency warnings (missing / version mismatch) ===</sys:String>
     <sys:String x:Key="Crash.Report.JarInJarMod.WarningNone">No dependency issues found.</sys:String>

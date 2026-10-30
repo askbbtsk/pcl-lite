@@ -35,6 +35,8 @@ public static class RequestSigning
             : useBrowserUserAgent
                 ? "PCL2 PCLCE Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0"
                 : "PCL2 PCLCE";
-        client.Headers.Add("User-Agent", userAgent);
+        // 不校验格式：UA 由本方法自己拼，走 Headers.Add 会先按 RFC 解析一遍，
+        // 解析不过就抛 FormatException（1.5.11 的 ProductInfoHeaderValue 就是这么炸的）
+        client.Headers.TryAddWithoutValidation("User-Agent", userAgent);
     }
 }

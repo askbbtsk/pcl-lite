@@ -68,6 +68,7 @@ public partial class PageSetupUI
             SliderGlassDispersion.Value = Config.Preference.Theme.LiquidGlassDispersion;
             PanGlassValue.Visibility = CheckLiquidGlass.Checked == true ? Visibility.Visible : Visibility.Collapsed;
             CheckLockWindowSize.Checked = Config.Preference.LockWindowSize;
+            RefreshWindowSize();
 
             // 背景图片
             SliderBackgroundOpacity.Value = Config.Preference.Background.WallpaperOpacity;
@@ -691,6 +692,126 @@ public partial class PageSetupUI
     }
 
     // 主题
+    #region 窗口大小
+
+    /// <summary>
+    ///     预设尺寸，顺序与下拉框一致（最后一项「自定义」不在表里）。
+    /// </summary>
+    private static readonly (double Width, double Height)[] WindowSizePresets =
+    [
+        (820, 520),
+        (900, 550),
+        (1080, 650),
+        (1280, 760)
+    ];
+
+    // 与 FormMain.xaml 的 MinWidth / MinHeight 对齐：比这更小的尺寸窗口自己会夹回去，
+    // 预设写成 800 只会变成「点了没反应」
+    private const double MinWindowWidth = 810;
+    private const double MinWindowHeight = 470;
+
+    /// <summary>
+    ///     把当前窗口尺寸同步到下拉框：对得上某个预设就选它，对不上就是「自定义」。
+    ///     <para>
+    ///         不额外存「上次选的是哪个预设」—— 用户拖过窗口边界后尺寸就变了，
+    ///         存下来的编号会跟实际尺寸对不上，直接按尺寸反推最省事。
+    ///     </para>
+    /// </summary>
+    private void RefreshWindowSize()
+    {
+        ModAnimation.AniControlEnabled += 1;
+        try
+        {
+            var width = States.UI.WindowWidth;
+            var height = States.UI.WindowHeight;
+
+            var match = -1;
+            for (var i = 0; i < WindowSizePresets.Length; i++)
+            {
+                if (Math.Abs(WindowSizePresets[i].Width - width) > 0.5) continue;
+                if (Math.Abs(WindowSizePresets[i].Height - height) > 0.5) continue;
+                match = i;
+                break;
+            }
+
+            ComboWindowSize.SelectedIndex = match >= 0 ? match : WindowSizePresets.Length;
+            PanWindowSizeCustom.Visibility = match >= 0 ? Visibility.Collapsed : Visibility.Visible;
+            TextWindowWidth.Text = Math.Round(width).ToString("F0");
+            TextWindowHeight.Text = Math.Round(height).ToString("F0");
+        }
+        finally
+        {
+            ModAnimation.AniControlEnabled -= 1;
+        }
+    }
+
+    private void ComboWindowSize_Change(object senderRaw, SelectionChangedEventArgs e)
+    {
+        if (ModAnimation.AniControlEnabled != 0) return;
+
+        var index = ComboWindowSize.SelectedIndex;
+        if (index < 0) return;
+
+        if (index >= WindowSizePresets.Length)
+        {
+            // 「自定义」：先把输入框亮出来，尺寸等用户填
+            PanWindowSizeCustom.Visibility = Visibility.Visible;
+            TextWindowWidth.Text = Math.Round(States.UI.WindowWidth).ToString("F0");
+            TextWindowHeight.Text = Math.Round(States.UI.WindowHeight).ToString("F0");
+            return;
+        }
+
+        PanWindowSizeCustom.Visibility = Visibility.Collapsed;
+        var (width, height) = WindowSizePresets[index];
+        ApplyWindowSize(width, height);
+    }
+
+    private void WindowSizeText_Change(object senderRaw, RoutedEventArgs e)
+    {
+        if (ModAnimation.AniControlEnabled != 0) return;
+        if (!int.TryParse(TextWindowWidth.Text, out var width)) return;
+        if (!int.TryParse(TextWindowHeight.Text, out var height)) return;
+        ApplyWindowSize(width, height);
+    }
+
+    /// <summary>
+    ///     写进 <see cref="States.UI" /> 并立刻套到主窗口上，不用重启。
+    /// </summary>
+    private void ApplyWindowSize(double width, double height)
+    {
+        // 别超过屏幕工作区，否则窗口会有一截跑到屏幕外、拖也拖不回来。
+        // 用 Max 兜一下：极小的远程桌面分辨率下 min 可能比 max 还大，Math.Clamp 会直接抛
+        var work = SystemParameters.WorkArea;
+        var appliedWidth = Math.Clamp(width, MinWindowWidth, Math.Max(work.Width, MinWindowWidth));
+        var appliedHeight = Math.Clamp(height, MinWindowHeight, Math.Max(work.Height, MinWindowHeight));
+
+        States.UI.WindowWidth = appliedWidth;
+        States.UI.WindowHeight = appliedHeight;
+
+        if (ModMain.frmMain is { } main)
+        {
+            main.Width = appliedWidth;
+            main.Height = appliedHeight;
+        }
+
+        // 被屏幕夹小了就把输入框改回实际值，免得显示的数字和窗口对不上
+        if (Math.Abs(appliedWidth - width) > 0.5 || Math.Abs(appliedHeight - height) > 0.5)
+        {
+            ModAnimation.AniControlEnabled += 1;
+            try
+            {
+                TextWindowWidth.Text = Math.Round(appliedWidth).ToString("F0");
+                TextWindowHeight.Text = Math.Round(appliedHeight).ToString("F0");
+            }
+            finally
+            {
+                ModAnimation.AniControlEnabled -= 1;
+            }
+        }
+    }
+
+    #endregion
+
     #region 自定义主题
 
     private bool _customThemeBinding;

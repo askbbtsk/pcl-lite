@@ -46,6 +46,7 @@
                                      文案会顶到右边那颗箭头上（箭头固定占 21.5px），所以留到 200。 -->
                                 <local:MyComboBox x:Name="ComboWindowSize" Width="200"
                                                   SelectionChanged="ComboWindowSize_Change">
+                                    <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Classic}" Tag="850x500" />
                                     <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Compact}" Tag="800x520" />
                                     <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Default}" Tag="900x550" />
                                     <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Window.Size.Large}" Tag="1080x650" />

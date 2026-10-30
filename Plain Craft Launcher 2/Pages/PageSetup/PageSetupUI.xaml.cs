@@ -695,10 +695,18 @@ public partial class PageSetupUI
     #region 窗口大小
 
     /// <summary>
-    ///     预设尺寸，顺序与下拉框一致（最后一项「自定义」不在表里）。
+    ///     窗口大小预设。顺序必须与 XAML 里 <c>ComboWindowSize</c> 的选项顺序一一对应，
+    ///     否则 <see cref="RefreshWindowSize" /> 按尺寸反推出来的下标会选中错误的条目
+    ///     （最后一项「自定义」不在表里）。
+    ///     <para>
+    ///         第一项是 PCL 原版的尺寸：上游 <c>FormMain.xaml</c> 里写的就是
+    ///         <c>Width="850" Height="500"</c>，从最早的公开代码起就没变过。
+    ///         从 PCL2 迁过来的用户按老习惯挑这一项就行。
+    ///     </para>
     /// </summary>
     private static readonly (double Width, double Height)[] WindowSizePresets =
     [
+        (850, 500),
         (820, 520),
         (900, 550),
         (1080, 650),

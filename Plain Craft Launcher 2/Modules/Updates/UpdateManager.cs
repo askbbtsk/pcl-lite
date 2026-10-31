@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.App.Updates;
@@ -12,6 +13,18 @@ namespace PCL;
 public static class UpdateManager
 {
     public static bool isUpdateWaitingRestart;
+
+    /// <summary>
+    /// 更新程序是否已经启动过（0 = 没有，1 = 已启动）。
+    /// <para>
+    /// 同一个更新流程会被三条路径分别调到 <see cref="UpdateRestart"/>：
+    /// 点「重启更新」按钮、安装任务、以及关闭窗口时的 <c>EndProgramForce</c>。
+    /// 它们之间没有互斥，实测出现过 268ms 内起两个更新器、抢同一个目标文件——
+    /// 一个在复制、另一个在删，两边都报 <c>Access denied</c>，用户看到的就是
+    /// 「第一次替换失败，重启两次才好」。这里用原子标记保证只起一个。
+    /// </para>
+    /// </summary>
+    private static int _restartLaunched;
 
     public static UpdatesWrapperModel remoteServer = new(new List<IUpdateSource>
     {
@@ -195,12 +208,24 @@ public static class UpdateManager
 
     public static void UpdateRestart(bool triggerRestartAndByEnd, bool triggerRestart = true)
     {
+        // 只允许启动一次。重复调用直接忽略——第一个更新器已经在干活了，
+        // 再起一个只会和它抢文件（见 _restartLaunched 的注释）
+        if (Interlocked.CompareExchange(ref _restartLaunched, 1, 0) != 0)
+        {
+            ModBase.Log("[System] 更新程序已启动过，忽略重复的更新请求");
+            return;
+        }
+
+        // 标记已经用掉了，后续任何关闭路径都不该再起第二个更新器
+        isUpdateWaitingRestart = false;
+
         try
         {
             var fileName = ModBase.exePath + @"PCL\Plain Craft Launcher Community Edition.exe";
             if (!File.Exists(fileName))
             {
                 ModBase.Log("[System] 更新失败：未找到更新文件");
+                _restartLaunched = 0;
                 return;
             }
 
@@ -218,6 +243,9 @@ public static class UpdateManager
         }
         catch (Win32Exception ex)
         {
+            // 被拦截时把标记还回去，用户装好白名单后还能再点一次
+            _restartLaunched = 0;
+            isUpdateWaitingRestart = true;
             ModBase.Log(ex, "自动更新时触发 Win32 错误，疑似被拦截");
             ModMain.MyMsgBox(
                 Lang.Text("Update.Error.UpdateBlockedMessage", ModBase.exePath),

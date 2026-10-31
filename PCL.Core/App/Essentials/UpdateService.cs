@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using PCL.Core.App.IoC;
 using PCL.Core.Utils.Exts;
 
@@ -25,8 +26,23 @@ public sealed class UpdateService : GeneralService
                 case ["update_finished", _]:
                 {
                     var toDelete = args[1];
-                    File.Delete(toDelete);
-                    Context.Debug("更新来源文件已删除");
+                    // 这个文件是上一个进程（更新器）自己。它是先 Process.Start 新版本、
+                    // 再 RequestExit 的，所以新版本走到这里时它很可能还没退干净——
+                    // 此时删不掉是正常现象，重试几次，删不掉就算了，绝不能因此让启动失败
+                    for (var attempt = 0; attempt < 10 && File.Exists(toDelete); attempt++)
+                    {
+                        try
+                        {
+                            File.Delete(toDelete);
+                            Context.Debug("更新来源文件已删除");
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            if (attempt == 9) Context.Warn($"更新来源文件删不掉，已跳过: {ex.Message}");
+                            else Thread.Sleep(200);
+                        }
+                    }
                     break;
                 }
                 case ["update_failed", _]:

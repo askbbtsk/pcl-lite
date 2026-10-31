@@ -22,7 +22,7 @@
 > **非 MINECRAFT 官方产品。** 未经 MOJANG 或 MICROSOFT 批准，也不与 MOJANG 或 MICROSOFT 关联。
 > NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
 
-PCL Lite 是基于 PCL 开源代码开发的衍生版本，在上游功能的基础上加入了一些额外的改动与修复。
+PCL Lite 是一个独立的 Minecraft 启动器项目，在开源代码基础上加入了大量改动与修复。
 
 本项目以 **MIT 许可证** 发布，并附带传染性（copyleft）附加条款，详见[许可证](#-许可证)。
 
@@ -98,8 +98,8 @@ PCL Lite 始终建议使用最新版本的操作系统以获得最佳体验。
 
 
 ## ❤️ 致谢
-<img width="403" height="310" alt="PCL 2 赞助相关聊天记录" src="docs/assets/thanks/pcl2-sponsor-chat.png" />
-<img width="832" height="573" alt="PCL 2 升级模块分析" src="docs/assets/thanks/pcl2-backdoor-analysis.png" />
+<img width="403" height="310" alt="赞助相关聊天记录" src="docs/assets/thanks/pcl2-sponsor-chat.png" />
+<img width="832" height="573" alt="升级模块分析" src="docs/assets/thanks/pcl2-backdoor-analysis.png" />
 
 参考文献:https://zhuanlan.zhihu.com/p/347828430
 

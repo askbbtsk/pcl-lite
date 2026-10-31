@@ -22,7 +22,7 @@ Preface: PCL and its guard squad keep saying we "touched the cake", and hand out
 > **NOT AN OFFICIAL MINECRAFT PRODUCT.** NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
 > 非 MINECRAFT 官方产品。未经 MOJANG 或 MICROSOFT 批准，也不与 MOJANG 或 MICROSOFT 关联。
 
-PCL Lite is a derivative built on PCL's open-source code, with a number of additional changes and fixes on top of the upstream features.
+PCL Lite is an independent Minecraft launcher project, with extensive changes and fixes on top of its open-source base.
 
 This project is released under the **MIT License** with additional copyleft terms — see [License](#-license).
 
@@ -100,8 +100,8 @@ A complete inventory of code sources and third-party libraries is in
 [the open-source inventory](docs/CREDITS.md).
 
 ## ❤️ Credits
-<img width="403" height="310" alt="PCL 2 sponsorship chat logs" src="docs/assets/thanks/pcl2-sponsor-chat.png" />
-<img width="832" height="573" alt="PCL 2 update module analysis" src="docs/assets/thanks/pcl2-backdoor-analysis.png" />
+<img width="403" height="310" alt="Sponsorship chat logs" src="docs/assets/thanks/pcl2-sponsor-chat.png" />
+<img width="832" height="573" alt="Update module analysis" src="docs/assets/thanks/pcl2-backdoor-analysis.png" />
 
 Reference: https://zhuanlan.zhihu.com/p/347828430
 

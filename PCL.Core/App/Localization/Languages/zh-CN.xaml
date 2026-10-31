@@ -3628,9 +3628,6 @@
     <sys:String x:Key="Lunar.Field.JavaAuto">启动后自动定位</sys:String>
     <sys:String x:Key="Lunar.Action.OpenDir">打开物料目录</sys:String>
     <sys:String x:Key="Lunar.Action.CopyCommand">复制启动命令</sys:String>
-    <sys:String x:Key="Lunar.Action.FocusGame">回到游戏</sys:String>
-    <sys:String x:Key="Lunar.Hint.Focused">已把游戏窗口切到前台</sys:String>
-    <sys:String x:Key="Lunar.Hint.FocusFailed">游戏还没连上 PCL，前台切换请求送不出去；等游戏进到主界面再试</sys:String>
     <sys:String x:Key="Lunar.Card.Social">好友与私聊</sys:String>
     <sys:String x:Key="Lunar.Social.Offline">未连接</sys:String>
     <sys:String x:Key="Lunar.Social.Online">已连接 Lunar 后端</sys:String>

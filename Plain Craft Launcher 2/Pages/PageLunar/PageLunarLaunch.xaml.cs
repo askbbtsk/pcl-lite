@@ -391,26 +391,6 @@ public partial class PageLunarLaunch
         ComboAccount.IsEnabled = !running && !busy;
         PanLoaders.IsEnabled = !running && !busy;
         BtnRefreshVersions.IsEnabled = !running && !busy;
-        BtnFocusGame.Visibility = running ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    private async void BtnFocusGame_Click(object sender, MouseButtonEventArgs e)
-    {
-        BtnFocusGame.IsEnabled = false;
-        try
-        {
-            if (await ModLunar.FocusGameAsync())
-            {
-                HintService.Hint(Lang.Text("Lunar.Hint.Focused"));
-                return;
-            }
-
-            HintService.Hint(Lang.Text("Lunar.Hint.FocusFailed"), HintType.Warning);
-        }
-        finally
-        {
-            BtnFocusGame.IsEnabled = true;
-        }
     }
 
     private void ComboVersion_SelectionChanged(object sender, SelectionChangedEventArgs e)

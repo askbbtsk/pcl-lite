@@ -136,10 +136,6 @@
                     <WrapPanel Margin="0,14,0,0">
                         <local:MyButton x:Name="BtnLaunch" Height="35" MinWidth="130" Margin="0,0,12,0"
                                         ColorType="Highlight" Text="{DynamicResource Lunar.Launch}" Click="BtnLaunch_Click" />
-                        <!--  只在运行中显示；WrapPanel 会自动换行，窄窗口不会撑破  -->
-                        <local:MyButton x:Name="BtnFocusGame" Height="35" MinWidth="130" Margin="0,0,12,0"
-                                        Visibility="Collapsed" Text="{DynamicResource Lunar.Action.FocusGame}"
-                                        Click="BtnFocusGame_Click" />
                         <local:MyButton x:Name="BtnOpenRoot" Height="35" MinWidth="130" Margin="0,0,12,0"
                                         Text="{DynamicResource Lunar.Action.OpenDir}" Click="BtnOpenRoot_Click" />
                         <local:MyButton x:Name="BtnCopyCommand" Height="35" MinWidth="130"

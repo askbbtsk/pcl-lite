@@ -3538,9 +3538,6 @@
     <sys:String x:Key="Lunar.Field.JavaAuto">啟動後自動定位</sys:String>
     <sys:String x:Key="Lunar.Action.OpenDir">開啟檔案目錄</sys:String>
     <sys:String x:Key="Lunar.Action.CopyCommand">複製啟動指令</sys:String>
-    <sys:String x:Key="Lunar.Action.FocusGame">回到遊戲</sys:String>
-    <sys:String x:Key="Lunar.Hint.Focused">已把遊戲視窗切到前景</sys:String>
-    <sys:String x:Key="Lunar.Hint.FocusFailed">遊戲還沒連上 PCL，前景切換請求送不出去；等遊戲進到主畫面再試</sys:String>
     <sys:String x:Key="Lunar.Card.Social">好友與私聊</sys:String>
     <sys:String x:Key="Lunar.Social.Offline">未連線</sys:String>
     <sys:String x:Key="Lunar.Social.Online">已連上 Lunar 後端</sys:String>

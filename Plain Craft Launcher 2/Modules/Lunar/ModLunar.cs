@@ -661,58 +661,6 @@ public static class ModLunar
         }
     }
 
-    /// <summary>
-    ///     把游戏窗口切到前台。
-    ///     <para>
-    ///         <b>和官方启动器完全一致</b>：只发一条 <c>FocusGamePush</c>，发完就不管了。
-    ///         官方那边是 <c>misc:focusGame</c> → <c>gameipc.sendPush(FocusGamePush.create({}))</c>，
-    ///         没有任何 Win32 动作。
-    ///     </para>
-    ///     <para>
-    ///         以前 PCL 自己枚举窗口再 <c>SetForegroundWindow</c> 抬窗口，找不到就报
-    ///         「未找到游戏窗口」—— 那套写法比官方多出来的只有误报，已经整段删掉。
-    ///     </para>
-    ///     <para>返回 <see langword="false" /> 只表示「这条推送没送出去」（游戏没连上 IPC）。</para>
-    /// </summary>
-    public static async Task<bool> FocusGameAsync()
-    {
-        var process = _process;
-        if (process is null) return false;
-
-        try
-        {
-            if (process.HasExited) return false;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
-        }
-
-        var server = _ipcServer;
-        if (server is null)
-        {
-            Log("IPC 不在 PCL 手里（端口被 Lunar 启动器占着），没法请游戏切到前台");
-            return false;
-        }
-
-        try
-        {
-            var sent = await server.SendPushAsync(LunarIpcPush.FocusGame).ConfigureAwait(false);
-            if (sent > 0)
-            {
-                Log("已请游戏切到前台");
-                return true;
-            }
-
-            Log("没有游戏连在 IPC 上，前台切换请求没送出去");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Log("发送前台切换请求失败：" + ex.Message);
-            return false;
-        }
-    }
 
     /// <summary>
     ///     这个进程名下有没有已经出来的游戏窗口。

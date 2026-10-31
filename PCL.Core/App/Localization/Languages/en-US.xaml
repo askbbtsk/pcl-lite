@@ -3597,9 +3597,6 @@
     <sys:String x:Key="Lunar.Field.JavaAuto">Set on launch</sys:String>
     <sys:String x:Key="Lunar.Action.OpenDir">Open folder</sys:String>
     <sys:String x:Key="Lunar.Action.CopyCommand">Copy command</sys:String>
-    <sys:String x:Key="Lunar.Action.FocusGame">Back to game</sys:String>
-    <sys:String x:Key="Lunar.Hint.Focused">Game window brought to front</sys:String>
-    <sys:String x:Key="Lunar.Hint.FocusFailed">The game is not connected to PCL yet, so the request could not be sent. Try again once it reaches the main menu.</sys:String>
     <sys:String x:Key="Lunar.Card.Social">Friends &amp; chat</sys:String>
     <sys:String x:Key="Lunar.Social.Offline">Not connected</sys:String>
     <sys:String x:Key="Lunar.Social.Online">Connected to the Lunar backend</sys:String>

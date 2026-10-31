@@ -11,7 +11,8 @@ namespace PCL.Core.App.Lunar;
 ///         目前的实测结论（<c>docs/LUNAR.md</c> 有完整记录）：
 ///     </para>
 ///     <list type="bullet">
-///         <item><see cref="ExitGame" />、<see cref="FocusGame" />、<see cref="PlayServer" /> —— 游戏真的处理</item>
+///         <item><see cref="ExitGame" />、<see cref="PlayServer" /> —— 游戏真的处理，PCL 也在用</item>
+///         <item><see cref="FocusGame" /> —— 游戏处理，但只做 AWT <c>toFront()</c>，被前台锁定挡住，实测无效（入口已删）</item>
 ///         <item>聊天推送 <c>chat.v1.SendChatPush</c> —— 游戏端**没有注册处理器**，推了会被丢掉</item>
 ///         <item>推广 / 商店预览 / 电台 / 结账关闭 —— 游戏处理，但 PCL 没有对应界面，推了也没有意义</item>
 ///     </list>
@@ -43,8 +44,13 @@ public sealed record LunarIpcPush(string TypeUrl, byte[] Payload)
     /// <summary>
     ///     把游戏窗口切到前台。消息体同样是空的。
     ///     <para>
-    ///         游戏端收到后会调 <c>bridge$displayGuiScreen(null)</c> 一类的逻辑把窗口拉起来。
-    ///         PCL 这边目前没有入口调用它，留着给「回到游戏」按钮用。
+    ///         <b>PCL 已经不提供这个入口了</b>（「回到游戏」按钮连同 <c>ModLunar.FocusGameAsync</c>
+    ///         一起删掉）。原因：游戏端收到后只做 AWT <c>toFront()</c>，被 Windows 前台锁定
+    ///         挡住，实测点了没反应 —— 用户看到的就是个坏按钮，不如没有。
+    ///     </para>
+    ///     <para>
+    ///         定义留着只是为了 wire 格式有据可查（<c>docs/LUNAR.md</c> 的协议表还引用它），
+    ///         代码里没有任何调用点，别再加回去。
     ///     </para>
     /// </summary>
     public static LunarIpcPush FocusGame { get; } =

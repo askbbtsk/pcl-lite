@@ -749,7 +749,7 @@ LaunchGameRequest_LaunchSource  UNSPECIFIED=0  MAIN_MENU_SWITCHER=1
 | 推送 | 游戏端处理器 | PCL |
 | --- | --- | --- |
 | `launch.v1.ExitGamePush` | `bridge$shutdownMinecraftApplet()` —— 走 Minecraft 正常关闭，存档落盘 | ✅ 停止游戏时先发它 |
-| `location.v1.FocusGamePush` | 把游戏窗口切到前台 | ✅ 接在「回到游戏」按钮上 |
+| `location.v1.FocusGamePush` | 只做 AWT `toFront()`，被 Windows 前台锁定挡住 | ❌ 实测点了没反应，「回到游戏」按钮已删除 |
 | `launch.v1.PlayServerPush` | 连服务器；**当前没有 session 就只打日志忽略** | 🟡 API 已就绪，PCL 没有服务器列表页，暂未接入口 |
 | `chat.v1.SendChatPush` | **没有注册处理器**，只有消息定义 | ❌ 发了等于没发，没实现 |
 | `promotion.v1.PendingPromotionUpdatePush` | 更新推广状态 | ⬜ PCL 没有推广模块 |
@@ -778,14 +778,17 @@ PendingPromotionUpdatePush { bool hasPendingPromotion = 1; repeated int32 pendin
 - **回到游戏**：`ipcMain.handle('misc:focusGame')` 里只有一句
   `gameipc.sendPush(FocusGamePush.create({}))`，没有任何 Win32 动作。
 
-> **PCL 现在与官方完全一致**：`Stop()` 直接 `process.Kill()`；
-> `FocusGameAsync()` 只发一条 `FocusGamePush`，发出去就算成功。
+> **PCL 现在与官方完全一致**：`Stop()` 直接 `process.Kill()`。
 >
-> 曾经试过两条「比官方更好」的路，都因为副作用撤掉了：
+> 曾经试过三条「比官方更好」的路，都因为副作用撤掉了：
 > ① 结束前先发 `ExitGamePush` 请游戏自己存盘、再按「吐日志 / 烧 CPU / 写盘」三个信号
 > 判断它是在存盘还是卡死 —— 游戏没理推送时界面会卡在「正在保存存档」；
 > ② 自己 `EnumWindows` 找窗口再 `SetForegroundWindow` 抬前台 —— 匹配不上时
-> 只能报「未找到游戏窗口」，而官方的做法根本不需要知道窗口在哪。
+> 只能报「未找到游戏窗口」，而官方的做法根本不需要知道窗口在哪；
+> ③ 退回官方的「只发 `FocusGamePush`」—— 游戏端收到后只做 AWT `toFront()`，
+> 被 Windows 前台锁定挡住，用户点了按钮窗口不动，就是个坏按钮。
+> **「回到游戏」按钮连同 `ModLunar.FocusGameAsync()` 已整体删除**；
+> `LunarIpcPush.FocusGame` 只作为 wire 格式记录保留，没有任何调用点，别再加回去。
 >
 > 结论：这两个功能**不要**再自己加逻辑。官方只靠 IPC 推送，PCL 也只靠 IPC 推送。
 

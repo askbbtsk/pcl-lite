@@ -62,11 +62,6 @@ public partial class PageSetupUI
             SliderBlurSamplingRate.Value = Config.Preference.Blur.SamplingRate;
             ComboBlurType.SelectedIndex = Config.Preference.Blur.KernelType;
             PanBlurValue.Visibility = CheckBlur.Checked == true ? Visibility.Visible : Visibility.Collapsed;
-            CheckLiquidGlass.Checked = Config.Preference.Theme.LiquidGlassEnabled;
-            SliderGlassHighlight.Value = Config.Preference.Theme.LiquidGlassHighlight;
-            SliderGlassRefraction.Value = Config.Preference.Theme.LiquidGlassRefraction;
-            SliderGlassDispersion.Value = Config.Preference.Theme.LiquidGlassDispersion;
-            PanGlassValue.Visibility = CheckLiquidGlass.Checked == true ? Visibility.Visible : Visibility.Collapsed;
             CheckLockWindowSize.Checked = Config.Preference.LockWindowSize;
             RefreshWindowSize();
 
@@ -217,35 +212,6 @@ public partial class PageSetupUI
         var sender = (MyCheckBox)senderRaw;
         if (ModAnimation.AniControlEnabled == 0)
             SetByTag(sender.Tag?.ToString(), sender.Checked);
-    }
-
-    /// <summary>
-    /// 液态玻璃开关。
-    /// <para>
-    /// 不走 <c>SetByTag</c>：该键经 <c>ConfigService.TrySetValue</c> 写入会静默失败
-    /// （与 <c>UiLauncherTheme</c> 同样的问题），因此直接赋值给强类型配置项。
-    /// </para>
-    /// </summary>
-    private void LiquidGlass_Change(object senderRaw, bool user)
-    {
-        if (ModAnimation.AniControlEnabled != 0) return;
-        Config.Preference.Theme.LiquidGlassEnabled = ((MyCheckBox)senderRaw).Checked == true;
-        PanGlassValue.Visibility =
-            Config.Preference.Theme.LiquidGlassEnabled ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    /// <summary>
-    /// 液态玻璃的三个手感参数。
-    /// <para>
-    /// 同样绕开 <c>SetByTag</c>，直接写强类型配置项，避免 <c>TrySetValue</c> 静默失败。
-    /// </para>
-    /// </summary>
-    private void GlassParam_Change(object senderRaw, bool user)
-    {
-        if (ModAnimation.AniControlEnabled != 0) return;
-        Config.Preference.Theme.LiquidGlassHighlight = SliderGlassHighlight.Value;
-        Config.Preference.Theme.LiquidGlassRefraction = SliderGlassRefraction.Value;
-        Config.Preference.Theme.LiquidGlassDispersion = SliderGlassDispersion.Value;
     }
 
     private void TextBoxChange(object senderRaw, RoutedEventArgs e)
@@ -1158,10 +1124,6 @@ public partial class PageSetupUI
         SliderBackgroundBlur.getHintText = new Func<object, object>(v => Lang.Text("Setup.Ui.Slider.Pixel", Lang.Number(Convert.ToDouble(v), "N0")));
         SliderBlurValue.getHintText = new Func<object, object>(v => Lang.Text("Setup.Ui.Slider.Pixel", Lang.Number(Convert.ToDouble(v), "N0")));
         SliderBlurSamplingRate.getHintText = new Func<object, object>(v => Lang.Number(Convert.ToDouble(v) / 100d, "P0"));
-        Func<object, object> glassPercent = v => Lang.Number(Convert.ToDouble(v) / 100d, "P0");
-        SliderGlassHighlight.getHintText = glassPercent;
-        SliderGlassRefraction.getHintText = glassPercent;
-        SliderGlassDispersion.getHintText = glassPercent;
     }
 
     private void CheckMusicStart_OnChange(object sender, bool user)

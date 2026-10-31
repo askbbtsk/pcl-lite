@@ -49,7 +49,6 @@ public partial class MyIconButton
         MouseEnter += (_, _) => RefreshAnim();
         MouseLeave += (_, _) => RefreshAnim();
         Loaded += (_, _) => RefreshAnim();
-        Loaded += (_, _) => GlassHelper.Apply(this); // 液态玻璃材质（默认关闭，由配置控制）
     }
 
     public string Logo

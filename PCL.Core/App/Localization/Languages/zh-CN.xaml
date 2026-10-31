@@ -2998,14 +2998,6 @@
 
     <sys:String x:Key="Setup.Ui.Basic.AdvancedMaterial">高级材质</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.AdvancedMaterial.ToolTip">启用此功能后会在部分透明区域（例如卡片）实现模糊效果。&#xA;请注意，该功能会消耗大量 GPU 算力，并导致卡顿！</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass">液态玻璃</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.ToolTip">给按钮等控件加上玻璃质感的边缘折射、色散与内侧高光。&#xA;只影响控件本身，不会改变界面背景。默认关闭。</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Highlight">高光亮度</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Highlight.ToolTip">顶部与边缘高光的强度。调高会让玻璃更亮、更抢眼。</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Refraction">边缘折射</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Refraction.ToolTip">贴着控件边缘那圈聚光的强度与宽度。调高更像一块有厚度的玻璃。</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Dispersion">色散</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Dispersion.ToolTip">边缘的彩色偏移强度。调高会看到更明显的暖色与冷色分层。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ThemeHint">懒得一个个调？下面是原版 PCL 的全部预设配色，点一下就能套用，套完还能继续微调。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.TryTheme">套用紫色主题</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.TryTheme.Hint">已切换为自定义紫色主题，可在下方继续微调</sys:String>

@@ -50,7 +50,6 @@ public partial class MyButton
         MouseEnter += RefreshColor;
         MouseLeave += RefreshColor;
         Loaded += RefreshColor;
-        Loaded += (_, _) => GlassHelper.Apply(this); // 液态玻璃材质（默认关闭，由配置控制）
         IsEnabledChanged += (_, _) => RefreshColor();
         MouseLeftButtonUp += Button_MouseUp;
         MouseLeftButtonDown += Button_MouseDown;

@@ -447,30 +447,6 @@ public static partial class Config
             /// </para>
             /// </summary>
             [ConfigItem<int>("UiLauncherTheme", 0, ConfigSource.Local)] public partial int ThemeSelected { get; set; }
-
-            /// <summary>
-            /// 是否给按钮等控件启用液态玻璃材质。
-            /// <para>
-            /// 默认关闭。只作用于控件自身（边缘折射、色散、内侧高光），
-            /// <b>不会改动界面背景</b>。
-            /// </para>
-            /// </summary>
-            [ConfigItem<bool>("UiLiquidGlass", false, ConfigSource.Local)] public partial bool LiquidGlassEnabled { get; set; }
-
-            /// <summary>
-            /// 液态玻璃：边缘聚光（折射感）强度，0-100。
-            /// </summary>
-            [ConfigItem<int>("UiLiquidGlassRefraction", 70, ConfigSource.Local)] public partial int LiquidGlassRefraction { get; set; }
-
-            /// <summary>
-            /// 液态玻璃：顶部高光亮度，0-100。
-            /// </summary>
-            [ConfigItem<int>("UiLiquidGlassHighlight", 72, ConfigSource.Local)] public partial int LiquidGlassHighlight { get; set; }
-
-            /// <summary>
-            /// 液态玻璃：色散强度，0-100。
-            /// </summary>
-            [ConfigItem<int>("UiLiquidGlassDispersion", 35, ConfigSource.Local)] public partial int LiquidGlassDispersion { get; set; }
         }
 
         /// <summary>

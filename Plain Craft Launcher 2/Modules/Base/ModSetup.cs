@@ -41,15 +41,6 @@ public class ModSetup
             e => UiLauncherTransparent((int)e.Value!)));
         Config.Preference.Theme.ThemeSelectedConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
             e => UiLauncherTheme((int)e.Value!)));
-        Config.Preference.Theme.LiquidGlassEnabledConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
-            _ => GlassHelper.RefreshAll()));
-        // 拖滑块时只刷新已有的覆盖层，不重走视觉树
-        Config.Preference.Theme.LiquidGlassRefractionConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
-            _ => GlassHelper.RefreshParams()));
-        Config.Preference.Theme.LiquidGlassHighlightConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
-            _ => GlassHelper.RefreshParams()));
-        Config.Preference.Theme.LiquidGlassDispersionConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
-            _ => GlassHelper.RefreshParams()));
         Config.Preference.Background.BackgroundColorfulConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
             e => UiBackgroundColorful((bool)e.Value!)));
         Config.Preference.LockWindowSizeConfig.Observe(new ConfigObserver(ConfigEvent.Changed,

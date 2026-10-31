@@ -251,42 +251,6 @@
                                                           ToolTip="{DynamicResource Setup.Ui.Basic.BlurMethod.Box.ToolTip}" />
                                 </local:MyComboBox>
                             </Grid>
-                            <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.LiquidGlass}" Margin="-1,10,0,0" Height="22"
-                                              x:Name="CheckLiquidGlass" Tag="UiLiquidGlass"
-                                              ToolTip="{DynamicResource Setup.Ui.Basic.LiquidGlass.ToolTip}"
-                                              Change="LiquidGlass_Change" />
-                            <Grid x:Name="PanGlassValue" Margin="0,10,0,0" Visibility="Collapsed">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Name1" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition />
-                                    <RowDefinition Height="10" />
-                                    <RowDefinition />
-                                    <RowDefinition Height="10" />
-                                    <RowDefinition />
-                                </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"
-                                           HorizontalAlignment="Left" Text="{DynamicResource Setup.Ui.Basic.LiquidGlass.Highlight}" />
-                                <local:MySlider Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
-                                                x:Name="SliderGlassHighlight" MaxValue="100"
-                                                ToolTip="{DynamicResource Setup.Ui.Basic.LiquidGlass.Highlight.ToolTip}"
-                                                Change="GlassParam_Change" />
-                                <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"
-                                           HorizontalAlignment="Left" Text="{DynamicResource Setup.Ui.Basic.LiquidGlass.Refraction}" />
-                                <local:MySlider Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                                                x:Name="SliderGlassRefraction" MaxValue="100"
-                                                ToolTip="{DynamicResource Setup.Ui.Basic.LiquidGlass.Refraction.ToolTip}"
-                                                Change="GlassParam_Change" />
-                                <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center"
-                                           HorizontalAlignment="Left" Text="{DynamicResource Setup.Ui.Basic.LiquidGlass.Dispersion}" />
-                                <local:MySlider Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
-                                                x:Name="SliderGlassDispersion" MaxValue="100"
-                                                ToolTip="{DynamicResource Setup.Ui.Basic.LiquidGlass.Dispersion.ToolTip}"
-                                                Change="GlassParam_Change" />
-                            </Grid>
                         </StackPanel>
                     </StackPanel>
                 </Grid>

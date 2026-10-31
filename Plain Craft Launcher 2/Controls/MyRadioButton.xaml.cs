@@ -58,7 +58,6 @@ public partial class MyRadioButton
             ThemeService.ColorModeChanged += OnColorModeChanged;
             ThemeService.ColorThemeChanged += OnColorThemeChanged;
         };
-        Loaded += (_, _) => GlassHelper.Apply(this); // 液态玻璃材质（默认关闭，由配置控制）
 
         Unloaded += (_, _) =>
         {

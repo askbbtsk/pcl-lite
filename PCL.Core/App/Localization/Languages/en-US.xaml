@@ -2998,14 +2998,6 @@
 
     <sys:String x:Key="Setup.Ui.Basic.AdvancedMaterial">Advanced material</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.AdvancedMaterial.ToolTip">When enabled, blur effects will be applied to some transparent areas, such as cards.&#xA;Note that this feature consumes significant GPU resources and may cause lag!</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass">Liquid glass</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.ToolTip">Adds glass-like edge refraction, dispersion and inner highlights to controls such as buttons.&#xA;Only affects the controls themselves, never the window background. Off by default.</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Highlight">Highlight</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Highlight.ToolTip">Strength of the top and edge highlights. Higher makes the glass brighter and more noticeable.</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Refraction">Edge refraction</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Refraction.ToolTip">Strength and width of the light gathering along the control edge. Higher looks like thicker glass.</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Dispersion">Dispersion</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.LiquidGlass.Dispersion.ToolTip">Strength of the colour fringing along the edge. Higher shows clearer warm/cool separation.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ThemeHint">Can't be bothered to tune it by hand? Every preset from the original PCL is below — click one to apply it, then keep fine-tuning.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.TryTheme">Apply a purple theme</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.TryTheme.Hint">Switched to a custom purple theme, fine-tune it below</sys:String>

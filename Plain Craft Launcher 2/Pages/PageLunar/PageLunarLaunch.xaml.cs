@@ -729,6 +729,7 @@ public partial class PageLunarLaunch
                 Height = 38,
                 Margin = new Thickness(0, 0, 0, 2),
                 Tag = friend,
+                LogoCornerRadius = new CornerRadius(5),
                 Checked = _selectedFriend?.Uuid == friend.Uuid
             };
             ApplyAvatar(item, friend);

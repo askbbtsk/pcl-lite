@@ -544,6 +544,7 @@ public partial class MyListItem : IMyRadio
         if (pathLogo is not null)
             Children.Remove(pathLogo);
         pathLogo = null;
+        _canvasClipHandlerAdded = false; // 旧 Canvas 上的 SizeChanged 钩子随旧控件一起丢了
 
         // 添加新 Logo
         if (IsUsingSvgIcon)
@@ -629,6 +630,7 @@ public partial class MyListItem : IMyRadio
             SetRowSpan(pathLogo, 4);
             OnSizeChanged(); // 设置边距
             Children.Add(pathLogo);
+            ApplyLogoCornerRadius(); // 圆角可能在 Logo 之前就设好了，这里补一次
             // 图标的点击事件
             if (LogoClickable)
             {

@@ -11,6 +11,7 @@
 [![Release](https://img.shields.io/github/v/release/askbbtsk/pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/askbbtsk/pcl-lite/releases)
 [![Downloads](https://img.shields.io/github/downloads/askbbtsk/pcl-lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/askbbtsk/pcl-lite/releases)
 
+[源仓库](https://github.com/askbbtsk/pcl-lite) |
 [下载](https://github.com/askbbtsk/pcl-lite/releases) |
 [文档](docs/) |
 [许可证](#-许可证) |

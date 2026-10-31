@@ -107,8 +107,27 @@ Release 被删）时客户端没有任何退路——2026-10 就这么断过一�
 而这恰恰是最需要更新能走通的时候。
 
 **所以：任何一个仓库要被当作镜像列进清单，它的根目录就必须有一份
-`update.json`**（内容写本项目发布仓库的指针，比如 `{"update": "askbbtsk/pcl-lite/releases/latest"}`）。
+`update.json`**。内容统一写 `{"update": "self"}`——`self` 表示「就是本项目自己的仓库」，
+客户端会用它自己编译进去的 `GitHubOwner` / `GitHubRepo` 展开成具体地址。
 本项目自己的仓库根目录也放着这么一份，它同时是「这个仓库属于本项目」的公开标记。
+
+### 为什么内容写 `self`，而不是写死仓库名
+
+写死 `askbbtsk/pcl-lite/releases/latest` 的话，这份文件就变成了**每个仓库各不相同的**文件：
+别人复刻这个仓库、或者我们自己换账号之后，两边内容对不上，**每次从上游同步都会在这份 json 上
+撞一次冲突**，逼着人 `git update-index --skip-worktree` 或者手动丢弃。
+
+写成 `self` 之后，**所有仓库里的内容逐字节相同**，合并永远不会冲突：
+
+- 复刻仓库的人什么都不用改，`update.json` 原样保留即可
+- 想发自己版本的人只改 `PCL.Core/App/ProjectLinks.cs` 里的
+  `GitHubOwner` / `GitHubRepo` 两个常量，`update.json` 一个字都不用动
+- 客户端永远拿到的是展开后的具体指针（日志、缓存键里不会出现 `self`）
+
+> 注意区分两份文件：
+> - **源码仓库根目录**的 `update.json` → `{"update": "self"}`，永远不要改
+> - **锚点仓库**（`PCL-Lite-service`）里的 `update.json` → 必须写死具体指针。
+>   锚点存在的意义就是「换仓库时只改这一行」，写 `self` 就失去这层间接了。
 
 ### 实测
 
@@ -251,7 +270,7 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 - 发新版 → 只要推 Release，客户端自动看到
 - 发预发布 → tag 带上对应的后缀（`-pre` / `-snapshot` / `-nightly`），
   选了对等或更激进通道的用户自动看到
-- 换仓库 → 改 `update.json` 那一行（唯一需要动手的场景）
+- 换仓库 → 改**锚点仓库**里 `update.json` 那一行（唯一需要动手的场景）
 
 发版真正要改的只有一处：`Plain Craft Launcher 2/metadata.json` 里的版本号。见下节。
 
@@ -363,12 +382,15 @@ tag 必须和 `metadata.json` 的 `base` + `suffix` 对上：
 假设以后要从 `askbbtsk/pcl-lite` 搬到 `SomeoneElse/PCL-Lite-Next`：
 
 1. 新仓库把代码、tag、Release 全部搬过去，确认 `releases/latest` 能打开
-2. 把 `update.json` 改成：
+2. 把**锚点仓库**（`PCL-Lite-service`）里的 `update.json` 改成：
    ```json
    { "update": "SomeoneElse/PCL-Lite-Next/releases/latest" }
    ```
 3. 推送到 `bedkillerspacex-boop/PCL-Lite-service` 的 `main`
 4. 等 1～2 分钟（raw / jsDelivr 有缓存），开一个旧版本验证能看到更新
+
+源码仓库根目录那份 `update.json`（内容是 `{"update": "self"}`）**不要动**，
+它跟发布仓库是谁无关。
 
 **客户端代码一行都不用改，也不需要发版。** 所有旧版本下次检查更新时
 就会顺着指针走到新仓库，完成最后一次「跨仓库更新」，之后一直在新仓库上更新。
@@ -383,7 +405,7 @@ tag 必须和 `metadata.json` 的 `base` + `suffix` 对上：
 | `Modules/Updates/UpdatesGitHubModel.cs` | 真正取版本：读 Release 列表、挑资产、读 `digest`、下载 |
 | `Modules/Updates/UpdatesWrapperModel.cs` | 按顺序试各个源，第一个成功的就是本次的版本源 |
 | `Modules/Updates/UpdateManager.cs` | 源列表就在这里，清单源排第一 |
-| `PCL.Core.Test/UpdateManifestPointerTest.cs` | 17 个用例，含「反代回 404 正文」「回 HTML」这些实战翻车场景 |
+| `PCL.Core.Test/UpdateManifestPointerTest.cs` | 21 个用例，含「反代回 404 正文」「回 HTML」这些实战翻车场景 |
 | `PCL.Core.Test/UpdateChannelLevelsTest.cs` | 37 个用例，钉死后缀分类与通道包含关系 |
 
 失败行为：清单拉不到（墙、仓库私有、json 写坏）→ 自动换 `UpdatesGitHubModel`，

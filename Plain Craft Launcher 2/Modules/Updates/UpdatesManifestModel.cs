@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -489,58 +488,7 @@ public class UpdatesManifestModel : IUpdateSource
     /// </summary>
     private static string _FetchManifestText(string fileName)
     {
-        var local = _ReadLocalManifest(fileName);
-        if (local is not null)
-            return local;
         return Task.Run(() => _FetchFirstText(_ManifestChannels(fileName), fileName)).GetAwaiter().GetResult();
-    }
-
-    /// <summary>
-    ///     本地清单覆盖文件的默认文件名。放在 exe 同目录（或者用环境变量 <c>PCL_UPDATE_MANIFEST</c> 指路径）。
-    ///     <para>
-    ///         给 fork / 自建仓库的人用：把 <c>sources</c> 写成自己的仓库，本地构建就会去查自己的 Release，
-    ///         不用再去改受版本控制的 <c>update.json</c>——那个文件改了也没用，
-    ///         客户端读的是<b>锚点仓库</b>里那份，不是自己仓库里那份（见 docs/UPDATE.md）。
-    ///     </para>
-    ///     <para>
-    ///         文件名已进 <c>.gitignore</c>，正式发版也不会有这个文件，所以对线上行为零影响。
-    ///     </para>
-    /// </summary>
-    private const string LocalManifestFileName = "update.local.json";
-
-    /// <summary>
-    ///     读本地清单覆盖。没有就返回 <see langword="null" />，调用方照常走网络。
-    ///     <para>只覆盖多源清单：单指针那份是留给老客户端读的，本地覆盖它没有意义。</para>
-    /// </summary>
-    private static string? _ReadLocalManifest(string fileName)
-    {
-        if (fileName != ProjectLinks.ManifestV2FileName)
-            return null;
-
-        try
-        {
-            var path = Environment.GetEnvironmentVariable("PCL_UPDATE_MANIFEST");
-            if (string.IsNullOrWhiteSpace(path))
-                path = Path.Combine(AppContext.BaseDirectory, LocalManifestFileName);
-            else if (!Path.IsPathRooted(path))
-                path = Path.Combine(AppContext.BaseDirectory, path);
-
-            if (!File.Exists(path))
-                return null;
-
-            var text = File.ReadAllText(path);
-            if (string.IsNullOrWhiteSpace(text))
-                return null;
-
-            ModBase.Log($"[Update] 使用本地清单覆盖：{path}", ModBase.LogLevel.Developer);
-            return text;
-        }
-        catch (Exception ex)
-        {
-            // 本地文件读坏了不该影响更新，退回网络
-            ModBase.Log(ex, "[Update] 本地清单覆盖读取失败，改用网络清单", ModBase.LogLevel.Developer);
-            return null;
-        }
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PCL.Core.App;
 using PCL.Core.App.Updates;
 using System;
 using System.Linq;
@@ -246,5 +247,27 @@ public class UpdateManifestV2Test
         Assert.AreEqual(100, result.Sources[0].Weight);
         Assert.AreEqual(60, result.Sources[1].Weight);
         Assert.AreEqual(5, result.Sources[2].Weight);
+    }
+
+    /// <summary>
+    /// 多源清单里的 <c>self</c> 也要展开成这个 exe 自己的仓库，
+    /// 这样这份文件在所有复刻仓库里都能保持同一份内容。
+    /// </summary>
+    [TestMethod]
+    public void ParseShouldResolveSelfSource()
+    {
+        var result = UpdateManifestV2.Parse("""
+            {
+              "schema": 2,
+              "sources": [
+                { "repo": "self", "tier": "official" }
+              ]
+            }
+            """);
+
+        Assert.AreEqual(1, result.Sources.Count);
+        Assert.AreEqual(ProjectLinks.GitHubOwner, result.Sources[0].Owner);
+        Assert.AreEqual(ProjectLinks.GitHubRepo, result.Sources[0].Repo);
+        Assert.AreEqual(0, result.Problems.Count);
     }
 }

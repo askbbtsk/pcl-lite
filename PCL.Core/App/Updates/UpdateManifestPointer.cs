@@ -20,6 +20,22 @@ namespace PCL.Core.App.Updates;
 /// </summary>
 public static class UpdateManifestPointer
 {
+    /// <summary>
+    ///     指针里可以写的「就是本项目自己的仓库」简写。
+    ///     <para>
+    ///         为什么要有它：<c>update.json</c> 是<b>每个仓库都要放一份</b>的公开标记，
+    ///         如果里面写死 <c>owner/repo</c>，那么别人复刻这个仓库、或者我们自己换账号之后，
+    ///         这份文件的内容就不一样了——每次从上游同步都会在它上面产生一次无意义的冲突，
+    ///         逼着人手动忽略。
+    ///     </para>
+    ///     <para>
+    ///         写成 <c>{"update": "self"}</c> 之后，<b>所有仓库里的内容一模一样</b>，
+    ///         合并永远不会冲突；真正的仓库地址由客户端自己的
+    ///         <see cref="ProjectLinks.GitHubOwner" /> / <see cref="ProjectLinks.GitHubRepo" /> 决定。
+    ///     </para>
+    /// </summary>
+    public const string SelfKeyword = "self";
+
     /// <summary>指针长度上限。正常也就几十个字符，超过这个长度必然是别的什么东西。</summary>
     private const int MaxLength = 200;
 
@@ -79,11 +95,32 @@ public static class UpdateManifestPointer
         if (candidate.Length == 0)
             throw new FormatException($"清单里没有写仓库地址（{_Preview(text)}）。");
 
+        // self 在这里就展开，让上层拿到的永远是具体的 owner/repo，
+        // 日志和缓存键（_trustedSources 用 Pointer 当键）里不会出现「self」这种看不懂的东西
+        candidate = ResolveSelf(candidate);
+
         if (!LooksLikePointer(candidate))
             throw new FormatException(
                 $"清单内容「{_Preview(candidate)}」不是仓库指针，应该写成 owner/repo，例如 askbbtsk/pcl-lite。");
 
         return candidate;
+    }
+
+    /// <summary>
+    ///     把 <c>self</c> 展开成本项目自己的发布仓库指针；其它内容原样返回。
+    ///     <para>
+    ///         展开结果是 <c>owner/repo/releases/latest</c>，其中 owner/repo 取自
+    ///         <see cref="ProjectLinks" />——也就是这个 exe 自己认定的仓库。
+    ///         所以复刻仓库的人只要不改代码，这份 json 就永远是同一份内容，不会冲突；
+    ///         要发自己的版本时也只改 <see cref="ProjectLinks.GitHubOwner" /> 两个常量，
+    ///         <c>update.json</c> 一个字都不用动。
+    ///     </para>
+    /// </summary>
+    public static string ResolveSelf(string? pointer)
+    {
+        var text = (pointer ?? string.Empty).Trim().Trim('"', '\'').Trim();
+        if (!text.Equals(SelfKeyword, StringComparison.OrdinalIgnoreCase)) return text;
+        return $"{ProjectLinks.GitHubOwner}/{ProjectLinks.GitHubRepo}/releases/latest";
     }
 
     /// <summary>
@@ -99,6 +136,9 @@ public static class UpdateManifestPointer
 
         var text = pointer.Trim().Trim('"', '\'').Trim();
         if (text.Length is 0 or > MaxLength) return false;
+
+        // self 是合法写法，具体地址由 ResolveSelf 展开
+        if (text.Equals(SelfKeyword, StringComparison.OrdinalIgnoreCase)) return true;
 
         foreach (var c in text)
         {
@@ -139,7 +179,7 @@ public static class UpdateManifestPointer
     /// <exception cref="FormatException">指针不合法。</exception>
     public static (string Owner, string Repo) Parse(string? pointer)
     {
-        var text = (pointer ?? string.Empty).Trim().Trim('"', '\'').Trim();
+        var text = ResolveSelf(pointer).Trim('"', '\'').Trim();
         if (text.Length == 0)
             throw new FormatException("清单里没有写仓库地址。");
 

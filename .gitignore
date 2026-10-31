@@ -367,7 +367,3 @@ tools/lunar-*.log
 
 # 助手工作区数据，不进版本库
 .workbuddy-ai/
-
-# 本地更新清单覆盖：fork 后想让自己构建查自己的 Release 时用，见 docs/CONTRIBUTE.md
-# 放 exe 同目录，或用环境变量 PCL_UPDATE_MANIFEST 指路径；永远不要提交
-update.local.json

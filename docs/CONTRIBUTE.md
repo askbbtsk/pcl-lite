@@ -32,8 +32,8 @@ dotnet build "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" -c Debug
 ```
 
 - 分支：从 `main` 切，PR 提到 `main`
-- **不要**改 `update.json`、`metadata.json`、`ProjectLinks.cs` 里的仓库常量（理由见第 4、5 节）
-- 想让自己的构建查自己的 Release，用 `update.local.json`（第 4.3 节），它已被 git 忽略
+- **`update.json` 一个字都不用改**，它是 `{"update": "self"}`，所有仓库里内容都一样（第 4 节）
+- **不要改 `metadata.json` 的版本号**，合并后统一发版（第 5 节）
 - 加文案要 zh-CN / zh-TW / en-US / en-GB **四份一起加**
 - 提 PR 前跑一遍 `dotnet test PCL.Core.Test`，已知的环境性失败在第 9 节
 
@@ -101,21 +101,24 @@ dotnet publish "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" `
 
 ## 4. `update.json` 到底是个什么文件
 
-这是这个仓库最容易被误解的一个文件，先说结论：**它不是一个给你本地改的开关。**
+先给结论：**它是全仓库唯一一份内容永远不用改的配置，你复刻、改名、换账号都不用碰它。**
 
 ### 4.1 它长什么样
 
-仓库根目录就一行：
+仓库根目录就三行：
 
 ```json
 {
-  "update": "askbbtsk/pcl-lite/releases/latest"
+  "update": "self"
 }
 ```
 
+`self` 的意思是"就是本项目自己的仓库"。客户端读到它会用**自己编译进去的**
+`ProjectLinks.GitHubOwner` / `GitHubRepo` 展开成具体地址（`owner/repo/releases/latest`）。
+
 ### 4.2 它是给谁读的
 
-更新检查的链路是这样的：
+更新检查的真实链路是：
 
 ```
 客户端（写死锚点，永不改变）
@@ -124,62 +127,52 @@ dotnet publish "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" `
               └─> 那个仓库的 GitHub Releases
 ```
 
-关键点：**客户端读的是锚点仓库那份，不是你自己仓库根目录这份。**
-
-所以——**你在 fork 里把 `update.json` 改成自己的仓库，对你构建出来的 exe 一点影响都没有。**
-它依然会去问官方锚点，依然会告诉你"有新版本 1.6.3-pre"。
-
-那本仓库根目录这份留着干嘛？两个作用：
+**客户端根本不会读你自己仓库根目录这份。** 那份 `update.json` 只有两个作用：
 
 1. 它是"**这个仓库属于本项目**"的公开标记。任何第三方仓库想被列进更新清单当镜像，
-   根目录必须有一份合法的 `update.json`，客户端会去拉它做身份校验（`tier` 不是 `official` 时才验）。
-2. 换发布仓库时，这份和锚点仓库那份要一起改（只有维护者需要）。
+   根目录必须有一份能解析的 `update.json`，客户端会去拉它做身份校验（`tier` 不是 `official` 时才验）
+2. 本项目自己的仓库根目录放一份，就是为了满足第 1 条
 
-### 4.3 想让自己的构建查自己的 Release：用 `update.local.json`
+所以：**你在 fork 里把它改成自己的仓库，对你构建出来的 exe 一点影响都没有**——
+它依然会去问锚点，依然会告诉你"有新版本"。以前很多人为了这个去改它，
+改完又怕提交，只能 `git update-index --skip-worktree update.json` 把它藏起来，
+每次同步上游还得记得再藏一遍。
 
-以前没这个口子，贡献者只能去改 `update.json` 或者 `ProjectLinks.cs` 里的常量，
-改完又怕提交上去，于是得 `git update-index --skip-worktree update.json` 把它"藏"起来。
-**这就是它傻的地方，现在不用这么干了。**
+### 4.3 为什么现在不用这么干了
 
-把 `update.local.json` 放在 exe 同目录，内容跟 `updatev2.json` 同格式：
+以前那份文件里写死的是 `askbbtsk/pcl-lite/releases/latest`，**每个仓库的内容都不一样**，
+所以复刻的人一同步上游就冲突。现在统一写 `self`，**所有仓库里的内容逐字节相同**：
 
-```json
-{
-  "schema": 2,
-  "sources": [
-    { "repo": "你的账号/pcl-lite", "tier": "official" }
-  ]
-}
+- 复刻仓库：原样保留，合并上游时这份文件永远不冲突
+- 改仓库名 / 换账号：不用动它
+- 客户端拿到的永远是展开后的具体指针，日志和缓存键里不会出现 `self`
+
+### 4.4 我要发自己的版本，怎么办
+
+改**代码里的两个常量**，不要改 json：
+
+```csharp
+// PCL.Core/App/ProjectLinks.cs
+public const string GitHubOwner = "你的账号";
+public const string GitHubRepo = "pcl-lite";
 ```
 
-- `tier` 写 `official` = 免身份校验，直接去那个仓库的 Releases 找版本。
-  写成别的值（比如 `mirror`）就得在你那个仓库根目录也放一份 `update.json`，否则这个源会被判不可信
-- 想验证多源优先级，可以在 `sources` 里写多条，`weight` 大的先问，前面的全挂了才轮到后面的
-- 文件位置二选一：
-  - 直接丢在 `Plain Craft Launcher 2/bin/Debug/net10.0-windows/` 里（默认位置）
-  - 或者设环境变量 `PCL_UPDATE_MANIFEST=E:\某个地方\my-update.json` 指到任意路径（相对路径按 exe 目录解析）
-
-生效后日志里会出现：
-
-```
-[Update] 使用本地清单覆盖：...\update.local.json
-```
-
-**这个文件名已经写进 `.gitignore`**，放哪都不会被提交；正式发版也不会有这个文件，所以对线上零影响。
+改完重新编译，`update.json` 里的 `self` 就自动展开到你的仓库，你发的 Release 就能被认出来。
+这份文件依然保持 `self` 不变，所以它还是不会跟上游冲突。
 
 > 自己发 Release 时注意：附件名里要带架构，比如 `PCL-Lite_1.0.0_x64.exe`。
 > 客户端挑资产时优先选文件名含 `x64` / `arm64` 的 `.exe` 或 `.zip`，
 > 都不含就退到第一个 `.zip`，再退到第一个附件——名字随便起就可能挑错。
 
-### 4.4 你什么时候真的需要动 `update.json`
+### 4.5 唯一需要动它的场景：换发布仓库
 
-基本不需要。唯一的场景是**换发布仓库**，那是维护者的活：
+那是维护者的活，而且改的是**锚点仓库**里那份，不是本仓库这份：
 
-1. 改锚点仓库 `bedkillerspacex-boop/PCL-Lite-service` 里的 `update.json` / `updatev2.json`
-2. 改本仓库根目录的 `update.json`，两处内容保持一致
+1. 改 `bedkillerspacex-boop/PCL-Lite-service` 里的 `update.json`（写死新仓库的完整指针）
+2. 同步改那个仓库里的 `updatev2.json`
+3. 本仓库根目录的 `update.json` 保持 `{"update": "self"}` 不动
 
-只改一处会怎样：老客户端认锚点，新客户端认锚点，两边都对不上时就只能靠 GitHub Releases 兜底源，
-那时候换仓库就等于把老版本用户丢了。细节见 [UPDATE.md](UPDATE.md)。
+细节和为什么这么设计见 [UPDATE.md](UPDATE.md)。
 
 ---
 
@@ -339,7 +332,6 @@ dotnet test PCL.Core.Test
 | 东西 | 为什么 |
 | --- | --- |
 | 任何 `client_id` / API key / 密钥 | 密钥是编译期注入的，源码里本来就没有。提交上去等于泄露 |
-| `update.local.json` | 已经 gitignore 了，这是你本地的调试开关 |
 | `publish-x64/`、`.release/`、`bin/`、`obj/` | 构建产物，体积大且没意义 |
 | 签名后的 exe / pfx 证书 | 私钥绝不能进仓库 |
 | `%APPDATA%\PCLLite*` 里的配置和缓存 | 那是运行时数据，不是源码 |
@@ -353,7 +345,8 @@ dotnet test PCL.Core.Test
 - [ ] 从 `main` 切的分支，PR 提到 `main`
 - [ ] 一个 PR 只做一件事，提交信息说清了"改了什么、为什么"
 - [ ] 本地能跑起来，改的功能自己点过一遍
-- [ ] 没改 `update.json` / `metadata.json` / `ProjectLinks.cs` 的仓库常量
+- [ ] **没改 `update.json`**（它应该是 `{"update": "self"}`，原样提交）
+- [ ] 没改 `metadata.json` 的版本号
 - [ ] 加了文案的话，四个语言文件都加了
 - [ ] 改了 XAML 的话，`python tools/audit-xaml-events.py` 通过
 - [ ] 深色模式下看过一眼（改界面的话）
@@ -394,3 +387,4 @@ dotnet build ... -t:Rebuild
 
 **合并时冲突一片**
 先把 `main` 上的改动 rebase 下来再改，不要拖很久才 PR。
+`update.json` 现在不会冲突了；如果它还冲突，说明你本地把它改过，`git checkout -- update.json` 还原即可。

@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PCL.Core.App;
 using PCL.Core.App.Updates;
 using System;
 
@@ -150,5 +151,44 @@ public class UpdateManifestPointerTest
     {
         Assert.ThrowsExactly<FormatException>(() => UpdateManifestPointer.Parse("404: Not Found"));
         Assert.ThrowsExactly<FormatException>(() => UpdateManifestPointer.Parse(""));
+    }
+
+    /// <summary>
+    /// <c>self</c> 必须展开成「这个 exe 自己认定的仓库」。
+    /// <para>
+    /// 这条是「复刻仓库不再需要改 update.json」的地基：所有仓库里的 json 内容都一样，
+    /// 具体地址由代码里的常量决定，所以合并永远不会在这份文件上冲突。
+    /// </para>
+    /// </summary>
+    [TestMethod]
+    public void ExtractShouldResolveSelfKeyword()
+    {
+        var expected = $"{ProjectLinks.GitHubOwner}/{ProjectLinks.GitHubRepo}/releases/latest";
+        Assert.AreEqual(expected, UpdateManifestPointer.Extract("{\"update\": \"self\"}"));
+        Assert.AreEqual(expected, UpdateManifestPointer.Extract("\"self\""));
+        Assert.AreEqual(expected, UpdateManifestPointer.Extract("SELF"));
+    }
+
+    [TestMethod]
+    public void LooksLikePointerShouldAcceptSelf()
+    {
+        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer("self"));
+        Assert.IsTrue(UpdateManifestPointer.LooksLikePointer(" Self "));
+    }
+
+    [TestMethod]
+    public void ParseShouldResolveSelf()
+    {
+        var (owner, repo) = UpdateManifestPointer.Parse("self");
+        Assert.AreEqual(ProjectLinks.GitHubOwner, owner);
+        Assert.AreEqual(ProjectLinks.GitHubRepo, repo);
+    }
+
+    [TestMethod]
+    public void ResolveSelfShouldLeaveOtherPointersAlone()
+    {
+        Assert.AreEqual("someone/fork/releases/latest",
+            UpdateManifestPointer.ResolveSelf("someone/fork/releases/latest"));
+        Assert.AreEqual(string.Empty, UpdateManifestPointer.ResolveSelf(null));
     }
 }

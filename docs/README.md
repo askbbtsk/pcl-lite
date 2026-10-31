@@ -6,7 +6,7 @@
 
 | 文档 | 讲什么 | 什么时候看 |
 | --- | --- | --- |
-| [CONTRIBUTE.md](CONTRIBUTE.md) | 贡献指南：fork、构建、`update.json` 怎么理解、代码规矩、PR 清单、常见坑 | **第一次提 PR 先看这个** |
+| [CONTRIBUTE.md](CONTRIBUTE.md) | 贡献指南：fork、构建、`update.json` 为什么不用改、代码规矩、PR 清单、常见坑 | **第一次提 PR 先看这个** |
 | [THEME.md](THEME.md) | 配色/主题系统：八级色阶怎么算、14 个预设、自定义主题参数、怎么加一个新主题 | 想改界面配色、想加主题 |
 | [CONFIG.md](CONFIG.md) | 配置文件在哪、YAML/JSON 长什么样、怎么手动改、改了怎么生效 | 想改配置、想查数据目录 |
 | [DISCORD.md](DISCORD.md) | Discord 状态显示：显示什么、隐私边界、换自己的应用、实现结构与测试方法 | 想开状态、想改显示内容 |

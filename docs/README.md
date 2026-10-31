@@ -15,6 +15,7 @@
 | [MCP.md](MCP.md) | 内置 MCP 服务，让 AI 客户端直接操作启动器 | 想接 Claude / Cursor / Cherry Studio |
 | [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md) | 主页语言 API：同一份主页内容按语言展示不同内容，兼容原版主页协议 | 想写多语言主页、想给页面加语言分支 |
 | [UPDATE.md](UPDATE.md) | 更新清单 `update.json`：为什么要有它、格式、发版时怎么改、换仓库怎么不翻车 | 要发版、要换仓库、更新检查出问题 |
+| [MIRROR.md](MIRROR.md) | 镜像仓库指南：怎么复制仓库、怎么搬 Release、怎么被列进更新清单、身份校验规则 | 想给更新链路做备份源、想当镜像 |
 | [CREDITS.md](CREDITS.md) | 开源项目清单：代码来源、第三方库、资源与各自的许可证 | 想知道哪段代码是谁的、想加新依赖 |
 
 ## 项目速览

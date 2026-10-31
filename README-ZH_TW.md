@@ -95,8 +95,8 @@ PCL Lite 始終建議使用最新版本的作業系統以獲得最佳體驗。
 完整的程式碼來源與第三方函式庫清單見[開源專案清單](docs/CREDITS.md)。
 
 ## ❤️ 致謝
-<img width="403" height="310" alt="ab4950f140f8c215f12435cd3dc3b667" src="https://github.com/user-attachments/assets/8fc63b73-d03c-4db3-8251-f93f7db93807" />
-<img width="832" height="573" alt="image" src="https://github.com/user-attachments/assets/4fe49f35-4de5-486f-9bdd-325fa22023a7" />
+<img width="403" height="310" alt="PCL 2 贊助相關聊天記錄" src="docs/assets/thanks/pcl2-sponsor-chat.png" />
+<img width="832" height="573" alt="PCL 2 升級模組分析" src="docs/assets/thanks/pcl2-backdoor-analysis.png" />
 
 參考文獻：https://zhuanlan.zhihu.com/p/347828430
 

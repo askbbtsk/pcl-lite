@@ -99,8 +99,8 @@ A complete inventory of code sources and third-party libraries is in
 [the open-source inventory](docs/CREDITS.md).
 
 ## ❤️ Credits
-<img width="403" height="310" alt="ab4950f140f8c215f12435cd3dc3b667" src="https://github.com/user-attachments/assets/8fc63b73-d03c-4db3-8251-f93f7db93807" />
-<img width="832" height="573" alt="image" src="https://github.com/user-attachments/assets/4fe49f35-4de5-486f-9bdd-325fa22023a7" />
+<img width="403" height="310" alt="PCL 2 sponsorship chat logs" src="docs/assets/thanks/pcl2-sponsor-chat.png" />
+<img width="832" height="573" alt="PCL 2 update module analysis" src="docs/assets/thanks/pcl2-backdoor-analysis.png" />
 
 Reference: https://zhuanlan.zhihu.com/p/347828430
 

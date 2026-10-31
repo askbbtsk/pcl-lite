@@ -97,8 +97,8 @@ PCL Lite 始终建议使用最新版本的操作系统以获得最佳体验。
 
 
 ## ❤️ 致谢
-<img width="403" height="310" alt="ab4950f140f8c215f12435cd3dc3b667" src="https://github.com/user-attachments/assets/8fc63b73-d03c-4db3-8251-f93f7db93807" />
-<img width="832" height="573" alt="image" src="https://github.com/user-attachments/assets/4fe49f35-4de5-486f-9bdd-325fa22023a7" />
+<img width="403" height="310" alt="PCL 2 赞助相关聊天记录" src="docs/assets/thanks/pcl2-sponsor-chat.png" />
+<img width="832" height="573" alt="PCL 2 升级模块分析" src="docs/assets/thanks/pcl2-backdoor-analysis.png" />
 
 参考文献:https://zhuanlan.zhihu.com/p/347828430
 

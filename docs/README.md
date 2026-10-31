@@ -56,5 +56,5 @@ PCL-CE/
   加文案要四个一起加，缺了会回退到 zh-CN。
 - **主页语言分支**不走语言文件，而是 `lang:` 标签 + 语言信封，见
   [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md)。想让主页按语言显示不同内容时用那套，不要往语言文件里塞整段 XAML。
-- **上游代码**在 `Plain Craft Launcher 2/` 与 `PCL.Core/` 里混合，改之前先用 `git log` 看这行是谁写的，
-  避免把上游的修复覆盖掉。
+- **历史代码**在 `Plain Craft Launcher 2/` 与 `PCL.Core/` 里混合，改之前先用 `git log` 看这行是谁写的、
+  为什么这么写，避免把早先的修复覆盖掉。

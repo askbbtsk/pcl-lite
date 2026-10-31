@@ -561,7 +561,7 @@ public class ModSetup
                 ModMain.frmMain.ShapeHMCLTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.ImageBrandLogo.Visibility = Visibility.Collapsed;
+                ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
                 if (ModMain.frmSetupUI is not null)
                 {
                     ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Visible;
@@ -573,16 +573,13 @@ public class ModSetup
             }
             case 1: // 默认
             {
-                // PLC 彩蛋（1/1000）命中时改显示 PCL 字标，平时显示 LITE 图标
-                var plcEasterEgg = ModMain.frmMain.PlcEasterEgg;
-                ModMain.frmMain.ShapeTitleLogo.Visibility =
-                    plcEasterEgg ? Visibility.Visible : Visibility.Collapsed;
-                ModMain.frmMain.ImageBrandLogo.Visibility =
-                    plcEasterEgg ? Visibility.Collapsed : Visibility.Visible;
+                ModMain.frmMain.ShapeTitleLogo.Visibility = Visibility.Visible;
                 ModMain.frmMain.BtnTitleHelp.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ShapeHMCLTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
+                // Lite 徽标只跟随默认的 PCL 字标出现
+                ModMain.frmMain.CELogo.Visibility = Visibility.Visible;
                 if (ModMain.frmSetupUI is not null)
                 {
                     ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed;
@@ -600,7 +597,7 @@ public class ModSetup
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Visible;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
                 // 自定义标题后面不强加 Lite 徽标
-                ModMain.frmMain.ImageBrandLogo.Visibility = Visibility.Collapsed;
+                ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
                 if (ModMain.frmSetupUI is not null)
                 {
                     ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed;
@@ -619,7 +616,7 @@ public class ModSetup
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Visible;
                 // 自定义标题后面不强加 Lite 徽标
-                ModMain.frmMain.ImageBrandLogo.Visibility = Visibility.Collapsed;
+                ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
                 if (ModMain.frmSetupUI is not null)
                 {
                     ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed;
@@ -648,7 +645,7 @@ public class ModSetup
                 ModMain.frmMain.ShapeHMCLTitleLogo.Visibility = Visibility.Visible;
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.ImageBrandLogo.Visibility = Visibility.Collapsed;
+                ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.BtnTitleHelp.Visibility = Visibility.Visible;
                 if (ModMain.frmSetupUI is not null) 
                 {

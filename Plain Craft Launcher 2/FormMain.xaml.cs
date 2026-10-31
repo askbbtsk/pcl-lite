@@ -27,12 +27,6 @@ public partial class FormMain
     // 愚人节鼠标位置
     public MouseEventArgs lastMouseArg;
 
-    /// <summary>
-    /// PLC 彩蛋是否命中（1/1000）。命中后标题栏改回 PCL 字标，
-    /// 平时显示的是 LITE 图标，见 <see cref="ModSetup.UiLogoType"/>。
-    /// </summary>
-    public bool PlcEasterEgg { get; private set; }
-
     private void FormMain_MouseMove(object sender, MouseEventArgs e)
     {
         lastMouseArg = e;
@@ -169,11 +163,8 @@ public partial class FormMain
             RemoveResizer();
         // PLC 彩蛋
         if (RandomUtils.NextInt(1, 1000) == 233)
-        {
-            PlcEasterEgg = true;
             ShapeTitleLogo.Data = (Geometry)new GeometryConverter().ConvertFromString(
                 "M26,29 v-25 h6 a7,7 180 0 1 0,14 h-6 M83,6.5 a10,11.5 180 1 0 0,18 M48,2.5 v24.5 h13.5");
-        }
         // 加载窗口
 
         ThemeManager.ThemeRefresh();

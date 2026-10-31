@@ -353,6 +353,19 @@ Lunar 账户库为空时（从没装过、或装了但没在 Lunar 启动器里�
 会按这个账号新建一份 `accounts.json`（已有内容一律不动）。
 只有 PCL 里也一个账号都没有，才兜底走一次主页面登录。
 
+> **`accounts.json` 恒在 `%USERPROFILE%\.lunarclient`，跟物料根目录无关。**
+> 设置里的「Lunar 根目录」只决定 `ui/`、`offline/multiver/`、`textures/` 这些**资源**
+> 从哪来（游戏通过 `--workingDirectory` 拿到）；`settings/game/accounts.json`、
+> `settings/launcher.json`、`launcher-cache/` 一律在用户目录下。证据是游戏日志里的
+> `[Bridge] Found JIT dir: C:\Users\<用户>\.lunarclient\jit` —— 物料在 D 盘、JIT 在 C 盘，
+> 两者本来就分开。所以所有账户库读写都走 `LunarClientService.SettingsRoot`，
+> **不能**跟着 `Config.Preference.Lunar.Root` 走。
+>
+> 踩过的坑：物料根设成 `D:\pcllitelunar` 后，账户库还跟着物料根走，于是 PCL 一直在改
+> `D:\pcllitelunar\settings\game\accounts.json` —— 一个游戏根本不看的文件。续期「成功」
+> 写进了 D 盘那份，游戏读的 C 盘那份 token 永远过期，它每秒重试一次，界面就卡在
+> `Connecting...` 不动。
+
 列 PCL 账号只是读本地档案（`ProfileService.Profiles`），**不会触发任何授权流程**，
 不会重新登录。只有「启动时发现这个档案的令牌过期」才会静默刷一次
 （`MicrosoftProvider.RefreshAsync`，用档案里已有的 `refreshToken`，同样不弹窗）。
@@ -434,15 +447,17 @@ RefreshAccountRequest.newBuilder()
 `UUID.getMostSignificantBits()` / `getLeastSignificantBits()`——和 Java 的
 UUID 文本一一对应，没有大小端花样（`high64` 就是前 16 个十六进制字符）。
 
-1.5.1 起匹配按这个顺序走，只要有一条命中就续期：
+1.5.1 起匹配按这个顺序走：
 
 1. `minecraftProfile.id`
 2. `localId`（万一哪天协议改传这个）
-3. **本次启动用的那个账号** —— 启动前已经把 `activeAccountLocalId` 切成它了，
-   游戏问「当前账号」时指的必然是它
 
-第 3 条是 1.5.0 报「账户库里没有这个 UUID」的兜底：账户库被 Lunar 启动器改过、
-或者文件正好写到一半，UUID 就可能对不上。命中兜底时日志里会写明。
+**两条都不命中就直接回失败，绝不拿别的账号顶替。** 1.5.1 曾经有第三条
+「按本次启动用的那个账号处理」，1.6.4-hotfix-4 删掉了 —— 顶替的代价是：
+我们回了 `success`，但刷新出来的令牌写进了**另一个**账号的条目，游戏回头重读
+自己要的那一条，发现还是过期的，于是再问一次，每秒一轮，界面永远停在
+`Connecting...`。宁可失败让游戏明确报错，也不能回这种假成功。
+
 另外账户库读出来是空的话会隔 200ms 重读一次 —— 游戏退出前会连续刷好几个 json，
 撞上写一半的窗口并不稀奇。
 

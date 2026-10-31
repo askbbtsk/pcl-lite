@@ -213,6 +213,25 @@ public static class LunarClientService
     public static string DefaultLunarRoot => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".lunarclient");
 
+    /// <summary>
+    ///     游戏真正读的那份设置目录，**恒为 <c>%USERPROFILE%\.lunarclient</c>**。
+    ///     <para>
+    ///         物料根（<see cref="DefaultLunarRoot" />，或设置里自定义的目录）只决定
+    ///         <c>ui/</c>、<c>offline/multiver/</c>、<c>textures/</c> 这些资源从哪来；
+    ///         <c>settings/game/accounts.json</c>、<c>settings/launcher.json</c>、
+    ///         <c>launcher-cache/</c> 一律在用户目录下，跟物料根没有关系。
+    ///         游戏日志里的 <c>[Bridge] Found JIT dir: C:\Users\xxx\.lunarclient\jit</c>
+    ///         就是证据 —— 资源走 <c>--workingDirectory</c>，设置走用户目录。
+    ///     </para>
+    ///     <para>
+    ///         踩过的坑：物料根设成 <c>D:\pcllitelunar</c> 之后，账户库的读写还跟着物料根走，
+    ///         于是 PCL 一直在改一个游戏根本不看的文件。续期「成功」写进了 D 盘那份，
+    ///         游戏读的 <c>~/.lunarclient</c> 那份 token 永远是过期的，它每秒重试一次，
+    ///         界面就卡在 <c>Connecting...</c>。
+    ///     </para>
+    /// </summary>
+    public static string SettingsRoot => DefaultLunarRoot;
+
     /// <summary>物料缓存目录，与 Lunar 启动器自己用的位置一致，可复用已下好的文件。</summary>
     public static string MultiverDirectory(string lunarRoot) =>
         Path.Combine(lunarRoot, "offline", "multiver");

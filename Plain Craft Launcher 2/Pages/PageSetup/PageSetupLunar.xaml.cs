@@ -80,7 +80,7 @@ public partial class PageSetupLunar
 
             // 官方启动器那份设置只读不写：PCL 没填的时候沿用它，
             // 这样「Lunar 启动器里设的 8G」不会在换 PCL 启动时凭空变成 3G
-            _lunarLauncher = LunarLauncherConfig.Read(LunarLauncherConfig.ResolveRoot(lunar.Root));
+            _lunarLauncher = LunarLauncherConfig.Read(LunarClientService.SettingsRoot);
             TextMemory.Text = _DisplayedMemory(lunar.MemoryMb).ToString();
 
             RefreshVersionCombo();
@@ -341,7 +341,7 @@ public partial class PageSetupLunar
     /// </summary>
     private void BtnLoadLunarMemory_Click(object sender, EventArgs e)
     {
-        _lunarLauncher = LunarLauncherConfig.Read(LunarLauncherConfig.ResolveRoot(Config.Preference.Lunar.Root));
+        _lunarLauncher = LunarLauncherConfig.Read(LunarClientService.SettingsRoot);
 
         if (!_lunarLauncher.HasMemory)
         {

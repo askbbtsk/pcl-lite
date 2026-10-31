@@ -408,7 +408,7 @@ public static class ModLunar
     /// <summary>重新读一遍 Lunar 的账户库。</summary>
     public static void RefreshAccounts()
     {
-        var snapshot = LunarAccountStore.Read(LunarRoot);
+        var snapshot = LunarAccountStore.Read(LunarClientService.SettingsRoot);
         _accounts = snapshot.Accounts;
         _activeAccountLocalId = snapshot.ActiveLocalId;
     }
@@ -566,7 +566,7 @@ public static class ModLunar
         }
 
         var localId = Guid.NewGuid().ToString("N");
-        if (!LunarAccountStore.CreateIfMissing(LunarRoot, localId, playerName, playerName, uuid,
+        if (!LunarAccountStore.CreateIfMissing(LunarClientService.SettingsRoot, localId, playerName, playerName, uuid,
                 accessToken, null))
         {
             Log("账户库不存在，自动创建失败 —— 游戏内可能没有身份，联机会失败");
@@ -1422,7 +1422,7 @@ public static class ModLunar
         {
             // 游戏进程读的是 Lunar 自己的激活账号，这里同步一下，
             // 否则「界面上选的是 A、进游戏是 B」
-            if (LunarAccountStore.SetActive(LunarRoot, account.LocalId))
+            if (LunarAccountStore.SetActive(LunarClientService.SettingsRoot, account.LocalId))
             {
                 _launchedLocalId = account.LocalId;
                 Log($"账号：{account.DisplayName}（Lunar 账户库，{account.Type}）");
@@ -1549,13 +1549,13 @@ public static class ModLunar
             }
         }
 
-        if (twin is not null && LunarAccountStore.SetActive(LunarRoot, twin.LocalId))
+        if (twin is not null && LunarAccountStore.SetActive(LunarClientService.SettingsRoot, twin.LocalId))
         {
             _launchedLocalId = twin.LocalId;
             Log($"Lunar 账户库里有同一个 UUID 的账号，激活账号已切过去（{twin.LocalId}）");
         }
         else if (!string.IsNullOrWhiteSpace(token) &&
-                 LunarAccountStore.Upsert(LunarRoot, Guid.NewGuid().ToString("N"), profile.UserName,
+                 LunarAccountStore.Upsert(LunarClientService.SettingsRoot, Guid.NewGuid().ToString("N"), profile.UserName,
                      profile.UserName, uuid.Replace("-", string.Empty), token, tokenExpiresAt))
         {
             // 账户库里没有这个号：直接补一条并切过去。以前这里只写日志然后照旧启动，
@@ -1649,10 +1649,10 @@ public static class ModLunar
     /// <summary>
     ///     在账户库里找到这次要续期的账号。
     ///     <para>
-    ///         按可靠性从高到低试三种认法：UUID → <c>localId</c> → 本次启动用的那个。
-    ///         最后那条不是瞎猜：启动前已经把 Lunar 的激活账号切成了它，游戏问「当前账号」
-    ///         时指的必然是它。只有账户库里真有多个账号、且请求的 UUID 一个都对不上时
-    ///         才会走到那里，日志里会写明是兜底命中的。
+    ///         只按 UUID 和 <c>localId</c> 认，**绝不拿别的账号顶替**。
+    ///         顶替的代价是：我们回了 <c>success</c>，但刷新出来的令牌写进了另一个账号的条目，
+    ///         游戏回头重读自己要的那一条，发现还是过期的，于是再问一次 —— 每秒一轮，
+    ///         界面永远停在 <c>Connecting...</c>。宁可失败让游戏明确报错，也不能回这种假成功。
     ///     </para>
     /// </summary>
     private static LunarAccount? FindRefreshTarget(string wantedUuid)
@@ -1665,19 +1665,8 @@ public static class ModLunar
             string.Equals(NormalizeUuid(x.LocalId), wantedUuid, StringComparison.OrdinalIgnoreCase));
         if (byLocalId is not null) return byLocalId;
 
-        if (!string.IsNullOrWhiteSpace(_launchedLocalId))
-        {
-            var launched = _accounts.FirstOrDefault(x => x.LocalId == _launchedLocalId);
-            if (launched is not null)
-            {
-                Log($"[续期] 请求的 UUID {wantedUuid} 不在账户库里，" +
-                    $"按本次启动用的账号 {launched.DisplayName}（{launched.MinecraftUuid}）处理");
-                return launched;
-            }
-        }
-
-        // 只有一个账号时也不用猜
-        return _accounts.Count == 1 ? _accounts[0] : null;
+        Log($"[续期] 账户库里没有 UUID {wantedUuid}（现有：{DescribeAccountUuids()}），不顶替，直接回失败");
+        return null;
     }
 
     /// <summary>
@@ -1739,7 +1728,7 @@ public static class ModLunar
                               ? Guid.NewGuid().ToString("N")
                               : _launchedLocalId);
 
-            if (!LunarAccountStore.Upsert(LunarRoot, localId, profile.UserName, profile.UserName,
+            if (!LunarAccountStore.Upsert(LunarClientService.SettingsRoot, localId, profile.UserName, profile.UserName,
                     uuid, token, expiresAt))
             {
                 Log("[Lunar IPC] 写 Lunar 账户库失败，账号没能交给游戏");
@@ -1857,7 +1846,7 @@ public static class ModLunar
         }
 
         // 游戏进程读的是 accounts.json，命令行里的令牌只是兜底，所以必须写回去
-        var written = LunarAccountStore.UpdateToken(LunarRoot, account.LocalId, token, expiresAt);
+        var written = LunarAccountStore.UpdateToken(LunarClientService.SettingsRoot, account.LocalId, token, expiresAt);
         RefreshAccounts();
 
         return new LunarTokenRefresh(token, expiresAt, written

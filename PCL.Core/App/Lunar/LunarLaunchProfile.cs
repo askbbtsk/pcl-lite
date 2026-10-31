@@ -208,7 +208,7 @@ public static class LunarLaunchProfile
         LunarLauncherSettings? lunarLauncher = null)
     {
         var lunarConfig = Config.Preference.Lunar;
-        var native = lunarLauncher ?? LunarLauncherConfig.Read(LunarLauncherConfig.ResolveRoot(lunarConfig.Root));
+        var native = lunarLauncher ?? LunarLauncherConfig.Read(LunarClientService.SettingsRoot);
 
         // 内存：Lunar 全局 > 官方启动器 > PCL 全局 > 内置默认
         //

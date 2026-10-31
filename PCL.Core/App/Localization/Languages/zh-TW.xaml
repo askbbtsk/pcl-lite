@@ -3762,6 +3762,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Lunar.Tip.PickRoot">選 Lunar 物料根目錄</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetRoot">恢復預設（~/.lunarclient）</sys:String>
     <sys:String x:Key="Lunar.Ipc.AddAccount">遊戲裡點了「新增帳號」。PCL 不能代替遊戲登入，請在這裡登入微軟帳號後再啟動。</sys:String>
+    <sys:String x:Key="Lunar.Ipc.AddAccountProvided">已把 PCL 目前登入的帳號交給遊戲，回到遊戲即可繼續。</sys:String>
     <sys:String x:Key="Lunar.Ipc.LaunchGame">遊戲請求切換到 {0}。請在啟動頁確認版本後重新啟動。</sys:String>
     <sys:String x:Key="Lunar.Ipc.LaunchUnknown">（未指定版本）</sys:String>
 </ResourceDictionary>

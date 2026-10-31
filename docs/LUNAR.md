@@ -663,7 +663,7 @@ Lunar 是往 `ProcessStartInfo.ArgumentList` 里逐项塞的，
 | 服务（`lunarclient.gameipc.` 前缀） | RPC | PCL | 说明 |
 | --- | --- | --- | --- |
 | `auth.v1.AuthService` | `RefreshAccount` | ✅ | 用 PCL 登录的微软账号刷令牌写回 `accounts.json` |
-| `auth.v1.AuthService` | `AddAccount` | 🟡 | 把窗口切到启动页并提示去登录，回 `success = false` |
+| `auth.v1.AuthService` | `AddAccount` | ✅ | 把 PCL 当前登录的账号写进 `accounts.json` 并切成激活账号，回 `success = true`；PCL 里没有可用账号时回失败。**不动主界面**（官方也不动） |
 | `browser.v1.BrowserService` | `OpenUrl` | ✅ | 用系统默认浏览器打开（只放行 http / https） |
 | `chat.v1.ChatService` | `ReceiveMessage` | 🟡 | 落到日志，PCL 没有启动器聊天面板 |
 | `launch.v1.LaunchService` | `LaunchGame` | 🟡 | 解析版本 / 模块 / 服务器并提示，**不自动杀进程重启** |

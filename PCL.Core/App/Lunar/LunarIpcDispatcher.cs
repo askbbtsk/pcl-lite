@@ -19,8 +19,12 @@ public interface ILunarIpcHost
     /// </summary>
     bool OpenUrl(string url, LunarUrlInitiator initiator, LunarOpenType openType);
 
-    /// <summary>游戏内点了「添加账号」。PCL 不能替游戏登录，只能把用户带到账号页。</summary>
-    void RequestAddAccount();
+    /// <summary>
+    ///     游戏内点了「添加账号」。官方启动器在这里弹自己的登录窗口，PCL 没有那套 UI，
+    ///     但会把已经登录的账号写进 Lunar 账户库并切成激活账号。
+    ///     返回是否真的交出了一个账号。
+    /// </summary>
+    bool RequestAddAccount();
 
     /// <summary>
     ///     游戏内请求「换版本重开」。
@@ -105,13 +109,15 @@ internal static class LunarIpcDispatcher
         // RefreshAccount 在 LunarIpcServer 里单独处理（要拿令牌、要落盘），到不了这里
         if (request.Method != "AddAccount") return Unknown(request, log);
 
-        // 官方启动器是调自己的 auth 模块加号；PCL 的账号只能在 PCL 里加，
-        // 所以这里只能把用户带到账号页，然后老实回 success = false。
-        log("游戏请求添加账号：PCL 不能代替游戏登录，已把窗口切到账号页");
-        host?.RequestAddAccount();
+        // 官方启动器是弹自己的登录窗口；PCL 没有那套 UI，但游戏真正认的是
+        // accounts.json，所以这里改成「把 PCL 已经登录的账号写进账户库」，
+        // 写成功就回 success = true —— 游戏重新读一遍就有账号了。
+        var success = host?.RequestAddAccount() ?? false;
+        log(success
+            ? "游戏请求添加账号：已把 PCL 当前账号写进 Lunar 账户库，回 success"
+            : "游戏请求添加账号：PCL 里没有可用账号，回 success = false");
 
-        // AddAccountResponse { success: false, error: UNSPECIFIED } —— 全是默认值
-        return [];
+        return LunarIpcProtocol.EncodeAddAccountResponse(success);
     }
 
     #endregion

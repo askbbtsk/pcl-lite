@@ -33,7 +33,7 @@ public class LunarIpcEndToEndTest
             return true;
         }
 
-        public void RequestAddAccount() { }
+        public bool RequestAddAccount() => false;
 
         public void RequestLaunchGame(string version, string module, string serverIp, int launchSource) { }
     }

@@ -155,6 +155,11 @@ public partial class PageLunarLeft
 
     private static void PageChangeRun(MyPageRight target)
     {
+        // 主页面已经不是 Lunar 了（比如游戏内点「添加账号」把界面切走了），
+        // 这次分页切换就已经过期：再写 PanMainRight.Child 会把右栏拽回 Lunar 页，
+        // 和左栏对不上，用户看到的就是两栏撕裂。
+        if (ModMain.frmMain.pageCurrent.page != FormMain.PageType.Lunar) return;
+
         ModAnimation.AniStop("FrmMain PageChangeRight");
         if (target.Parent is not null)
             target.SetValue(System.Windows.Controls.ContentPresenter.ContentProperty, null);

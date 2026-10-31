@@ -1681,6 +1681,84 @@ public static class ModLunar
     }
 
     /// <summary>
+    ///     把 PCL 当前登录的账号写进 Lunar 账户库并切成激活账号，供游戏内的
+    ///     <c>AuthService/AddAccount</c> 使用。
+    ///     <para>
+    ///         官方启动器收到这个请求时弹自己的登录窗口；PCL 没有那套 UI，但游戏
+    ///         真正认的身份来源就是 <c>accounts.json</c>，所以「把已经有的账号补进去」
+    ///         等价于官方那条路的结果 —— 游戏重新读一遍文件就有账号了。
+    ///     </para>
+    /// </summary>
+    /// <returns>真的交出了一个账号返回 <c>true</c>。</returns>
+    public static bool TryProvideAccountToStore()
+    {
+        try
+        {
+            var profile = ProfileService.Current is { ProfileType: ProfileType.Microsoft } current &&
+                          !string.IsNullOrWhiteSpace(current.AccessToken)
+                ? current
+                : PclProfiles.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.AccessToken));
+
+            if (profile is null || string.IsNullOrWhiteSpace(profile.AccessToken))
+            {
+                Log("[Lunar IPC] 游戏请求添加账号，但 PCL 里没有登录任何可用账号");
+                return false;
+            }
+
+            var token = profile.AccessToken;
+            var expiresAt = profile.ExpiresAt;
+            if (profile.IsExpired)
+            {
+                // 交给游戏的一定得是还能用的令牌，否则进游戏就是 Invalid session
+                try
+                {
+                    var refreshed = new MicrosoftProvider()
+                        .RefreshAsync(profile, CancellationToken.None)
+                        .GetAwaiter().GetResult();
+                    if (!string.IsNullOrWhiteSpace(refreshed.AccessToken))
+                    {
+                        token = refreshed.AccessToken;
+                        expiresAt = refreshed.ExpiresAt ?? expiresAt;
+                        ProfileService.ApplyAuthenticationResult(refreshed, profile, select: false);
+                        Log($"[Lunar IPC] 账号令牌已刷新，到期 {refreshed.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("[Lunar IPC] 刷新令牌失败，仍然交出旧令牌：" + ex.Message);
+                }
+            }
+
+            var uuid = NormalizeUuid(profile.Uuid).Replace("-", string.Empty);
+            RefreshAccounts();
+            var twin = _accounts.FirstOrDefault(x =>
+                string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
+            // 复用已有的 localId：游戏记的是这个 id，换一个新的等于凭空多出一个账号
+            var localId = twin?.LocalId ??
+                          (string.IsNullOrWhiteSpace(_launchedLocalId)
+                              ? Guid.NewGuid().ToString("N")
+                              : _launchedLocalId);
+
+            if (!LunarAccountStore.Upsert(LunarRoot, localId, profile.UserName, profile.UserName,
+                    uuid, token, expiresAt))
+            {
+                Log("[Lunar IPC] 写 Lunar 账户库失败，账号没能交给游戏");
+                return false;
+            }
+
+            RefreshAccounts();
+            _launchedLocalId = localId;
+            Log($"[Lunar IPC] 已把账号 {profile.UserName}（{localId}）写进 Lunar 账户库并切成激活账号");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar IPC] 把账号写进 Lunar 账户库时出错", ModBase.LogLevel.Debug);
+            return false;
+        }
+    }
+
+    /// <summary>
     ///     找 PCL 里对应的登录。**先按 UUID 认，再按名字认** ——
     ///     改过名的账号 UUID 不变，只比名字会认错人。
     /// </summary>

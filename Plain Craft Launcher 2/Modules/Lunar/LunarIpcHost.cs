@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using PCL.Core.App.Localization;
 using PCL.Core.App.Lunar;
 
@@ -14,6 +15,11 @@ namespace PCL;
 /// </summary>
 internal sealed class LunarIpcHost : ILunarIpcHost
 {
+    /// <summary>「添加账号」提示的最小间隔，游戏会连着发好几条。</summary>
+    private const long AddAccountHintIntervalMs = 3000;
+
+    private static long _lastAddAccountHint;
+
     /// <summary>
     ///     游戏内点链接（商店 / 公告 / 帮助 / 社交链接）。用系统默认浏览器打开。
     ///     <para>
@@ -36,16 +42,32 @@ internal sealed class LunarIpcHost : ILunarIpcHost
     }
 
     /// <summary>
-    ///     游戏内点了「添加账号」。PCL 没法代替游戏登录，只能把用户带到能加账号的地方，
-    ///     然后由分派层回 <c>success = false</c> —— 游戏侧会提示登录失败，这是实话。
+    ///     游戏内点了「添加账号」。官方启动器在这里弹自己的登录窗口，**不动主界面**。
+    ///     <para>
+    ///         PCL 没有那套登录窗口，但游戏真正认的是
+    ///         <c>~/.lunarclient/settings/game/accounts.json</c>，所以这里改成
+    ///         「把 PCL 已经登录的账号写进账户库并切成激活账号」，成功就回
+    ///         <c>success = true</c>，游戏重新读一遍就有账号了。
+    ///     </para>
+    ///     <para>
+    ///         以前这里会把主界面切到启动页 —— 那既不是官方行为，又会把 Lunar 页
+    ///         撕成「左栏 Lunar、右栏启动页」的两半，游戏内点一次加号就报一次错。
+    ///         现在完全不碰页面。
+    ///     </para>
     /// </summary>
-    public void RequestAddAccount()
+    public bool RequestAddAccount()
     {
-        ModBase.RunInUi(() =>
-        {
-            ModMain.frmMain.PageChange(FormMain.PageType.Launch);
-            HintService.Hint(Lang.Text("Lunar.Ipc.AddAccount"), HintType.Info);
-        });
+        var provided = ModLunar.TryProvideAccountToStore();
+
+        // 游戏会连着发好几条，别弹一串一样的提示
+        var now = Environment.TickCount64;
+        if (now - Interlocked.Read(ref _lastAddAccountHint) < AddAccountHintIntervalMs) return provided;
+        Interlocked.Exchange(ref _lastAddAccountHint, now);
+
+        ModBase.RunInUi(() => HintService.Hint(
+            Lang.Text(provided ? "Lunar.Ipc.AddAccountProvided" : "Lunar.Ipc.AddAccount"),
+            provided ? HintType.Success : HintType.Info));
+        return provided;
     }
 
     /// <summary>
@@ -64,10 +86,7 @@ internal sealed class LunarIpcHost : ILunarIpcHost
 
         ModBase.Log($"[Lunar IPC] 游戏请求重开：{target}（launchSource={launchSource}）");
 
-        ModBase.RunInUi(() =>
-        {
-            ModMain.frmMain.PageChange(FormMain.PageType.Launch);
-            HintService.Hint(Lang.Text("Lunar.Ipc.LaunchGame", target), HintType.Info);
-        });
+        // 同样不切页面：切页会把 Lunar 页撕成两半，提示到就够了。
+        ModBase.RunInUi(() => HintService.Hint(Lang.Text("Lunar.Ipc.LaunchGame", target), HintType.Info));
     }
 }

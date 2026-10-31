@@ -183,6 +183,25 @@ internal static class LunarIpcProtocol
         return stream.ToArray();
     }
 
+    /// <summary>
+    ///     拼 <c>AddAccountResponse</c>。
+    ///     <para>
+    ///         字段是 <c>bool success = 1</c> 与 <c>AccountError error = 2</c>，
+    ///         失败时官方也只给 <c>ACCOUNT_ERROR_UNSPECIFIED = 0</c>，默认值不编码，
+    ///         所以这里只有成功与否的区别。
+    ///     </para>
+    /// </summary>
+    public static byte[] EncodeAddAccountResponse(bool success)
+    {
+        // 失败时 success = false、error = 0 都是默认值，按 protobuf 惯例整个不编码，
+        // 游戏解出来就是 { success: false, error: UNSPECIFIED }，和官方那条失败分支一致。
+        if (!success) return [];
+
+        using var stream = new MemoryStream();
+        WriteBool(stream, 1, true);
+        return stream.ToArray();
+    }
+
     #endregion
 
     #region 解码

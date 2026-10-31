@@ -38,7 +38,13 @@ public class LunarIpcDispatcherTest
             return AcceptUrls;
         }
 
-        public void RequestAddAccount() => AddAccountCalls++;
+        public bool AcceptAddAccount { get; set; }
+
+        public bool RequestAddAccount()
+        {
+            AddAccountCalls++;
+            return AcceptAddAccount;
+        }
 
         public void RequestLaunchGame(string version, string module, string serverIp, int launchSource) =>
             Launches.Add((version, module, serverIp, launchSource));
@@ -130,8 +136,19 @@ public class LunarIpcDispatcherTest
         var host = new FakeHost();
         var output = Dispatch(LunarIpcProtocol.AuthService, "AddAccount", [], host);
 
-        // AddAccountResponse { success: false, error: UNSPECIFIED } —— 全是默认值
+        // 拿不出账号时：AddAccountResponse { success: false, error: UNSPECIFIED } —— 全是默认值
         Assert.AreEqual(0, output.Length);
+        Assert.AreEqual(1, host.AddAccountCalls);
+    }
+
+    [TestMethod]
+    public void AddAccount_ShouldReportSuccessWhenHostProvidesAccount()
+    {
+        var host = new FakeHost { AcceptAddAccount = true };
+        var output = Dispatch(LunarIpcProtocol.AuthService, "AddAccount", [], host);
+
+        // success = 1（字段 1，varint）→ 08 01
+        CollectionAssert.AreEqual(new byte[] { 0x08, 0x01 }, output);
         Assert.AreEqual(1, host.AddAccountCalls);
     }
 

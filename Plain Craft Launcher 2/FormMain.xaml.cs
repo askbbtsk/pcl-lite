@@ -1687,8 +1687,12 @@ public partial class FormMain
             // 切换到主页面
             PageChangeExit();
             isChangingPage = true; // 防止下面的勾选直接触发了 PageChangeActual
-            ((MyRadioButton)PanTitleSelect.Children[(int)stack.page]).SetChecked(true, true,
-                string.IsNullOrEmpty(PageNameGet(pageCurrent)));
+            // 必须按 Tag 找标题栏按钮，不能用 Children[(int)stack.page]：
+            // Lunar 是后加进来的标签，Tag 是 13，插在 Children 的第 4 位，
+            // 索引和枚举值早就不一一对应了，用索引会点亮错误的标签（或者直接越界）。
+            var titleButton = PanTitleSelect.Children.OfType<MyRadioButton>()
+                .FirstOrDefault(x => x.Tag is not null && ModBase.Val(x.Tag) == (double)stack.page);
+            titleButton?.SetChecked(true, true, string.IsNullOrEmpty(PageNameGet(pageCurrent)));
             isChangingPage = false;
             switch (stack.page)
             {
@@ -2035,46 +2039,54 @@ public partial class FormMain
         ((MyPageLeft)PanMainLeft.Child).TriggerHideAnimation();
         ((MyPageRight)PanMainRight.Child).PageOnExit();
         ModAnimation.AniControlEnabled -= 1;
-        // 执行动画
+
+        // 左右两栏必须在同一个动画里换掉，而且要用局部变量捕获目标页：
+        // 以前是左右各起一组动画，各自在 110ms 后换自己那一半，只要其中一组被
+        // AniStop（PageLunarLeft 等切分页时会停 "FrmMain PageChangeRight"），
+        // 或者 pageLeft/pageRight 字段在中途被改写，就会剩下
+        // 「左栏还是旧页、右栏已经是新页」的撕裂界面 —— 游戏内点「添加账号」
+        // 把界面从 Lunar 页切走时，用户看到的就是这个样子。
+        var newLeft = (MyPageLeft)targetLeft;
+        var newRight = (MyPageRight)targetRight;
         ModAnimation.AniStart(new[]
         {
             ModAnimation.AaCode(() =>
             {
                 ModAnimation.AniControlEnabled += 1;
-                // 把新页面添加进容器
-                PanMainLeft.Child = pageLeft;
-                pageLeft.Opacity = 0d;
-                PanMainLeft.Background = null;
-                ModAnimation.AniControlEnabled -= 1;
-                ModBase.RunInUi(() => PanMainLeft_Resize(PanMainLeft.ActualWidth), true);
+                try
+                {
+                    ((MyPageRight)PanMainRight.Child)?.PageOnForceExit();
+                    // 把两栏一起换进容器
+                    PanMainLeft.Child = newLeft;
+                    newLeft.Opacity = 0d;
+                    PanMainLeft.Background = null;
+                    PanMainRight.Child = newRight;
+                    newRight.Opacity = 0d;
+                    PanMainRight.Background = null;
+                }
+                finally
+                {
+                    ModAnimation.AniControlEnabled -= 1;
+                }
+
+                ModBase.RunInUi(() =>
+                {
+                    PanMainLeft_Resize(PanMainLeft.ActualWidth);
+                    BtnExtraBack.ShowRefresh();
+                }, true);
             }, 110),
             ModAnimation.AaCode(() =>
             {
                 // 延迟触发页面通用动画，以使得在 Loaded 事件中加载的控件得以处理
-                pageLeft.Opacity = 1d;
-                pageLeft.TriggerShowAnimation();
+                newLeft.Opacity = 1d;
+                newLeft.TriggerShowAnimation();
+            }, 30, true),
+            ModAnimation.AaCode(() =>
+            {
+                newRight.Opacity = 1d;
+                newRight.PageOnEnter();
             }, 30, true)
         }, "FrmMain PageChangeLeft");
-        ModAnimation.AniStart(new[]
-        {
-            ModAnimation.AaCode(() =>
-            {
-                ModAnimation.AniControlEnabled += 1;
-                ((MyPageRight)PanMainRight.Child).PageOnForceExit();
-                // 把新页面添加进容器
-                PanMainRight.Child = pageRight;
-                pageRight.Opacity = 0d;
-                PanMainRight.Background = null;
-                ModAnimation.AniControlEnabled -= 1;
-                ModBase.RunInUi(() => BtnExtraBack.ShowRefresh(), true);
-            }, 110),
-            ModAnimation.AaCode(() =>
-            {
-                // 延迟触发页面通用动画，以使得在 Loaded 事件中加载的控件得以处理
-                pageRight.Opacity = 1d;
-                pageRight.PageOnEnter();
-            }, 30, true)
-        }, "FrmMain PageChangeRight");
     }
 
     /// <summary>

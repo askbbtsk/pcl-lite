@@ -7,6 +7,7 @@ using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.Logging;
 using PCL.Core.UI;
+using PCL.Core.Utils.OS;
 using PCL.Core.Utils.Validate;
 using PCL.Network;
 
@@ -172,7 +173,8 @@ public partial class PageSelectLeft : IRefreshable
                     Type = MyListItem.CheckType.RadioBox,
                     MinPaddingRight = 30,
                     Title = folder.Name,
-                    Info = folder.Location,
+                    // 副标题是文件夹完整路径，显示前按「用户文件夹名打码」处理（个性化里可关）
+                    Info = UserPathMasker.Apply(folder.Location),
                     Height = 40,
                     ContextMenu = contMenu,
                     Tag = folder

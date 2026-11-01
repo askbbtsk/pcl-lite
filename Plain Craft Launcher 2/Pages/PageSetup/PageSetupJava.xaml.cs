@@ -5,6 +5,7 @@ using System.Windows.Media;
 using PCL.Core.App;
 using PCL.Core.Minecraft;
 using PCL.Core.UI;
+using PCL.Core.Utils.OS;
 using PCL.Core.App.Localization;
 
 namespace PCL;
@@ -73,7 +74,8 @@ public partial class PageSetupJava
         var versionNameDesc = j.Installation.MajorVersion.ToString();
         item.Title = $"{versionTypeDesc} {versionNameDesc}";
 
-        item.Info = j.Installation.JavaFolder;
+        // 副标题是完整路径，显示前要按「用户文件夹名打码」处理（个性化里可关）
+        item.Info = UserPathMasker.Apply(j.Installation.JavaFolder);
         var displayTags = new List<string>();
         var displayBits = j.Installation.Is64Bit ? "64 Bit" : "32 Bit";
         displayTags.Add(displayBits);

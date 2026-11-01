@@ -34,13 +34,4 @@ public static class McLogFilter
     ///     </para>
     /// </summary>
     public static string FilterUserName(string raw) => UserPathMasker.MaskUserFolders(raw);
-
-    /// <summary>
-    ///     界面显示用：跟随个性化里的「用户文件夹名打码」开关。
-    ///     <para>
-    ///         和 <see cref="FilterUserName" /> 分开是有意的：崩溃报告是要发给别人看的，
-    ///         不管开关怎么设都必须打码；而屏幕上显示什么，由用户自己决定。
-    ///     </para>
-    /// </summary>
-    public static string FilterUserNameForDisplay(string raw) => UserPathMasker.Apply(raw);
 }

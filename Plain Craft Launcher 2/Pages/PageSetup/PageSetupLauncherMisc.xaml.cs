@@ -106,7 +106,6 @@ public partial class PageSetupLauncherMisc
 
         // Discord 状态显示
         CheckDiscordEnabled.Checked = Config.Discord.Enabled;
-        TextDiscordAppId.Text = Config.Discord.AppId;
         var discordFields = (Config.Discord.Fields ?? "")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -648,15 +647,6 @@ public partial class PageSetupLauncherMisc
         LabDiscordStatus.SetResourceReference(TextBlock.ForegroundProperty, brush);
     }
 
-    private void DiscordAppId_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (ModAnimation.AniControlEnabled != 0) return;
-        var text = TextDiscordAppId.Text.Trim();
-        if (Config.Discord.AppId == text) return;
-        Config.Discord.AppId = text;
-        DiscordRichPresenceService.RequestRefresh();
-    }
-
     /// <summary>
     ///     任意一个显示项变化都重算整串配置。
     /// </summary>
@@ -691,11 +681,6 @@ public partial class PageSetupLauncherMisc
     {
         DiscordRichPresenceService.ClearActivity();
         UpdateDiscordStatus();
-    }
-
-    private void BtnDiscordPortal_Click(object sender, MouseButtonEventArgs e)
-    {
-        ModBase.OpenWebsite("https://discord.com/developers/applications");
     }
 
     #endregion

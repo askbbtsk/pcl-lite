@@ -231,7 +231,13 @@ public sealed class DiscordIpcClient : IDisposable
                     && body.Contains("\"evt\":\"ERROR\"", StringComparison.OrdinalIgnoreCase))
                 {
                     _lastError = _ExtractMessage(body) ?? "Discord 返回错误";
-                    // 常见于 activity 字段超长或含非法字符，断开后由上层决定是否重连
+
+                    // 限流是暂时状态，管道本身没坏。断开会把状态空白拉得更长，
+                    // 而等限流窗口过去，下一轮 tick 自然就恢复了。
+                    if (_IsRateLimited(body)) continue;
+
+                    // 其余错误（activity 字段非法、应用 ID 被拒等）重连也救不回来，
+                    // 但留着一条被拒的连接更没意义，交给上层断开并按退避重试
                     Disconnected?.Invoke(_lastError!);
                     return;
                 }
@@ -304,6 +310,15 @@ public sealed class DiscordIpcClient : IDisposable
             return null;
         }
     }
+
+    /// <summary>
+    ///     这条 ERROR 是不是限流。Discord 的措辞随版本变过（<c>rate limited</c> /
+    ///     <c>rate_limit</c> / <c>You are being rate limited.</c>），按关键字判比按 code 稳。
+    /// </summary>
+    private static bool _IsRateLimited(string body) =>
+        body.Contains("rate limit", StringComparison.OrdinalIgnoreCase) ||
+        body.Contains("rate_limit", StringComparison.OrdinalIgnoreCase) ||
+        body.Contains("rate-limit", StringComparison.OrdinalIgnoreCase);
 
     #endregion
 

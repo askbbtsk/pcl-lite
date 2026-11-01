@@ -282,23 +282,7 @@
                                Text="当前已关闭。打开开关就能用，不需要额外配置——应用 ID 已经内置好了。" />
 
                     <StackPanel x:Name="PanDiscordOptions" Margin="0,14,0,0" Visibility="Collapsed">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" SharedSizeGroup="Name1" />
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="应用 ID" Margin="0,0,20,0" />
-                            <local:MyTextBox x:Name="TextDiscordAppId" Grid.Column="1"
-                                             HintText="已内置官方应用 ID，一般不用改"
-                                             ToolTip="默认已填好 PCL Lite 自己的 Discord 应用，开箱即用。&#xA;想换成自己的应用就替换成你的 Application ID（不是机器人 Token，填错不会泄露账号）。&#xA;清空则不会连接 Discord。"
-                                             TextChanged="DiscordAppId_TextChanged" />
-                            <local:MyButton Grid.Column="2" Text="开发者门户" TextPadding="3" Margin="10,0,0,0"
-                                            ToolTip="打开 discord.com/developers/applications，点 New Application，名字随意。"
-                                            Click="BtnDiscordPortal_Click" />
-                        </Grid>
-
-                        <TextBlock Margin="0,18,0,8" Text="显示内容（可多选）" />
+                        <TextBlock Margin="0,0,0,8" Text="显示内容（可多选）" />
                         <WrapPanel>
                             <local:MyCheckBox x:Name="CheckDiscordLauncherVersion" Margin="0,0,24,8"
                                               Text="启动器版本"

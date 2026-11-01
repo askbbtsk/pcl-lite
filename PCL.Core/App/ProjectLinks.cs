@@ -121,6 +121,19 @@ public static class ProjectLinks
     public const string ManifestV1FileName = "update.json";
 
     /// <summary>
+    /// 公告文件名。和清单放在同一个仓库、同一个分支，所以走的是同一套多通道抢答。
+    /// <para>
+    /// 单独一个文件而不是塞进清单里：清单的解析器对形状很严（顶层多一个字符串值就判失败），
+    /// 而且清单只在仓库搬家时才改，公告却要随时能发。分开之后管理员编辑这个文件就等于
+    /// 发了一条公告，不用发版、不用动清单。
+    /// </para>
+    /// <para>
+    /// 文件不存在、内容写坏、网络不通，一律当作「没有公告」，不影响启动。
+    /// </para>
+    /// </summary>
+    public const string NoticeFileName = "notice.json";
+
+    /// <summary>
     /// v2 清单文件名：多源 + 权重。
     /// <para>
     /// 用<b>另一个文件</b>而不是往 v1 里加字段，是因为老客户端的解析器对形状很严

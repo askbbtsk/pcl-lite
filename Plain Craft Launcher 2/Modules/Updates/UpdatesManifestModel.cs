@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -118,21 +119,67 @@ public class UpdatesManifestModel : IUpdateSource
 
     public VersionAnnouncementDataModel GetAnnouncementList()
     {
-        _EnsureLoaded(false);
-
-        // 公告只从权重最高的源取：这是「官方说法」，不该被镜像的旧公告盖掉
-        foreach (var model in _OrderedModels())
-            try
-            {
-                return model.GetAnnouncementList();
-            }
-            catch (Exception ex)
-            {
-                ModBase.Log(ex, $"[Update] {model.SourceName} 取公告失败", ModBase.LogLevel.Developer);
-            }
-
-        return new VersionAnnouncementDataModel { Content = [] };
+        // 公告来自清单仓库根目录的 notice.json：管理员改这个文件就等于发了一条公告，
+        // 不用发版、不用动清单。走的是和清单同一套多通道抢答，国内也能拉得到。
+        //
+        // 拉不到一律当「没有公告」：文件还没建、网络不通、内容写坏，都不该让启动变慢
+        // 或者弹个错误出来。公告是锦上添花，不是启动的前置条件。
+        try
+        {
+            return _ParseNotice(_FetchManifestText(ProjectLinks.NoticeFileName));
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Update] 拉取公告失败，本次不展示公告", ModBase.LogLevel.Developer);
+            return _EmptyAnnouncement();
+        }
     }
+
+    private static VersionAnnouncementDataModel _EmptyAnnouncement() => new() { Content = [] };
+
+    /// <summary>
+    /// 解析 notice.json。
+    /// <para>
+    /// 容错优先：允许注释、允许尾逗号、字段大小写不敏感。管理员是手改这个文件的，
+    /// 因为少个引号就让公告整条不显示（还看不出原因）是最没必要的坑。
+    /// </para>
+    /// <para>
+    /// 没有 <c>id</c> 的条目会被丢掉：去重全靠 id，缺了它这条公告每次启动都会弹一遍。
+    /// </para>
+    /// </summary>
+    private static VersionAnnouncementDataModel _ParseNotice(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body)) return _EmptyAnnouncement();
+
+        try
+        {
+            var model = JsonSerializer.Deserialize<VersionAnnouncementDataModel>(body, NoticeJsonOptions);
+            if (model?.Content is null) return _EmptyAnnouncement();
+
+            var valid = model.Content
+                .Where(item => item is not null && !string.IsNullOrWhiteSpace(item.Id))
+                .ToList();
+
+            var dropped = model.Content.Count - valid.Count;
+            if (dropped > 0)
+                ModBase.Log($"[Update] 公告里有 {dropped} 条缺少 id，已忽略（没有 id 就无法去重）",
+                    ModBase.LogLevel.Developer);
+
+            return new VersionAnnouncementDataModel { Content = valid };
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Update] 公告内容无法解析，本次不展示公告", ModBase.LogLevel.Developer);
+            return _EmptyAnnouncement();
+        }
+    }
+
+    private static readonly JsonSerializerOptions NoticeJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
+    };
 
     public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
     {
@@ -257,17 +304,6 @@ public class UpdatesManifestModel : IUpdateSource
             ModBase.Log($"[Update] 已回退到单指针清单（{plan.V2Failure}），指向 {plan.Sources[0].Pointer}");
 
         return (plan.Sources.ToList(), models);
-    }
-
-    /// <summary>按权重降序取一份快照，供只该问一个源的地方用。</summary>
-    private List<UpdatesGitHubModel> _OrderedModels()
-    {
-        _EnsureLoaded(false);
-        lock (_lock)
-        {
-            // _models 与 _entries 同序（_Load 里按权重降序建的）
-            return _models.ToList();
-        }
     }
 
     /// <summary>

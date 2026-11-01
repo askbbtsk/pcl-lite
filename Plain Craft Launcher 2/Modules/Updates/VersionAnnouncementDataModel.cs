@@ -22,6 +22,14 @@ public class VersionAnnouncementContentModel
     [JsonPropertyName("date")]
     public string Date { get; set; }
 
+    /// <summary>
+    ///     是否重要。设置里选「仅重要时显示」的用户只会看到这类公告。
+    ///     用于「某个版本有严重问题，别升」这种必须让所有人知道的消息；
+    ///     活动、预告之类留 <c>false</c>。
+    /// </summary>
+    [JsonPropertyName("important")]
+    public bool Important { get; set; }
+
     [JsonPropertyName("btn1")]
     public AnnouncementBtnInfoModel Btn1 { get; set; }
 

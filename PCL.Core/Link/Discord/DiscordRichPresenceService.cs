@@ -17,10 +17,47 @@ namespace PCL.Core.Link.Discord;
 [LifecycleService(LifecycleState.Loaded)]
 public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc", "DiscordRichPresence", false)
 {
+    /// <summary>
+    ///     本项目的 Discord 应用 ID，写死在这里。
+    ///     <para>
+    ///     以前它是个可配置项，但那个输入框除了让人填错之外没有任何用处：填成别人的应用，
+    ///     状态卡片上显示的就是别人的应用名和图标；填错一个字符就整条链路连不上，
+    ///     而用户根本无从判断是自己填错了还是 Discord 没开。现在固定成本项目的应用，
+    ///     不给改，也就没有「填错了」这种状态。
+    ///     </para>
+    /// </summary>
+    public const string AppId = "1563608700969689108";
+
     private const int TickIntervalMs = 5000;
 
-    /// <summary>连接失败后的重试间隔。Discord 没开的时候别每 5 秒折腾一次。</summary>
-    private const int ConnectRetryMs = 30000;
+    /// <summary>
+    ///     连接失败后的重试间隔。
+    ///     <para>
+    ///     Discord 没开的时候别每 5 秒折腾一次；但也不能太长——Discord 后启动、或者管道
+    ///     被对端悄悄关掉之后，用户要等这么久状态才回来。15 秒是「不折腾」和「别让人干等」的折中。
+    ///     </para>
+    /// </summary>
+    private const int ConnectRetryMs = 15000;
+
+    /// <summary>
+    ///     连续多少次读不到游戏才算真的退出了。
+    ///     <para>
+    ///     单次读不到不等于退出：UI 线程忙着加载、进程对象瞬时拿不到、<c>Refresh()</c> 抛个异常，
+    ///     都会让快照变成「没在运行」。以前一读到就立刻清空开始时间，于是 <c>timestamps.start</c>
+    ///     归零重来，用户看到的就是「游玩时长莫名其妙从头开始」。连续三次（15 秒）才算数。
+    ///     </para>
+    /// </summary>
+    private const int GameLossGraceTicks = 3;
+
+    /// <summary>
+    ///     这么久没有成功上报过任何东西，就认定连接已经僵死，强制重连。
+    ///     <para>
+    ///     <c>NamedPipeClientStream.IsConnected</c> 在对端静默消失后仍可能是 <c>true</c>，
+    ///     于是 SET_ACTIVITY 一直写进黑洞、状态却停在最后一帧不动。只靠 <c>IsConnected</c>
+    ///     判断「还连着」是不够的。
+    ///     </para>
+    /// </summary>
+    private const int StaleConnectionMs = 90000;
 
     /// <summary>
     ///     内容没变时也定期重发一次的间隔。
@@ -40,6 +77,10 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
     private static DiscordIpcClient? _client;
     private static LifecycleContext? _context;
     private static DateTime? _gameStart;
+
+    /// <summary>连续多少次没读到「游戏在跑」。用于给退出判定加宽限。</summary>
+    private static int _missingGameTicks;
+
     private static string? _lastActivity;
 
     /// <summary>上次真正发出 SET_ACTIVITY 的时刻，用于定期重发。</summary>
@@ -94,6 +135,9 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
         _paused = false;
         _lastActivity = null;
         _nextConnectAttemptTicks = 0;
+        // 刚恢复就判「长时间没发过」会把一条好端端的连接断掉，重新计时。
+        // 连接要是真死了，下面这次 SetActivity 会失败，照样会走重连。
+        _lastSentTicks = Environment.TickCount64;
         _Tick(null);
     }
 
@@ -152,14 +196,18 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
             return;
         }
 
-        var appId = (Config.Discord.AppId ?? "").Trim();
-        if (appId.Length == 0)
+        // 连接（失败后按退避重试）
+        // 暂停（用户手动清除状态）时不查僵死：那本来就不发东西，按「没发过」判失效会
+        // 让连接每 90 秒被断开重连一次，纯属自找麻烦。
+        if (!_paused && _client is { IsConnected: true } &&
+            Environment.TickCount64 - _lastSentTicks > StaleConnectionMs)
         {
-            _SetStatus("未填写 Discord 应用 ID");
+            // 管道还报「已连接」，但已经很久没成功发出去过东西了。
+            // 这种情况 IsConnected 是假象，不主动断开就会一直停在最后一帧。
+            _DropClient("连接已失效（长时间没有成功上报）");
             return;
         }
 
-        // 连接（失败后按退避重试）
         if (_client is not { IsConnected: true })
         {
             if (_client is not null)
@@ -171,7 +219,7 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
             if (Environment.TickCount64 < _nextConnectAttemptTicks) return;
 
             var client = new DiscordIpcClient();
-            if (!client.Connect(appId, out var error))
+            if (!client.Connect(AppId, out var error))
             {
                 client.Dispose();
                 _nextConnectAttemptTicks = Environment.TickCount64 + ConnectRetryMs;
@@ -258,9 +306,24 @@ public sealed class DiscordRichPresenceService() : GeneralService("discord-rpc",
     private static void _TrackGameStart(DiscordGameSnapshot? game)
     {
         if (game is { Running: true })
-            _gameStart ??= DateTime.Now;
-        else
-            _gameStart = null;
+        {
+            _missingGameTicks = 0;
+            // 优先用游戏进程自己的启动时间：万一中间被误判成「没在运行」，
+            // 重新拿到时起点还是同一个，游玩时长不会归零重算。
+            _gameStart ??= game.StartedAt ?? DateTime.Now;
+            return;
+        }
+
+        if (_gameStart is null)
+        {
+            _missingGameTicks = 0;
+            return;
+        }
+
+        if (++_missingGameTicks < GameLossGraceTicks) return;
+
+        _gameStart = null;
+        _missingGameTicks = 0;
     }
 
     private static HashSet<string> _ParseFields(string? raw)

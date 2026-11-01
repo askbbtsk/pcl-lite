@@ -7,14 +7,18 @@ public static class AnnouncementService
 {
     public static void Load()
     {
-        if (States.System.AnnounceSolution > 1)
-            return;
+        // 0 = 全部显示，1 = 仅重要，2 = 完全关闭
+        var solution = States.System.AnnounceSolution;
+        if (solution > 1) return;
 
         var showedAnnounced = States.Hint.ShowedAnnouncements
             .Split("|".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
             .ToList();
 
         var showAnnounce = UpdateManager.remoteServer.GetAnnouncementList().Content
+            .Where(x => !string.IsNullOrWhiteSpace(x.Id))
+            // 选了「仅重要」的人只该看到 important: true 的那几条
+            .Where(x => solution != 1 || x.Important)
             .Where(x => !showedAnnounced.Contains(x.Id))
             .ToList();
 

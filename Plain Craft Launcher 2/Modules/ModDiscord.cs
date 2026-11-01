@@ -36,10 +36,9 @@ public static class ModDiscord
 
         DiscordHostBridge.GameSnapshotProvider = GetSnapshot;
 
-        // 开关 / 应用 ID / 显示项 任何一项变化都立刻重发一次
+        // 开关 / 显示项 任何一项变化都立刻重发一次。
+        // 应用 ID 不在这里——它已经写死在 DiscordRichPresenceService 里，没有可改的入口。
         Config.Discord.EnabledConfig.Observe(
-            new ConfigObserver(ConfigEvent.Changed, _ => DiscordRichPresenceService.RequestRefresh()));
-        Config.Discord.AppIdConfig.Observe(
             new ConfigObserver(ConfigEvent.Changed, _ => DiscordRichPresenceService.RequestRefresh()));
         Config.Discord.FieldsConfig.Observe(
             new ConfigObserver(ConfigEvent.Changed, _ => DiscordRichPresenceService.RequestRefresh()));
@@ -70,21 +69,44 @@ public static class ModDiscord
         var process = ModLaunch.mcLaunchProcess;
         var running = false;
         long memory = 0;
+        DateTime? startedAt = null;
 
         if (process is not null)
         {
             try
             {
-                if (!process.HasExited)
-                {
-                    running = true;
-                    process.Refresh();
-                    memory = process.WorkingSet64;
-                }
+                running = !process.HasExited;
             }
             catch (Exception)
             {
+                // 进程对象已经失效（退出后被回收），这时才算真的没在运行
                 running = false;
+            }
+
+            if (running)
+            {
+                // 取内存、取启动时间失败都不代表游戏没在跑：权限不足、进程正在退出、
+                // 对象瞬时失效都会抛。以前这里一抛就把 running 打成 false，
+                // 游玩时长跟着归零重来——用户看到的就是「时间莫名其妙从头开始」。
+                // 现在只放弃这两项数据，运行状态照旧。
+                try
+                {
+                    process.Refresh();
+                    memory = process.WorkingSet64;
+                }
+                catch (Exception)
+                {
+                    memory = 0;
+                }
+
+                try
+                {
+                    startedAt = process.StartTime;
+                }
+                catch (Exception)
+                {
+                    startedAt = null;
+                }
             }
         }
 
@@ -108,7 +130,7 @@ public static class ModDiscord
             return new DiscordGameSnapshot(false, instanceName, 0, null);
         }
 
-        return new DiscordGameSnapshot(true, instanceName, memory, ReadServerAddress(instance));
+        return new DiscordGameSnapshot(true, instanceName, memory, ReadServerAddress(instance), startedAt);
     }
 
     #region 服务器地址

@@ -39,13 +39,22 @@
         </ItemsControl>
     </local:MyScrollViewer>
 
+    <!--
+        新建档案。
+        点击事件挂在整张卡片上，不是挂里面那个 24×24 的圆形图标按钮上：
+        卡片比按钮大一圈（左右各留 10 像素、上下各 3 像素），以前点在图标外面那块
+        完全没有反应，看着像个能点的方框其实只有中间一个小圆生效。
+        图标按钮自己也会处理点击（并标记 Handled），所以点在图标上不会触发两次。
+    -->
     <local:MyCard Grid.Row="5" HorizontalAlignment="Center" x:Name="PanButtons" Opacity="10"
-                  CornerRadius="5" Margin="0,0,4,0">
+                  CornerRadius="5" Margin="0,0,4,0" Cursor="Hand"
+                  MouseLeftButtonUp="PanButtons_MouseLeftButtonUp"
+                  ToolTip="{DynamicResource Launch.Account.Profile.Create}" ToolTipService.Placement="Center"
+                  ToolTipService.VerticalOffset="35" ToolTipService.HorizontalOffset="1"
+                  ToolTipService.InitialShowDelay="50">
         <StackPanel Orientation="Horizontal" Margin="10,3,0,3">
             <local:MyIconButton Height="24" Margin="0,0.5,9,0" x:Name="BtnNew"
                                  Click="BtnNew_Click"
-                                 ToolTip="{DynamicResource Launch.Account.Profile.Create}" ToolTipService.Placement="Center" ToolTipService.VerticalOffset="35"
-                                ToolTipService.HorizontalOffset="1" ToolTipService.InitialShowDelay="50"
                                 LogoScale="1.08"
                                 SvgIcon="lucide/user-plus" />
         </StackPanel>

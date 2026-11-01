@@ -164,6 +164,19 @@ public partial class PageLoginProfile
         });
     }
 
+    /// <summary>
+    ///     点卡片上任意位置都算点了「新建档案」。
+    ///     <para>
+    ///         里面那个图标按钮只有 24×24，卡片左右各留 10 像素、上下各 3 像素，
+    ///         以前点在图标外面那块完全没有反应 —— 看着是个能点的方框，实际只有中间一个小圆生效。
+    ///     </para>
+    ///     <para>
+    ///         点在图标上时 <see cref="MyIconButton" /> 会把事件标记成 Handled，冒泡不到这里，
+    ///         所以不会触发两次。
+    ///     </para>
+    /// </summary>
+    private void PanButtons_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => BtnNew_Click(sender, e);
+
     // 编辑 UUID
     private void EditProfileUuid(object sender, EventArgs e)
     {

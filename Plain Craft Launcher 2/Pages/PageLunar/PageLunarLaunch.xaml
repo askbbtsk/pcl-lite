@@ -247,32 +247,20 @@
                 </StackPanel>
             </local:MyCard>
 
-            <!--  说明  -->
+            <!--
+                说明。
+                这里刻意只留一句概述 + 一个跳转入口：Lunar 相关逻辑改动很频繁，
+                以前逐条列了 8 行「不经过官方启动器 / Loader 由服务端下发 / 好友面板还没做」，
+                没多久就全过时了（好友与私聊后来做出来了，那行还写着「还没做」）。
+                细节统一维护在仓库的 docs/LUNAR.md，改文档不用发版。
+            -->
             <local:MyCard Margin="0,15" Title="{DynamicResource Lunar.Card.Notes}">
                 <StackPanel Margin="20,40,20,18">
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="{DynamicResource Lunar.Note.1}" />
-
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="{DynamicResource Lunar.Note.2}" />
-
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="{DynamicResource Lunar.Note.3}" />
-
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="{DynamicResource Lunar.Note.4}" />
-
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="{DynamicResource Lunar.Note.5}" />
-
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="{DynamicResource Lunar.Note.6}" />
-
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.85"
-                               Text="{DynamicResource Lunar.Note.7}" />
-
-                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,10" Opacity="0.6" FontSize="11.5"
-                               Text="{DynamicResource Lunar.Note.8}" />
+                    <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="6,0,6,0" Opacity="0.85"
+                               Text="{DynamicResource Lunar.Note.Brief}" />
+                    <local:MyTextButton x:Name="BtnLunarDocs" Margin="6,8,0,0" HorizontalAlignment="Left"
+                                        FontSize="12.5" Text="{DynamicResource Lunar.Note.Docs}"
+                                        Click="BtnLunarDocs_Click" />
                 </StackPanel>
             </local:MyCard>
 

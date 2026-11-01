@@ -557,6 +557,15 @@ public partial class PageLunarLaunch
         Process.Start(new ProcessStartInfo { FileName = directory, UseShellExecute = true });
     }
 
+    /// <summary>
+    /// 打开 GitHub 上的 Lunar 说明文档。
+    /// <para>
+    /// 页面里只留一句概述，细节全在 docs/LUNAR.md —— 那块逻辑改得勤，
+    /// 写在界面上必然过时，指向文档才能「改一次全端一致」。
+    /// </para>
+    /// </summary>
+    private void BtnLunarDocs_Click(object sender, EventArgs e) => ModBase.OpenWebsite(ProjectLinks.LunarDocs);
+
     private void BtnCopyCommand_Click(object sender, MouseButtonEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(ModLunar.LastCommandLine))

@@ -70,6 +70,15 @@ public static class ProjectLinks
     /// <summary>仓库的简体中文 README（项目说明、支持平台与许可条款都在这里）。</summary>
     public static string Readme => $"{Repository}/blob/main/README.md";
 
+    /// <summary>
+    /// Lunar Client 支持的完整说明（物料来源、账号与续期、IPC 支持矩阵、好友与私聊通道、已知限制）。
+    /// <para>
+    /// Lunar 那一块逻辑变化很快，页面上写死的说明必然过时——所以页面上只留一句概述，
+    /// 细节一律指向这份文档，改文档不用发版。
+    /// </para>
+    /// </summary>
+    public static string LunarDocs => $"{Repository}/blob/main/docs/LUNAR.md";
+
     public static string Wiki => $"{Repository}/wiki";
 
     /// <summary>GitHub API：仓库的 release 列表。</summary>

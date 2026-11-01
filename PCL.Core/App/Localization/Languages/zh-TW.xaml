@@ -3575,14 +3575,8 @@ Cookie 同樣會換出整套權杖，也能續期。
     <sys:String x:Key="Lunar.Social.Me">我</sys:String>
     <sys:String x:Key="Lunar.Social.Placeholder">輸入訊息，Enter 送出…</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">說明</sys:String>
-    <sys:String x:Key="Lunar.Note.1">不經過 Lunar 啟動器，由 PCL 直接拉起遊戲。</sys:String>
-    <sys:String x:Key="Lunar.Note.2">Loader 由伺服器下發，點一下就能換。</sys:String>
-    <sys:String x:Key="Lunar.Note.3">帳號優先使用 PCL 裡已登入的，不需要先在 Lunar 登入。</sys:String>
-    <sys:String x:Key="Lunar.Note.4">遊戲目錄用 .minecraft 根目錄，不跟實例隔離走。</sys:String>
-    <sys:String x:Key="Lunar.Note.5">檔案由 PCL 自己下載校驗，首次約 300 MB。</sys:String>
-    <sys:String x:Key="Lunar.Note.6">記憶體、JVM 參數和 Java 路徑在「設定 → Lunar Client」裡改。</sys:String>
-    <sys:String x:Key="Lunar.Note.7">工作階段過期由本機 IPC 自動續期。</sys:String>
-    <sys:String x:Key="Lunar.Note.8">好友與社交面板還沒做，其他功能正常。</sys:String>
+    <sys:String x:Key="Lunar.Note.Brief">PCL 直接拉起 Lunar 客戶端，不經過官方啟動器；檔案由 PCL 自己下載校驗，帳號、記憶體與 JVM 參數都在本頁或「設定 → Lunar Client」裡設定。</sys:String>
+    <sys:String x:Key="Lunar.Note.Docs">查看完整說明 →</sys:String>
     <sys:String x:Key="Lunar.Card.Log">執行日誌</sys:String>
     <sys:String x:Key="Lunar.Log.Desc">啟動過程與遊戲輸出</sys:String>
     <sys:String x:Key="Lunar.Action.Copy">複製</sys:String>

@@ -3575,14 +3575,8 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Lunar.Social.Me">Me</sys:String>
     <sys:String x:Key="Lunar.Social.Placeholder">Type a message, Enter to send…</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">Notes</sys:String>
-    <sys:String x:Key="Lunar.Note.1">PCL starts the game itself, without the Lunar launcher.</sys:String>
-    <sys:String x:Key="Lunar.Note.2">Loader list comes from the server; click to switch.</sys:String>
-    <sys:String x:Key="Lunar.Note.3">Uses the account you signed in with in PCL.</sys:String>
-    <sys:String x:Key="Lunar.Note.4">Uses the .minecraft root, not the instance folder.</sys:String>
-    <sys:String x:Key="Lunar.Note.5">PCL downloads and verifies the files (~300 MB first time).</sys:String>
-    <sys:String x:Key="Lunar.Note.6">Memory, JVM args and Java path live in Settings → Lunar Client.</sys:String>
-    <sys:String x:Key="Lunar.Note.7">Expired sessions refresh over local IPC.</sys:String>
-    <sys:String x:Key="Lunar.Note.8">Friends and social panels are not implemented yet.</sys:String>
+    <sys:String x:Key="Lunar.Note.Brief">PCL launches Lunar Client directly, without the official launcher. Files are downloaded and verified by PCL; accounts, memory and JVM arguments are configured on this page or in Settings → Lunar Client.</sys:String>
+    <sys:String x:Key="Lunar.Note.Docs">Read the full guide →</sys:String>
     <sys:String x:Key="Lunar.Card.Log">Log</sys:String>
     <sys:String x:Key="Lunar.Log.Desc">Startup and game output</sys:String>
     <sys:String x:Key="Lunar.Action.Copy">Copy</sys:String>

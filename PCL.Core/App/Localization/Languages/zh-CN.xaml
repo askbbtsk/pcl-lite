@@ -3665,14 +3665,8 @@ Cookie 同样会换出整套令牌，也能续期。
     <sys:String x:Key="Lunar.Social.Me">我</sys:String>
     <sys:String x:Key="Lunar.Social.Placeholder">输入消息，回车发送…</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">说明</sys:String>
-    <sys:String x:Key="Lunar.Note.1">不经过 Lunar 启动器，由 PCL 直接拉起游戏。</sys:String>
-    <sys:String x:Key="Lunar.Note.2">Loader 由服务端下发，点一下就能换。默认跟官方一致（1.17.1 默认 Fabric）。</sys:String>
-    <sys:String x:Key="Lunar.Note.3">账号优先用 PCL 里已登录的，不需要先在 Lunar 登录。</sys:String>
-    <sys:String x:Key="Lunar.Note.4">游戏目录用 .minecraft 根目录，不跟实例隔离走。</sys:String>
-    <sys:String x:Key="Lunar.Note.5">物料由 PCL 自己下载校验，首次约 300 MB。</sys:String>
-    <sys:String x:Key="Lunar.Note.6">内存、JVM 参数和 Java 路径在「设置 → Lunar Client」里改。</sys:String>
-    <sys:String x:Key="Lunar.Note.7">会话过期由本地 IPC 自动续期，不用管。</sys:String>
-    <sys:String x:Key="Lunar.Note.8">好友与社交面板还没做，其他功能正常。</sys:String>
+    <sys:String x:Key="Lunar.Note.Brief">PCL 直接拉起 Lunar 客户端，不经过官方启动器；物料由 PCL 自己下载校验，账号、内存与 JVM 参数都在本页或「设置 → Lunar Client」里配。</sys:String>
+    <sys:String x:Key="Lunar.Note.Docs">查看完整说明 →</sys:String>
     <sys:String x:Key="Lunar.Card.Log">运行日志</sys:String>
     <sys:String x:Key="Lunar.Log.Desc">启动过程与游戏输出</sys:String>
     <sys:String x:Key="Lunar.Action.Copy">复制</sys:String>

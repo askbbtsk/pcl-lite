@@ -1568,6 +1568,25 @@
     <sys:String x:Key="Launch.Account.Microsoft.LoginFailed.Title">正版登录尝试失败</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.LoginFailed.WithDetail">正版登录验证失败。&#xA;&#xA;原始错误信息：&#xA;{0}</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Purchase">»  购买正版</sys:String>
+    <sys:String x:Key="Launch.Account.Token.NotOurs">Refresh Token 只能由签发它的应用兑换：PCL Lite 自己，或者 Lunar 启动器。其它启动器、工具签发的换不了，微软会直接回 AADSTS70000。改用 Cookie 或 Minecraft 令牌吧。</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Device">设备代码</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Token">Access Token</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Refresh">Refresh Token</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Cookie">Cookie</sys:String>
+    <sys:String x:Key="Launch.Account.Token.CookieStale">这份 Cookie 已经失效。请确认它是从 login.live.com 导出的，并且浏览器里那个账号还登着。</sys:String>
+    <sys:String x:Key="Launch.Account.NameWithMethod">（{0}）</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Login">使用令牌登录</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Title">使用令牌登录</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Desc">粘贴 Refresh Token、Minecraft 令牌或微软 Cookie，三种会自动识别。
+
+Refresh Token 会换出一整套新令牌，能一直续期，效果和正常登录一样。
+Minecraft 令牌直接用，但 24 小时后失效，且没法续期。
+Cookie 同样会换出整套令牌，也能续期。
+
+这三种凭据等同于账号密码。</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Hint">粘贴令牌或 Cookie</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Success">已添加账号：{0}</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Failed">令牌登录失败</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Start">开始正版验证</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Unavailable">正版登录不可用</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Website">»  前往官网</sys:String>
@@ -3689,6 +3708,7 @@
 令牌已于 {1} 过期，启动前会刷新</sys:String>
     <sys:String x:Key="Lunar.Account.Hint.UsingIdentity">用 Lunar 身份启动：{0}。这个账号在本页登录，和 PCL 主页面的账号互不影响。</sys:String>
     <sys:String x:Key="Lunar.Account.Hint.IdentityExpired">{0} 的令牌已于 {1} 过期，启动前会自动刷新。</sys:String>
+    <sys:String x:Key="Lunar.Error.TokenOnlyExpired">{0} 是用 Minecraft 令牌导入的账号，令牌已过期且没法续期。请在 Lunar 页面重新导入，或者改用设备码登录。</sys:String>
     <sys:String x:Key="Lunar.Action.LoginIdentity">登录</sys:String>
     <sys:String x:Key="Lunar.Account.Login.Busy">正在启动或运行中，先停一下再登录。</sys:String>
     <sys:String x:Key="Lunar.Account.Login.Failed">Lunar 身份登录失败</sys:String>
@@ -3728,7 +3748,9 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Lunar.Left.AccountExpiredHint">会话已过期，游戏内会显示 Invalid session。</sys:String>
     <sys:String x:Key="Lunar.Left.AccountHint">Lunar 账户库里的账号（{0}），进游戏用的就是它。</sys:String>
     <sys:String x:Key="Lunar.Left.NoAccount">未找到 Lunar 账号</sys:String>
-    <sys:String x:Key="Lunar.Left.NoAccountHint">先在 Lunar 启动器里登录一次，或用 PCL 主页面登录的账号。</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityExpiredNoRefresh">令牌已过期，这个账号是令牌导入的、没法续期，需要重新导入。</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityHint">Lunar 身份账号，UUID {0}。进游戏用的就是它。</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityExpiredHint">令牌已过期，启动前会自动刷新。</sys:String>
     <sys:String x:Key="Lunar.Msg.NotInstalled">没有找到 {0}。
 请先安装 Lunar Client 并至少启动一次。</sys:String>
     <sys:String x:Key="Lunar.Msg.NotInstalled.Title">未检测到 Lunar Client</sys:String>

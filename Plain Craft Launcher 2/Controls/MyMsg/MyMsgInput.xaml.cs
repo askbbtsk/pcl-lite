@@ -26,6 +26,7 @@ public partial class MyMsgInput
             TextArea.Text = (string)converter.Content;
             TextArea.HintText = converter.HintText;
             TextArea.ValidateRules = converter.ValidateRules;
+            if (converter.Multiline) ApplyMultilineInput();
             ConfigurePrimaryButton(converter.Button1, converter.IsWarn);
             ConfigureSecondaryButton(converter.Button2);
             ShapeLine.StrokeThickness = ModBase.GetWPFSize(1d);
@@ -46,6 +47,26 @@ public partial class MyMsgInput
     private void AppendUniqueNameSuffix(FrameworkElement element)
     {
         element.Name += ModBase.GetUuid();
+    }
+
+    /// <summary>
+    ///     把输入框换成多行、自动换行、可滚动的样式，并固定宽度。
+    ///     <para>
+    ///         令牌和 Cookie 都是几百上千字符的一长串：单行框看不全，还会把弹窗横向撑开。
+    ///         <c>Width</c> 必须写死 —— 弹窗是按内容自动定宽的，不给宽度的话长串会把整个
+    ///         弹窗顶到屏幕外。
+    ///     </para>
+    /// </summary>
+    private void ApplyMultilineInput()
+    {
+        TextArea.TextWrapping = TextWrapping.Wrap;
+        TextArea.AcceptsReturn = true;
+        TextArea.MaxLength = 8000;
+        TextArea.Width = TextArea.MinWidth;
+        TextArea.Height = 92d;
+        TextArea.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        TextArea.VerticalContentAlignment = VerticalAlignment.Top;
+        TextArea.HorizontalAlignment = HorizontalAlignment.Left;
     }
 
     private void ConfigurePrimaryButton(string text, bool isWarn)

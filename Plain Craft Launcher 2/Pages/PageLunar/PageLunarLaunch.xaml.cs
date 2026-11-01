@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -17,6 +18,13 @@ namespace PCL;
 /// <summary>
 ///     Lunar Client 板块的右栏：版本与账号选择、状态、启动入口、说明与运行日志。
 /// </summary>
+/// <summary>账号下拉框里一项的内容：账号名 + UUID。</summary>
+public sealed record AccountComboEntry(string Title, string Subtitle)
+{
+    // 日志和 MyComboBox.Text 会走 ToString()，别让它打印类型名
+    public override string ToString() => Title;
+}
+
 public partial class PageLunarLaunch
 {
     private bool _subscribed;
@@ -234,11 +242,14 @@ public partial class PageLunarLaunch
     }
 
     /// <summary>
-    ///     账号下拉框：分「PCL Lite 登录账号」和「Lunar 启动器账号」两组。
+    ///     账号下拉框：分「Lunar 身份账号」和「Lunar 启动器账号」两组。
     ///     <para>
-    ///         分组头是禁用项（<see cref="UIElement.IsEnabled" /> = false），点不动也选不上，
-    ///         只用来在列表里画一条分界。真正能选的是下面那些，<c>Tag</c> 带着
-    ///         <c>pcl:</c> / <c>lunar:</c> 前缀，选完原样存进配置。
+    ///         分组头是禁用项，点不动也选不上，只用来在列表里画一条分界。真正能选的那些，
+    ///         <c>Tag</c> 带着 <c>identity:</c> / <c>lunar:</c> 前缀，选完原样存进配置。
+    ///     </para>
+    ///     <para>
+    ///         每一项都是两行：上面账号名，下面 UUID。同名的号一眼分不清，
+    ///         UUID 才是一对一能对上的那个。
     ///     </para>
     /// </summary>
     private void RefreshAccountCombo()
@@ -246,17 +257,14 @@ public partial class PageLunarLaunch
         var identities = ModLunar.LunarIdentityAccounts;
         var accounts = ModLunar.Accounts;
 
+        // 配置里存的是带前缀的 Tag。历史上有两种残留要归一化，否则下拉框一项都对不上，
+        // 看起来就是「选中的账号没了」：pcl:<ProfileId>（已取消的那组）和裸 localId（1.5.0 之前）
         var selectedTag = Config.Preference.Lunar.AccountLocalId ?? "";
-        // 老配置里可能存着 pcl:<ProfileId>（以前的「PCL Lite 登录账号」那组）。
-        // 那组已经取消了，统一当成没选，否则下拉框会对不上任何一项
-        if (!string.IsNullOrEmpty(selectedTag)
-            && !selectedTag.StartsWith(ModLunar.IdentitySelectionPrefix, StringComparison.OrdinalIgnoreCase)
-            && !selectedTag.StartsWith("lunar:", StringComparison.OrdinalIgnoreCase))
+        if (selectedTag.StartsWith("pcl:", StringComparison.OrdinalIgnoreCase))
             selectedTag = "";
-        // 1.5.0 存的是裸的 localId，没有前缀
-        if (!string.IsNullOrEmpty(selectedTag)
-            && !selectedTag.StartsWith(ModLunar.IdentitySelectionPrefix, StringComparison.OrdinalIgnoreCase)
-            && !selectedTag.StartsWith("lunar:", StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(selectedTag)
+                 && !selectedTag.StartsWith(ModLunar.IdentitySelectionPrefix, StringComparison.OrdinalIgnoreCase)
+                 && !selectedTag.StartsWith("lunar:", StringComparison.OrdinalIgnoreCase))
             selectedTag = "lunar:" + selectedTag;
 
         // 选中项也要进签名：换账号时要重建，否则下拉框显示的还是旧的
@@ -286,17 +294,15 @@ public partial class PageLunarLaunch
             else
             {
                 foreach (var identity in identities)
-                    ComboAccount.Items.Add(new MyComboBoxItem
-                    {
-                        // 下拉框里只写名字，过期状态放到下面那行说明里，免得把右侧挤歪
-                        Content = identity.DisplayName,
-                        Tag = ModLunar.SelectionTag(identity),
-                        ToolTip = identity.IsExpired
+                    ComboAccount.Items.Add(MakeAccountItem(
+                        identity.DisplayName,
+                        FormatUuid(identity.Uuid),
+                        ModLunar.SelectionTag(identity),
+                        identity.IsExpired
                             ? Lang.Text("Lunar.Account.Tip.IdentityExpired", identity.Uuid,
                                 identity.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "")
                             : Lang.Text("Lunar.Account.Tip.Identity", identity.Uuid),
-                        IsSelected = selectedTag == ModLunar.SelectionTag(identity)
-                    });
+                        selectedTag == ModLunar.SelectionTag(identity)));
             }
 
             // 第二组：Lunar 启动器自己的账户库
@@ -315,16 +321,15 @@ public partial class PageLunarLaunch
             else
             {
                 foreach (var account in accounts)
-                    ComboAccount.Items.Add(new MyComboBoxItem
-                    {
-                        Content = account.DisplayName,
-                        Tag = ModLunar.SelectionTag(account),
-                        ToolTip = account.IsExpired && account.ExpiresAt is { } expires
+                    ComboAccount.Items.Add(MakeAccountItem(
+                        account.DisplayName,
+                        FormatUuid(account.MinecraftUuid),
+                        ModLunar.SelectionTag(account),
+                        account.IsExpired && account.ExpiresAt is { } expires
                             ? Lang.Text("Lunar.Account.Tip.LunarExpired", account.Type, account.MinecraftUuid,
                                 expires.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
                             : Lang.Text("Lunar.Account.Tip.Lunar", account.Type, account.MinecraftUuid),
-                        IsSelected = selectedTag == ModLunar.SelectionTag(account)
-                    });
+                        selectedTag == ModLunar.SelectionTag(account)));
             }
 
             // 没有任何一项被选中时（第一次进页面、或者配置里那个账号已经不在库里）
@@ -341,6 +346,36 @@ public partial class PageLunarLaunch
         {
             _suppressComboEvents = false;
         }
+    }
+
+    /// <summary>
+    ///     下拉框里的一个账号项：上面账号名，下面 UUID。
+    ///     <para>
+    ///         内容是 <see cref="AccountComboEntry" /> 而不是现做的控件 —— 控件只能有一个父级，
+    ///         下拉列表和收起后的显示格是两处，共用同一个控件会有一边空掉。
+    ///         模板见 XAML 里的 <c>LunarAccountItemTemplate</c>。
+    ///     </para>
+    ///     <para>
+    ///         <c>Tag</c> 必须留成字符串 —— 选中处理靠它区分 <c>identity:</c> / <c>lunar:</c>。
+    ///     </para>
+    /// </summary>
+    private MyComboBoxItem MakeAccountItem(string title, string subtitle, string tag, string? toolTip,
+        bool selected) => new()
+    {
+        Content = new AccountComboEntry(title, subtitle),
+        ContentTemplate = (DataTemplate)FindResource("LunarAccountItemTemplate"),
+        Tag = tag,
+        ToolTip = toolTip,
+        IsSelected = selected
+    };
+
+    /// <summary>把 32 位裸 UUID 补成带横线的形式，和别处看到的 UUID 对得上。</summary>
+    private static string FormatUuid(string? uuid)
+    {
+        var raw = (uuid ?? "").Replace("-", string.Empty);
+        return raw.Length == 32
+            ? $"{raw[..8]}-{raw[8..12]}-{raw[12..16]}-{raw[16..20]}-{raw[20..]}"
+            : uuid ?? "";
     }
 
     /// <summary>分组头：禁用状态，点不动、也选不上。</summary>
@@ -430,6 +465,7 @@ public partial class PageLunarLaunch
         }, "Lunar Identity Login");
     }
 
+
     private void RefreshButtons()
     {
         var running = ModLunar.IsRunning;
@@ -473,6 +509,9 @@ public partial class PageLunarLaunch
         // 光点下拉框就改别人的配置文件太粗暴了
         Config.Preference.Lunar.AccountLocalId = tag;
         RefreshAccountHint();
+        // 左栏显示的是「这次启动用哪个号」，换选中就得让它跟着变，
+        // 否则右边选完、左边还写着上一个（或者写着「未找到」）
+        ModLunar.Refresh();
     }
 
     private async void BtnRefreshVersions_Click(object sender, MouseButtonEventArgs e)

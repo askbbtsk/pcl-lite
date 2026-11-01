@@ -235,6 +235,8 @@ public partial class ProfileService
     public static McProfile ApplyAuthenticationResult(AuthenticationResult result, McProfile? existing = null, bool select = true)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // 同一个号、同一种登录方式 = 续期，不要再堆一条新的
+        existing ??= _FindMatchingProfile(result);
         var profile = existing?.Clone() ?? new McProfile { ProfileId = Guid.NewGuid().ToString("N") };
         profile.ProfileType = result.ProfileType;
         profile.UserName = result.UserName;
@@ -252,6 +254,11 @@ public partial class ProfileService
         profile.Provider = result.Provider ?? profile.Provider;
         profile.DiscoveryAddress = result.DiscoveryAddress ?? profile.DiscoveryAddress;
         profile.IdToken = result.IdToken ?? profile.IdToken;
+        if (result.ProfileType == ProfileType.Microsoft)
+            profile.LoginMethod = NormalizeLoginMethod(result.LoginMethod ?? profile.LoginMethod);
+        // 续期沿用原来的签发者；新登进来的记下这次是谁签的
+        if (!string.IsNullOrWhiteSpace(result.RefreshClientId))
+            profile.RefreshClientId = result.RefreshClientId;
         if (existing is null) Add(profile, select);
         else
         {
@@ -292,8 +299,17 @@ public partial class ProfileService
         => Profiles.FirstOrDefault(profile =>
             profile.ProfileType == result.ProfileType &&
             string.Equals(profile.Uuid, result.Uuid, StringComparison.Ordinal) &&
-            (result.ProfileType == ProfileType.Microsoft ||
-             string.Equals(profile.Server, result.Server, StringComparison.OrdinalIgnoreCase)));
+            (result.ProfileType == ProfileType.Microsoft
+                ? string.Equals(NormalizeLoginMethod(profile.LoginMethod),
+                    NormalizeLoginMethod(result.LoginMethod), StringComparison.Ordinal)
+                : string.Equals(profile.Server, result.Server, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>
+    ///     登录方式的归一化。老档案没有这个字段，按设备码算 —— 否则升级之后
+    ///     同一个号会凭空多出一条「设备码」档案。
+    /// </summary>
+    public static string NormalizeLoginMethod(string? method) =>
+        string.IsNullOrWhiteSpace(method) ? "device" : method.Trim().ToLowerInvariant();
 
     private static void _EnsureLoaded()
     {
@@ -329,7 +345,58 @@ public partial class ProfileService
             while (!ids.Add(profile.ProfileId));
             changed = true;
         }
+
+        if (_MergeDuplicateMicrosoftProfiles()) changed = true;
         if (changed) Save();
+    }
+
+    /// <summary>
+    ///     合并重复的正版档案：同一个号 + 同一种登录方式只留一条。
+    ///     <para>
+    ///         以前不区分登录方式，同一个号反复登录会一直往下堆新条目 ——
+    ///         列表里出现好几个一模一样的名字就是这么来的。
+    ///     </para>
+    ///     <para>
+    ///         留哪条：先看有没有 Refresh Token（有才续得下去，令牌导入的那种 24 小时就废），
+    ///         再看到期时间。反过来只看时间的话，一条快过期的令牌档案会把能续期的挤掉。
+    ///     </para>
+    /// </summary>
+    /// <returns>删掉了东西返回 <c>true</c>。</returns>
+    private static bool _MergeDuplicateMicrosoftProfiles()
+    {
+        var kept = new Dictionary<string, McProfile>(StringComparer.Ordinal);
+        var duplicates = new List<McProfile>();
+        foreach (var profile in Profiles.Where(x => x.ProfileType == ProfileType.Microsoft))
+        {
+            var key = $"{profile.Uuid}|{NormalizeLoginMethod(profile.LoginMethod)}";
+            if (!kept.TryGetValue(key, out var existing))
+            {
+                kept[key] = profile;
+                continue;
+            }
+
+            var replace = _IsBetterProfile(profile, existing);
+            duplicates.Add(replace ? existing : profile);
+            if (replace) kept[key] = profile;
+        }
+
+        if (duplicates.Count == 0) return false;
+
+        var currentGone = _profiles.Current is { } current && duplicates.Contains(current);
+        foreach (var profile in duplicates) _profiles.Delete(profile);
+        if (currentGone && Profiles.Count > 0) _profiles.SelectAt(0);
+        Context.Info($"[Profile] 已合并 {duplicates.Count} 条重复的正版档案");
+        return true;
+    }
+
+    /// <summary>两条同号同方式的档案里，<paramref name="candidate" /> 是不是更该留的那条。</summary>
+    private static bool _IsBetterProfile(McProfile candidate, McProfile current)
+    {
+        var candidateRenewable = !string.IsNullOrWhiteSpace(candidate.RefreshToken);
+        var currentRenewable = !string.IsNullOrWhiteSpace(current.RefreshToken);
+        if (candidateRenewable != currentRenewable) return candidateRenewable;
+        return (candidate.ExpiresAt ?? DateTimeOffset.MinValue) >
+               (current.ExpiresAt ?? DateTimeOffset.MinValue);
     }
 
     private static bool _TryMigrateLegacy(out string? migrated)

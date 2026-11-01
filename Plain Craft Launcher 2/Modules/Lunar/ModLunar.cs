@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.App;
@@ -64,7 +65,7 @@ public static class ModLunar
     ///         （关掉 public client、改 redirect URI、删应用）会让这条链路直接失效。
     ///     </para>
     /// </summary>
-    private const string LunarOAuthClientId = "4358653d-21f6-4697-96bb-7963ff974196";
+    private const string LunarOAuthClientId = PCL.Core.App.Secrets.LunarOAuthClientId;
 
     private static Process? _process;
     private static bool _isBusy;
@@ -1465,8 +1466,8 @@ public static class ModLunar
         LunarIdentityAccount identity)
     {
         Log($"账号：{identity.DisplayName}（Lunar 身份账号）");
-        // 令牌是 Lunar 的 client id 签的，PCL 自己就能续期
-        _canRefreshSession = true;
+        // 有 refreshToken 才谈得上续期；令牌导入的那种到期只能重新导入
+        _canRefreshSession = identity.CanRefresh;
 
         var uuid = NormalizeUuid(identity.Uuid);
         var twin = _accounts.FirstOrDefault(x =>
@@ -1478,6 +1479,11 @@ public static class ModLunar
         DateTimeOffset? tokenExpiresAt = current.ExpiresAt;
         var refreshToken = current.RefreshToken;
         var displayName = current.DisplayName;
+
+        // 续不了又已经过期：再往下走就是拿个死令牌进游戏，只会在 Connecting... 卡住
+        if (current.IsExpired && !current.CanRefresh)
+            throw new InvalidOperationException(
+                Lang.Text("Lunar.Error.TokenOnlyExpired", displayName));
 
         if (twin is not null && LunarAccountStore.SetActive(LunarClientService.SettingsRoot, twin.LocalId))
         {
@@ -1507,7 +1513,43 @@ public static class ModLunar
             Log("Lunar 账户库写入失败：游戏内身份仍由 Lunar 原来的激活账号决定");
         }
 
+        WarnIfNotLunarToken(token, displayName);
         return (displayName, uuid, token ?? string.Empty);
+    }
+
+    /// <summary>
+    ///     检查令牌是不是 Lunar 的应用签的。不是就在日志里说清楚，别让它一路走到
+    ///     卡在 <c>Connecting...</c> 才让人猜。
+    /// </summary>
+    private static void WarnIfNotLunarToken(string? accessToken, string displayName)
+    {
+        var aid = ReadTokenAid(accessToken);
+        if (string.IsNullOrEmpty(aid)) return;
+        if (string.Equals(aid, LunarOAuthClientId, StringComparison.OrdinalIgnoreCase)) return;
+
+        Log($"警告：{displayName} 的令牌不是 Lunar 应用签的（aid = {aid}），" +
+            "游戏端会认不出来、卡在 Connecting...。请在 Lunar 页面重新登录一次这个账号。");
+    }
+
+    /// <summary>读 Minecraft accessToken 里的 <c>aid</c>（签发它的 Azure 应用 id）。读不出来返回空串。</summary>
+    private static string ReadTokenAid(string? accessToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken)) return string.Empty;
+        var parts = accessToken.Split('.');
+        if (parts.Length < 2) return string.Empty;
+        try
+        {
+            var payload = parts[1].Replace('-', '+').Replace('_', '/');
+            payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
+            using var document = JsonDocument.Parse(Convert.FromBase64String(payload));
+            return document.RootElement.TryGetProperty("aid", out var aid)
+                ? aid.GetString() ?? string.Empty
+                : string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     /// <summary>
@@ -1522,6 +1564,15 @@ public static class ModLunar
         CancellationToken token)
     {
         if (!identity.IsExpired && !string.IsNullOrWhiteSpace(identity.AccessToken)) return identity;
+
+        // 用 Minecraft 令牌导入的账号没有 refreshToken，续不了 —— 别去撞 invalid_grant，
+        // 直接说清楚，让用户重新导入或改用设备码登录
+        if (!identity.CanRefresh)
+        {
+            Log($"Lunar 身份账号 {identity.DisplayName} 是令牌导入的，已于 " +
+                $"{FormatExpiry(identity.ExpiresAt)} 过期，没法自动续期。");
+            return identity;
+        }
 
         Log($"Lunar 身份账号 {identity.DisplayName} 的令牌已过期" +
             $"（{FormatExpiry(identity.ExpiresAt)}），正在刷新…");
@@ -1598,6 +1649,7 @@ public static class ModLunar
             return null;
         }
 
+        WarnIfNotLunarToken(account.AccessToken, account.DisplayName);
         Log($"Lunar 身份登录完成：{account.DisplayName}（{account.Uuid}）");
         // 登录完直接选中它，省得用户再点一次下拉框
         Config.Preference.Lunar.AccountLocalId = SelectionTag(account);

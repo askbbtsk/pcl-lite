@@ -48,6 +48,21 @@ public sealed class AuthenticationResult
     public string? Provider { get; init; }
     public string? DiscoveryAddress { get; init; }
     public string? IdToken { get; init; }
+
+    /// <summary>
+    ///     这条账号是怎么登进来的：<c>device</c>（设备码）、<c>refresh</c>（Refresh Token）、
+    ///     <c>token</c>（Minecraft 令牌）、<c>cookie</c>（微软 Cookie）。界面靠它区分同一个号的多条档案。
+    /// </summary>
+    public string? LoginMethod { get; set; }
+
+    /// <summary>
+    ///     签发这条 Refresh Token 的 Azure 应用 client id。为空表示 PCL 自己的应用。
+    ///     <para>
+    ///         Refresh Token 绑死签发它的应用，续期时必须拿同一个身份去换 ——
+    ///         不记下来，用 IAS / Lunar 的令牌建的档案下次续期就会 AADSTS70000。
+    ///     </para>
+    /// </summary>
+    public string? RefreshClientId { get; set; }
 }
 
 public interface IAuthenticateProvider

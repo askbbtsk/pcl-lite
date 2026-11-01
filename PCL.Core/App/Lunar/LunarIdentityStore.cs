@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -50,6 +50,16 @@ public sealed record LunarIdentityAccount
     /// <summary>下拉框和日志里显示的名字。</summary>
     [JsonIgnore]
     public string DisplayName => string.IsNullOrWhiteSpace(UserName) ? Uuid : UserName;
+
+    /// <summary>
+    ///     能不能自己续期。
+    ///     <para>
+    ///         只有 refreshToken 才能续。用 Minecraft 令牌导入的账号没有它 ——
+    ///         那种账号能用，但 24 小时后必须重新导入。
+    ///     </para>
+    /// </summary>
+    [JsonIgnore]
+    public bool CanRefresh => !string.IsNullOrWhiteSpace(RefreshToken);
 }
 
 /// <summary>
@@ -82,7 +92,8 @@ public static class LunarIdentityStore
             var container = JsonSerializer.Deserialize<Container>(File.ReadAllText(path));
             return container?.Accounts?
                        .Where(x => !string.IsNullOrWhiteSpace(x.Uuid) &&
-                                   !string.IsNullOrWhiteSpace(x.RefreshToken))
+                                   (!string.IsNullOrWhiteSpace(x.RefreshToken) ||
+                                    !string.IsNullOrWhiteSpace(x.AccessToken)))
                        .ToList()
                    ?? [];
         }
@@ -122,7 +133,8 @@ public static class LunarIdentityStore
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(account.RefreshToken)) return false;
+            // 没有 refreshToken 也行：那是用 Minecraft 令牌导入的，能用但续不了
+            if (string.IsNullOrWhiteSpace(account.AccessToken)) return false;
             list.Add(account);
         }
 

@@ -1568,6 +1568,25 @@
     <sys:String x:Key="Launch.Account.Microsoft.LoginFailed.Title">Microsoft login authentication failed</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.LoginFailed.WithDetail">Microsoft login failed.&#xA;&#xA;Original error:&#xA;{0}</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Purchase">»  Purchase</sys:String>
+    <sys:String x:Key="Launch.Account.Token.NotOurs">A refresh token can only be redeemed by the application that issued it: PCL Lite itself, or the Lunar launcher. Tokens from other launchers or tools are rejected with AADSTS70000. Use cookies or a Minecraft token instead.</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Device">device code</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Token">access token</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Refresh">refresh token</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Cookie">cookie</sys:String>
+    <sys:String x:Key="Launch.Account.Token.CookieStale">These cookies are no longer valid. Make sure they were exported from login.live.com while the account was still signed in.</sys:String>
+    <sys:String x:Key="Launch.Account.NameWithMethod"> ({0})</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Login">Sign in with a token</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Title">Sign in with a token</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Desc">Paste a refresh token, a Minecraft token, or your Microsoft cookies — the type is detected automatically.
+
+A refresh token is exchanged for a new set of tokens, so it keeps renewing itself just like a normal sign-in.
+A Minecraft token is used as-is: it expires in 24 hours and cannot be renewed.
+Cookies are exchanged for a full set of tokens as well, and renew like a normal sign-in.
+
+Any of these credentials is equivalent to your account password.</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Hint">Paste token or cookie</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Success">Account added: {0}</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Failed">Token sign-in failed</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Start">Log in</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Unavailable">Login unavailable</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Website">»  Website</sys:String>
@@ -3658,6 +3677,7 @@
 Token expired at {1}, will refresh before launch</sys:String>
     <sys:String x:Key="Lunar.Account.Hint.UsingIdentity">Launching with Lunar identity: {0}. This account is signed in on this page and is independent of your PCL accounts.</sys:String>
     <sys:String x:Key="Lunar.Account.Hint.IdentityExpired">{0}'s token expired at {1} and will refresh before launch.</sys:String>
+    <sys:String x:Key="Lunar.Error.TokenOnlyExpired">{0} was imported from a Minecraft token. That token has expired and cannot be renewed — import it again on the Lunar page, or use the device-code sign-in.</sys:String>
     <sys:String x:Key="Lunar.Action.LoginIdentity">Sign in</sys:String>
     <sys:String x:Key="Lunar.Account.Login.Busy">Busy launching or running — stop it before signing in.</sys:String>
     <sys:String x:Key="Lunar.Account.Login.Failed">Lunar identity sign-in failed</sys:String>
@@ -3697,7 +3717,9 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Lunar.Left.AccountExpiredHint">Session expired; the game will show Invalid session.</sys:String>
     <sys:String x:Key="Lunar.Left.AccountHint">This account from Lunar's account library ({0}) is what the game signs in with.</sys:String>
     <sys:String x:Key="Lunar.Left.NoAccount">No Lunar account</sys:String>
-    <sys:String x:Key="Lunar.Left.NoAccountHint">Sign in once in the Lunar launcher, or use the account signed in on PCL's main page.</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityExpiredNoRefresh">Token expired. This account was imported from a token and cannot renew itself — import it again.</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityHint">Lunar identity, UUID {0}. This is the account used in game.</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityExpiredHint">Token expired — it will refresh before launch.</sys:String>
     <sys:String x:Key="Lunar.Msg.NotInstalled">Could not find {0}.
 Install Lunar Client and launch it at least once first.</sys:String>
     <sys:String x:Key="Lunar.Msg.NotInstalled.Title">Lunar Client not found</sys:String>

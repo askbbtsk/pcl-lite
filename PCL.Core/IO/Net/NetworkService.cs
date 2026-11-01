@@ -55,6 +55,11 @@ public partial class NetworkService
 
     public const string ModrinthApi = "modrinth_api";
 
+    /// <summary>
+    ///     不自动跟随重定向的客户端。授权码登录要自己读 302 的 <c>Location</c> 才能拿到 code。
+    /// </summary>
+    public const string NoRedirect = "no_redirect";
+
 
     #endregion
     
@@ -94,6 +99,11 @@ public partial class NetworkService
         {
             c.BaseAddress = new Uri(ModrinthApiServer);
         });
+        
+        // 不跟随重定向（授权码登录用）
+
+        services.AddHttpClient(NoRedirect)
+            .ConfigurePrimaryHttpMessageHandler(() => _GetSocketsHttpHandler(false));
         
         // Microsoft Entra ID
         
@@ -140,12 +150,17 @@ public partial class NetworkService
         _provider?.Dispose();
     }
 
-    private static SocketsHttpHandler _GetSocketsHttpHandler() => new SocketsHttpHandler
+    private static SocketsHttpHandler _GetSocketsHttpHandler() => _GetSocketsHttpHandler(true);
+
+    /// <param name="allowAutoRedirect">
+    ///     是否自动跟随 3xx。授权码登录必须自己读 <c>Location</c>，所以那边要传 <c>false</c>。
+    /// </param>
+    private static SocketsHttpHandler _GetSocketsHttpHandler(bool allowAutoRedirect) => new SocketsHttpHandler
     {
         UseProxy = true,
         AutomaticDecompression = DecompressionMethods.All,
         Proxy = HttpProxyManager.Instance,
-        AllowAutoRedirect = true,
+        AllowAutoRedirect = allowAutoRedirect,
         MaxAutomaticRedirections = 20,
         UseCookies = false,
         EnableMultipleHttp2Connections = true,

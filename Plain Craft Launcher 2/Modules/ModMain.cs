@@ -294,6 +294,14 @@ public static class ModMain
         public string HintText = "";
 
         /// <summary>
+        ///     输入模式：是否换成多行、可滚动的高输入框。
+        ///     <para>
+        ///         长令牌、Cookie 这类内容塞进单行框里既看不全也容易溢出，改用多行框。
+        ///         </para>
+        /// </summary>
+        public bool Multiline;
+
+        /// <summary>
         ///     弹窗是否已经关闭。
         /// </summary>
         public bool IsExited = false;
@@ -539,9 +547,10 @@ public static class ModMain
     /// <param name="button1">显示的第一个按钮，默认为“确定”。</param>
     /// <param name="button2">显示的第二个按钮，默认为“取消”。</param>
     /// <param name="isWarn">是否为警告弹窗，若为 True，弹窗配色和背景会变为红色。</param>
+    /// <param name="multiline">是否使用多行、可滚动的高输入框（长令牌、Cookie 之类）。</param>
     public static string MyMsgBoxInput(string title, string text = "", string defaultInput = "",
         Collection<IValidator<string>>? validateRules = null, string hintText = "", string? button1 = null,
-        string? button2 = null, bool isWarn = false)
+        string? button2 = null, bool isWarn = false, bool multiline = false)
     {
         button1 ??= GetDefaultConfirmText();
         button2 ??= GetDefaultCancelText();
@@ -550,7 +559,7 @@ public static class ModMain
         {
             Text = text, HintText = hintText, Type = MyMsgBoxType.Input,
             ValidateRules = validateRules ?? [], Button1 = button1, Button2 = button2,
-            Content = defaultInput, IsWarn = isWarn, Title = title
+            Content = defaultInput, IsWarn = isWarn, Title = title, Multiline = multiline
         };
         WaitingMyMsgBox.Add(converter);
         // 虽然我也不知道这是啥但是能用就成了 :)

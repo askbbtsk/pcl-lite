@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -64,10 +64,22 @@ public partial class PageLunarLeft
 
         LabVersionText.Text = ready ? ModLunar.SelectedSubVersion : "";
 
-        // 账号：Lunar 只认自己账户库里的激活账号，这里如实显示，
-        // 免得用户以为在用 PCL 主页面的登录
+        // 账号：先看本页登录的「Lunar 身份账号」，再看 Lunar 账户库里的激活账号。
+        // 身份账号必须排在前面 —— 它选中时 SelectedAccount 会故意返回 null
+        // （那条路不再用 PCL 主页面登录的令牌），漏了这一步左栏就会一直写着「未找到」
+        var identity = ModLunar.SelectedIdentityAccount;
         var account = ModLunar.SelectedAccount;
-        if (account is not null)
+        if (identity is not null)
+        {
+            LabAccountName.Text = identity.DisplayName;
+            // 令牌导入的账号没有 refreshToken，说「启动前会刷新」是骗人
+            LabAccountHint.Text = identity.IsExpired
+                ? Lang.Text(identity.CanRefresh
+                    ? "Lunar.Left.IdentityExpiredHint"
+                    : "Lunar.Left.IdentityExpiredNoRefresh")
+                : Lang.Text("Lunar.Left.IdentityHint", FormatUuid(identity.Uuid));
+        }
+        else if (account is not null)
         {
             LabAccountName.Text = account.IsExpired
                 ? Lang.Text("Lunar.Account.NameExpired", account.DisplayName)
@@ -79,10 +91,24 @@ public partial class PageLunarLeft
         else
         {
             LabAccountName.Text = Lang.Text("Lunar.Left.NoAccount");
-            LabAccountHint.Text = Lang.Text("Lunar.Left.NoAccountHint");
+            LabAccountHint.Text = "";
         }
 
+        // 没有说明时把那一行收起来，别在卡片底部留一条空白
+        LabAccountHint.Visibility = string.IsNullOrEmpty(LabAccountHint.Text)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
         RefreshButton(running);
+    }
+
+    /// <summary>把 32 位裸 UUID 补成带横线的形式，方便和别处看到的一一对应。</summary>
+    private static string FormatUuid(string? uuid)
+    {
+        var raw = (uuid ?? "").Replace("-", string.Empty);
+        return raw.Length == 32
+            ? $"{raw[..8]}-{raw[8..12]}-{raw[12..16]}-{raw[16..20]}-{raw[20..]}"
+            : uuid ?? "";
     }
 
     private void RefreshButton(bool running)

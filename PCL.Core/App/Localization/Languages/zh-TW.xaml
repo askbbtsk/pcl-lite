@@ -1524,6 +1524,25 @@
     <sys:String x:Key="Launch.Account.Microsoft.LoginFailed.Title">微軟登入嘗試失敗</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.LoginFailed.WithDetail">微軟登入驗證失敗。&#xA;&#xA;原始錯誤資訊：&#xA;{0}</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Purchase">»   購買游戲</sys:String>
+    <sys:String x:Key="Launch.Account.Token.NotOurs">Refresh Token 只能由簽發它的應用程式兌換：PCL Lite 自己，或 Lunar 啟動器。其它啟動器、工具簽發的換不了，微軟會直接回 AADSTS70000。改用 Cookie 或 Minecraft 權杖吧。</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Device">裝置碼</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Token">Access Token</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Refresh">Refresh Token</sys:String>
+    <sys:String x:Key="Launch.Account.Method.Cookie">Cookie</sys:String>
+    <sys:String x:Key="Launch.Account.Token.CookieStale">這份 Cookie 已經失效。請確認它是從 login.live.com 匯出的，而且瀏覽器裡那個帳號還登著。</sys:String>
+    <sys:String x:Key="Launch.Account.NameWithMethod">（{0}）</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Login">使用權杖登入</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Title">使用權杖登入</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Desc">貼上 Refresh Token、Minecraft 權杖或微軟 Cookie，三種會自動辨識。
+
+Refresh Token 會換出一整套新權杖，可以一直續期，效果和正常登入一樣。
+Minecraft 權杖直接使用，但 24 小時後失效，且無法續期。
+Cookie 同樣會換出整套權杖，也能續期。
+
+這三種憑據等同於帳號密碼。</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Hint">貼上權杖或 Cookie</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Success">已新增帳號：{0}</sys:String>
+    <sys:String x:Key="Launch.Account.Token.Failed">權杖登入失敗</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Start">開始微軟驗證</sys:String>
     <sys:String x:Key="Launch.Account.Microsoft.Website">»   前往官網</sys:String>
 
@@ -3599,6 +3618,7 @@
 權杖已於 {1} 過期，啟動前會重新整理</sys:String>
     <sys:String x:Key="Lunar.Account.Hint.UsingIdentity">用 Lunar 身分啟動：{0}。這個帳號在本頁登入，和 PCL 主頁面的帳號互不影響。</sys:String>
     <sys:String x:Key="Lunar.Account.Hint.IdentityExpired">{0} 的權杖已於 {1} 過期，啟動前會自動重新整理。</sys:String>
+    <sys:String x:Key="Lunar.Error.TokenOnlyExpired">{0} 是用 Minecraft 權杖匯入的帳號，權杖已過期且無法續期。請在 Lunar 頁面重新匯入，或改用裝置碼登入。</sys:String>
     <sys:String x:Key="Lunar.Action.LoginIdentity">登入</sys:String>
     <sys:String x:Key="Lunar.Account.Login.Busy">正在啟動或執行中，先停一下再登入。</sys:String>
     <sys:String x:Key="Lunar.Account.Login.Failed">Lunar 身分登入失敗</sys:String>
@@ -3638,7 +3658,9 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Lunar.Left.AccountExpiredHint">工作階段已過期，遊戲內會顯示 Invalid session。</sys:String>
     <sys:String x:Key="Lunar.Left.AccountHint">Lunar 帳戶庫裡的帳號（{0}），進遊戲用的就是它。</sys:String>
     <sys:String x:Key="Lunar.Left.NoAccount">未找到 Lunar 帳號</sys:String>
-    <sys:String x:Key="Lunar.Left.NoAccountHint">先在 Lunar 啟動器裡登入一次，或用 PCL 主頁面登入的帳號。</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityExpiredNoRefresh">權杖已過期，這個帳號是權杖匯入的、無法續期，需要重新匯入。</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityHint">Lunar 身分帳號，UUID {0}。進遊戲用的就是它。</sys:String>
+    <sys:String x:Key="Lunar.Left.IdentityExpiredHint">權杖已過期，啟動前會自動重新整理。</sys:String>
     <sys:String x:Key="Lunar.Msg.NotInstalled">沒有找到 {0}。
 請先安裝 Lunar Client 並至少啟動一次。</sys:String>
     <sys:String x:Key="Lunar.Msg.NotInstalled.Title">未偵測到 Lunar Client</sys:String>

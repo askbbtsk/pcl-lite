@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -402,6 +402,23 @@ public static class ProfileUi
     {
         var high = 1L << (digits * 4);
         return (high | (value & (high - 1L))).ToString("X")[1..];
+    }
+
+    /// <summary>
+    ///     账号名后面那个「（设备代码）」。同一个号可能有好几条档案（设备码 / Refresh Token /
+    ///     Minecraft 令牌），不标出来在列表里完全分不清。
+    /// </summary>
+    public static string GetLoginMethodSuffix(McProfile profile)
+    {
+        if (profile.ProfileType != ProfileType.Microsoft) return string.Empty;
+        var label = ProfileService.NormalizeLoginMethod(profile.LoginMethod) switch
+        {
+            "token" => Lang.Text("Launch.Account.Method.Token"),
+            "refresh" => Lang.Text("Launch.Account.Method.Refresh"),
+            "cookie" => Lang.Text("Launch.Account.Method.Cookie"),
+            _ => Lang.Text("Launch.Account.Method.Device")
+        };
+        return Lang.Text("Launch.Account.NameWithMethod", label);
     }
 
     public static string GetProfileInfo(McProfile profile)

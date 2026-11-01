@@ -72,24 +72,40 @@ public sealed class MicrosoftProvider : IAuthenticateProvider
         var oauth = request.OAuthResult;
         if (oauth is null && !string.IsNullOrWhiteSpace(request.RefreshToken))
             oauth = await RefreshOAuthAsync(request.RefreshToken, token).ConfigureAwait(false);
+        string? loginMethod = null;
         if (oauth is null && request.DeviceCodeHandler is not null)
         {
             var device = await GetDeviceCodeAsync(token).ConfigureAwait(false);
             oauth = await request.DeviceCodeHandler(
                 new DeviceCodeAuthenticationContext(device, pollToken => PollDeviceCodeAsync(device, pollToken)), token)
                 .ConfigureAwait(false);
+            loginMethod = "device";
         }
         if (oauth is null)
             throw new IdentityModelConfigurationException("Microsoft login requires an OAuth result or device-code handler.");
-        return await CompleteAsync(oauth, token).ConfigureAwait(false);
+        var result = await CompleteAsync(oauth, token).ConfigureAwait(false);
+        // 刷新别人的档案时这里保持 null，调用方会沿用原来的登录方式
+        result.LoginMethod = loginMethod;
+        return result;
     }
 
     public async Task<AuthenticationResult> RefreshAsync(McProfile profile, CancellationToken token)
     {
         if (string.IsNullOrWhiteSpace(profile.RefreshToken))
             throw new IdentityModelAuthenticationException("invalid_grant", "Microsoft refresh token is empty.");
-        return await AuthenticateAsync(new AuthenticationRequest { RefreshToken = profile.RefreshToken }, token)
-            .ConfigureAwait(false);
+        // Cookie 导入的档案，refresh token 是 Xbox 应用签发的：拿 PCL 自己的 client id 去换，
+        // 微软只会回 AADSTS70000「令牌是发给别的客户端的」，必须回到签发它的那套端点
+        if (ProfileService.NormalizeLoginMethod(profile.LoginMethod) == "cookie")
+            return await CompleteAsync(await MsCookieAuth.RefreshAsync(profile.RefreshToken, token)
+                .ConfigureAwait(false), token).ConfigureAwait(false);
+
+        // 令牌导入的档案可能来自别的应用（Lunar、IAS），续期也得用签发者身份
+        var provider = string.IsNullOrWhiteSpace(profile.RefreshClientId) ||
+                       string.Equals(profile.RefreshClientId, _clientId, StringComparison.OrdinalIgnoreCase)
+            ? this
+            : new MicrosoftProvider(profile.RefreshClientId);
+        var oauth = await provider.RefreshOAuthAsync(profile.RefreshToken, token).ConfigureAwait(false);
+        return await CompleteAsync(oauth, token).ConfigureAwait(false);
     }
 
     public async Task<bool> ValidateAsync(McProfile profile, CancellationToken token)

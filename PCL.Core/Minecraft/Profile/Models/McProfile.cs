@@ -8,6 +8,19 @@ namespace PCL.Core.Minecraft.Profile.Models;
 /// </summary>
 public sealed class McProfile : SafeProfile
 {
+    /// <summary>
+    ///     登录方式：<c>device</c> / <c>refresh</c> / <c>token</c> / <c>cookie</c>。老档案没有这个字段，按设备码算。
+    /// </summary>
+    [JsonPropertyName("loginMethod")]
+    public string LoginMethod { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     签发 <see cref="RefreshToken" /> 的应用 client id。空 = PCL 自己。
+    ///     <para>续期必须用签发者身份，否则 AADSTS70000。</para>
+    /// </summary>
+    [JsonPropertyName("refreshClientId")]
+    public string RefreshClientId { get; set; } = string.Empty;
+
     [JsonPropertyName("refreshToken")] public string RefreshToken { get; set; } = string.Empty;
     [JsonPropertyName("clientToken")] public string ClientToken { get; set; } = string.Empty;
     [JsonPropertyName("expiresAt")] public DateTimeOffset? ExpiresAt { get; set; }

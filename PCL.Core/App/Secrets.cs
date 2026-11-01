@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using PCL.Core.Utils.Exts;
 using PCL.Core.Utils.OS;
 
@@ -21,6 +21,25 @@ public static class Secrets
     /// </para>
     /// </summary>
     public static string MSOAuthClientId { get; } = EnvironmentInterop.GetSecret("MS_CLIENT_ID").ReplaceNullOrEmpty();
+
+    /// <summary>
+    ///     Lunar 官方启动器自己的 Azure 应用 client id（public client，没有 secret）。
+    ///     <para>
+    ///         只有两处用得到：Lunar 那条启动链路，以及导入别人签发的 Refresh Token 时的兜底
+    ///         —— refresh token 绑死签发它的应用，拿 PCL 的身份换会直接 <c>invalid_grant</c>。
+    ///     </para>
+    /// </summary>
+    public const string LunarOAuthClientId = "4358653d-21f6-4697-96bb-7963ff974196";
+
+    /// <summary>
+    ///     In-Game Account Switcher（IAS）的 Azure 应用 client id。
+    ///     <para>
+    ///         同样是公共客户端、没有 secret，写在它自己的开源仓库里。
+    ///         用途只有一个：导入别人从 IAS 里拿到的 Refresh Token —— 令牌绑死签发它的应用，
+    ///         拿 PCL 的身份去换只会得到 <c>invalid_grant</c>。
+    ///     </para>
+    /// </summary>
+    public const string IasOAuthClientId = "54fd49e4-2103-4044-9603-2b028c814ec3";
 
     /// <summary>
     /// CurseForge API 的 Client ID

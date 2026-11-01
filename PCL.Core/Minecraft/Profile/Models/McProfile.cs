@@ -45,6 +45,16 @@ public sealed class McProfile : SafeProfile
     [JsonIgnore]
     public bool IsExpired => ExpiresAt is { } expires && expires <= DateTimeOffset.UtcNow.AddMinutes(1);
 
+    /// <summary>
+    ///     复制一份用于就地替换。
+    ///     <para>
+    ///         <b>这里是手写的字段清单，漏一个字段就等于在续期时把它抹成默认值。</b>
+    ///         以前漏了 <see cref="LoginMethod" /> 和 <see cref="RefreshClientId" />：
+    ///         导入的 Refresh Token 档案刷新一次就变成「设备代码」（<see cref="LoginMethod" />
+    ///         被抹成空 → 归一化成 device），签发者也被清掉，下次续期拿 PCL 自己的身份去换，
+    ///         直接 AADSTS70000。加字段时记得同步这里。
+    ///     </para>
+    /// </summary>
     public McProfile Clone() => new()
     {
         ProfileId = ProfileId,
@@ -65,6 +75,8 @@ public sealed class McProfile : SafeProfile
         Password = Password,
         Provider = Provider,
         DiscoveryAddress = DiscoveryAddress,
-        IdToken = IdToken
+        IdToken = IdToken,
+        LoginMethod = LoginMethod,
+        RefreshClientId = RefreshClientId
     };
 }

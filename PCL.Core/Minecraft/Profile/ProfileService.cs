@@ -254,11 +254,16 @@ public partial class ProfileService
         profile.Provider = result.Provider ?? profile.Provider;
         profile.DiscoveryAddress = result.DiscoveryAddress ?? profile.DiscoveryAddress;
         profile.IdToken = result.IdToken ?? profile.IdToken;
+        // 续期回来的结果不带登录方式，要沿用原档案的。这里刻意读 existing 而不是刚克隆出来的
+        // profile：Clone() 是手写字段清单，漏字段时读克隆体会把登录方式静默抹成「设备代码」。
         if (result.ProfileType == ProfileType.Microsoft)
-            profile.LoginMethod = NormalizeLoginMethod(result.LoginMethod ?? profile.LoginMethod);
+            profile.LoginMethod = NormalizeLoginMethod(
+                result.LoginMethod ?? existing?.LoginMethod ?? profile.LoginMethod);
         // 续期沿用原来的签发者；新登进来的记下这次是谁签的
         if (!string.IsNullOrWhiteSpace(result.RefreshClientId))
             profile.RefreshClientId = result.RefreshClientId;
+        else if (existing is not null)
+            profile.RefreshClientId = existing.RefreshClientId;
         if (existing is null) Add(profile, select);
         else
         {

@@ -112,4 +112,29 @@ public sealed class ProfileManagementTest
 
         Assert.ThrowsExactly<InvalidOperationException>(() => management.Update(first, replacement));
     }
+
+    /// <summary>
+    ///     <see cref="McProfile.Clone" /> 是手写的字段清单，漏一个字段就等于在续期时把它抹成默认值。
+    ///     这里钉住两个最要命的：登录方式（漏了 → 导入的 Refresh Token 档案刷新一次就变成
+    ///     「设备代码」）和签发者（漏了 → 下次续期拿错身份，AADSTS70000）。
+    ///     <para>以后给 <see cref="McProfile" /> 加字段时，这条测试不一定会红，但至少这两个不会再漏。</para>
+    /// </summary>
+    [TestMethod]
+    public void CloneKeepsLoginMethodAndRefreshClientId()
+    {
+        var profile = new McProfile
+        {
+            ProfileId = "profile-1",
+            UserName = "Player",
+            Uuid = "0123456789abcdef0123456789abcdef",
+            ProfileType = ProfileType.Microsoft,
+            LoginMethod = "refresh",
+            RefreshClientId = "00000000402b5328"
+        };
+
+        var clone = profile.Clone();
+
+        Assert.AreEqual("refresh", clone.LoginMethod);
+        Assert.AreEqual("00000000402b5328", clone.RefreshClientId);
+    }
 }

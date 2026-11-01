@@ -3045,6 +3045,8 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">不透明度</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">打开启动器时显示 PCL Lite 图标</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在启动游戏时显示"你知道吗"</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">界面上的用户文件夹名打码</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">把界面上路径里 C:\Users\ 后面那一段统一显示成 *****，截图发出去不会带出 Windows 用户名。只影响显示，不会改动任何文件夹或文件。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">基础</sys:String>
 
     <!-- Setup.Ui.FeatureHide -->

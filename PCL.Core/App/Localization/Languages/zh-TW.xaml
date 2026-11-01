@@ -2988,6 +2988,8 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">不透明度</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">開啟啟動器時顯示 PCL Lite 圖示</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在啟動遊戲時顯示"你知道嗎"</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">介面上的使用者資料夾名打碼</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">把介面上路徑裡 C:\Users\ 後面那一段統一顯示成 *****，截圖發出去不會帶出 Windows 使用者名稱。只影響顯示，不會改動任何資料夾或檔案。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">基礎</sys:String>
 
     <!-- Setup.Ui.FeatureHide -->

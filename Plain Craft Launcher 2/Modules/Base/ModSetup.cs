@@ -7,6 +7,7 @@ using PCL.Core.App.Configuration;
 using PCL.Core.IO.Net.Http;
 using PCL.Core.UI.Theme;
 using PCL.Core.Utils.Exts;
+using PCL.Core.Utils.OS;
 using PCL.Network;
 
 using PCL.Core.App.Localization;
@@ -80,6 +81,11 @@ public class ModSetup
             e => UiBlurSamplingRate((int)e.Value!)));
         Config.Preference.Blur.KernelTypeConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
             e => UiBlurType((int)e.Value!)));
+
+        // UI - 用户文件夹名打码
+        // 关掉之后界面上（含启动日志）的 C:\Users\xxx 原样显示；崩溃报告不受这个开关影响，始终打码
+        Config.Preference.MaskUserFolderConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            e => UserPathMasker.Enabled = (bool)e.Value!));
 
         // UI - Title Bar
         Config.Preference.WindowTitleTypeConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
@@ -162,6 +168,9 @@ public class ModSetup
         }
 
         UiBlur(Config.Preference.Blur.IsEnabled);
+
+        // UI - 用户文件夹名打码（默认开）
+        UserPathMasker.Enabled = Config.Preference.MaskUserFolder;
 
         // UI - Title Bar
         UiLogoType((int)Config.Preference.WindowTitleType);

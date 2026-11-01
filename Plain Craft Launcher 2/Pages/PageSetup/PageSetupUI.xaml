@@ -212,6 +212,12 @@
                         <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.ShowTriviaHint}" Margin="-1,0,0,7" Height="22"
                                            x:Name="CheckShowLaunchingHint" Tag="UiShowLaunchingHint"
                                            Change="CheckBoxChange" />
+                        <!-- 用户文件夹名打码。默认开：启动日志里全是 C:\Users\xxx\... 这种路径，
+                             截图发出去就把 Windows 用户名带出去了。只改显示，不动任何文件。 -->
+                        <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.MaskUserFolder}" Margin="-1,0,0,7" Height="22"
+                                           x:Name="CheckMaskUserFolder" Tag="UiMaskUserFolder"
+                                           ToolTip="{DynamicResource Setup.Ui.Basic.MaskUserFolder.ToolTip}"
+                                           Change="CheckBoxChange" />
                         <StackPanel x:Name="PanelBlur" Margin="0,0,0,10">
                             <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.AdvancedMaterial}" Height="22" x:Name="CheckBlur" Tag="UiBlur"
                                               ToolTip="{DynamicResource Setup.Ui.Basic.AdvancedMaterial.ToolTip}"

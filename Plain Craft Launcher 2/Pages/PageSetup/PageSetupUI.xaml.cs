@@ -52,6 +52,7 @@ public partial class PageSetupUI
             ComboDarkMode.SelectedIndex = (int)Config.Preference.Theme.ColorMode;
             RefreshCustomTheme();
             CheckShowLaunchingHint.Checked = Config.Preference.ShowLaunchingHint;
+            CheckMaskUserFolder.Checked = Config.Preference.MaskUserFolder;
 
             // 字体设置
             ComboUiFont.SelectedFontTag = Config.Preference.Font;

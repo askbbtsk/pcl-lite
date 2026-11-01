@@ -214,6 +214,15 @@ public static partial class Config
         [ConfigItem<bool>("UiLauncherLogo", true, ConfigSource.Local)] public partial bool ShowStartupLogo { get; set; }
 
         /// <summary>
+        /// 启动日志里把 Windows 用户文件夹的名字打码成 *****。
+        /// <para>
+        /// 默认开：启动日志里全是 <c>C:\Users\xxx\AppData\...</c> 这种路径，随手截个图就带出去了。
+        /// 只影响显示，不改动任何文件。
+        /// </para>
+        /// </summary>
+        [ConfigItem<bool>("UiMaskUserFolder", true, ConfigSource.Local)] public partial bool MaskUserFolder { get; set; }
+
+        /// <summary>
         /// 锁定窗口大小。
         /// </summary>
         [ConfigItem<bool>("UiLockWindowSize", false)] public partial bool LockWindowSize { get; set; }

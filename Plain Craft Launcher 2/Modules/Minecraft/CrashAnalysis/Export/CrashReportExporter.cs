@@ -122,7 +122,8 @@ internal sealed class CrashReportExporter
         var tokenMask = fileName == LaunchScriptFileName ? 'F' : '*';
 
         fileContent = McLogFilter.FilterAccessToken(fileContent, tokenMask);
-        return McLogFilter.FilterUserName(fileContent, '*');
+        // 崩溃报告是要发出去给人看的，用户文件夹名一律打码，不看个性化里那个开关
+        return McLogFilter.FilterUserName(fileContent);
     }
 
     private static void _WriteEnvironmentInfo(string reportFolder)

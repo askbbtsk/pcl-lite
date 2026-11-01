@@ -5,6 +5,7 @@ using System.Windows;
 using Humanizer;
 using PCL.Core.App.IoC;
 using PCL.Core.IO;
+using PCL.Core.Utils.OS;
 
 namespace PCL.Core.App.Localization;
 
@@ -117,7 +118,10 @@ public static class Lang
     /// </returns>
     public static string Text(string key, params object?[] args)
     {
-        return string.Format(Culture, Text(key), args);
+        var text = string.Format(Culture, Text(key), args);
+        // 显示层打码：界面上到处都是 C:\Users\xxx\... 这种路径，截图发出去就带出用户名了。
+        // 个性化里的「用户文件夹名打码」默认开着；关掉时这里原样返回，一个字都不改。
+        return UserPathMasker.Apply(text);
     }
 
     /// <summary>

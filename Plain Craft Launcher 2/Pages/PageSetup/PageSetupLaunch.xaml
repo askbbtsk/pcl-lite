@@ -31,8 +31,11 @@
                             <RowDefinition Height="9" />
                             <RowDefinition Height="28" />
                             <RowDefinition Height="9" />
-                            <RowDefinition Height="28" />
-                            <RowDefinition Height="9" />
+                            <!-- 正版验证方式那一行（原 Row 12）和它下面的间距：该选项实际被强制成设备代码流，
+                                 切换没有任何效果，所以整行隐藏。控件本身留着，改回来只要把这两行高度和
+                                 下面两个控件的 Visibility 恢复即可。 -->
+                            <RowDefinition Height="0" />
+                            <RowDefinition Height="0" />
                             <RowDefinition Height="28" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
@@ -139,13 +142,16 @@
                                 </local:MyTextBox.ValidateRules>
                             </local:MyTextBox>
                         </Grid>
+                        <!-- 正版验证方式：选项被强制成设备代码流，切换无效，整行隐藏。
+                             控件和绑定都保留，将来真做出双流程了把 Visibility 去掉、上面两行行高改回 28/9 即可。 -->
                         <TextBlock VerticalAlignment="Center" Grid.Row="12" HorizontalAlignment="Left" Text="{DynamicResource Setup.Launch.Options.MsAuth.Label}"
-                                   Margin="0,0,25,0"
+                                   Margin="0,0,25,0" Visibility="Collapsed"
                                    ToolTip="{DynamicResource Setup.Launch.Options.MsAuth.ToolTip}" />
                         <local:MyComboBox x:Name="ComboMsAuthType" Grid.Row="12" Grid.ColumnSpan="2"
                                           Tag="LoginMsAuthType" Grid.Column="1"
                                           SelectionChanged="ComboChange"
                                           ToolTip="{DynamicResource Setup.Launch.Options.MsAuth.ToolTip}"
+                                          Visibility="Collapsed"
                                           IsEnabled="False">
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Launch.Options.MsAuth.WebManager}" IsSelected="True" />
                             <local:MyComboBoxItem Content="{DynamicResource Setup.Launch.Options.MsAuth.DeviceCode}" />

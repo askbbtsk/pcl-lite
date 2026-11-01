@@ -243,21 +243,25 @@ public partial class PageLunarLaunch
     /// </summary>
     private void RefreshAccountCombo()
     {
+        var identities = ModLunar.LunarIdentityAccounts;
         var accounts = ModLunar.Accounts;
-        var pclProfiles = ModLunar.PclProfiles;
 
-        // 1.5.0 存的是裸的 localId，没有前缀。这里补上，否则老用户的选中项
-        // 会对不上任何一项，下拉框看起来像「没选账号」
         var selectedTag = Config.Preference.Lunar.AccountLocalId ?? "";
+        // 老配置里可能存着 pcl:<ProfileId>（以前的「PCL Lite 登录账号」那组）。
+        // 那组已经取消了，统一当成没选，否则下拉框会对不上任何一项
         if (!string.IsNullOrEmpty(selectedTag)
-            && !selectedTag.StartsWith("pcl:", StringComparison.OrdinalIgnoreCase)
+            && !selectedTag.StartsWith(ModLunar.IdentitySelectionPrefix, StringComparison.OrdinalIgnoreCase)
+            && !selectedTag.StartsWith("lunar:", StringComparison.OrdinalIgnoreCase))
+            selectedTag = "";
+        // 1.5.0 存的是裸的 localId，没有前缀
+        if (!string.IsNullOrEmpty(selectedTag)
+            && !selectedTag.StartsWith(ModLunar.IdentitySelectionPrefix, StringComparison.OrdinalIgnoreCase)
             && !selectedTag.StartsWith("lunar:", StringComparison.OrdinalIgnoreCase))
             selectedTag = "lunar:" + selectedTag;
 
         // 选中项也要进签名：换账号时要重建，否则下拉框显示的还是旧的
-        var signature = string.Join(",", accounts.Select(x => x.LocalId + (x.IsExpired ? "!" : "")))
-                        + "|" + string.Join(",", pclProfiles.Select(x => x.ProfileId + ":" + x.UserName +
-                            (x.IsExpired ? "!" : "")))
+        var signature = string.Join(",", identities.Select(x => x.Uuid + (x.IsExpired ? "!" : "")))
+                        + "|" + string.Join(",", accounts.Select(x => x.LocalId + (x.IsExpired ? "!" : "")))
                         + "#" + selectedTag;
         if (signature == _accountSignature) return;
         _accountSignature = signature;
@@ -267,23 +271,35 @@ public partial class PageLunarLaunch
         {
             ComboAccount.Items.Clear();
 
-            if (pclProfiles.Count > 0)
+            // 第一组：Lunar 身份账号。只来自本页的「登录」，和 PCL 主页面的账号列表无关
+            ComboAccount.Items.Add(MakeGroupHeader(Lang.Text("Lunar.Account.Group.Identity")));
+            if (identities.Count == 0)
             {
-                ComboAccount.Items.Add(MakeGroupHeader(Lang.Text("Lunar.Account.Group.Pcl")));
-                foreach (var profile in pclProfiles)
+                ComboAccount.Items.Add(new MyComboBoxItem
+                {
+                    Content = Lang.Text("Lunar.Account.Identity.Empty"),
+                    Tag = "",
+                    IsEnabled = false,
+                    IsSelected = string.IsNullOrEmpty(selectedTag)
+                });
+            }
+            else
+            {
+                foreach (var identity in identities)
                     ComboAccount.Items.Add(new MyComboBoxItem
                     {
                         // 下拉框里只写名字，过期状态放到下面那行说明里，免得把右侧挤歪
-                        Content = profile.UserName,
-                        Tag = ModLunar.SelectionTag(profile),
-                        ToolTip = profile.IsExpired
-                            ? Lang.Text("Lunar.Account.Tip.PclExpired", profile.Uuid,
-                                profile.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "")
-                            : Lang.Text("Lunar.Account.Tip.Pcl", profile.Uuid),
-                        IsSelected = selectedTag == ModLunar.SelectionTag(profile)
+                        Content = identity.DisplayName,
+                        Tag = ModLunar.SelectionTag(identity),
+                        ToolTip = identity.IsExpired
+                            ? Lang.Text("Lunar.Account.Tip.IdentityExpired", identity.Uuid,
+                                identity.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "")
+                            : Lang.Text("Lunar.Account.Tip.Identity", identity.Uuid),
+                        IsSelected = selectedTag == ModLunar.SelectionTag(identity)
                     });
             }
 
+            // 第二组：Lunar 启动器自己的账户库
             ComboAccount.Items.Add(MakeGroupHeader(Lang.Text("Lunar.Account.Group.Lunar")));
 
             if (accounts.Count == 0)
@@ -341,11 +357,20 @@ public partial class PageLunarLaunch
     /// </summary>
     private void RefreshAccountHint()
     {
+        var identity = ModLunar.SelectedIdentityAccount;
         var account = ModLunar.SelectedAccount;
-        var pclProfile = ModLunar.SelectedPclProfile;
 
         string text;
-        if (account is { IsExpired: true } expired)
+        if (identity is { IsExpired: true } expiredIdentity)
+        {
+            text = Lang.Text("Lunar.Account.Hint.IdentityExpired", expiredIdentity.DisplayName,
+                expiredIdentity.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "");
+        }
+        else if (identity is not null)
+        {
+            text = Lang.Text("Lunar.Account.Hint.UsingIdentity", identity.DisplayName);
+        }
+        else if (account is { IsExpired: true } expired)
         {
             var pcl = ModLunar.MatchPclProfile(expired);
             text = Lang.Text("Lunar.Account.Hint.LunarExpired",
@@ -354,15 +379,6 @@ public partial class PageLunarLaunch
                        ? Lang.Text("Lunar.Account.Hint.WillRefresh", pcl.UserName)
                        : Lang.Text("Lunar.Account.Hint.NoPcl"));
         }
-        else if (pclProfile is { IsExpired: true } pcl)
-        {
-            text = Lang.Text("Lunar.Account.Hint.PclExpired", pcl.UserName,
-                pcl.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "");
-        }
-        else if (pclProfile is not null)
-        {
-            text = Lang.Text("Lunar.Account.Hint.UsingPcl", pclProfile.UserName);
-        }
         else
         {
             text = "";
@@ -370,6 +386,48 @@ public partial class PageLunarLaunch
 
         LabAccountHint.Text = text;
         LabAccountHint.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>
+    ///     用 Lunar 的 client id 登录一个「Lunar 身份账号」。
+    ///     <para>
+    ///         这是 Lunar 页面专属的登录，<b>和 PCL 主页面的账号列表完全无关</b>：
+    ///         产出的账号只写进身份库，主页面看不到；反过来主页面的账号也不会出现在这里。
+    ///         必须走 Lunar 的应用身份，游戏端才认得出来（它按 JWT 的 aid 选刷新实现）。
+    ///     </para>
+    /// </summary>
+    private void BtnLoginIdentity_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (ModLunar.IsBusy || ModLunar.IsRunning)
+        {
+            HintService.Hint(Lang.Text("Lunar.Account.Login.Busy"), HintType.Warning);
+            return;
+        }
+
+        BtnLoginIdentity.IsEnabled = false;
+        ModBase.RunInNewThread(() =>
+        {
+            try
+            {
+                var account = ModLunar.LoginLunarIdentityAsync().GetAwaiter().GetResult();
+                if (account is null) return; // 用户取消，ModLunar 里已经记过日志
+                ModBase.RunInUi(() =>
+                {
+                    _accountSignature = "";
+                    RefreshAccountCombo();
+                    RefreshAccountHint();
+                });
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "[Lunar] 登录 Lunar 身份账号失败", ModBase.LogLevel.Msgbox,
+                    userSummary: Lang.Text("Lunar.Account.Login.Failed"));
+            }
+            finally
+            {
+                ModBase.RunInUi(() => BtnLoginIdentity.IsEnabled = true);
+            }
+        }, "Lunar Identity Login");
     }
 
     private void RefreshButtons()
@@ -389,6 +447,7 @@ public partial class PageLunarLaunch
 
         ComboVersion.IsEnabled = !running && !busy;
         ComboAccount.IsEnabled = !running && !busy;
+        BtnLoginIdentity.IsEnabled = !running && !busy;
         PanLoaders.IsEnabled = !running && !busy;
         BtnRefreshVersions.IsEnabled = !running && !busy;
     }

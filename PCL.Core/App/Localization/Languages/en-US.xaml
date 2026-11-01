@@ -3651,6 +3651,16 @@
     <sys:String x:Key="Lunar.Setup.OverrideCheck">Override for this version</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideHint">Empty = use global</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideDesc">Only affects the selected version.</sys:String>
+    <sys:String x:Key="Lunar.Account.Group.Identity">Lunar identity</sys:String>
+    <sys:String x:Key="Lunar.Account.Identity.Empty">(Not signed in — use "Sign in" on the right)</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.Identity">Lunar identity: {0}</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.IdentityExpired">Lunar identity: {0}
+Token expired at {1}, will refresh before launch</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.UsingIdentity">Launching with Lunar identity: {0}. This account is signed in on this page and is independent of your PCL accounts.</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.IdentityExpired">{0}'s token expired at {1} and will refresh before launch.</sys:String>
+    <sys:String x:Key="Lunar.Action.LoginIdentity">Sign in</sys:String>
+    <sys:String x:Key="Lunar.Account.Login.Busy">Busy launching or running — stop it before signing in.</sys:String>
+    <sys:String x:Key="Lunar.Account.Login.Failed">Lunar identity sign-in failed</sys:String>
     <sys:String x:Key="Lunar.Account.Group.Pcl">PCL account</sys:String>
     <sys:String x:Key="Lunar.Account.Group.Lunar">Lunar account</sys:String>
     <sys:String x:Key="Lunar.Account.Empty">(account library is empty)</sys:String>

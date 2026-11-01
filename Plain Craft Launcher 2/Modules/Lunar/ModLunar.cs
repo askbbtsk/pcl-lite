@@ -46,6 +46,26 @@ public static class ModLunar
     /// </summary>
     public const string FallbackModule = "lunar";
 
+    /// <summary>
+    ///     Lunar 官方启动器自己的 Azure 应用 client id。
+    ///     <para>
+    ///         <b>这不是 PCL 的凭据</b>，是从 Lunar 官方启动器的 <c>main.js</c> 里提取的明文常量
+    ///         （public client，没有 client secret）。只在 Lunar 这条链路上使用，PCL 自己的
+    ///         微软登录仍然走 <see cref="Secrets.MSOAuthClientId" />，两者互不影响。
+    ///     </para>
+    ///     <para>
+    ///         <b>为什么必须用它</b>：Lunar 游戏端按 JWT 里的 <c>aid</c> 选刷新实现
+    ///         （<c>aid === Lunar 的 client id</c> → 走标准 OAuth；否则落到 SISU 分支，
+    ///         需要 deviceToken 和密钥对，PCL 造不出来）。用 PCL 自己的 client id 签出来的
+    ///         refreshToken，<c>aid</c> 对不上，游戏启动时会卡在 <c>Connecting...</c>。
+    ///     </para>
+    ///     <para>
+    ///         风险：授权会记在 Lunar 的 Azure 应用名下；Lunar 单方面改这个应用注册
+    ///         （关掉 public client、改 redirect URI、删应用）会让这条链路直接失效。
+    ///     </para>
+    /// </summary>
+    private const string LunarOAuthClientId = "4358653d-21f6-4697-96bb-7963ff974196";
+
     private static Process? _process;
     private static bool _isBusy;
     private static LunarIpcServer? _ipcServer;
@@ -125,8 +145,14 @@ public static class ModLunar
     /// </summary>
     private static bool _canRefreshSession;
 
-    /// <summary>账号选择里 PCL 账号的前缀，和 Lunar 的 <c>localId</c> 区分开。</summary>
-    public const string PclSelectionPrefix = "pcl:";
+    /// <summary>
+    ///     账号选择里「Lunar 身份账号」的前缀，和 Lunar 账户库的 <c>localId</c> 区分开。
+    ///     <para>
+    ///         带这个前缀的账号是用户在 Lunar 页面用 Lunar 的 client id 登录出来的，
+    ///     和 PCL 主页面的登录完全是两套。
+    ///     </para>
+    /// </summary>
+    public const string IdentitySelectionPrefix = "identity:";
 
     public static event Action? StateChanged;
 
@@ -325,27 +351,36 @@ public static class ModLunar
         get
         {
             var configured = Config.Preference.Lunar.AccountLocalId;
-            if (IsPclSelection(configured)) return null;
+            if (IsIdentitySelection(configured)) return null;
             return new LunarAccountSnapshot(_activeAccountLocalId, _accounts).Resolve(StripLunarPrefix(configured));
         }
     }
 
     /// <summary>
-    ///     当前选中的 PCL 登录账号。没选 PCL 账号时为 <c>null</c>。
+    ///     当前选中的「Lunar 身份账号」—— 用户在 Lunar 页面用 Lunar 的 client id 登录出来的那个。
+    ///     没选时为 <c>null</c>。
     ///     <para>
-    ///         只读本地档案，**不会触发任何登录/授权流程**，所以把它列进下拉框不会导致重新登录。
+    ///         只读本地身份库，**不会触发任何登录/授权流程**，列进下拉框不会导致重新登录。
     ///     </para>
     /// </summary>
-    public static McProfile? SelectedPclProfile
+    public static LunarIdentityAccount? SelectedIdentityAccount
     {
         get
         {
             var configured = Config.Preference.Lunar.AccountLocalId;
-            if (!IsPclSelection(configured)) return null;
-            var id = configured[PclSelectionPrefix.Length..];
-            return PclProfiles.FirstOrDefault(x => x.ProfileId == id);
+            if (!IsIdentitySelection(configured)) return null;
+            return LunarIdentityStore.Find(configured[IdentitySelectionPrefix.Length..]);
         }
     }
+
+    /// <summary>
+    ///     Lunar 页面登录出来的账号列表。
+    ///     <para>
+    ///         <b>和 PCL 主页面的账号列表没有任何关系</b>：这里只读
+    ///         <see cref="LunarIdentityStore" />，不会把 PCL 的档案混进来。
+    ///     </para>
+    /// </summary>
+    public static IReadOnlyList<LunarIdentityAccount> LunarIdentityAccounts => LunarIdentityStore.Read();
 
     /// <summary>PCL 里登录过的微软账号。读不出来就返回空列表，不抛异常。</summary>
     public static IReadOnlyList<McProfile> PclProfiles
@@ -369,10 +404,10 @@ public static class ModLunar
     /// <summary>下拉框里那一项的唯一标识：<c>pcl:&lt;ProfileId&gt;</c> 或 <c>lunar:&lt;localId&gt;</c>。</summary>
     public static string SelectionTag(LunarAccount account) => "lunar:" + account.LocalId;
 
-    public static string SelectionTag(McProfile profile) => PclSelectionPrefix + profile.ProfileId;
+    public static string SelectionTag(LunarIdentityAccount account) => IdentitySelectionPrefix + account.Uuid;
 
-    private static bool IsPclSelection(string? value) =>
-        value is not null && value.StartsWith(PclSelectionPrefix, StringComparison.OrdinalIgnoreCase);
+    private static bool IsIdentitySelection(string? value) =>
+        value is not null && value.StartsWith(IdentitySelectionPrefix, StringComparison.OrdinalIgnoreCase);
 
     private static string StripLunarPrefix(string? value) =>
         value is not null && value.StartsWith("lunar:", StringComparison.OrdinalIgnoreCase) ? value[6..] : value ?? "";
@@ -1360,9 +1395,10 @@ public static class ModLunar
         _launchedLocalId = string.Empty;
         _canRefreshSession = false;
 
-        // ① 用户在账号下拉框里明确点了「PCL Lite 登录账号」
-        if (SelectedPclProfile is { } pclProfile)
-            return await ResolveFromPclProfileAsync(pclProfile).ConfigureAwait(false);
+        // ① 用户在账号下拉框里明确点了「Lunar 身份账号」—— 那是本页登录出来的，
+        //    和 PCL 主页面的账号完全是两套，互不影响
+        if (SelectedIdentityAccount is { } identity)
+            return await ResolveFromIdentityAsync(identity).ConfigureAwait(false);
 
         var account = SelectedAccount;
 
@@ -1409,49 +1445,12 @@ public static class ModLunar
             return (account.DisplayName, uuid, account.AccessToken);
         }
 
-        // ③ Lunar 账户库里一个账号都没有。典型情况是从没装过、或装过但从没在 Lunar 启动器里登录。
-        // 这种时候只要 PCL Lite 自己登录过微软账号就够用，不必先去 Lunar 登录一次
-        var pclAccount = ProfileService.Current;
-        if (pclAccount is null || pclAccount.ProfileType != ProfileType.Microsoft ||
-            string.IsNullOrWhiteSpace(pclAccount.AccessToken))
-        {
-            pclAccount = PclProfiles.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.AccessToken));
-        }
-
-        if (pclAccount is not null)
-        {
-            Log("Lunar 账户库里没有账号，改用 PCL Lite 登录的账号");
-            return await ResolveFromPclProfileAsync(pclAccount).ConfigureAwait(false);
-        }
-
-        Log("Lunar 账户库和 PCL 账号列表都是空的，尝试走一次主页面登录");
-
-        // 直接复用主页面登录过的凭据：mcLoginLoader 跑完一次之后 output 就有值，
-        // 再 Start() 一次会重新走 OAuth、多弹一次浏览器，用户会以为出问题了
-        var login = ModLaunch.mcLoginLoader.output;
-
-        if (string.IsNullOrWhiteSpace(login.AccessToken))
-        {
-            // 主页面还没登录过，兜底走一次。
-            // 不能用 WaitForExit —— 它会同步 sleep，这里必须用轮询等
-            ModLaunch.mcLoginLoader.Start();
-            while (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Loading)
-                await Task.Delay(50).ConfigureAwait(false);
-
-            if (ModLaunch.mcLoginLoader.State == ModBase.LoadState.Aborted)
-                throw new InvalidOperationException("登录已取消。");
-            if (ModLaunch.mcLoginLoader.Error is { } loginError)
-                throw loginError;
-
-            login = ModLaunch.mcLoginLoader.output;
-        }
-
-        if (string.IsNullOrWhiteSpace(login.AccessToken))
-            throw new InvalidOperationException(
-                "PCL 里还没有登录任何账号。请在主页面登录微软账号后重试 —— 不需要登录 Lunar 启动器。");
-
-        Log($"账号：{login.Name}（PCL 登录）");
-        return (login.Name, NormalizeUuid(login.Uuid), login.AccessToken);
+        // ③ 既没选 Lunar 身份账号，账户库里也没有账号。
+        //    这里**不再**偷偷回落到 PCL 主页面的登录：那套令牌是 PCL 自己的 client id 签的，
+        //    JWT 里的 aid 对不上，Lunar 认不出来，启动只会卡在 Connecting...。
+        throw new InvalidOperationException(
+            "还没有可用的 Lunar 账号。请在账号下拉框右侧点「登录」，用 Lunar 身份登录一次。\n" +
+            "这个登录和 PCL 主页面的账号是两套，互不影响。");
     }
 
     /// <summary>
@@ -1462,66 +1461,148 @@ public static class ModLunar
     ///         的账号并把激活账号切过去；找不到就只能启动，进游戏仍是 Lunar 原来那个身份。
     ///     </para>
     /// </summary>
-    private static async Task<(string Name, string Uuid, string Token)> ResolveFromPclProfileAsync(
-        McProfile profile)
+    private static async Task<(string Name, string Uuid, string Token)> ResolveFromIdentityAsync(
+        LunarIdentityAccount identity)
     {
-        Log($"账号：{profile.UserName}（PCL Lite 登录）");
-        // 用的是 PCL 自己的档案，续期自然也能自己做
+        Log($"账号：{identity.DisplayName}（Lunar 身份账号）");
+        // 令牌是 Lunar 的 client id 签的，PCL 自己就能续期
         _canRefreshSession = true;
 
-        var uuid = NormalizeUuid(profile.Uuid);
+        var uuid = NormalizeUuid(identity.Uuid);
         var twin = _accounts.FirstOrDefault(x =>
             string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
 
-        var token = profile.AccessToken;
-        DateTimeOffset? tokenExpiresAt = profile.ExpiresAt;
-        if (profile.IsExpired)
-        {
-            Log("PCL 令牌已过期，先刷新一次…");
-            try
-            {
-                var refreshed = await new MicrosoftProvider()
-                    .RefreshAsync(profile, CancellationToken.None)
-                    .ConfigureAwait(false);
-                if (!string.IsNullOrWhiteSpace(refreshed.AccessToken))
-                {
-                    token = refreshed.AccessToken;
-                    tokenExpiresAt = refreshed.ExpiresAt ?? tokenExpiresAt;
-                    ProfileService.ApplyAuthenticationResult(refreshed, profile, select: false);
-                    Log($"令牌已刷新，到期 {refreshed.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log("刷新失败，仍然用旧令牌启动：" + ex.Message);
-            }
-        }
+        // 过期就用 Lunar 的 client id 刷新一次，新令牌写回身份库
+        var current = await RefreshIdentityAsync(identity, CancellationToken.None).ConfigureAwait(false);
+        var token = current.AccessToken;
+        DateTimeOffset? tokenExpiresAt = current.ExpiresAt;
+        var refreshToken = current.RefreshToken;
+        var displayName = current.DisplayName;
 
         if (twin is not null && LunarAccountStore.SetActive(LunarClientService.SettingsRoot, twin.LocalId))
         {
             _launchedLocalId = twin.LocalId;
-            Log($"Lunar 账户库里有同一个 UUID 的账号，激活账号已切过去（{twin.LocalId}）");
+            // 只切 active 是不够的：Lunar 用 refreshToken 判定账号是否可用
+            // （invalid: !e.refreshToken），为空会直接标无效并卡在 Connecting...
+            var wrote = LunarAccountStore.UpdateToken(LunarClientService.SettingsRoot, twin.LocalId,
+                token, tokenExpiresAt, refreshToken);
+            Log(wrote
+                ? $"Lunar 账户库里已有这个 UUID，激活账号已切过去（{twin.LocalId}），令牌已写回"
+                : $"Lunar 账户库里已有这个 UUID，激活账号已切过去（{twin.LocalId}），但令牌写回失败");
         }
         else if (!string.IsNullOrWhiteSpace(token) &&
-                 LunarAccountStore.Upsert(LunarClientService.SettingsRoot, Guid.NewGuid().ToString("N"), profile.UserName,
-                     profile.UserName, uuid.Replace("-", string.Empty), token, tokenExpiresAt))
+                 LunarAccountStore.Upsert(LunarClientService.SettingsRoot, Guid.NewGuid().ToString("N"), displayName,
+                     displayName, uuid.Replace("-", string.Empty), token, tokenExpiresAt, refreshToken))
         {
-            // 账户库里没有这个号：直接补一条并切过去。以前这里只写日志然后照旧启动，
-            // 结果游戏读 activeAccountLocalId，进游戏还是 Lunar 原来那个账号 ——
-            // 用户看到的就是「在 PCL 里选了 A，游戏里是 B」
+            // 账户库里没有这个号：补一条并切过去。游戏只认 activeAccountLocalId，
+            // 光传命令行令牌的话，进游戏还是 Lunar 原来那个身份
             RefreshAccounts();
             var added = _accounts.FirstOrDefault(x =>
                 string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
             _launchedLocalId = added?.LocalId ?? string.Empty;
-            Log($"Lunar 账户库里没有这个 UUID，已按 PCL 登录新建一条并切成激活账号（{added?.LocalId}）");
+            Log($"Lunar 账户库里没有这个 UUID，已按登录账号新建一条并切成激活账号（{added?.LocalId}）");
         }
         else
         {
-            Log("Lunar 账户库写入失败：游戏内身份仍由 Lunar 原来的激活账号决定，" +
-                "这里只换了命令行令牌（联机用这个号，好友列表是另一个号）");
+            Log("Lunar 账户库写入失败：游戏内身份仍由 Lunar 原来的激活账号决定");
         }
 
-        return (profile.UserName, uuid, token);
+        return (displayName, uuid, token ?? string.Empty);
+    }
+
+    /// <summary>
+    ///     确保这条 Lunar 身份账号的 accessToken 可用：没过期直接返回，
+    ///     过期就用 Lunar 的 client id 刷新并写回身份库。
+    ///     <para>
+    ///         必须用 Lunar 的 client id 刷新 —— refreshToken 绑死签发它的应用，
+    ///         换别的 client 会直接 <c>invalid_grant</c>。
+    ///     </para>
+    /// </summary>
+    private static async Task<LunarIdentityAccount> RefreshIdentityAsync(LunarIdentityAccount identity,
+        CancellationToken token)
+    {
+        if (!identity.IsExpired && !string.IsNullOrWhiteSpace(identity.AccessToken)) return identity;
+
+        Log($"Lunar 身份账号 {identity.DisplayName} 的令牌已过期" +
+            $"（{FormatExpiry(identity.ExpiresAt)}），正在刷新…");
+        try
+        {
+            var refreshed = await new MicrosoftProvider(LunarOAuthClientId)
+                .RefreshAsync(new McProfile { RefreshToken = identity.RefreshToken, UserName = identity.UserName },
+                    token).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(refreshed.AccessToken))
+            {
+                Log("微软没有返回新的 accessToken，继续用旧的");
+                return identity;
+            }
+
+            var renewed = identity with
+            {
+                UserName = string.IsNullOrWhiteSpace(refreshed.UserName) ? identity.UserName : refreshed.UserName,
+                // 微软每次刷新都轮换 refreshToken，旧的再用就是 invalid_grant
+                RefreshToken = string.IsNullOrWhiteSpace(refreshed.RefreshToken)
+                    ? identity.RefreshToken
+                    : refreshed.RefreshToken,
+                AccessToken = refreshed.AccessToken,
+                ExpiresAt = refreshed.ExpiresAt
+            };
+            LunarIdentityStore.Upsert(renewed);
+            Log($"Lunar 身份令牌已刷新，到期 {FormatExpiry(renewed.ExpiresAt)}");
+            return renewed;
+        }
+        catch (Exception ex)
+        {
+            Log("刷新 Lunar 身份令牌失败：" + ex.Message);
+            return identity;
+        }
+    }
+
+    /// <summary>
+    ///     在 Lunar 页面主动登录一个「Lunar 身份账号」。
+    ///     <para>
+    ///         走 Lunar 自己的 Azure 应用（<see cref="LunarOAuthClientId" />）的设备码流程。
+    ///         产出的 refreshToken 的 <c>aid</c> 是 Lunar 的 client id，游戏端才认得出来。
+    ///     </para>
+    ///     <para>
+    ///         结果只写 <see cref="LunarIdentityStore" />，**不写 PCL 的档案列表** ——
+    ///         所以主页面看不到这个账号，两套登录互不影响。
+    ///     </para>
+    /// </summary>
+    /// <returns>登录成功返回该账号；用户取消返回 <c>null</c>；失败抛异常。</returns>
+    public static async Task<LunarIdentityAccount?> LoginLunarIdentityAsync()
+    {
+        var provider = new MicrosoftProvider(LunarOAuthClientId);
+        var device = await provider.GetDeviceCodeAsync(CancellationToken.None).ConfigureAwait(false);
+        var oauth = await ProfileUi.ShowDeviceCodeLoginAsync(
+            new DeviceCodeAuthenticationContext(device,
+                pollToken => provider.PollDeviceCodeAsync(device, pollToken)),
+            CancellationToken.None).ConfigureAwait(false);
+        if (oauth is null)
+        {
+            Log("Lunar 身份登录已取消");
+            return null;
+        }
+
+        var result = await provider.CompleteAsync(oauth, CancellationToken.None).ConfigureAwait(false);
+        var account = new LunarIdentityAccount
+        {
+            Uuid = NormalizeUuid(result.Uuid).Replace("-", string.Empty),
+            UserName = result.UserName,
+            RefreshToken = result.RefreshToken,
+            AccessToken = result.AccessToken,
+            ExpiresAt = result.ExpiresAt
+        };
+        if (!LunarIdentityStore.Upsert(account))
+        {
+            Log("Lunar 身份登录成功，但写入身份库失败");
+            return null;
+        }
+
+        Log($"Lunar 身份登录完成：{account.DisplayName}（{account.Uuid}）");
+        // 登录完直接选中它，省得用户再点一次下拉框
+        Config.Preference.Lunar.AccountLocalId = SelectionTag(account);
+        Refresh();
+        return account;
     }
 
     /// <summary>
@@ -1631,42 +1712,20 @@ public static class ModLunar
     {
         try
         {
-            var profile = ProfileService.Current is { ProfileType: ProfileType.Microsoft } current &&
-                          !string.IsNullOrWhiteSpace(current.AccessToken)
-                ? current
-                : PclProfiles.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.AccessToken));
-
-            if (profile is null || string.IsNullOrWhiteSpace(profile.AccessToken))
+            // 只认 Lunar 页面登录出来的身份账号 —— PCL 主页面的账号令牌 Lunar 认不出来
+            var identity = SelectedIdentityAccount ?? LunarIdentityAccounts.FirstOrDefault();
+            if (identity is null)
             {
-                Log("[Lunar IPC] 游戏请求添加账号，但 PCL 里没有登录任何可用账号");
+                Log("[Lunar IPC] 游戏请求添加账号，但还没有 Lunar 身份账号（需要先在 Lunar 页面点「登录」）");
                 return false;
             }
 
-            var token = profile.AccessToken;
-            var expiresAt = profile.ExpiresAt;
-            if (profile.IsExpired)
-            {
-                // 交给游戏的一定得是还能用的令牌，否则进游戏就是 Invalid session
-                try
-                {
-                    var refreshed = new MicrosoftProvider()
-                        .RefreshAsync(profile, CancellationToken.None)
-                        .GetAwaiter().GetResult();
-                    if (!string.IsNullOrWhiteSpace(refreshed.AccessToken))
-                    {
-                        token = refreshed.AccessToken;
-                        expiresAt = refreshed.ExpiresAt ?? expiresAt;
-                        ProfileService.ApplyAuthenticationResult(refreshed, profile, select: false);
-                        Log($"[Lunar IPC] 账号令牌已刷新，到期 {refreshed.ExpiresAt?.ToLocalTime():yyyy-MM-dd HH:mm}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log("[Lunar IPC] 刷新令牌失败，仍然交出旧令牌：" + ex.Message);
-                }
-            }
-
-            var uuid = NormalizeUuid(profile.Uuid).Replace("-", string.Empty);
+            var current = RefreshIdentityAsync(identity, CancellationToken.None).GetAwaiter().GetResult();
+            var token = current.AccessToken;
+            var expiresAt = current.ExpiresAt;
+            var refreshToken = current.RefreshToken;
+            var displayName = current.DisplayName;
+            var uuid = NormalizeUuid(current.Uuid).Replace("-", string.Empty);
             RefreshAccounts();
             var twin = _accounts.FirstOrDefault(x =>
                 string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
@@ -1676,8 +1735,8 @@ public static class ModLunar
                               ? Guid.NewGuid().ToString("N")
                               : _launchedLocalId);
 
-            if (!LunarAccountStore.Upsert(LunarClientService.SettingsRoot, localId, profile.UserName, profile.UserName,
-                    uuid, token, expiresAt))
+            if (!LunarAccountStore.Upsert(LunarClientService.SettingsRoot, localId, displayName, displayName,
+                    uuid, token, expiresAt, refreshToken))
             {
                 Log("[Lunar IPC] 写 Lunar 账户库失败，账号没能交给游戏");
                 return false;
@@ -1685,7 +1744,7 @@ public static class ModLunar
 
             RefreshAccounts();
             _launchedLocalId = localId;
-            Log($"[Lunar IPC] 已把账号 {profile.UserName}（{localId}）写进 Lunar 账户库并切成激活账号");
+            Log($"[Lunar IPC] 已把账号 {displayName}（{localId}）写进 Lunar 账户库并切成激活账号");
             return true;
         }
         catch (Exception ex)
@@ -1744,6 +1803,45 @@ public static class ModLunar
     private static async Task<LunarTokenRefresh?> RefreshAccountTokenAsync(LunarAccount account,
         CancellationToken cancellationToken)
     {
+        // ① 账户库里自己那份 refreshToken 是 Lunar 应用签的，优先用它自愈 ——
+        //    这条路不依赖 PCL 里有没有同 UUID 的登录
+        if (!string.IsNullOrWhiteSpace(account.RefreshToken))
+        {
+            if (!account.IsExpired && !string.IsNullOrWhiteSpace(account.AccessToken))
+                return new LunarTokenRefresh(account.AccessToken, account.ExpiresAt,
+                    $"账户库里的令牌还能用（{account.DisplayName}），到期 {FormatExpiry(account.ExpiresAt)}");
+
+            Log($"{account.DisplayName} 的账户库令牌已过期（{FormatExpiry(account.ExpiresAt)}），" +
+                "用 Lunar 的 client id 刷新…");
+            try
+            {
+                var refreshed = await new MicrosoftProvider(LunarOAuthClientId)
+                    .RefreshAsync(new McProfile { RefreshToken = account.RefreshToken, UserName = account.Username },
+                        cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(refreshed.AccessToken))
+                {
+                    // 微软每次刷新都轮换 refreshToken，必须一起写回去
+                    var newRefresh = string.IsNullOrWhiteSpace(refreshed.RefreshToken)
+                        ? account.RefreshToken
+                        : refreshed.RefreshToken;
+                    var written = LunarAccountStore.UpdateToken(LunarClientService.SettingsRoot, account.LocalId,
+                        refreshed.AccessToken, refreshed.ExpiresAt, newRefresh);
+                    RefreshAccounts();
+                    return new LunarTokenRefresh(refreshed.AccessToken, refreshed.ExpiresAt, written
+                        ? $"已用 Lunar 身份刷新（{account.DisplayName}），到期 {FormatExpiry(refreshed.ExpiresAt)}"
+                        : $"已刷新（{account.DisplayName}），但写回 accounts.json 失败，游戏内可能仍是旧令牌");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"用账户库的 refreshToken 刷新失败：{ex.Message}");
+                // 落到下面用 PCL 登录再试一次
+            }
+        }
+
+        // ② 账户库里没有 refreshToken（Lunar 启动器留下的老数据，或 PCL 早先写的条目）。
+        //    退回「用 PCL 的登录替它续期」：能保证游戏内会话不失效，
+        //    但产出的令牌 aid 是 PCL 的，Lunar 端可能认不出来 —— 想彻底解决就在 Lunar 页面重新登录一次
         McProfile? profile;
         try
         {
@@ -1758,46 +1856,46 @@ public static class ModLunar
         if (profile is null)
         {
             Log($"PCL 里没有 {account.DisplayName}（{NormalizeUuid(account.MinecraftUuid)}）的登录，" +
-                "没法替它续期");
+                "账户库里也没有可用的 refreshToken，没法替它续期");
             return null;
         }
 
         var token = profile.AccessToken;
         var expiresAt = profile.ExpiresAt;
+        var refreshToken = profile.RefreshToken;
 
         if (profile.IsExpired || string.IsNullOrWhiteSpace(token))
         {
             Log($"PCL 里 {profile.UserName} 的令牌已过期（{FormatExpiry(expiresAt)}），正在刷新…");
-            AuthenticationResult refreshed;
             try
             {
-                refreshed = await new MicrosoftProvider()
+                var refreshed = await new MicrosoftProvider()
                     .RefreshAsync(profile, cancellationToken)
                     .ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(refreshed.AccessToken))
+                {
+                    token = refreshed.AccessToken;
+                    expiresAt = refreshed.ExpiresAt;
+                    if (!string.IsNullOrWhiteSpace(refreshed.RefreshToken)) refreshToken = refreshed.RefreshToken;
+                    ProfileService.ApplyAuthenticationResult(refreshed, profile, select: false);
+                    Log($"刷新成功，新令牌到期 {FormatExpiry(expiresAt)}");
+                }
             }
             catch (Exception ex)
             {
                 Log("刷新令牌失败：" + ex.Message);
                 return null;
             }
-
-            if (string.IsNullOrWhiteSpace(refreshed.AccessToken))
-            {
-                Log("微软没有返回新的 accessToken");
-                return null;
-            }
-
-            token = refreshed.AccessToken;
-            expiresAt = refreshed.ExpiresAt;
-            ProfileService.ApplyAuthenticationResult(refreshed, profile, select: false);
-            Log($"刷新成功，新令牌到期 {FormatExpiry(expiresAt)}");
         }
 
+        if (string.IsNullOrWhiteSpace(token)) return null;
+
         // 游戏进程读的是 accounts.json，命令行里的令牌只是兜底，所以必须写回去
-        var written = LunarAccountStore.UpdateToken(LunarClientService.SettingsRoot, account.LocalId, token, expiresAt);
+        var writtenLegacy = LunarAccountStore.UpdateToken(LunarClientService.SettingsRoot, account.LocalId, token,
+            expiresAt, refreshToken);
         RefreshAccounts();
 
-        return new LunarTokenRefresh(token, expiresAt, written
+        return new LunarTokenRefresh(token, expiresAt, writtenLegacy
             ? $"取自 PCL 登录（{profile.UserName}），到期 {FormatExpiry(expiresAt)}"
             : $"取自 PCL 登录（{profile.UserName}），但写回 accounts.json 失败，游戏内可能仍是旧令牌");
     }

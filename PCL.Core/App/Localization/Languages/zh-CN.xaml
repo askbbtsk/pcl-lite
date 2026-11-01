@@ -3682,6 +3682,16 @@
     <sys:String x:Key="Lunar.Setup.OverrideCheck">为这个版本单独设置</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideHint">留空 = 沿用全局</sys:String>
     <sys:String x:Key="Lunar.Setup.OverrideDesc">只影响选中的这个版本。</sys:String>
+    <sys:String x:Key="Lunar.Account.Group.Identity">Lunar 身份账号</sys:String>
+    <sys:String x:Key="Lunar.Account.Identity.Empty">（还没登录，点右侧「登录」）</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.Identity">Lunar 身份：{0}</sys:String>
+    <sys:String x:Key="Lunar.Account.Tip.IdentityExpired">Lunar 身份：{0}
+令牌已于 {1} 过期，启动前会刷新</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.UsingIdentity">用 Lunar 身份启动：{0}。这个账号在本页登录，和 PCL 主页面的账号互不影响。</sys:String>
+    <sys:String x:Key="Lunar.Account.Hint.IdentityExpired">{0} 的令牌已于 {1} 过期，启动前会自动刷新。</sys:String>
+    <sys:String x:Key="Lunar.Action.LoginIdentity">登录</sys:String>
+    <sys:String x:Key="Lunar.Account.Login.Busy">正在启动或运行中，先停一下再登录。</sys:String>
+    <sys:String x:Key="Lunar.Account.Login.Failed">Lunar 身份登录失败</sys:String>
     <sys:String x:Key="Lunar.Account.Group.Pcl">PCL 账号</sys:String>
     <sys:String x:Key="Lunar.Account.Group.Lunar">Lunar 账号</sys:String>
     <sys:String x:Key="Lunar.Account.Empty">（账户库是空的）</sys:String>

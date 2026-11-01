@@ -74,10 +74,18 @@
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="{DynamicResource Lunar.Left.Account}"
                                        VerticalAlignment="Center"
                                        FontSize="11.5" Opacity="0.55" Margin="0,0,10,9" />
-                            <local:MyComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                                              x:Name="ComboAccount" Height="28" Margin="0,0,0,9"
+                            <local:MyComboBox Grid.Row="2" Grid.Column="1"
+                                              x:Name="ComboAccount" Height="28" Margin="0,0,10,9"
                                               SelectionChanged="ComboAccount_SelectionChanged"
                                               ToolTip="{DynamicResource Lunar.Tip.Account}" />
+                            <!--
+                                登录入口只作用于「Lunar 身份账号」那一组：用 Lunar 自己的 Azure 应用
+                                走设备码，产出的 refreshToken 游戏端才认。和 PCL 主页面的登录是两套。
+                            -->
+                            <local:MyButton Grid.Row="2" Grid.Column="2" x:Name="BtnLoginIdentity"
+                                            Height="28" MinWidth="72" Margin="0,0,0,9"
+                                            Text="{DynamicResource Lunar.Action.LoginIdentity}"
+                                            Click="BtnLoginIdentity_Click" />
 
                             <!--  启动目录  -->
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="{DynamicResource Lunar.Field.GameDir}"

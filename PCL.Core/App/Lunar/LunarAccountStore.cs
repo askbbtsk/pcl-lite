@@ -38,6 +38,20 @@ public sealed record LunarAccount(
     /// </summary>
     public DateTimeOffset? ExpiresAt { get; init; }
 
+    /// <summary>
+    ///     微软 OAuth 的 <c>refreshToken</c>，可能为空。
+    ///     <para>
+    ///         <b>这是 Lunar 判定账号是否可用的硬条件</b>：启动器里 <c>invalid: !e.refreshToken</c>，
+    ///         为空直接标记为无效，<c>refreshAccountInternal</c> 抛 <c>INVALID_SESSION</c>，
+    ///         表现就是卡在 <c>Connecting...</c>。所以只要 PCL 能拿到，就必须写进来。
+    ///     </para>
+    ///     <para>
+    ///         非空时不要覆盖：Lunar 自己登录的账号这个字段是 Lunar 的 OAuth 应用签的，
+    ///         覆盖成别的来源会让 Lunar 启动器以后刷不动那个账号。
+    ///     </para>
+    /// </summary>
+    public string RefreshToken { get; init; } = string.Empty;
+
     /// <summary>Lunar 会话是否已经过期（留一分钟余量）。</summary>
     public bool IsExpired => ExpiresAt is { } expires && expires <= DateTimeOffset.UtcNow.AddMinutes(1);
 
@@ -109,7 +123,8 @@ public static class LunarAccountStore
                     item["type"]?.GetValue<string>() ?? string.Empty,
                     item["accessToken"]?.GetValue<string>() ?? string.Empty)
                 {
-                    ExpiresAt = ParseTimestamp(item["accessTokenExpiresAt"])
+                    ExpiresAt = ParseTimestamp(item["accessTokenExpiresAt"]),
+                    RefreshToken = item["refreshToken"]?.GetValue<string>() ?? string.Empty
                 });
             }
 
@@ -164,11 +179,15 @@ public static class LunarAccountStore
     }
 
     /// <summary>
-    ///     把某个账号的 <c>accessToken</c> / <c>accessTokenExpiresAt</c> 换成新的。
+    ///     把某个账号的 <c>accessToken</c> / <c>accessTokenExpiresAt</c>（以及可选的
+    ///     <c>refreshToken</c>）换成新的。
     ///     <para>
-    ///         只动这两个字段：<c>refreshToken</c> 是 Lunar 自己的 OAuth 应用签的，
-    ///         换掉会让 Lunar 启动器以后再也刷不动这个账号；其余字段（profile、
-    ///         localId、type…）游戏也在用，一律原样保留。
+    ///         其余字段（profile、localId、type…）游戏也在用，一律原样保留。
+    ///     </para>
+    ///     <para>
+    ///         <b>refreshToken 只在原本为空时才补</b>：非空说明这条账号是 Lunar 自己登录的，
+    ///         那个令牌绑在 Lunar 的 OAuth 应用上，覆盖成别的来源会让 Lunar 启动器以后刷不动它。
+    ///         微软每次刷新都会轮换 refreshToken，所以调用方刷新后要顺手把新值传进来。
     ///     </para>
     ///     <para>
     ///         游戏端拿到 IPC 的成功响应后会**重新读一遍这个文件**，所以写入必须先落盘
@@ -177,7 +196,7 @@ public static class LunarAccountStore
     /// </summary>
     /// <returns>写入成功返回 <c>true</c>。</returns>
     public static bool UpdateToken(string lunarRoot, string localId, string accessToken,
-        DateTimeOffset? expiresAt)
+        DateTimeOffset? expiresAt, string? refreshToken = null)
     {
         if (string.IsNullOrWhiteSpace(localId) || string.IsNullOrWhiteSpace(accessToken)) return false;
 
@@ -198,6 +217,10 @@ public static class LunarAccountStore
             if (expiresAt is { } value)
                 account["accessTokenExpiresAt"] =
                     value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+
+            if (!string.IsNullOrWhiteSpace(refreshToken) &&
+                string.IsNullOrWhiteSpace(account["refreshToken"]?.GetValue<string>()))
+                account["refreshToken"] = refreshToken;
 
             var temporary = path + ".pcltmp";
             File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
@@ -231,7 +254,8 @@ public static class LunarAccountStore
     /// <param name="expiresAt">令牌到期时间。</param>
     /// <returns>写入成功（或本来就有账号）返回 <c>true</c>。</returns>
     public static bool CreateIfMissing(string lunarRoot, string localId, string username,
-        string minecraftName, string minecraftUuid, string accessToken, DateTimeOffset? expiresAt)
+        string minecraftName, string minecraftUuid, string accessToken, DateTimeOffset? expiresAt,
+        string? refreshToken = null)
     {
         if (string.IsNullOrWhiteSpace(localId) || string.IsNullOrWhiteSpace(minecraftUuid)) return false;
 
@@ -255,7 +279,8 @@ public static class LunarAccountStore
             root["activeAccountLocalId"] = localId;
             root["accounts"] = new JsonObject
             {
-                [localId] = NewAccountObject(localId, username, minecraftName, minecraftUuid, accessToken, expiresAt)
+                [localId] = NewAccountObject(localId, username, minecraftName, minecraftUuid, accessToken,
+                    expiresAt, refreshToken)
             };
 
             Write(path, root);
@@ -280,13 +305,14 @@ public static class LunarAccountStore
     ///         真正写进库里再切过去，光传令牌没用。
     ///     </para>
     ///     <para>
-    ///         只新增/改自己那一条，其余账号（包括 B 的 refreshToken）原样保留；
-    ///         新条目的 <c>refreshToken</c> 留空 —— Lunar 的 OAuth 令牌拿不到，续期走本地 IPC。
+    ///         只新增/改自己那一条，其余账号（包括别人的 refreshToken）原样保留。
+    ///         新建条目时若传了 <paramref name="refreshToken" /> 就写进去 —— Lunar 把
+    ///         <c>refreshToken</c> 为空视为无效账号，能带上就别留空。
     ///     </para>
     /// </summary>
     /// <returns>写入成功返回 <c>true</c>。</returns>
     public static bool Upsert(string lunarRoot, string localId, string username, string minecraftName,
-        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt)
+        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt, string? refreshToken = null)
     {
         if (string.IsNullOrWhiteSpace(localId) || string.IsNullOrWhiteSpace(minecraftUuid)) return false;
 
@@ -315,11 +341,15 @@ public static class LunarAccountStore
                 // 已经有这一条：只换令牌和到期时间，localId / profile / type 这些游戏也在读，别动
                 if (!string.IsNullOrWhiteSpace(accessToken)) account["accessToken"] = accessToken;
                 if (expiresAt is { } updated) account["accessTokenExpiresAt"] = FormatTimestamp(updated);
+                // refreshToken 为空说明这条是 PCL 早先写的（当时拿不到），补上；非空是 Lunar 签的，别动
+                if (!string.IsNullOrWhiteSpace(refreshToken) &&
+                    string.IsNullOrWhiteSpace(account["refreshToken"]?.GetValue<string>()))
+                    account["refreshToken"] = refreshToken;
             }
             else
             {
                 accounts[localId] = NewAccountObject(localId, username, minecraftName, minecraftUuid,
-                    accessToken, expiresAt);
+                    accessToken, expiresAt, refreshToken);
             }
 
             if (root["activeAccountLocalId"]?.GetValue<string>() != localId)
@@ -337,7 +367,7 @@ public static class LunarAccountStore
 
     /// <summary>账户库里一条账号的 JSON 形状，<see cref="CreateIfMissing" /> 和 <see cref="Upsert" /> 共用。</summary>
     private static JsonObject NewAccountObject(string localId, string username, string minecraftName,
-        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt)
+        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt, string? refreshToken = null)
     {
         var account = new JsonObject
         {
@@ -347,9 +377,9 @@ public static class LunarAccountStore
             ["legacy"] = false,
             ["persistent"] = true,
             ["localId"] = localId,
-            // Lunar 自己的 OAuth 令牌拿不到，留空：游戏端续期走本地 IPC，
-            // 由 LunarIpcServer 用 PCL 的登录去刷新，不依赖这个字段
-            ["refreshToken"] = string.Empty,
+            // Lunar 把空 refreshToken 直接判为无效账号（invalid: !refreshToken），
+            // 能拿到就写进去；拿不到才留空，那时续期只能走本地 IPC
+            ["refreshToken"] = refreshToken ?? string.Empty,
             ["minecraftProfile"] = new JsonObject
             {
                 ["id"] = minecraftUuid,

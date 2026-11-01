@@ -126,7 +126,8 @@ public class UpdatesManifestModel : IUpdateSource
         // 或者弹个错误出来。公告是锦上添花，不是启动的前置条件。
         try
         {
-            return _ParseNotice(_FetchManifestText(ProjectLinks.NoticeFileName));
+            // freshOnly：公告要「改完立刻生效」，不能走 jsDelivr 那种 12 小时缓存的镜像
+            return _ParseNotice(_FetchManifestText(ProjectLinks.NoticeFileName, freshOnly: true));
         }
         catch (Exception ex)
         {
@@ -522,9 +523,10 @@ public class UpdatesManifestModel : IUpdateSource
     /// <summary>
     /// 拉清单仓库里的某个文件（update.json / updatev2.json）。
     /// </summary>
-    private static string _FetchManifestText(string fileName)
+    private static string _FetchManifestText(string fileName, bool freshOnly = false)
     {
-        return Task.Run(() => _FetchFirstText(_ManifestChannels(fileName), fileName)).GetAwaiter().GetResult();
+        return Task.Run(() => _FetchFirstText(_ManifestChannels(fileName, freshOnly), fileName))
+            .GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -614,13 +616,17 @@ public class UpdatesManifestModel : IUpdateSource
     /// <summary>
     /// 清单锚点的全部候选通道：每个锚点 × {Contents API, raw 直连, raw+各反代, jsDelivr}。
     /// </summary>
-    private static IEnumerable<(string Name, string Url, bool IsApi)> _ManifestChannels(string fileName)
+    /// <param name="freshOnly">
+    /// 只用准实时通道（跳过 jsDelivr）。给「改完就要立刻生效」的文件用，见 <see cref="_ChannelsFor"/>。
+    /// </param>
+    private static IEnumerable<(string Name, string Url, bool IsApi)> _ManifestChannels(
+        string fileName, bool freshOnly = false)
     {
         var anchors = ProjectLinks.ServiceAnchors();
         var multiAnchor = anchors.Count > 1;
 
         foreach (var (owner, repo) in anchors)
-            foreach (var channel in _ChannelsFor(owner, repo, fileName, multiAnchor))
+            foreach (var channel in _ChannelsFor(owner, repo, fileName, multiAnchor, freshOnly))
                 yield return channel;
     }
 
@@ -634,19 +640,26 @@ public class UpdatesManifestModel : IUpdateSource
     /// 既然是并发抢答，顺序只影响日志可读性，不影响速度。
     /// 多个锚点时通道名前面会带上 <c>owner/repo</c>，否则日志里分不清是哪个锚点回来的。
     /// </para>
+    /// <para>
+    /// <b>jsDelivr 有长缓存</b>（对 GitHub 的路径默认 12 小时），而抢答是「谁先回用谁」，
+    /// 于是它命中缓存时反而最快、把旧内容顶上来。清单文件无所谓（只在搬家时变），
+    /// 但公告是「改完就该立刻看到」的东西，所以公告走 <paramref name="freshOnly"/> 跳过它。
+    /// </para>
     /// </summary>
     private static IEnumerable<(string Name, string Url, bool IsApi)> _ChannelsFor(
-        string owner, string repo, string fileName, bool tagWithAnchor)
+        string owner, string repo, string fileName, bool tagWithAnchor, bool freshOnly = false)
     {
         var tag = tagWithAnchor ? $"{owner}/{repo} " : string.Empty;
         var raw = ProjectLinks.ManifestRaw(owner, repo, fileName);
 
-        // Contents API 和取 Release 用同一个域名，常常是最快的那条
+        // Contents API 和取 Release 用同一个域名，常常是最快的那条，而且不吃 CDN 缓存
         yield return ($"{tag}Contents API", ProjectLinks.ManifestApi(owner, repo, fileName), true);
         yield return ($"{tag}raw 直连", raw, false);
 
         foreach (var proxy in UpdatesGitHubModel.DownloadProxies)
             yield return ($"{tag}{_ProxyName(proxy)}", proxy + raw, false);
+
+        if (freshOnly) yield break;
 
         yield return ($"{tag}jsDelivr", ProjectLinks.ManifestMirror(owner, repo, fileName), false);
     }

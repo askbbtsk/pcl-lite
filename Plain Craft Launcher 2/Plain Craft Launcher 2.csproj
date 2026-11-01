@@ -127,10 +127,11 @@
         <EmbeddedResource Include="metadata.json" />
         <!--
             许可协议正文随程序一起走。以前这里写的是 <Content Include="LICENCE" />，
-            但仓库里的文件叫 LICENSE（而且那个 Content 项指向的文件根本不存在，一直是空转），
-            结果发出去的 exe 里一份协议都没有。改成嵌入资源：单文件产物照旧只有一个 exe，
-            协议正文编在程序集里，`PCL.LICENSE` 就是它的资源名。
+            但仓库里的文件叫 LICENSE、而且放在**仓库根目录**（本项目目录的上一级），
+            那个 Content 项一直指向不存在的文件，发出去的 exe 里一份协议都没有。
+            现在改成嵌入资源，并显式指定 LogicalName：单文件产物照旧只有一个 exe，
+            协议正文编在程序集里，资源名固定为 PCL.LICENSE。
         -->
-        <EmbeddedResource Include="LICENSE" />
+        <EmbeddedResource Include="..\LICENSE" LogicalName="PCL.LICENSE" />
     </ItemGroup>
 </Project>

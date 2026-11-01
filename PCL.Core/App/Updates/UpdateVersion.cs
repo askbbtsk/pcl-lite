@@ -19,7 +19,7 @@ namespace PCL.Core.App.Updates;
 /// </para>
 /// <list type="number">
 /// <item>主 / 次 / 修订号（<c>1.6.0</c> 的三段），大的赢</item>
-/// <item>后缀档位：hotfix(+1) &gt; 正式版(0) &gt; pre(-1) &gt; snapshot(-2) &gt; nightly(-3)</item>
+/// <item>后缀档位：hotfix(+1) &gt; 正式版(0) &gt; early(-1) &gt; pre(-2) &gt; snapshot(-3) &gt; nightly(-4)</item>
 /// <item>后缀序号：<c>hotfix-2</c> &gt; <c>hotfix-1</c>；没写序号按 1 算（<c>pre</c> 等价于 <c>pre-1</c>）</item>
 /// <item>以上全平手时退回 SemVer 的后缀比较，保住 <c>beta &lt; pre</c> 这类老顺序</item>
 /// </list>
@@ -32,14 +32,24 @@ public static class UpdateVersion
     /// <summary>正式版档。</summary>
     public const int RankStable = 0;
 
+    /// <summary>
+    ///     抢先档（early）：同一版正式发布之前先放出去的那份，所以比同号正式版**旧**、比预览版**新**。
+    ///     <para>
+    ///         它同时属于正式版通道（见 <see cref="UpdateChannelLevels" />），
+    ///         也就是选「稳定版」的用户也会收到；等 <c>1.7.0</c> 正式发布后，
+    ///         他们从 <c>1.7.0-early-1</c> 再升一次就落地了。
+    ///     </para>
+    /// </summary>
+    public const int RankEarly = -1;
+
     /// <summary>预览档（pre / preview / beta / alpha / rc，以及认不出来的后缀）。</summary>
-    public const int RankPreview = -1;
+    public const int RankPreview = -2;
 
     /// <summary>快照档。</summary>
-    public const int RankSnapshot = -2;
+    public const int RankSnapshot = -3;
 
     /// <summary>不稳定档。</summary>
-    public const int RankLatest = -3;
+    public const int RankLatest = -4;
 
     /// <summary>比较用的字符串比较器，供 <c>OrderBy</c> 之类的 LINQ 用。</summary>
     public static IComparer<string?> Comparer { get; } = new StringComparer();
@@ -108,6 +118,7 @@ public static class UpdateVersion
         if (suffix.Contains("hotfix", StringComparison.OrdinalIgnoreCase)) return RankHotfix;
         if (suffix.Contains("nightly", StringComparison.OrdinalIgnoreCase)) return RankLatest;
         if (suffix.Contains("snapshot", StringComparison.OrdinalIgnoreCase)) return RankSnapshot;
+        if (suffix.Contains("early", StringComparison.OrdinalIgnoreCase)) return RankEarly;
         return RankPreview;
     }
 

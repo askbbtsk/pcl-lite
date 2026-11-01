@@ -26,6 +26,10 @@ public class UpdateChannelLevelsTest
     [DataRow("1.3.2-rc1", UpdateChannelLevels.Preview)]
     [DataRow("1.3.2-snapshot", UpdateChannelLevels.Snapshot)]
     [DataRow("1.3.2-nightly", UpdateChannelLevels.Latest)]
+    // early 是「正式版提前放出来」，归正式版通道 —— 选稳定版的人也该收到
+    [DataRow("1.3.2-early", UpdateChannelLevels.Stable)]
+    [DataRow("1.3.2-early-2", UpdateChannelLevels.Stable)]
+    [DataRow("1.3.2-hotfix-1", UpdateChannelLevels.Stable)]
     public void FromVersionNameShouldClassifySuffix(string versionName, int expected)
     {
         Assert.AreEqual(expected, UpdateChannelLevels.FromVersionName(versionName));

@@ -271,7 +271,7 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 **不用。** 这是这套设计最重要的性质：
 
 - 发新版 → 只要推 Release，客户端自动看到
-- 发预发布 → tag 带上对应的后缀（`-pre` / `-snapshot` / `-nightly`），
+- 发预发布 → tag 带上对应的后缀（`-early` / `-pre` / `-snapshot` / `-nightly`），
   选了对等或更激进通道的用户自动看到
 - 换仓库 → 改**锚点仓库**里 `update.json` 那一行（唯一需要动手的场景）
 
@@ -325,11 +325,12 @@ python tools/verify-channels.py
 | `suffix` | 不稳定后缀，决定这个版本进哪个通道 |
 | `code` | 内部版本代号，只增不减 |
 
-### suffix 的五种取值
+### suffix 的六种取值
 
 | suffix | 版本名示例 | 叫法 | 通道等级 |
 | --- | --- | --- | --- |
 | （空） | `1.3.2` | 正式版 | 0 |
+| `early` | `1.3.3-early-1` | 抢先体验版 | 0 |
 | `pre` | `1.3.3-pre-1` | 预览版 | 1 |
 | `snapshot` | `1.3.3-snapshot-2` | 快照版 | 2 |
 | `nightly` | `1.3.3-nightly` | 不稳定版 | 3 |
@@ -343,8 +344,13 @@ python tools/verify-channels.py
 看的是另一套档位（`UpdateVersion`）：
 
 ```
-hotfix(+1) > 正式版(0) > pre(-1) > snapshot(-2) > nightly(-3)
+hotfix(+1) > 正式版(0) > early(-1) > pre(-2) > snapshot(-3) > nightly(-4)
 ```
+
+**`early` 是「正式版提前放出来的那份」**：它比同号正式版旧（正式版一发就能把它顶掉），
+但比 `pre` 新（它是即将发布的那份正式版，比预览阶段靠后）。它同时属于正式版通道，
+所以选「稳定版」的用户也会收到——1.6.4 的用户会先升到 `1.7.0-early-1`，
+等 `1.7.0` 正式发布后再升一次落地。
 
 **`pre` 比 `snapshot` 新。** 这条最容易翻车：`1.7.0-pre-1` 比
 `1.7.0-snapshot-5` 新，所以已经装了 snapshot-5 的用户能正常收到 pre-1；

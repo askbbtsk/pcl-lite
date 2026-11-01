@@ -14,7 +14,14 @@ namespace PCL.Core.App.Updates;
 /// </summary>
 public static class UpdateChannelLevels
 {
-    /// <summary>正式版：版本名不带任何后缀。</summary>
+    /// <summary>
+    ///     正式版：版本名不带任何后缀。
+    ///     <para>
+    ///         <c>early</c> 也算这一档 —— 它是「正式版提前放出来」，选稳定版通道的人同样该收到。
+    ///         它和正式版的区别只在 <see cref="UpdateVersion" /> 的档位里（early 低于同号正式版），
+    ///         所以正式版一发出来，抢先版用户会再升一次落到正式版上。
+    ///     </para>
+    /// </summary>
     public const int Stable = 0;
 
     /// <summary>预览版：pre / preview / beta / alpha / rc 等，统一归到这一档。</summary>
@@ -44,6 +51,10 @@ public static class UpdateChannelLevels
         // 不单独判的话会掉进下面那条兜底规则变成「预览版」，稳定版通道的用户就永远收不到它——
         // 而热修复恰恰是要推给所有人的。判定必须排在兜底之前。
         if (text.Contains("hotfix", StringComparison.OrdinalIgnoreCase)) return Stable;
+
+        // 抢先版（early-1 / early-2 …）是「正式版提前放出来」，同样属于正式版通道：
+        // 它排在 hotfix 后面、兜底规则前面，否则会掉进「预览版」，稳定版通道就收不到它。
+        if (text.Contains("early", StringComparison.OrdinalIgnoreCase)) return Stable;
 
         if (text.Contains("nightly", StringComparison.OrdinalIgnoreCase)) return Latest;
         if (text.Contains("snapshot", StringComparison.OrdinalIgnoreCase)) return Snapshot;

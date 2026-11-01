@@ -2,7 +2,7 @@
 
 镜像的规则（UpdatesGitHubModel._PickRelease / UpdateChannelLevels）：
   - draft 跳过
-  - 按 tag 后缀算等级：空=0，pre/beta/alpha/rc=1，snapshot=2，nightly=3
+  - 按 tag 后缀算等级：空=0，early=0（抢先体验版，属于正式版通道），pre/beta/alpha/rc=1，snapshot=2，nightly=3
   - tag 没后缀但标了 prerelease 的，按预览级(1)处理
   - 等级 > 通道等级的丢弃（包含式）
   - 剩下的按 SemVer 降序取第一条
@@ -49,6 +49,9 @@ def level_from_name(name):
     # hotfix 打在同号正式版**之上**，属于正式版通道（和 C# 的 UpdateChannelLevels 保持一致）
     if "hotfix" in suffix:
         return 0
+    # early 是「正式版提前放出来」，也属于正式版通道；排序上仍低于同号正式版
+    if "early" in suffix:
+        return 0
     if "nightly" in suffix:
         return 3
     if "snapshot" in suffix:
@@ -58,9 +61,9 @@ def level_from_name(name):
 
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?(?:-([0-9A-Za-z.\-]+))?(?:\+[0-9A-Za-z.\-]+)?$")
 
-#: 后缀档位：hotfix 高于正式版，其余预发布都在正式版之下。
+#: 后缀档位：hotfix 高于正式版，early 紧随正式版之下（抢先体验），其余预发布再往下。
 #: 必须和 PCL.Core/App/Updates/UpdateVersion.cs 里的 Rank* 常量一致。
-_SUFFIX_RANK = {"hotfix": 1, "stable": 0, "pre": -1, "snapshot": -2, "nightly": -3}
+_SUFFIX_RANK = {"hotfix": 1, "stable": 0, "early": -1, "pre": -2, "snapshot": -3, "nightly": -4}
 
 
 def _suffix_parts(suffix):
@@ -72,6 +75,8 @@ def _suffix_parts(suffix):
         rank = _SUFFIX_RANK["nightly"]
     elif "snapshot" in low:
         rank = _SUFFIX_RANK["snapshot"]
+    elif "early" in low:
+        rank = _SUFFIX_RANK["early"]
     else:
         rank = _SUFFIX_RANK["pre"]
     m = re.search(r"(?:^|[.\-])(\d+)$", low)

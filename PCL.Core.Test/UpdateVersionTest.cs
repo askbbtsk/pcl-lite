@@ -190,4 +190,37 @@ public class UpdateVersionTest
         Assert.IsTrue(UpdateVersion.IsUpToDate("1.6.1", "1.6.2-nightly-1"));
         Assert.IsTrue(UpdateVersion.IsUpToDate("1.6.1-hotfix-1", "1.6.2"));
     }
+
+    // ─────────────────────────────────────────────────────────────
+    //  early：正式版提前放出来的那份
+    // ─────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void EarlyShouldSitBetweenStableAndPre()
+    {
+        // 档位：正式版(0) > early(-1) > pre(-2)。early 比正式版旧，所以正式版一发就能把它顶掉；
+        // 又比 pre 新，因为它是「同一版即将发布的正式版」，比预览阶段更靠后。
+        Assert.IsTrue(Newer("1.7.0", "1.7.0-early-1"));
+        Assert.IsFalse(Newer("1.7.0-early-1", "1.7.0"));
+        Assert.IsTrue(Newer("1.7.0-early-1", "1.7.0-pre-9"));
+        Assert.IsFalse(Newer("1.7.0-pre-9", "1.7.0-early-1"));
+    }
+
+    [TestMethod]
+    public void HigherEarlyNumberShouldWin()
+    {
+        Assert.IsTrue(Newer("1.7.0-early-2", "1.7.0-early-1"));
+        Assert.IsTrue(Newer("1.7.0-early-10", "1.7.0-early-9"),
+            "early-10 比 early-9 新：按数字比，不是按字典序");
+    }
+
+    [TestMethod]
+    public void EarlyShouldReachStableChannelUsers()
+    {
+        // early 归正式版通道，所以 1.6.4-hotfix-5 的用户（稳定版通道）能看到 1.7.0-early-1；
+        // 反过来，已经装了 1.7.0-early-1 的人再检查时，「最新」还是它自己。
+        Assert.AreEqual(UpdateChannelLevels.Stable, UpdateChannelLevels.FromVersionName("1.7.0-early-1"));
+        Assert.IsTrue(Newer("1.7.0-early-1", "1.6.4-hotfix-5"));
+        Assert.IsTrue(UpdateVersion.IsUpToDate("1.7.0-early-1", "1.7.0-early-1"));
+    }
 }

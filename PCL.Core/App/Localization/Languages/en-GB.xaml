@@ -1537,6 +1537,7 @@
 A refresh token is exchanged for a new set of tokens, so it keeps renewing itself just like a normal sign-in.
 A Minecraft token is used as-is: it expires in 24 hours and cannot be renewed.
 Cookies are exchanged for a full set of tokens as well, and renew like a normal sign-in.
+You can paste a whole cookies.txt exported by a browser extension (Netscape format); only the login.live.com entries are used.
 
 Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Launch.Account.Token.Hint">Paste token or cookie</sys:String>

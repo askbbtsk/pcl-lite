@@ -1537,6 +1537,7 @@
 Refresh Token 會換出一整套新權杖，可以一直續期，效果和正常登入一樣。
 Minecraft 權杖直接使用，但 24 小時後失效，且無法續期。
 Cookie 同樣會換出整套權杖，也能續期。
+Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整份內容，只取 login.live.com 那部分。
 
 這三種憑據等同於帳號密碼。</sys:String>
     <sys:String x:Key="Launch.Account.Token.Hint">貼上權杖或 Cookie</sys:String>

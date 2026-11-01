@@ -1581,6 +1581,7 @@
 Refresh Token 会换出一整套新令牌，能一直续期，效果和正常登录一样。
 Minecraft 令牌直接用，但 24 小时后失效，且没法续期。
 Cookie 同样会换出整套令牌，也能续期。
+Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内容，只取 login.live.com 那部分。
 
 这三种凭据等同于账号密码。</sys:String>
     <sys:String x:Key="Launch.Account.Token.Hint">粘贴令牌或 Cookie</sys:String>

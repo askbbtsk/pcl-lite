@@ -1530,7 +1530,6 @@
     <sys:String x:Key="Launch.Account.Method.Refresh">Refresh Token</sys:String>
     <sys:String x:Key="Launch.Account.Method.Cookie">Cookie</sys:String>
     <sys:String x:Key="Launch.Account.Token.CookieStale">這份 Cookie 已經失效。請確認它是從 login.live.com 匯出的，而且瀏覽器裡那個帳號還登著。</sys:String>
-    <sys:String x:Key="Launch.Account.NameWithMethod">（{0}）</sys:String>
     <sys:String x:Key="Launch.Account.Token.Login">使用權杖登入</sys:String>
     <sys:String x:Key="Launch.Account.Token.Title">使用權杖登入</sys:String>
     <sys:String x:Key="Launch.Account.Token.Desc">貼上 Refresh Token、Minecraft 權杖或微軟 Cookie，三種會自動辨識。

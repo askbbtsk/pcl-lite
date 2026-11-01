@@ -94,7 +94,7 @@ public partial class PageLoginProfile
         public string Logo { get; private set; } = string.Empty;
         public string SvgIcon { get; private set; } = string.Empty;
         public McProfile Profile { get; }
-        public string Username => Profile.UserName + ProfileUi.GetLoginMethodSuffix(Profile);
+        public string Username => Profile.UserName;
     }
 
     #region 控件

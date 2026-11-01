@@ -295,14 +295,36 @@ public partial class ProfileService
         }
     }
 
+    /// <summary>
+    ///     找这条结果对应的旧档案。规则：**同一个号 + 同一种登录方式 = 同一条档案**，
+    ///     再次登录就当地续期、就地替换，不新增条目。
+    ///     <para>
+    ///         同一个号允许用不同方式各占一条（设备码一条、Cookie 一条、令牌导入一条），
+    ///         这是有意的：它们的令牌寿命和续期能力完全不同，混成一条反而说不清。
+    ///         所以匹配键里必须带登录方式，只比 UUID 会把别的槽位顶掉。
+    ///     </para>
+    ///     <para>
+    ///         结果里没带登录方式时（续期回来的结果没有这个字段）退回按号找第一条 ——
+    ///         宁可命中一个槽位，也不能凭空多出一条一模一样的档案。
+    ///     </para>
+    /// </summary>
     private static McProfile? _FindMatchingProfile(AuthenticationResult result)
-        => Profiles.FirstOrDefault(profile =>
-            profile.ProfileType == result.ProfileType &&
-            string.Equals(profile.Uuid, result.Uuid, StringComparison.Ordinal) &&
-            (result.ProfileType == ProfileType.Microsoft
-                ? string.Equals(NormalizeLoginMethod(profile.LoginMethod),
-                    NormalizeLoginMethod(result.LoginMethod), StringComparison.Ordinal)
-                : string.Equals(profile.Server, result.Server, StringComparison.OrdinalIgnoreCase)));
+    {
+        var candidates = Profiles
+            .Where(profile => profile.ProfileType == result.ProfileType &&
+                              string.Equals(profile.Uuid, result.Uuid, StringComparison.Ordinal))
+            .ToList();
+        if (candidates.Count == 0) return null;
+
+        if (result.ProfileType != ProfileType.Microsoft)
+            return candidates.FirstOrDefault(profile =>
+                string.Equals(profile.Server, result.Server, StringComparison.OrdinalIgnoreCase));
+
+        if (string.IsNullOrWhiteSpace(result.LoginMethod)) return candidates[0];
+        var method = NormalizeLoginMethod(result.LoginMethod);
+        return candidates.FirstOrDefault(profile =>
+            string.Equals(NormalizeLoginMethod(profile.LoginMethod), method, StringComparison.Ordinal));
+    }
 
     /// <summary>
     ///     登录方式的归一化。老档案没有这个字段，按设备码算 —— 否则升级之后

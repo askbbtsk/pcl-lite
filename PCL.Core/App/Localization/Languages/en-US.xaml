@@ -1574,7 +1574,6 @@
     <sys:String x:Key="Launch.Account.Method.Refresh">refresh token</sys:String>
     <sys:String x:Key="Launch.Account.Method.Cookie">cookie</sys:String>
     <sys:String x:Key="Launch.Account.Token.CookieStale">These cookies are no longer valid. Make sure they were exported from login.live.com while the account was still signed in.</sys:String>
-    <sys:String x:Key="Launch.Account.NameWithMethod"> ({0})</sys:String>
     <sys:String x:Key="Launch.Account.Token.Login">Sign in with a token</sys:String>
     <sys:String x:Key="Launch.Account.Token.Title">Sign in with a token</sys:String>
     <sys:String x:Key="Launch.Account.Token.Desc">Paste a refresh token, a Minecraft token, or your Microsoft cookies — the type is detected automatically.

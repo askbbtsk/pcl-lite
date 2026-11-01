@@ -1574,7 +1574,6 @@
     <sys:String x:Key="Launch.Account.Method.Refresh">Refresh Token</sys:String>
     <sys:String x:Key="Launch.Account.Method.Cookie">Cookie</sys:String>
     <sys:String x:Key="Launch.Account.Token.CookieStale">这份 Cookie 已经失效。请确认它是从 login.live.com 导出的，并且浏览器里那个账号还登着。</sys:String>
-    <sys:String x:Key="Launch.Account.NameWithMethod">（{0}）</sys:String>
     <sys:String x:Key="Launch.Account.Token.Login">使用令牌登录</sys:String>
     <sys:String x:Key="Launch.Account.Token.Title">使用令牌登录</sys:String>
     <sys:String x:Key="Launch.Account.Token.Desc">粘贴 Refresh Token、Minecraft 令牌或微软 Cookie，三种会自动识别。

@@ -12,6 +12,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using PCL.Core.App.Lunar.Social;
 using PCL.Core.IO.Net;
 using PCL.Core.IO.Net.Http;
 using PCL.Core.Logging;
@@ -170,7 +171,18 @@ public sealed class LunarLaunchOptions
     public int Height { get; init; } = 480;
     public bool Fullscreen { get; init; }
     public string? Server { get; init; }
-    public string LauncherVersion { get; init; } = "3.3.0";
+    /// <summary>
+    ///     传给 Genesis 的 <c>--launcherVersion</c>。
+    ///     <para>
+    ///         <b>这是「游戏侧」的版本号，与上报给 Lunar 服务端的
+    ///         <c>launcherVersion.semver</c> 是两回事</b>：后者校验下限、必须跟着官方
+    ///         启动器往上涨（见 <see cref="LunarSocialProtocol.ResolveLauncherVersion" />）；
+    ///         这个参数只被游戏侧用来打日志，PCL 从 1.6.x 起一直填 <c>3.3.0</c> 且
+    ///         各版本启动均正常，没有理由跟着改。
+    ///     </para>
+    /// </summary>
+    public string GameLauncherVersion { get; init; } = "3.3.0";
+
     public string InstallationId { get; init; } = string.Empty;
 
     /// <summary>
@@ -344,7 +356,9 @@ public static class LunarClientService
             ["os"] = "win32",
             ["os_release"] = Environment.OSVersion.Version.ToString(),
             ["arch"] = Environment.Is64BitOperatingSystem ? "x64" : "ia32",
-            ["launcher_version"] = "3.3.0",
+            // 官方启动器这里填的是自己的壳版本（app.getVersion()），
+            // 也就是最新正式版 —— 不是 --launcherVersion 那个 3.3.0
+            ["launcher_version"] = LunarSocialProtocol.ResolveLauncherVersion(),
             ["version"] = subVersion,
             ["branch"] = branch,
             ["args"] = new JsonArray(),
@@ -362,7 +376,7 @@ public static class LunarClientService
         {
             Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json")
         };
-        request.Headers.TryAddWithoutValidation("User-Agent", "Lunar Client Launcher v3.3.0");
+        request.Headers.TryAddWithoutValidation("User-Agent", LunarSocialProtocol.LauncherUserAgent);
 
         using var response = await Http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -512,7 +526,7 @@ public static class LunarClientService
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.TryAddWithoutValidation("User-Agent", "Lunar Client Launcher v3.3.0");
+            request.Headers.TryAddWithoutValidation("User-Agent", LunarSocialProtocol.LauncherUserAgent);
 
             using var response = await Http.SendAsync(request, cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return null;
@@ -1009,7 +1023,7 @@ public static class LunarClientService
         Add("--ichorExternalFiles", string.Join(',', externalFiles.Select(x => x.Name)));
 
         Add("--version", options.VersionName);
-        Add("--launcherVersion", options.LauncherVersion);
+        Add("--launcherVersion", options.GameLauncherVersion);
         // 必须是 {enabled:[],disabled:[]}：Genesis 会直接 get("enabled").getAsJsonArray()，
         // 传 {} 会在 Main.parse 里抛 NullPointerException
         Add("--launcherFeatureFlags", "{\"enabled\":[],\"disabled\":[]}");

@@ -3,7 +3,12 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PCL.Core.App.Lunar.Social;
 
@@ -52,6 +57,11 @@ internal static class LunarSocialProtocol
     ///         下限有余量的，不能填刚好卡在边上的值 —— 填 3.7.27 那种，Lunar 下一次
     ///         抬下限就整条链路失效。
     ///     </para>
+    ///     <para>
+    ///         <b>优先走在线查版本</b>（见 <see cref="FetchLatestLauncherVersionAsync" />），
+    ///         查不到才用这个兜底值。在线查到的版本是 Lunar 官方启动器的最新正式版本号，
+    ///         服务端永远认。断网且本机也没装官方启动器时，才落回这里。
+    ///     </para>
     /// </summary>
     private const string FallbackLauncherVersion = "4.0.0";
 
@@ -90,9 +100,189 @@ internal static class LunarSocialProtocol
     }
 
     /// <summary>
-    ///     首选的上报版本：装过官方启动器就报它的真实版本，没装就用兜底值。
+    ///     Lunar 官方启动器的版本号来源。
+    ///     <para>
+    ///         官方启动器（Electron 壳）自己就在用这套地址：<c>/metadata/misc</c> 给出
+    ///         <c>updater.feedUrl</c> 与 <c>updater.channel</c>，再由
+    ///         <c>{feedUrl}/{channel}.yml</c>（electron-builder 的频道清单）读出
+    ///         <c>version: x.y.z-ow</c>。剪掉 <c>-ow</c> 就是握手要的 semver。
+    ///     </para>
+    ///     <para>
+    ///         <b>为什么要联网查</b>：服务端只校验下限，而这个下限跟着官方启动器往上涨。
+    ///         写死任何一个具体版本，迟早会被 <c>1008 Unsupported launcher version</c> 踢掉。
+    ///         查到的结果缓存 6 小时，一次启动最多一次请求。
+    ///     </para>
     /// </summary>
-    public static string ResolveLauncherVersion() => ResolveLocalLauncherVersion() ?? FallbackLauncherVersion;
+    private const string LunarApiBase = "https://api.lunarclientprod.com/launcher";
+
+    private const string DefaultUpdateFeedUrl =
+        "https://launcher-releases.lunarclientprod.com/master/6e18b5a4f4ebbd4c7ecff572f1700cedce1f248bcb157adce5ec49be9e081a23";
+
+    private const string DefaultUpdateChannel = "latest-ow";
+
+    /// <summary>
+    ///     查版本时用的 UA。不带版本号，避免「先有鸡还是先有蛋」——
+    ///     这两个接口都不校验 UA（实测不带版本号也能正常拿到数据）。
+    /// </summary>
+    private const string BootstrapUserAgent = "Lunar Client Launcher";
+
+    private static readonly TimeSpan OnlineVersionTtl = TimeSpan.FromHours(6);
+    private static readonly SemaphoreSlim OnlineVersionGate = new(1, 1);
+
+    private static readonly HttpClient VersionHttp = new()
+    {
+        Timeout = TimeSpan.FromSeconds(15)
+    };
+
+    private static string? _onlineVersion;
+    private static long _onlineVersionExpiresAt;
+
+    /// <summary>官方启动器的 UA：<c>Lunar Client Launcher v{最新正式版}</c>。</summary>
+    public static string LauncherUserAgent => "Lunar Client Launcher v" + ResolveLauncherVersion();
+
+    /// <summary>
+    ///     取 Lunar 官方启动器的最新正式版本号（形如 <c>3.7.29</c>），拿不到返回 <see langword="null" />。
+    ///     <para>
+    ///         命中缓存（6 小时内）直接返回；否则去官方更新源查一次。
+    ///         查失败时保留上一次的好值，不会把缓存冲成空。
+    ///     </para>
+    /// </summary>
+    public static async Task<string?> FetchLatestLauncherVersionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var cached = Volatile.Read(ref _onlineVersion);
+        if (cached is not null && Environment.TickCount64 < Volatile.Read(ref _onlineVersionExpiresAt))
+            return cached;
+
+        await OnlineVersionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            cached = Volatile.Read(ref _onlineVersion);
+            if (cached is not null && Environment.TickCount64 < _onlineVersionExpiresAt) return cached;
+
+            var fetched = await FetchLatestLauncherVersionCoreAsync(cancellationToken).ConfigureAwait(false);
+            if (fetched is null) return cached;
+
+            Volatile.Write(ref _onlineVersion, fetched);
+            Volatile.Write(ref _onlineVersionExpiresAt,
+                Environment.TickCount64 + (long)OnlineVersionTtl.TotalMilliseconds);
+            return fetched;
+        }
+        finally
+        {
+            OnlineVersionGate.Release();
+        }
+    }
+
+    private static async Task<string?> FetchLatestLauncherVersionCoreAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var (feedUrl, channel) = await ResolveUpdateFeedAsync(cancellationToken).ConfigureAwait(false);
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"{feedUrl}/{channel}.yml");
+            request.Headers.TryAddWithoutValidation("User-Agent", BootstrapUserAgent);
+
+            using var response = await VersionHttp.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) return null;
+
+            var yaml = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            return ParseChannelVersion(yaml);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException
+                                       or IOException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     问 <c>/metadata/misc</c> 要当前的更新源；拿不到就用官方启动器里写死的那一对。
+    /// </summary>
+    private static async Task<(string FeedUrl, string Channel)> ResolveUpdateFeedAsync(
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var url = LunarApiBase + "/metadata/misc" +
+                      "?installation_id=00000000-0000-0000-0000-000000000000";
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.TryAddWithoutValidation("User-Agent", BootstrapUserAgent);
+
+            using var response = await VersionHttp.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+            {
+                var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                var updater = JsonNode.Parse(text)?["updater"];
+                var feedUrl = updater?["feedUrl"]?.GetValue<string>();
+                var channel = updater?["channel"]?.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(feedUrl) && !string.IsNullOrWhiteSpace(channel))
+                    return (feedUrl, channel);
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException
+                                       or InvalidOperationException)
+        {
+            // 断网 / 超时 / 结构变了：退回默认值
+        }
+
+        return (DefaultUpdateFeedUrl, DefaultUpdateChannel);
+    }
+
+    /// <summary>
+    ///     从 electron-builder 的频道清单里抠 <c>version</c>，剪掉 <c>-ow</c> 之类的后缀。
+    ///     <para>
+    ///         清单长这样，只关心第一行：
+    ///         <code>
+    ///         version: 3.7.29-ow
+    ///         files:
+    ///           - url: Lunar Client v3.7.29-ow.exe
+    ///         </code>
+    ///     </para>
+    /// </summary>
+    internal static string? ParseChannelVersion(string? yaml)
+    {
+        if (string.IsNullOrWhiteSpace(yaml)) return null;
+
+        foreach (var rawLine in yaml.Split('\n'))
+        {
+            var line = rawLine.Trim();
+            if (!line.StartsWith("version:", StringComparison.Ordinal)) continue;
+
+            var value = line["version:".Length..].Trim().Trim('\'', '"');
+            var end = 0;
+            while (end < value.Length && (char.IsDigit(value[end]) || value[end] == '.')) end++;
+
+            var cleaned = value[..end].Trim('.');
+            return cleaned.Contains('.') ? cleaned : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     首选的上报版本：<b>在线最新正式版</b> → 本机官方启动器 → 兜底。
+    ///     <para>
+    ///         在线版本优先于本机版本：本机那个可能已经落后好几版，而服务端抬下限
+    ///         抬的是「官方最新」那条线。
+    ///     </para>
+    ///     <para>
+    ///         <b>不会发网络请求</b>——只读缓存。调用方应先在启动早期 await 一次
+    ///         <see cref="FetchLatestLauncherVersionAsync" /> 把缓存预热。
+    ///     </para>
+    /// </summary>
+    public static string ResolveLauncherVersion() =>
+        Volatile.Read(ref _onlineVersion) ?? ResolveLocalLauncherVersion() ?? FallbackLauncherVersion;
+
+    /// <summary>
+    ///     同上，但会主动去查一次（带 6 小时缓存）。能 await 的地方优先用这个。
+    /// </summary>
+    public static async Task<string> ResolveLauncherVersionAsync(CancellationToken cancellationToken = default)
+    {
+        var online = await FetchLatestLauncherVersionAsync(cancellationToken).ConfigureAwait(false);
+        return online ?? ResolveLocalLauncherVersion() ?? FallbackLauncherVersion;
+    }
 
     /// <summary>
     ///     按优先级排列的候选版本。握手被服务端以「版本不受支持」拒掉时依次往后试。

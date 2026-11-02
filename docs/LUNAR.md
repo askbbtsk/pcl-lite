@@ -559,7 +559,7 @@ com.moonsworth.lunar.genesis.Genesis
 --ichorClassPath      {7 个 CLASS_PATH 文件名，逗号分隔}
 --ichorExternalFiles  {50 个 EXTERNAL_FILE 文件名，逗号分隔}
 --version 1.8.9
---launcherVersion <启动器版本>
+--launcherVersion 3.3.0
 --launcherFeatureFlags {"enabled":[],"disabled":[]}
 --installationId <guid>
 --overwolfMuid "not specified"
@@ -875,12 +875,42 @@ Handshake {
 > **没装官方启动器** —— 物料是 PCL 自己下的，根本不需要那个 Electron 壳。所以
 > 只读本机 `Lunar Client.exe` 是不够的，没装的人会拿到一个必然过期的值。
 >
-> 现在的做法（`LunarSocialProtocol.GetLauncherVersionCandidates`）：
-> ① 首选本机官方启动器版本，没装就用兜底 `4.0.0`（离当前下限有余量）；
-> ② 握手被 1008 拒掉就自动改用 `99.0.0` 重连一次。既然没有上限，报个远高于
+> 现在的做法（`LunarSocialProtocol.ResolveLauncherVersion`）：
+> ① **优先在线查官方最新正式版**（见下节），拿到就是服务端当下认的那条线；
+> ② 查不到就退到本机 `Lunar Client.exe` 的 `FileVersion`；
+> ③ 再不行用兜底 `4.0.0`（离当前下限有余量）；
+> ④ 握手仍被 1008 拒掉就自动改用 `99.0.0` 重连一次 —— 既然没有上限，报个远高于
 > 任何真实版本的号必然满足下限。
 >
 > 实测：强制传 `3.7.0` 时自动升到 `99.0.0`，好友 / 会话 / 历史 / 发消息全部正常。
+
+#### 官方启动器版本号的更新源
+
+官方启动器（Electron 壳）自己就是这么查的，两个地址串联：
+
+```
+GET https://api.lunarclientprod.com/launcher/metadata/misc
+      ?installation_id=<uuid>            # 必填，zod 校验，得是合法 UUID
+→ { "updater": { "channel": "latest-ow",
+                 "feedUrl": "https://launcher-releases.lunarclientprod.com/master/<sha256>" } }
+
+GET <feedUrl>/<channel>.yml              # electron-builder 的频道清单
+→ version: 3.7.29-ow
+  files: [ { url: Lunar Client v3.7.29-ow.exe, sha512: ... } ]
+  releaseDate: '2026-10-31T18:02:17.431Z'
+```
+
+- 频道文件名是 `<channel>.yml`，**不是** `<channel>/latest.yml` —— Windows 下
+  electron-builder 的 `getChannelFilePrefix()` 返回空串，所以没有平台后缀。
+- `version` 带 `-ow`（Overwolf 发行标记），握手要的 semver **剪掉后缀**只留数字和点。
+- 这两个接口**都不校验 UA**，不带版本号也能拿到数据（所以查版本不会陷入「先有鸡还是先有蛋」）。
+- `feedUrl` 里那段 sha256 是构建产物哈希，**会随发布变**，所以要么每次都问
+  `metadata/misc`，要么接受默认值过期。代码里两条路都留着：先问 API，失败用内置默认值。
+- 结果缓存 6 小时；查失败时保留上一次的好值，不会把缓存冲成空。
+
+> `--launcherVersion`（传给 Genesis 的那个）和这里是**两回事**：官方启动器填的是
+> 自己的壳版本，PCL 从 1.6.x 起一直填 `3.3.0` 且各版本启动正常，不要跟着改。
+> 见 `LunarLaunchOptions.GameLauncherVersion`。
 
 ### 信封与 RPC
 

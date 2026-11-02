@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using PCL.Core.App.Lunar.Social;
 
 namespace PCL.Core.App.Lunar;
 
@@ -191,7 +192,7 @@ public static class LunarVersionCatalog
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.TryAddWithoutValidation("User-Agent", "Lunar Client Launcher v3.3.0");
+            request.Headers.TryAddWithoutValidation("User-Agent", LunarSocialProtocol.LauncherUserAgent);
 
             using var response = await Http.SendAsync(request, cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return _versions;

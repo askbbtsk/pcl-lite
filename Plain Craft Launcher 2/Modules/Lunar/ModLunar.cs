@@ -837,15 +837,23 @@ public static class ModLunar
             var uuid = LunarUuid.Parse(uuidText);
             if (uuid.IsEmpty) throw new LunarSocialException("拿不到账号 UUID，没法登录 Lunar 后端");
 
+            // 握手 semver 会被服务端校验下限，连接前刷成官方最新正式版
+            var reportedVersion = await LunarLauncherVersion.ResolveAsync().ConfigureAwait(false);
+
             LunarSocialClient client;
             lock (SocialLock)
             {
                 if (_social is null)
                 {
-                    _social = new LunarSocialClient(ReadOrCreateInstallationId());
+                    _social = new LunarSocialClient(ReadOrCreateInstallationId(), reportedVersion);
                     _social.StateChanged += () => SocialStateChanged?.Invoke();
                     _social.FriendsChanged += () => SocialFriendsChanged?.Invoke();
                     _social.MessageReceived += (id, message) => SocialMessageReceived?.Invoke(id, message);
+                }
+                else
+                {
+                    // 实例是复用的，版本可能已经过期（Lunar 发了新正式版）
+                    _social.LauncherVersion = reportedVersion;
                 }
 
                 client = _social;
@@ -1010,6 +1018,13 @@ public static class ModLunar
             RaiseStateChanged();
 
             var installationId = ReadInstallationId();
+
+            // 先把「上报给 Lunar 的启动器版本」查好并缓存：后面 /launch 请求体、
+            // 握手 semver、User-Agent 全都读这份缓存。查不到会退回本机官方启动器
+            // 的 FileVersion，再不行才用内置兜底值，不会挡住启动。
+            var reportedVersion = await LunarLauncherVersion.ResolveAsync().ConfigureAwait(false);
+            Log($"上报启动器版本：{reportedVersion}");
+
             var data = await LunarClientService.FetchLaunchDataAsync(
                 subVersion, SelectedModuleId,
                 installationId: installationId,

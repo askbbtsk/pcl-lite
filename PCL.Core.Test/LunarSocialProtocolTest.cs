@@ -378,6 +378,41 @@ public class LunarSocialProtocolTest
     }
 
     [TestMethod]
+    public void ParseChannelVersion_ShouldStripSuffix()
+    {
+        // electron-builder 频道清单的真实形状（Lunar 的 latest-ow.yml）
+        const string yaml = """
+                            version: 3.7.29-ow
+                            files:
+                              - url: Lunar Client v3.7.29-ow.exe
+                                sha512: abc
+                            path: Lunar Client v3.7.29-ow.exe
+                            releaseDate: '2026-10-31T18:02:17.431Z'
+                            """;
+
+        Assert.AreEqual("3.7.29", LunarSocialProtocol.ParseChannelVersion(yaml));
+    }
+
+    [TestMethod]
+    public void ParseChannelVersion_ShouldHandleCrlfAndQuotes()
+    {
+        const string yaml = "files:\r\n  - url: x\r\nversion: \"4.1.0\"\r\n";
+
+        Assert.AreEqual("4.1.0", LunarSocialProtocol.ParseChannelVersion(yaml));
+    }
+
+    [TestMethod]
+    public void ParseChannelVersion_ShouldRejectGarbage()
+    {
+        Assert.IsNull(LunarSocialProtocol.ParseChannelVersion(null));
+        Assert.IsNull(LunarSocialProtocol.ParseChannelVersion(""));
+        Assert.IsNull(LunarSocialProtocol.ParseChannelVersion("no version here"));
+        Assert.IsNull(LunarSocialProtocol.ParseChannelVersion("version: not-a-version"));
+        Assert.IsNull(LunarSocialProtocol.ParseChannelVersion("version: 7"));
+        Assert.IsNull(LunarSocialProtocol.ParseChannelVersion("<html>404</html>"));
+    }
+
+    [TestMethod]
     public void Candidates_ShouldStartWithPreferredAndEndWithEscalation()
     {
         var candidates = LunarSocialProtocol.GetLauncherVersionCandidates("3.7.0");

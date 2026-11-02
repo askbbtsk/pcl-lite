@@ -49,6 +49,23 @@ public sealed class LunarSocialClient : IAsyncDisposable
             : launcherVersion;
     }
 
+    /// <summary>
+    ///     握手上报的启动器版本（<c>launcherVersion.semver</c>）。
+    ///     <para>
+    ///         服务端校验<b>下限</b>，所以每次连接前都应当把它刷成官方最新正式版
+    ///         （<see cref="LunarSocialProtocol.ResolveLauncherVersion" />）。
+    ///         连接成功后如果服务端不认首选值，这里会被改成实际被接受的候选值。
+    ///     </para>
+    /// </summary>
+    public string LauncherVersion
+    {
+        get => _launcherVersion;
+        set
+        {
+            if (!string.IsNullOrWhiteSpace(value)) _launcherVersion = value;
+        }
+    }
+
     /// <summary>连接状态变了（连上 / 断开）。</summary>
     public event Action? StateChanged;
 

@@ -156,6 +156,192 @@
                 <Setter Property="FontFamily" Value="{DynamicResource LaunchFontFamily}" />
             </Style>
 
+            <!-- 原生 ScrollBar（TextBox / ListBox / 未走 MyScrollViewer 的地方）：
+                 默认是一条半透明细边，鼠标移进来才滑出变粗、变实，可以拖。
+                 颜色全部取主题画笔（ColorBrush3/4 会随主题色相变化），不用写死颜色。 -->
+            <ControlTemplate x:Key="SlimHorizontalScrollBar" TargetType="ScrollBar">
+                <Grid Background="Transparent">
+                    <Track x:Name="PART_Track" Orientation="Horizontal">
+                        <Track.DecreaseRepeatButton>
+                            <RepeatButton Command="{x:Static ScrollBar.PageLeftCommand}" Opacity="0" Focusable="False" />
+                        </Track.DecreaseRepeatButton>
+                        <Track.IncreaseRepeatButton>
+                            <RepeatButton Command="{x:Static ScrollBar.PageRightCommand}" Opacity="0" Focusable="False" />
+                        </Track.IncreaseRepeatButton>
+                        <Track.Thumb>
+                            <Thumb Height="4" VerticalAlignment="Bottom" Margin="3,0,3,4">
+                                <Thumb.Template>
+                                    <ControlTemplate TargetType="Thumb">
+                                        <Border x:Name="Bar" CornerRadius="2" Opacity="0.45"
+                                                Background="{DynamicResource ColorBrush4}" />
+                                        <ControlTemplate.Triggers>
+                                            <DataTrigger Value="True"
+                                                         Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ScrollBar}}">
+                                                <Setter TargetName="Bar" Property="Opacity" Value="0.9" />
+                                                <Setter TargetName="Bar" Property="Background"
+                                                        Value="{DynamicResource ColorBrush3}" />
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
+                        </Track.Thumb>
+                    </Track>
+                </Grid>
+            </ControlTemplate>
+            <Style TargetType="ScrollBar">
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Stylus.IsPressAndHoldEnabled" Value="False" />
+                <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
+                <Setter Property="OverridesDefaultStyle" Value="True" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="UseLayoutRounding" Value="True" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Width" Value="12" />
+                <Setter Property="MinWidth" Value="12" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <!-- 透明底：整条 12px 都算命中区，鼠标一进这一列就能触发滑出 -->
+                            <Grid Background="Transparent">
+                                <!-- 轨道：平时完全看不见，悬停才浮出一层极淡的胶囊 -->
+                                <Border x:Name="TrackBg" Width="4" CornerRadius="2"
+                                        HorizontalAlignment="Right" Margin="0,2,3,2"
+                                        Background="{DynamicResource ColorBrush1}" Opacity="0" />
+                                <Track x:Name="PART_Track" IsDirectionReversed="True" Orientation="Vertical">
+                                    <Track.Resources>
+                                        <sys:Double
+                                            x:Key="{x:Static SystemParameters.VerticalScrollBarButtonHeightKey}">
+                                            100
+                                        </sys:Double>
+                                    </Track.Resources>
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Opacity="0"
+                                                      Focusable="False" />
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Opacity="0"
+                                                      Focusable="False" />
+                                    </Track.IncreaseRepeatButton> <!-- 不能删，删了点击 Thumb 以外的部分就不能翻页了 -->
+                                    <Track.Thumb>
+                                        <Thumb x:Name="ThumbBar" Width="4" HorizontalAlignment="Right" Margin="0,2,3,2">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Border x:Name="Bar" CornerRadius="2" Opacity="0.45"
+                                                            Background="{DynamicResource ColorBrush4}" />
+                                                    <ControlTemplate.Triggers>
+                                                        <!-- 用祖先 ScrollBar 的 IsMouseOver，而不是 Thumb 自己的：
+                                                             这样鼠标落在这一列任意位置都会亮起来 -->
+                                                        <DataTrigger Value="True"
+                                                                     Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ScrollBar}}">
+                                                            <Setter TargetName="Bar" Property="Opacity" Value="0.9" />
+                                                            <Setter TargetName="Bar" Property="Background"
+                                                                    Value="{DynamicResource ColorBrush3}" />
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="Bar" Property="Opacity" Value="1" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="ThumbBar"
+                                                                 Storyboard.TargetProperty="Width"
+                                                                 To="8" Duration="0:0:0.16" />
+                                                <DoubleAnimation Storyboard.TargetName="TrackBg"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.1" Duration="0:0:0.16" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="ThumbBar"
+                                                                 Storyboard.TargetProperty="Width"
+                                                                 To="4" Duration="0:0:0.2" />
+                                                <DoubleAnimation Storyboard.TargetName="TrackBg"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0" Duration="0:0:0.2" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="ThumbBar" Property="Opacity" Value="0" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <!-- 横向滚动条保持满宽，只换成同色系的细条 -->
+                    <Trigger Property="Orientation" Value="Horizontal">
+                        <Setter Property="Width" Value="Auto" />
+                        <Setter Property="MinWidth" Value="0" />
+                        <Setter Property="Height" Value="12" />
+                        <Setter Property="MinHeight" Value="12" />
+                        <Setter Property="Template" Value="{StaticResource SlimHorizontalScrollBar}" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- 原生 ScrollViewer（TextBox 的 PART_ContentHost、ComboBox 下拉、ListBox 等）：
+                 WPF 默认模板在两条滚动条交汇处画了一个 Rectangle，填的是
+                 SystemColors.ControlBrush —— 深色界面下就是右下角那块刺眼的白方块。
+                 这里重写模板，去掉那个角，其余 PART 名字与默认模板保持一致。
+                 （显式指定了 ScrollViewerNoMargin / ScrollViewerFullMargin 的不受影响，
+                   MyScrollViewer 有自己的隐式样式，也不会走到这里。） -->
+            <Style TargetType="ScrollViewer">
+                <Setter Property="OverridesDefaultStyle" Value="True" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollViewer">
+                            <Grid Background="{TemplateBinding Background}"
+                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                        Margin="{TemplateBinding Padding}"
+                                                        CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                        Content="{TemplateBinding Content}"
+                                                        ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                <ScrollBar x:Name="PART_VerticalScrollBar"
+                                           AutomationProperties.AutomationId="VerticalScrollBar"
+                                           Grid.Row="0" Grid.Column="1" Orientation="Vertical" Cursor="Arrow"
+                                           Maximum="{TemplateBinding ScrollableHeight}" Minimum="0"
+                                           ViewportSize="{TemplateBinding ViewportHeight}"
+                                           Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                           Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                                <ScrollBar x:Name="PART_HorizontalScrollBar"
+                                           AutomationProperties.AutomationId="HorizontalScrollBar"
+                                           Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Cursor="Arrow"
+                                           Maximum="{TemplateBinding ScrollableWidth}" Minimum="0"
+                                           ViewportSize="{TemplateBinding ViewportWidth}"
+                                           Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                           Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}" />
+                                <!-- 默认模板这里是 <Rectangle Fill="{SystemColors.ControlBrushKey}"/>，删掉 -->
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- ScrollViewer -->
             <Style x:Key="MyThumb" TargetType="Thumb">
                 <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false" />

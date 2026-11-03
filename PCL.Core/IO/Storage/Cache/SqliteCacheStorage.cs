@@ -36,7 +36,9 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
         await using var conn = await _CreateConnectionAsync().ConfigureAwait(false);
         await using var cmd = conn.CreateCommand();
 
-        cmd.CommandText = "DELETE FROM cache_entries WHERE expires_at IS NOT NULL AND expires_at < datetime('now')";
+        // 同 DeleteExpiredAsync：字符串比较保住亚秒精度
+        cmd.CommandText = "DELETE FROM cache_entries WHERE expires_at IS NOT NULL AND expires_at < @now";
+        cmd.Parameters.AddWithValue("@now", DateTime.UtcNow.ToString("O"));
         await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 
         await using var walCmd = conn.CreateCommand();
@@ -128,7 +130,10 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
         {
             await using var conn = await _CreateConnectionAsync().ConfigureAwait(false);
             await using var cmd = conn.CreateCommand();
-            cmd.CommandText = "DELETE FROM cache_entries WHERE expires_at IS NOT NULL AND datetime(expires_at) < datetime('now')";
+            // expires_at 是 .NET "O" 格式（定宽、UTC、100ns 精度），字典序即时间序。
+            // 不能用 datetime()/julianday()：它们只有毫秒/秒级精度，亚秒过期全判不出来
+            cmd.CommandText = "DELETE FROM cache_entries WHERE expires_at IS NOT NULL AND expires_at < @now";
+            cmd.Parameters.AddWithValue("@now", now.ToString("O"));
             var affected = await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             return affected;
         }

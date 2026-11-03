@@ -20,9 +20,34 @@ public static class Basics
 
     /// <summary>
     /// 启动器元数据。
+    /// <para>
+    /// 入口程序集缺内嵌资源（单元测试宿主就没有）时退回占位值 ——
+    /// 类型初始化直接炸掉会让整个程序集没法用。
+    /// </para>
     /// </summary>
-    public static MetadataModel Metadata { get; } = JsonSerializer.Deserialize<MetadataModel>(
-        Assembly.GetEntryAssembly()!.GetManifestResourceStream("PCL.metadata.json")!, JsonCompat.SerializerOptions)!;
+    public static MetadataModel Metadata { get; } = _LoadMetadata();
+
+    private static MetadataModel _LoadMetadata()
+    {
+        try
+        {
+            var stream = Assembly.GetEntryAssembly()?.GetManifestResourceStream("PCL.metadata.json");
+            if (stream is not null)
+            {
+                using (stream)
+                    return JsonSerializer.Deserialize<MetadataModel>(stream, JsonCompat.SerializerOptions)!;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Console.Error.WriteLine($"[Basics] metadata.json 不可用，退回占位值：{ex.Message}");
+        }
+
+        return new MetadataModel(
+            "PCL",
+            new LauncherVersionModel("0.0.0", "", 0, "0.0.0"),
+            []);
+    }
 
     /// <summary>
     /// 版本名称。

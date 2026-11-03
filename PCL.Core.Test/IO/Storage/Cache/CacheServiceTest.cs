@@ -60,6 +60,9 @@ public class CacheServiceTest
             await _cache.DisposeAsync().ConfigureAwait(false);
         }
 
+        // 连接池（Pooling=True）会握着 .db 文件句柄不放，先清池再删目录
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+
         // Clean up the test directory
         if (Directory.Exists(_testCacheDir))
         {

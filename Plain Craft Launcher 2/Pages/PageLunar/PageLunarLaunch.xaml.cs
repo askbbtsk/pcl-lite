@@ -42,6 +42,25 @@ public partial class PageLunarLaunch
         InitializeComponent();
         Loaded += (_, _) => Subscribe();
         Unloaded += (_, _) => Unsubscribe();
+        // 容器宽度变了（窗口缩放 / 页面重排）也要按百分比重摆填充条
+        PanInstallProgress.SizeChanged += (_, _) => RefreshInstallProgress();
+    }
+
+    /// <summary>
+    ///     物料准备进度条：<see cref="ModLunar.InstallPercent" /> 负数表示没有确定进度，
+    ///     整条隐藏；非负就按百分比铺填充条。
+    /// </summary>
+    private void RefreshInstallProgress()
+    {
+        var percent = ModLunar.InstallPercent;
+        if (percent < 0)
+        {
+            PanInstallProgress.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        PanInstallProgress.Visibility = Visibility.Visible;
+        RectInstallProgress.Width = Math.Clamp(percent, 0, 100) / 100 * PanInstallProgress.ActualWidth;
     }
 
     private void Subscribe()
@@ -82,6 +101,7 @@ public partial class PageLunarLaunch
 
         LabStatusLine.Text = ModLunar.StatusText;
         LabStatusDetail.Text = ModLunar.DetailText;
+        RefreshInstallProgress();
 
         _brushReady ??= (Brush)FindResource("ColorBrush3");
         _brushIdle ??= (Brush)FindResource("ColorBrushGray4");

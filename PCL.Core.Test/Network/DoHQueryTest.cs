@@ -26,8 +26,10 @@ public class DoHQueryTest
     [TestMethod]
     public async Task TestSrvQuery()
     {
+        // 原来的 _minecraft._tcp.mc.hdeda6e85.nyat.app 已不再发布 SRV（查询返回 0 条）；
+        // 换成 hypixel 的 SRV（长期稳定），测的只是「SRV 查询 + 解析」本身
         var query = DnsQuery.Instance;
-        var addr = await query.QueryAsync("_minecraft._tcp.mc.hdeda6e85.nyat.app", DnsQueryType.SRV, TestContext.CancellationTokenSource.Token);
+        var addr = await query.QueryAsync("_minecraft._tcp.hypixel.net", DnsQueryType.SRV, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(addr);
         Assert.IsGreaterThan(0, addr.Answers.Count);
         Assert.AreEqual(DnsQueryClass.IN, addr.Header.QueryClass);

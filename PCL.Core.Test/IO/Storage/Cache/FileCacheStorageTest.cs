@@ -30,6 +30,8 @@ public class FileCacheStorageTest
     public void Cleanup()
     {
         _fileCache.Dispose();
+        // 同进程内其它测试类开过 SQLite 连接池，清一下防止句柄残留
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
 
         if (Directory.Exists(_testCachePath))
         {

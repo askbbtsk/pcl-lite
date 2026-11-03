@@ -10,6 +10,17 @@ public class EventBusServiceTest
 {
     private record MyEvent(Guid Id, string Name, int Value) : EventDataBase(Id, Name);
 
+    /// <summary>
+    ///     EventBus 的 Context 由生命周期服务实例的构造器赋值；测试宿主不跑生命周期，
+    ///     这里手动 new 一个把 Context 点亮，否则 Publish 走到无处理者的分支会
+    ///     抛「Not initialized」。
+    /// </summary>
+    [ClassInitialize]
+    public static void InitContext(TestContext context)
+    {
+        _ = new EventBusService();
+    }
+
     [TestMethod]
     public async Task Publish_Calls_Delegate_Handler()
     {

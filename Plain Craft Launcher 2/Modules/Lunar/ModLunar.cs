@@ -216,6 +216,12 @@ public static class ModLunar
 
     public static string DetailText { get; private set; } = "";
 
+    /// <summary>
+    ///     当前物料准备阶段的百分比（0–100）；负数表示没有可展示的确定进度
+    ///     （不在准备阶段，或当前阶段是条数不定的步骤如 JRE），界面据此隐藏进度条。
+    /// </summary>
+    public static double InstallPercent { get; private set; } = -1;
+
     /// <summary>最近一次启动的完整命令行，出错时贴出来方便定位。</summary>
     public static string LastCommandLine { get; private set; } = "";
 
@@ -574,6 +580,7 @@ public static class ModLunar
         StatusText = progress.Total > 0
             ? Lang.Text("Lunar.Status.Preparing", name, progress.Done, progress.Total)
             : Lang.Text("Lunar.Status.PreparingName", name);
+        InstallPercent = progress.Total > 0 ? percent : -1;
         RaiseStateChanged();
     }
 
@@ -999,6 +1006,7 @@ public static class ModLunar
 
             StatusText = Lang.Text("Lunar.Status.PreparingVersion", subVersion);
             DetailText = "";
+            InstallPercent = -1;
             RaiseStateChanged();
 
             var (playerName, playerUuid, accessToken) = await ResolveCredentialsAsync().ConfigureAwait(false);
@@ -1093,6 +1101,7 @@ public static class ModLunar
             LastCommandLine = startInfo.FileName + " " + string.Join(' ', startInfo.ArgumentList);
 
             StatusText = Lang.Text("Lunar.Status.Launching");
+            InstallPercent = -1;
             RaiseStateChanged();
 
             lock (_recentOutputLock) _recentOutput.Clear();

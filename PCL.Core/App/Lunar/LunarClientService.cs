@@ -221,6 +221,19 @@ public static class LunarClientService
         Timeout = TimeSpan.FromSeconds(30)
     };
 
+    /// <summary>
+    ///     下载通道。宿主（启动器）在启动时注册：给了就走启动器自带的下载管线
+    ///     （代理、HTTP 模式、限速、分段下载、统一重试全都生效），没给就退回
+    ///     本类内置的裸 <see cref="HttpClient" /> 重试下载。
+    ///     <para>
+    ///         Core 层引用不了应用层的下载器，只能反过来让宿主把通道注入进来。
+    ///     </para>
+    /// </summary>
+    /// <param name="urls">候选下载地址，第一个成功的算数。</param>
+    /// <param name="destination">目标文件路径。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public static Func<IReadOnlyList<string>, string, CancellationToken, Task>? DownloadDispatcher { get; set; }
+
     /// <summary>Lunar 数据根目录。</summary>
     public static string DefaultLunarRoot => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".lunarclient");
@@ -1156,16 +1169,31 @@ public static class LunarClientService
     ///         整段物料下载失败。
     ///     </para>
     /// </summary>
-    internal static async Task DownloadAsync(string url, string destination,
+    /// <summary>
+    ///     下载一个文件。注册了 <see cref="DownloadDispatcher" /> 就整包交给宿主的
+    ///     下载管线（多地址 + 重试由它统一处理），否则用内置的重试下载。
+    /// </summary>
+    internal static Task DownloadAsync(string url, string destination,
+        CancellationToken cancellationToken)
+        => DownloadAsync([url], destination, cancellationToken);
+
+    /// <inheritdoc cref="DownloadAsync(string, string, CancellationToken)" />
+    internal static async Task DownloadAsync(IReadOnlyList<string> urls, string destination,
         CancellationToken cancellationToken)
     {
+        if (DownloadDispatcher is { } dispatch)
+        {
+            await dispatch(urls, destination, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         const int maxAttempts = 3;
 
         for (var attempt = 1;; attempt++)
         {
             try
             {
-                await DownloadOnceAsync(url, destination, cancellationToken).ConfigureAwait(false);
+                await DownloadOnceAsync(urls[0], destination, cancellationToken).ConfigureAwait(false);
                 return;
             }
             catch (Exception ex) when (attempt < maxAttempts
@@ -1226,11 +1254,21 @@ public static class LunarClientService
     ///         <c>jre.download</c> 本身就给了 <c>url</c> + <c>fallbackUrl</c> 两条，
     ///         官方 CDN 在国内经常拉不动，得留后路。
     ///     </para>
+    ///     <para>
+    ///         多地址的取舍直接交给下载通道：宿主管线（FileDownloader）本来就支持
+    ///         多地址轮试；内置兜底沿用原来的逐个尝试。
+    ///     </para>
     /// </summary>
     internal static async Task DownloadFirstAsync(IReadOnlyList<string> urls, string destination,
         CancellationToken cancellationToken)
     {
         if (urls.Count == 0) throw new ArgumentException("没有可用的下载地址。", nameof(urls));
+
+        if (DownloadDispatcher is not null)
+        {
+            await DownloadAsync(urls, destination, cancellationToken).ConfigureAwait(false);
+            return;
+        }
 
         Exception? lastError = null;
         foreach (var url in urls)

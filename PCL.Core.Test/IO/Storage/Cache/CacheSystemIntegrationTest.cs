@@ -46,6 +46,9 @@ public class CacheSystemIntegrationTest
             await _cache.DisposeAsync();
         }
 
+        // 连接池（Pooling=True）会握着 .db 文件句柄不放，先清池再删目录
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+
         if (Directory.Exists(_testCacheDir))
         {
             // Wait for file locks to be released

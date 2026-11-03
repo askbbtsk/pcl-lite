@@ -38,6 +38,8 @@ public class SqliteCacheStorageTest
     public async Task Cleanup()
     {
         _storage.Dispose();
+        // 连接池（Pooling=True）会握着 .db 文件句柄不放，先清池再删目录
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
 
         var testDir = Path.GetDirectoryName(_testDbPath);
         if (testDir != null && Directory.Exists(testDir))

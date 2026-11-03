@@ -27,7 +27,7 @@
                 <StackPanel Margin="20,40,20,18">
 
                     <!--  状态行：圆点 + 主状态 + 补充说明  -->
-                    <Grid Margin="6,0,6,14">
+                    <Grid Margin="6,0,6,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -42,6 +42,18 @@
                             <TextBlock x:Name="LabStatusDetail" FontSize="11" Opacity="0.62"
                                        Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="15" Text="" />
                         </StackPanel>
+                    </Grid>
+
+                    <!--
+                        物料准备进度条。InstallPercent < 0 时整行隐藏（不在准备阶段，
+                        或当前阶段没有条数概念如 JRE）；宽度在代码后置里按百分比设。
+                    -->
+                    <Grid x:Name="PanInstallProgress" Height="4" Margin="14,0,14,10"
+                          Visibility="Collapsed">
+                        <Border Background="{DynamicResource ColorBrushGray4}" CornerRadius="2" />
+                        <Rectangle x:Name="RectInstallProgress" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2"
+                                   Fill="{DynamicResource ColorBrush3}" Width="0" />
                     </Grid>
 
                     <!--  选择区 + 信息块：标签与值分列，值过长时省略并用 ToolTip 显示全文  -->

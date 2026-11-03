@@ -97,9 +97,14 @@ public static class EncodingDetector
 
         try
         {
-            var decoded = Encoding.UTF8.GetString(buffer);
+            // 先把真实字节读进缓冲区：之前只声明没读，拿全零样本校验永远通过，
+            // 任何非 UTF-8 内容都会被误判成 UTF-8
+            var length = stream.Read(buffer, 0, buffer.Length);
+            if (length <= 0) return false;
+
+            var decoded = Encoding.UTF8.GetString(buffer, 0, length);
             var roundTrip = Encoding.UTF8.GetBytes(decoded);
-            return roundTrip.SequenceEqual(buffer);
+            return roundTrip.Length == length && roundTrip.AsSpan().SequenceEqual(buffer.AsSpan(0, length));
         }
         catch
         {

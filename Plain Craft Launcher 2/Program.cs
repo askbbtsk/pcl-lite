@@ -4,6 +4,7 @@ using PCL.Core.App;
 using PCL.Core.App.Essentials;
 using PCL.Core.App.IoC;
 using PCL.Core.Utils.OS;
+using PCL.Network;
 
 namespace PCL;
 
@@ -37,6 +38,10 @@ internal static class Program
         {
             // 首次启动写入默认网络白名单（必须在任何联网操作之前，且此时配置系统已就绪）
             PCL.Core.IO.Net.Consent.NetworkConsentService.SeedDefaults();
+            // Lunar 物料下载接入启动器自带下载管线：代理、HTTP 模式、限速、分段下载、
+            // 统一重试全都生效，不再走 Core 里那份裸 HttpClient
+            PCL.Core.App.Lunar.LunarClientService.DownloadDispatcher = static (urls, path, ct) =>
+                FileDownloader.DownloadAsync(urls, path, cancellationToken: ct, enableParallelChunks: true);
             var form = new FormMain();
             return form;
         };

@@ -3657,9 +3657,6 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityExpiredNoRefresh">權杖已過期，這個帳號是權杖匯入的、無法續期，需要重新匯入。</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityHint">Lunar 身分帳號，UUID {0}。進遊戲用的就是它。</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityExpiredHint">權杖已過期，啟動前會自動重新整理。</sys:String>
-    <sys:String x:Key="Lunar.Msg.NotInstalled">沒有找到 {0}。
-請先安裝 Lunar Client 並至少啟動一次。</sys:String>
-    <sys:String x:Key="Lunar.Msg.NotInstalled.Title">未偵測到 Lunar Client</sys:String>
     <sys:String x:Key="Lunar.Status.NoAssets">還沒有下載 Lunar 物料</sys:String>
     <sys:String x:Key="Lunar.Status.NoAssetsDesc">不用裝 Lunar 啟動器，點啟動會自己下載（首次約 300 MB）。</sys:String>
     <sys:String x:Key="Lunar.Status.MaterialDir">物料目錄：{0}</sys:String>

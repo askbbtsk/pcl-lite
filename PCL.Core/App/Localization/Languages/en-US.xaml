@@ -3716,9 +3716,6 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityExpiredNoRefresh">Token expired. This account was imported from a token and cannot renew itself — import it again.</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityHint">Lunar identity, UUID {0}. This is the account used in game.</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityExpiredHint">Token expired — it will refresh before launch.</sys:String>
-    <sys:String x:Key="Lunar.Msg.NotInstalled">Could not find {0}.
-Install Lunar Client and launch it at least once first.</sys:String>
-    <sys:String x:Key="Lunar.Msg.NotInstalled.Title">Lunar Client not found</sys:String>
     <sys:String x:Key="Lunar.Status.NoAssets">Lunar assets not downloaded yet</sys:String>
     <sys:String x:Key="Lunar.Status.NoAssetsDesc">No Lunar launcher needed; launching downloads them (about 300 MB the first time).</sys:String>
     <sys:String x:Key="Lunar.Status.MaterialDir">Asset folder: {0}</sys:String>

@@ -3747,9 +3747,6 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityExpiredNoRefresh">令牌已过期，这个账号是令牌导入的、没法续期，需要重新导入。</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityHint">Lunar 身份账号，UUID {0}。进游戏用的就是它。</sys:String>
     <sys:String x:Key="Lunar.Left.IdentityExpiredHint">令牌已过期，启动前会自动刷新。</sys:String>
-    <sys:String x:Key="Lunar.Msg.NotInstalled">没有找到 {0}。
-请先安装 Lunar Client 并至少启动一次。</sys:String>
-    <sys:String x:Key="Lunar.Msg.NotInstalled.Title">未检测到 Lunar Client</sys:String>
     <sys:String x:Key="Lunar.Status.NoAssets">还没有下载 Lunar 物料</sys:String>
     <sys:String x:Key="Lunar.Status.NoAssetsDesc">不用装 Lunar 启动器，点启动会自己下（首次约 300 MB）。</sys:String>
     <sys:String x:Key="Lunar.Status.MaterialDir">物料目录：{0}</sys:String>

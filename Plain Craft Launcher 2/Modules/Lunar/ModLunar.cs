@@ -128,6 +128,14 @@ public static class ModLunar
     private static readonly object SocialLock = new();
 
     /// <summary>
+    ///     页面打开时的令牌预热任务（单飞用）。见 <see cref="PrepareSessionAsync" />。
+    /// </summary>
+    private static Task? _prepareSessionTask;
+
+    /// <summary>上一次预热的时间，用来做节流，避免来回切页面反复打微软的刷新接口。</summary>
+    private static DateTime _lastPrepareUtc = DateTime.MinValue;
+
+    /// <summary>
     ///     本次启动实际交给游戏的 Lunar 账号（<c>localId</c>）。
     ///     <para>
     ///         游戏发续期请求时带的是它自己认为的当前账号 UUID。万一对不上账户库
@@ -1631,6 +1639,61 @@ public static class ModLunar
             return identity;
         }
     }
+
+    /// <summary>
+    ///     打开 Lunar 页面时预热一次令牌：快过期或已经过期的，现在就刷掉。
+    ///     <para>
+    ///         聊天（Lunar 后端）和启动用的是同一个 accessToken。以前只有「点启动」和
+    ///     「点连接」时才顺手刷，用户先看到的就是好友列表空着、私聊发不出去，
+    ///     或者连上之后一小时令牌过期、消息全丢。
+    ///     </para>
+    ///     <para>
+    ///         单飞 + 60 秒节流：来回切页面不会反复打微软的刷新接口
+    ///         （refreshToken 每次刷新都会轮换，没必要空转）。
+    ///     </para>
+    /// </summary>
+    public static Task PrepareSessionAsync()
+    {
+        if (_prepareSessionTask is { IsCompleted: false }) return _prepareSessionTask;
+        if (DateTime.UtcNow - _lastPrepareUtc < TimeSpan.FromSeconds(60)) return Task.CompletedTask;
+
+        _lastPrepareUtc = DateTime.UtcNow;
+        _prepareSessionTask = Task.Run(PrepareSessionCoreAsync);
+        return _prepareSessionTask;
+    }
+
+    private static async Task PrepareSessionCoreAsync()
+    {
+        try
+        {
+            // 顺序和 ResolveCredentialsAsync 保持一致：身份账号优先，其次 Lunar 账户库
+            if (SelectedIdentityAccount is { } identity)
+            {
+                if (!identity.IsExpired && !IsExpiringSoon(identity.ExpiresAt)) return;
+                await RefreshIdentityAsync(identity, CancellationToken.None).ConfigureAwait(false);
+                RaiseStateChanged();
+                return;
+            }
+
+            if (SelectedAccount is { } account)
+            {
+                if (!account.IsExpired && !IsExpiringSoon(account.ExpiresAt)) return;
+                if (await RefreshAccountTokenAsync(account, CancellationToken.None).ConfigureAwait(false) is not null)
+                    RaiseStateChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            // 预热失败不弹窗：真正要用的时候（启动 / 连聊天）还会再试一次并给出明确提示
+            Log("预热 Lunar 令牌失败：" + ex.Message);
+        }
+    }
+
+    /// <summary>
+    ///     离到期不到 10 分钟就算「快过期」。聊天连接是长连接，等它真过期再刷就晚了。
+    /// </summary>
+    private static bool IsExpiringSoon(DateTimeOffset? expiresAt) =>
+        expiresAt is { } value && value <= DateTimeOffset.UtcNow.AddMinutes(10);
 
     /// <summary>
     ///     在 Lunar 页面主动登录一个「Lunar 身份账号」。

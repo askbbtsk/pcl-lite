@@ -40,6 +40,10 @@ public partial class PageLunarLeft
         ModLunar.StateChanged += RefreshStatus;
         RefreshStatus();
         ModLunar.Refresh();
+
+        // 一进 Lunar 板块就开始预热令牌：聊天和启动共用同一个 accessToken，
+        // 等用户点「连接」或「启动」再刷，看到的就是好友列表空着 / 连上就掉线
+        _ = ModLunar.PrepareSessionAsync();
     }
 
     private void PageLunarLeft_Unloaded(object sender, RoutedEventArgs e)
@@ -130,13 +134,9 @@ public partial class PageLunarLeft
 
         if (ModLunar.IsBusy) return;
 
-        if (!ModLunar.IsInstalled)
-        {
-            ModMain.MyMsgBox(
-                Lang.Text("Lunar.Msg.NotInstalled", ModLunar.LunarRoot),
-                Lang.Text("Lunar.Msg.NotInstalled.Title"));
-            return;
-        }
+        // 这里以前挡着「没检测到 Lunar Client，请先安装并至少启动一次」。
+        // 物料早就由 PCL 自己下了（LunarInstaller.EnsureInstalledAsync），
+        // 装没装过 Lunar 启动器和能不能启动无关，拦在这里只会让人永远进不去。
 
         // 游戏目录由 ModLunar 自己决定（MC 根目录，不跟实例隔离走），这里不再传
         ModLunar.Launch();

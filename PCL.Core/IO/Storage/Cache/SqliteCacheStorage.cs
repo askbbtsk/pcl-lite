@@ -217,7 +217,10 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
     {
         await using var conn = await _CreateConnectionAsync().ConfigureAwait(false);
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) AS total, COALESCE(SUM(data_size), 0) AS total_size, COALESCE(SUM(CASE WHEN expires_at < datetime('now') THEN 1 ELSE 0 END), 0) AS expired, COALESCE(SUM(CASE WHEN entry_type = 0 THEN 1 ELSE 0 END), 0) AS inline, COALESCE(SUM(CASE WHEN entry_type = 1 THEN 1 ELSE 0 END), 0) AS file_ref FROM cache_entries";
+        // 过期判定同样走字符串比较：datetime() 只有秒级精度，和删除逻辑口径不一致
+        // 会统计出「一条都没过期」这种假数据
+        cmd.CommandText = "SELECT COUNT(*) AS total, COALESCE(SUM(data_size), 0) AS total_size, COALESCE(SUM(CASE WHEN expires_at IS NOT NULL AND expires_at < @now THEN 1 ELSE 0 END), 0) AS expired, COALESCE(SUM(CASE WHEN entry_type = 0 THEN 1 ELSE 0 END), 0) AS inline, COALESCE(SUM(CASE WHEN entry_type = 1 THEN 1 ELSE 0 END), 0) AS file_ref FROM cache_entries";
+        cmd.Parameters.AddWithValue("@now", DateTime.UtcNow.ToString("O"));
         await using var reader = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
         if (await reader.ReadAsync(ct).ConfigureAwait(false))
         {

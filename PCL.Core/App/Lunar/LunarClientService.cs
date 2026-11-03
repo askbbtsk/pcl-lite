@@ -295,6 +295,20 @@ public static class LunarClientService
         Path.Combine(lunarRoot, "jre");
 
     /// <summary>
+    ///     界面资源的落点：服务端给了版本号就是 <c>ui/&lt;sha1&gt;/</c>，否则退回 <c>ui/</c>。
+    ///     <para>
+    ///         下载和解压**只认这个目录**，不要拿 <see cref="UiDirectory" /> 的结果去写 ——
+    ///         那个方法会为了「尽量能用」去猜现有目录，猜中 <c>ui/assets/</c> 这种数据目录时，
+    ///         压缩包就被解到错误的位置，下一次启动的 <c>--uiDir</c> 跟着一起错。
+    ///     </para>
+    /// </summary>
+    public static string UiTargetDirectory(string lunarRoot, string uiSha1)
+    {
+        var root = Path.Combine(lunarRoot, "ui");
+        return string.IsNullOrWhiteSpace(uiSha1) ? root : Path.Combine(root, uiSha1);
+    }
+
+    /// <summary>
     ///     界面资源目录。
     ///     <para>
     ///         Lunar 把界面资源按 SHA-1 分目录放在 <c>ui/&lt;sha1&gt;/</c> 下，
@@ -302,36 +316,43 @@ public static class LunarClientService
     ///         <c>index.html</c>，游戏内菜单整块不显示（HUD 和模组都还在，很容易误判）。
     ///     </para>
     ///     <para>
-    ///         服务端换了 ui 版本、而本地那份还没重下时，<c>ui/&lt;sha1&gt;</c> 是不存在的，
-    ///         指过去等于把背景、按钮贴图全丢掉（界面会退化成纯文字）。这种情况下退回到
-    ///         <c>ui/</c> 下唯一的那份：资源版本对不上顶多是细节有出入，比整块没有强。
+    ///         退回逻辑**只认有 <c>index.html</c> 的目录**：<c>ui/assets/</c> 是放 css 和字体的
+    ///         数据目录，指过去等于让 Genesis 去一个没有入口页的地方找 index.html，
+    ///         菜单（主界面的按钮）就整块不渲染。以前按「最新的子目录」挑，正好会挑中它。
     ///     </para>
     /// </summary>
     public static string UiDirectory(string lunarRoot, string uiSha1)
     {
         var root = Path.Combine(lunarRoot, "ui");
+
+        // ① 版本目录里真的有入口页才算数
         if (!string.IsNullOrWhiteSpace(uiSha1))
         {
             var exact = Path.Combine(root, uiSha1);
-            if (Directory.Exists(exact)) return exact;
+            if (File.Exists(Path.Combine(exact, "index.html"))) return exact;
         }
+
+        // ② 老布局（资源直接摊在 ui/ 根下）或官方启动器留下的其它目录
+        if (File.Exists(Path.Combine(root, "index.html"))) return root;
 
         try
         {
             if (Directory.Exists(root))
             {
-                var candidates = Directory.GetDirectories(root);
-                if (candidates.Length == 1) return candidates[0];
-                if (candidates.Length > 1)
-                    return candidates.OrderByDescending(Directory.GetLastWriteTimeUtc).First();
+                var usable = Directory.GetDirectories(root)
+                    .Where(x => File.Exists(Path.Combine(x, "index.html")))
+                    .OrderByDescending(Directory.GetLastWriteTimeUtc)
+                    .FirstOrDefault();
+                if (usable is not null) return usable;
             }
         }
         catch (IOException)
         {
-            // 目录读不了就走下面的老路，让游戏自己决定怎么退化
+            // 目录读不了就走下面的兜底
         }
 
-        return root;
+        // ③ 一个能用的都没有：把下载目标交出去，让调用方去补
+        return UiTargetDirectory(lunarRoot, uiSha1);
     }
 
     /// <summary>
@@ -724,13 +745,16 @@ public static class LunarClientService
         string lunarRoot,
         CancellationToken cancellationToken = default)
     {
-        var target = UiDirectory(lunarRoot, data.UiSha1);
+        // 下载目标恒为 ui/<sha1>/（版本号缺失时就是 ui/），不能跟着 UiDirectory 的猜测走
+        var target = UiTargetDirectory(lunarRoot, data.UiSha1);
+
+        // 版本目录里已经有入口页就直接复用；uiSha1 为空时上面这行等价于判断 ui/ 根下
         if (File.Exists(Path.Combine(target, "index.html"))) return target;
 
         if (string.IsNullOrWhiteSpace(data.UiUrl))
         {
-            // 没地址也没现成资源，只能把旧路径交出去，至少不会崩
-            return target;
+            // 没地址也没现成资源，把猜测结果交出去，至少不会崩
+            return UiDirectory(lunarRoot, data.UiSha1);
         }
 
         Directory.CreateDirectory(target);

@@ -939,7 +939,6 @@ public partial class PageInstanceSavesDatapack : IRefreshable
             }
         }
 
-        return "";
     }
 
     private void BtnSortClick(object sender, ModBase.RouteEventArgs e)

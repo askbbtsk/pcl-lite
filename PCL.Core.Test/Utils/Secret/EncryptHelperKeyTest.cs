@@ -44,7 +44,7 @@ public class EncryptHelperKeyTest
         CollectionAssert.AreEqual(rawKey, EncryptHelper.EncryptionKey);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(1u, 0)]  // 结构合法但内容损坏 / 版本未知，都应重建
     [DataRow(1u, 4)]
     [DataRow(7u, 4)]

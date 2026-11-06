@@ -3545,6 +3545,10 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Update.Error.FileNotFound">Update file not found</sys:String>
     <sys:String x:Key="Update.Error.OperationFailed">An update operation failed. See the details below.</sys:String>
     <sys:String x:Key="Update.Error.Sha256Mismatch">Update file SHA256 mismatch. Expected: {0}, actual: {1}</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Title">Update certificate verification failed</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Message">{0}&#xA;&#xA;We recommend choosing “Do not update” unless you have confirmed the release source is trusted.</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Cancel">Do not update</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Continue">Update anyway</sys:String>
     <sys:String x:Key="Update.Error.UnableToGetUpdate">Unable to get update information</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlocked">Update failed</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlockedMessage">PCL CE cannot update because it was blocked by Windows Security or does not have sufficient permissions.&#xA;Please add the PCL CE folder to the exclusion list, or manually replace the current file with {0}PCL\Plain Craft Launcher Community Edition.exe!</sys:String>
@@ -3555,6 +3559,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
 
     <sys:String x:Key="Update.Task.ApplyFile">Apply file</sys:String>
     <sys:String x:Key="Update.Task.Check">Verify update</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Task">Verify release certificate</sys:String>
     <sys:String x:Key="Update.Task.DownloadFile">Download file</sys:String>
     <sys:String x:Key="Update.Task.DownloadLatestStable">Download latest stable</sys:String>
     <sys:String x:Key="Update.Task.DownloadUpdateFile">Download update file</sys:String>

@@ -10,7 +10,6 @@ using PCL.Core.Minecraft;
 using PCL.Core.Minecraft.Launch.Utils;
 using PCL.Core.Utils.OS;
 using PCL.Core.Utils;
-using PCL.Core.Utils.OS;
 using PCL.Core.Utils.Secret;
 using PCL.Network;
 using PCL.Core.Minecraft.IdentityModel;
@@ -442,6 +441,8 @@ public static class ModLaunch
         {
             return obj is not null && obj.GetHashCode() == GetHashCode();
         }
+
+        public override int GetHashCode() => LoginType.GetHashCode();
     }
 
     #region 第三方验证类型

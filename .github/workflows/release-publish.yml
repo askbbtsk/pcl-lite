@@ -51,7 +51,14 @@ jobs:
           tool: git-cliff
 
       - name: Create local release tag
-        run: git tag -f "v${{ inputs.version }}"
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version" >&2
+            exit 1
+          fi
+          git tag -f "v$RELEASE_VERSION"
 
       - name: Generate changelog
         run: git-cliff --latest -o CHANGELOG.md
@@ -90,18 +97,31 @@ jobs:
           name: PCL2_CE_${{ matrix.configuration }}_${{ matrix.architecture }}
           path: ./artifact
 
-      - name: Rename binaries
+      - name: Require the protected release branch
+        env:
+          RELEASE_REF: ${{ github.ref }}
         run: |
-          mv "./artifact/Plain Craft Launcher 2.exe" "PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe"
+          if [[ "$RELEASE_REF" != "refs/heads/main" ]]; then
+            echo "Releases must be dispatched from refs/heads/main" >&2
+            exit 1
+          fi
+
+      - name: Rename binaries
+        env:
+          RELEASE_CONFIGURATION: ${{ matrix.configuration }}
+          RELEASE_ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          if [[ "$RELEASE_CONFIGURATION" != "Release" && "$RELEASE_CONFIGURATION" != "Beta" ]]; then exit 1; fi
+          if [[ "$RELEASE_ARCHITECTURE" != "x64" && "$RELEASE_ARCHITECTURE" != "ARM64" ]]; then exit 1; fi
+          mv "./artifact/Plain Craft Launcher 2.exe" "PCL-Lite_${RELEASE_CONFIGURATION}_${RELEASE_ARCHITECTURE}.exe"
 
       - name: Sign the binary
         uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
         with:
           inputs: PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe
           verify: true
-          # 这里原本写死成上游 PCL-Community/PCL-CE。fork 之后签名证书的颁发对象变成了本仓库，
-          # 写死会导致校验失败、整个 job 直接挂掉，所以改成跟着当前仓库和分支走。
-          verify-cert-identity: https://github.com/${{ github.repository }}/.github/workflows/release-publish.yml@${{ github.ref }}
+          # Must match UpdateSignatureVerifier.ExpectedWorkflowIdentity exactly.
+          verify-cert-identity: https://github.com/askbbtsk/pcl-lite/.github/workflows/release-publish.yml@refs/heads/main
           verify-oidc-issuer: https://token.actions.githubusercontent.com
 
       - name: Upload binary and signature to Release

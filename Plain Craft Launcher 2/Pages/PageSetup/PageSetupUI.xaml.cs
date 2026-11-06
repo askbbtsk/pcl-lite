@@ -16,7 +16,7 @@ namespace PCL;
 
 public partial class PageSetupUI
 {
-    public new bool isLoaded;
+    public bool isLoaded;
 
     public PageSetupUI()
     {

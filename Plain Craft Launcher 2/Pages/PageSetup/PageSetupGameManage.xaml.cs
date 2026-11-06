@@ -9,7 +9,7 @@ namespace PCL;
 
 public partial class PageSetupGameManage
 {
-    private new bool isLoaded;
+    private bool isLoaded;
 
     public PageSetupGameManage()
     {

@@ -393,8 +393,8 @@ public static class ProfileUi
     {
         long msb = 0;
         long lsb = 0;
-        for (var i = 0; i <= 7; i++) msb = (msb << 8) | (bytes[i] & 0xff);
-        for (var i = 8; i <= 15; i++) lsb = (lsb << 8) | (bytes[i] & 0xff);
+        for (var i = 0; i <= 7; i++) msb = (msb << 8) | bytes[i];
+        for (var i = 8; i <= 15; i++) lsb = (lsb << 8) | bytes[i];
         return $"{_Digits(msb >> 32, 8)}-{_Digits(msb >> 16, 4)}-{_Digits(msb, 4)}-{_Digits(lsb >> 48, 4)}-{_Digits(lsb, 12)}";
     }
 

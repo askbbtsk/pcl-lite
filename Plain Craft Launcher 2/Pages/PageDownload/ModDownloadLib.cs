@@ -812,7 +812,7 @@ public static class ModDownloadLib
                                 task.Progress += 0.9d / 7000d;
                             }
                         }
-                        catch (ObjectDisposedException ex)
+                        catch (ObjectDisposedException)
                         {
                         }
                         catch (Exception ex)
@@ -849,7 +849,7 @@ public static class ModDownloadLib
                                 task.Progress += 0.9d / 7000d;
                             }
                         }
-                        catch (ObjectDisposedException ex)
+                        catch (ObjectDisposedException)
                         {
                         }
                         catch (Exception ex)
@@ -1792,7 +1792,7 @@ public static class ModDownloadLib
                                 ForgelikeInjectorLine(e.Data, task);
                             }
                         }
-                        catch (ObjectDisposedException ex)
+                        catch (ObjectDisposedException)
                         {
                         }
                         catch (Exception ex)
@@ -1828,7 +1828,7 @@ public static class ModDownloadLib
                                 ForgelikeInjectorLine(e.Data, task);
                             }
                         }
-                        catch (ObjectDisposedException ex)
+                        catch (ObjectDisposedException)
                         {
                         }
                         catch (Exception ex)
@@ -3767,7 +3767,7 @@ public static class ModDownloadLib
             return true;
         }
 
-        catch (ModBase.CancelledException ex)
+        catch (ModBase.CancelledException)
         {
             return false;
         }

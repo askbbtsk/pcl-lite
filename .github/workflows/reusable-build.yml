@@ -36,18 +36,26 @@ jobs:
 
       - name: Build Project
         env:
+          BUILD_CONFIGURATION: ${{ inputs.configuration }}
+          BUILD_ARCHITECTURE: ${{ inputs.architecture }}
           PCL_WRITE_SECRET: '1'
           PCL_MS_CLIENT_ID: ${{ secrets.CLIENT_ID }}
-          PCL_CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-          PCL_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          PCL_NAID_CLIENT_ID: ${{ secrets.NAID_CLIENT_ID }}
-          PCL_NAID_CLIENT_SECRET: ${{ secrets.NAID_CLIENT_SECRET }}
-          PCL_LINK_SERVER_ROOT: ${{ secrets.LINK_SERVER_ROOTS }}
-          PCL_LOBBY_DEFAULT_SECRET: ${{ secrets.LOBBY_DEFAULT_SECRET }}
           PCL_GITHUB_SHA: ${{ github.sha }}
         run: |
+          if [[ "$BUILD_CONFIGURATION" != "CI" && "$BUILD_CONFIGURATION" != "Release" && "$BUILD_CONFIGURATION" != "Beta" ]]; then
+            echo "Invalid build configuration" >&2
+            exit 1
+          fi
+          if [[ "$BUILD_ARCHITECTURE" != "x64" && "$BUILD_ARCHITECTURE" != "ARM64" ]]; then
+            echo "Invalid build architecture" >&2
+            exit 1
+          fi
+          if [[ "$BUILD_CONFIGURATION" != "CI" && -z "${PCL_MS_CLIENT_ID:-}" ]]; then
+            echo "CLIENT_ID repository secret is required for every published build" >&2
+            exit 1
+          fi
           dotnet publish "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" \
-          -p:Configuration=${{ inputs.configuration }} -p:Platform=${{ inputs.architecture }} \
+          -p:Configuration="$BUILD_CONFIGURATION" -p:Platform="$BUILD_ARCHITECTURE" \
           -p:DeleteExistingFiles=true -o ./artifact --no-self-contained
 
       - name: Upload the Build Artifact

@@ -561,15 +561,7 @@ public class SqliteCacheStorageTest
         await _storage.UpsertAsync(entry, CancellationToken.None);
 
         // Act & Assert
-        try
-        {
-            await _storage.CompactAsync(CancellationToken.None);
-            Assert.IsTrue(true, "Compact should execute without error");
-        }
-        catch (Exception ex)
-        {
-            Assert.Fail($"Compact failed with exception: {ex.Message}");
-        }
+        await _storage.CompactAsync(CancellationToken.None);
     }
 
     #endregion

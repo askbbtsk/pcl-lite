@@ -414,7 +414,7 @@ public partial class PageInstanceServer : MyPageRight
 
             await Task.WhenAll(tasks); // 等待所有任务完成
         }
-        catch (OperationCanceledException ex)
+        catch (OperationCanceledException)
         {
             ModBase.Log("PingAllServers 被取消", ModBase.LogLevel.Debug);
         }
@@ -454,7 +454,7 @@ public partial class PageInstanceServer : MyPageRight
                 }
             }
         }
-        catch (OperationCanceledException ex)
+        catch (OperationCanceledException)
         {
             server.Status = ServerStatus.Offline;
             ModBase.Log("Ping 服务器被取消: " + server.Address, ModBase.LogLevel.Debug);

@@ -1707,7 +1707,6 @@ public partial class PageInstanceCompResource : IRefreshable
             }
         }
 
-        return "";
     }
 
     private void BtnSortClick(object sender, ModBase.RouteEventArgs e)
@@ -2627,7 +2626,7 @@ public partial class PageInstanceCompResource : IRefreshable
                                 }
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             fileCount = 0;
                         }

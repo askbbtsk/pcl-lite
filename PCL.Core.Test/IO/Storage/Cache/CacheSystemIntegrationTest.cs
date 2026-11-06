@@ -34,7 +34,9 @@ public class CacheSystemIntegrationTest
             EnableCompression = false
         };
 
+#pragma warning disable CS0618 // This constructor is explicitly reserved for option-injected tests.
         _cache = new CacheService(_options);
+#pragma warning restore CS0618
         await _cache.InitializeAsync();
     }
 

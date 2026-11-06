@@ -22,7 +22,7 @@ public class RegionPolicyTest
         Assert.AreEqual(RegionClassification.Mainland, result.Classification);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("HK", "zh-HK", "Asia/Hong_Kong")]
     [DataRow("MO", "zh-MO", "Asia/Macau")]
     [DataRow("TW", "zh-TW", "Asia/Taipei")]

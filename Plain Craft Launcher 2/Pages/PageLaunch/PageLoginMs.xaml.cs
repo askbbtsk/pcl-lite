@@ -124,7 +124,7 @@ public partial class PageLoginMs
                 else
                     throw ModLaunch.mcLoginMsLoader.Error;
             }
-            catch (ThreadInterruptedException ex)
+            catch (ThreadInterruptedException)
             {
                 if (!loginSucceeded && previousProfile is not null) ProfileService.Select(previousProfile);
                 HintService.Hint(Lang.Text("Launch.Account.LoginCancelled"));

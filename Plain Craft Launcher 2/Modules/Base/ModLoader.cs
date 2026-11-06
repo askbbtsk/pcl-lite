@@ -487,6 +487,8 @@ public static class ModLoader
             var @base = obj as LoaderBase;
             return @base is not null && Uuid == @base.Uuid;
         }
+
+        public override int GetHashCode() => Uuid;
     }
 
     // 说实话，我真的觉得 C# 应该学学 VB 的那种近乎 Java 泛型擦除的兼容性，省掉一堆麻烦
@@ -1004,7 +1006,7 @@ public static class ModLoader
     /// </summary>
     public class LoaderCombo<InputType> : LoaderCombo
     {
-        public new InputType typedInput;
+        public InputType typedInput;
 
         public LoaderCombo(string name, IEnumerable<LoaderBase> loaders) : base(name, loaders) { }
 
@@ -1028,5 +1030,7 @@ public static class ModLoader
             return EqualityComparer<DateTime?>.Default.Equals(lastCheckTime, entry.lastCheckTime) &&
                    (folderPath ?? "") == (entry.folderPath ?? "");
         }
+
+        public override int GetHashCode() => HashCode.Combine(lastCheckTime, folderPath ?? "");
     }
 }

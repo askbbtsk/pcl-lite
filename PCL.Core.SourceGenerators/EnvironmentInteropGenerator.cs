@@ -21,10 +21,16 @@ public class EnvironmentInteropGenerator : IIncrementalGenerator
 #pragma warning disable RS1035
             var envs = Environment.GetEnvironmentVariables();
 #pragma warning restore RS1035
+            // Only the public OAuth client id and build provenance may be embedded.
+            // Server credentials and API keys must never become client binary literals.
+            var allowedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "PCL_MS_CLIENT_ID", "PCL_GITHUB_SHA"
+            };
             var secretPairs = envs.Contains("PCL_WRITE_SECRET") ? (
                 from key in (
                     from key in envs.Keys.Cast<string>()
-                    where !string.IsNullOrWhiteSpace(key) && key.StartsWith("PCL_") && key != "PCL_WRITE_SECRET"
+                    where !string.IsNullOrWhiteSpace(key) && allowedKeys.Contains(key)
                     select key
                 )
                 let value = envs[key]?.ToString()

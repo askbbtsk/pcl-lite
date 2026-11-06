@@ -898,11 +898,7 @@ public class McInstance
                     }
 
                 // 确定实例描述
-                if (state == McInstanceState.Error)
-                {
-                    Desc = Desc;
-                }
-                else
+                if (state != McInstanceState.Error)
                 {
                     Desc = States.Instance.CustomInfo[PathInstance];
                     if ((Desc ?? "") == (GetDefaultDescription() ?? ""))
@@ -1064,6 +1060,8 @@ public class McInstance
             return instance is not null && (PathInstance ?? "") == (instance.PathInstance ?? "");
         }
 
+        public override int GetHashCode() => (PathInstance ?? "").GetHashCode(StringComparison.Ordinal);
+
         public static bool operator ==(McInstance? a, McInstance? b)
         {
             if (a is null && b is null)
@@ -1073,7 +1071,7 @@ public class McInstance
             return (a.PathInstance ?? "") == (b.PathInstance ?? "");
         }
 
-        public static bool operator !=(McInstance a, McInstance b)
+        public static bool operator !=(McInstance? a, McInstance? b)
         {
             return !(a == b);
         }

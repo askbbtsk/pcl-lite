@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.App.Updates;
+using System;
+using System.Linq;
 
 namespace PCL.Core.Test;
 
@@ -14,7 +16,7 @@ namespace PCL.Core.Test;
 [TestClass]
 public class UpdateChannelLevelsTest
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("1.3.2", UpdateChannelLevels.Stable)]
     [DataRow("v1.3.2", UpdateChannelLevels.Stable)]
     [DataRow("V1.3.2", UpdateChannelLevels.Stable)]
@@ -35,7 +37,7 @@ public class UpdateChannelLevelsTest
         Assert.AreEqual(expected, UpdateChannelLevels.FromVersionName(versionName));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("1.3.2-nightly.20261025", UpdateChannelLevels.Latest)]
     [DataRow("1.3.2-snapshot.3", UpdateChannelLevels.Snapshot)]
     [DataRow("1.3.2-beta+build.5", UpdateChannelLevels.Preview)]
@@ -46,7 +48,7 @@ public class UpdateChannelLevelsTest
         Assert.AreEqual(expected, UpdateChannelLevels.FromVersionName(versionName));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(null)]
     [DataRow("")]
     [DataRow("   ")]
@@ -56,7 +58,7 @@ public class UpdateChannelLevelsTest
         Assert.AreEqual(UpdateChannelLevels.Stable, UpdateChannelLevels.FromSuffix(suffix));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("SNAPSHOT", UpdateChannelLevels.Snapshot)]
     [DataRow("Nightly", UpdateChannelLevels.Latest)]
     [DataRow("-beta", UpdateChannelLevels.Preview)]
@@ -74,7 +76,7 @@ public class UpdateChannelLevelsTest
     /// <summary>
     /// 通道的包含关系：版本等级 &lt;= 通道等级 时该版本可见。
     /// </summary>
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(UpdateChannelLevels.Stable, UpdateChannelLevels.Preview, true, DisplayName = "正式版 → 预览体验：可见")]
     [DataRow(UpdateChannelLevels.Preview, UpdateChannelLevels.Preview, true, DisplayName = "pre → 预览体验：可见")]
     [DataRow(UpdateChannelLevels.Snapshot, UpdateChannelLevels.Preview, false, DisplayName = "snapshot → 预览体验：不可见")]
@@ -99,10 +101,11 @@ public class UpdateChannelLevelsTest
     [TestMethod]
     public void LevelValuesAreContract()
     {
-        Assert.AreEqual(0, UpdateChannelLevels.Stable);
-        Assert.AreEqual(1, UpdateChannelLevels.Preview);
-        Assert.AreEqual(2, UpdateChannelLevels.Snapshot);
-        Assert.AreEqual(3, UpdateChannelLevels.Latest);
+        var type = typeof(UpdateChannelLevels);
+        var values = new[] { "Stable", "Preview", "Snapshot", "Latest" }
+            .Select(name => Convert.ToInt32(type.GetField(name)!.GetRawConstantValue()))
+            .ToArray();
+        CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 }, values);
     }
 
     [TestMethod]

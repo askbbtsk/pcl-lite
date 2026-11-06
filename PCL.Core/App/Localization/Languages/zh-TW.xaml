@@ -3488,6 +3488,10 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Update.Error.FileNotFound">找不到更新檔案</sys:String>
     <sys:String x:Key="Update.Error.OperationFailed">更新操作失敗。請檢視錯誤詳情。</sys:String>
     <sys:String x:Key="Update.Error.Sha256Mismatch">更新檔案 SHA256 不正確，應該為 {0}，實際為 {1}</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Title">更新憑證驗證失敗</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Message">{0}&#xA;&#xA;建議選擇「不更新」，除非你已確認發佈來源可信。</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Cancel">不更新</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Continue">仍然更新</sys:String>
     <sys:String x:Key="Update.Error.UnableToGetUpdate">無法取得更新</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlocked">更新失敗</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlockedMessage">由於被 Windows 安全中心攔截，或存在權限問題，導致 PCL CE 無法更新。&#xA;請將 PCL CE 所在資料夾加入白名單，或手動用 {0}PCL\Plain Craft Launcher Community Edition.exe 取代目前檔案！</sys:String>
@@ -3498,6 +3502,7 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
 
     <sys:String x:Key="Update.Task.ApplyFile">應用檔案</sys:String>
     <sys:String x:Key="Update.Task.Check">校驗更新</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Task">驗證發佈憑證</sys:String>
     <sys:String x:Key="Update.Task.DownloadFile">下載檔案</sys:String>
     <sys:String x:Key="Update.Task.DownloadLatestStable">下載最新穩定版</sys:String>
     <sys:String x:Key="Update.Task.DownloadUpdateFile">下載更新檔案</sys:String>

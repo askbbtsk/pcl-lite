@@ -20,7 +20,11 @@ namespace PCL.Core.App.Updates;
 public static class UpdateSignatureVerifier
 {
     public const string OidcIssuer = "https://token.actions.githubusercontent.com";
-    public const string ExpectedSignerSubject = "repo:askbbtsk/pcl-lite:ref:refs/heads/main";
+    // Sigstore's current GitHub OIDC subject uses immutable numeric owner/repository IDs.
+    // Keep this pinned alongside the exact workflow SAN below so a different repository
+    // or workflow cannot satisfy update verification.
+    public const string ExpectedSignerSubject =
+        "repo:askbbtsk@134824152/pcl-lite@1433078355:ref:refs/heads/main";
     public const string ExpectedWorkflowIdentity =
         "https://github.com/askbbtsk/pcl-lite/.github/workflows/release-publish.yml@refs/heads/main";
 

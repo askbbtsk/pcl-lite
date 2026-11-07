@@ -191,6 +191,8 @@ public sealed class PluginApiRuntimeTests
                 "/get" => "get-response",
                 "/post" => "post-response",
                 "/download" => "download-payload",
+                "/download-length-short" => "download-length-mismatch",
+                "/download-length-long" => "tiny",
                 "/download-fail" => "",
                 "/download-cancel" => "",
                 "/download-oversize" => "tiny-body",
@@ -215,6 +217,12 @@ public sealed class PluginApiRuntimeTests
                 content.Headers.ContentLength = request.RequestUri.AbsolutePath == "/download-oversize"
                     ? 100L * 1024 * 1024 + 1
                     : 16L * 1024 * 1024 + 1;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+            }
+            if (request.RequestUri.AbsolutePath is "/download-length-short" or "/download-length-long")
+            {
+                var content = new StringContent(body, Encoding.UTF8, "text/plain");
+                content.Headers.ContentLength = request.RequestUri.AbsolutePath == "/download-length-short" ? 2 : 100;
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
             }
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
@@ -328,6 +336,14 @@ public sealed class ApiProbePlugin : IPclPlugin
             () => context.Launcher.DownloadAsync(new Uri("https://plugin.test/download-fail"), "downloads/atomic.txt", cancellationToken: cancellationToken),
             "failed download response");
         Require(await context.Storage.ReadTextAsync("downloads/atomic.txt", cancellationToken) == "original", "failed download keeps old file");
+        await RequireThrowsAsync<InvalidDataException>(
+            () => context.Launcher.DownloadAsync(new Uri("https://plugin.test/download-length-short"), "downloads/atomic.txt", cancellationToken: cancellationToken),
+            "download exceeds declared content length");
+        await RequireThrowsAsync<InvalidDataException>(
+            () => context.Launcher.DownloadAsync(new Uri("https://plugin.test/download-length-long"), "downloads/atomic.txt", cancellationToken: cancellationToken),
+            "download shorter than declared content length");
+        Require(await context.Storage.ReadTextAsync("downloads/atomic.txt", cancellationToken) == "original",
+            "content length mismatch keeps old file");
         using (var canceled = new CancellationTokenSource())
         {
             var pendingDownload = context.Launcher.DownloadAsync(new Uri("https://plugin.test/download-cancel"),

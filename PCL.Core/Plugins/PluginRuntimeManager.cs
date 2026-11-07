@@ -231,9 +231,28 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         var snapshotDirectory = Path.Combine(_pluginsDirectory, ".package-snapshot");
         Directory.CreateDirectory(snapshotDirectory);
         var snapshotPath = Path.Combine(snapshotDirectory, Guid.NewGuid().ToString("N") + PluginPackage.Extension);
-        File.Copy(packagePath, snapshotPath, overwrite: false);
         try
         {
+            var sourceInfo = new FileInfo(packagePath);
+            if (!sourceInfo.Exists) throw new FileNotFoundException("Plugin package does not exist.", packagePath);
+            if (sourceInfo.Length > PluginPackage.MaximumPackageBytes)
+                throw new InvalidDataException("Package exceeds the 100 MiB limit.");
+            await using (var source = new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                             81920, FileOptions.Asynchronous | FileOptions.SequentialScan))
+            await using (var snapshot = new FileStream(snapshotPath, FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                             81920, FileOptions.Asynchronous | FileOptions.SequentialScan))
+            {
+                var buffer = new byte[81920];
+                long copied = 0;
+                int read;
+                while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+                {
+                    copied += read;
+                    if (copied > PluginPackage.MaximumPackageBytes)
+                        throw new InvalidDataException("Package exceeds the 100 MiB limit.");
+                    await snapshot.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+                }
+            }
             return await _InstallSnapshotAsync(snapshotPath, confirmInstallation, cancellationToken).ConfigureAwait(false);
         }
         finally
@@ -360,8 +379,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 var files = await ReadInstalledFilesAsync(directory, cancellationToken).ConfigureAwait(false);
                 if (!files.TryGetValue(PluginPackage.ManifestFileName, out var manifestBytes))
                     throw new InvalidDataException("Plugin manifest is missing.");
-                manifest = JsonSerializer.Deserialize<PluginManifest>(manifestBytes, PluginPackage.SerializerOptions)
-                           ?? throw new InvalidDataException("Plugin manifest is invalid.");
+                manifest = PluginPackage.DeserializeManifest(manifestBytes);
                 if (!string.Equals(manifest.Id, Path.GetFileName(directory), StringComparison.Ordinal))
                     throw new InvalidDataException("Plugin id does not match its installation directory.");
                 var error = PluginPackage.ValidateManifest(manifest, files.Keys);
@@ -372,8 +390,10 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 var signaturePath = Path.Combine(directory, PluginPackage.SignatureFileName);
                 if (File.Exists(signaturePath))
                 {
+                    var signatureBytes = await _ReadBoundedFileAsync(signaturePath,
+                        PluginPackage.MaximumSignatureBytes, cancellationToken).ConfigureAwait(false);
                     var signature = JsonSerializer.Deserialize<PluginPackageSignature>(
-                        await File.ReadAllBytesAsync(signaturePath, cancellationToken).ConfigureAwait(false),
+                        signatureBytes,
                         PluginPackage.SerializerOptions) ?? throw new InvalidDataException("Signature is invalid.");
                     var result = PluginPackage.VerifyFiles(files, signature);
                     if (!result.Valid) throw new InvalidDataException(result.Error ?? "Signature verification failed.");
@@ -775,15 +795,42 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     continue;
                 }
                 var relative = Path.GetRelativePath(directory, path).Replace('\\', '/');
-                if (relative.Equals(PluginPackage.SignatureFileName, StringComparison.Ordinal)) continue;
+                if (relative.Equals(PluginPackage.SignatureFileName, StringComparison.Ordinal))
+                {
+                    if (new FileInfo(path).Length > PluginPackage.MaximumSignatureBytes)
+                        throw new InvalidDataException("Plugin signature metadata is too large.");
+                    continue;
+                }
                 PluginPackage.ValidateRelativePath(relative);
                 total = checked(total + new FileInfo(path).Length);
                 if (total > PluginPackage.MaximumExpandedBytes)
                     throw new InvalidDataException("Plugin exceeds the expanded size limit.");
+                if (relative.Equals(PluginPackage.ManifestFileName, StringComparison.Ordinal) &&
+                    new FileInfo(path).Length > PluginPackage.MaximumManifestBytes)
+                    throw new InvalidDataException("Plugin manifest exceeds the 64 KiB limit.");
                 files.Add(relative, await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false));
             }
         }
         return files;
+    }
+
+    private static async Task<byte[]> _ReadBoundedFileAsync(string path, long maximumBytes,
+        CancellationToken cancellationToken)
+    {
+        var info = new FileInfo(path);
+        if (info.Length > maximumBytes) throw new InvalidDataException("File exceeds its allowed size limit.");
+        await using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,
+            81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        using var output = new MemoryStream((int)Math.Min(maximumBytes, info.Length));
+        var buffer = new byte[81920];
+        int read;
+        while ((read = await input.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+        {
+            if (output.Length + read > maximumBytes)
+                throw new InvalidDataException("File exceeds its allowed size limit.");
+            await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+        }
+        return output.ToArray();
     }
 
     private static async Task<byte[]> _ReadBoundedContentAsync(HttpContent content, int maximumBytes,

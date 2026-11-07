@@ -14,6 +14,8 @@
 using PCL.Plugin.SDK;
 using System.Windows.Controls;
 
+namespace Example.Plugin;
+
 public sealed class ExamplePlugin : IPclPlugin
 {
     public Task StartAsync(IPluginContext context, CancellationToken cancellationToken)

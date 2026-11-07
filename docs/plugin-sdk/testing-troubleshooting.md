@@ -35,7 +35,7 @@ dotnet build .\PCL.Plugin.Sample\PCL.Plugin.Sample.csproj
 | 下载失败或文件残缺 | URI 是否 HTTPS、取消/权限/磁盘空间/响应错误；不要假定失败下载会自动恢复远端文件 |
 | 启动器因插件无法启动 | 使用 `PCL_LITE_SAFE_MODE=1` 或 `--safe-mode` 跳过插件；进入插件页后禁用/卸载故障包并重启 |
 
-宿主 API 专项测试 `PluginApiRuntimeTests.LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions` 覆盖插件生命周期和停止、独立存储/设置、日志等级、UI 桥接、事件、HTTP 16 MiB 响应上限、Minecraft 桥接、HTTPS 下载 64 MiB 上限、取消、Content-Length 检查和临时文件原子清理。包与市场安全测试覆盖低于 2048 位 RSA 拒绝、市场索引/Release JSON 响应限制、条目上限和 HTTPS 重定向限制。Mixin 集成测试 `PluginMixinPackageRuntimeTests.SignedPackagesApplyMixinRollbackFailedPluginAndRestoreHostMethodOnShutdown` 验证签名包安装和加载、Mixin 应用、必需配置失败回滚，以及管理器释放时恢复目标方法；另有安全模式跳过补丁测试。测试未覆盖存储 256 MiB 总量、64 MiB 单文件及 10,000 文件的极限压力；这些配额也不是对任意同进程文件访问的强制隔离。完整真实 UI 和游戏进程仍需发行构建回归；每种 Mixin 操作还需要各自的目标、匹配和运行效果用例。
+宿主 API 专项测试 `PluginApiRuntimeTests.LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions` 覆盖插件生命周期和停止、独立存储/设置、日志等级、UI 桥接、事件、HTTP 16 MiB 响应上限、Minecraft 桥接、HTTPS 下载 64 MiB 上限、取消、超限声明 Content-Length、声明长度与实际字节数不符时保留原文件，以及临时文件原子清理。包与市场安全测试覆盖低于 2048 位 RSA 拒绝、市场索引/Release JSON 响应限制、条目上限和 HTTPS 重定向限制。Mixin 集成测试 `PluginMixinPackageRuntimeTests.SignedPackagesApplyMixinRollbackFailedPluginAndRestoreHostMethodOnShutdown` 验证签名包安装和加载、Mixin 应用、必需配置失败回滚，以及管理器释放时恢复目标方法；另有安全模式跳过补丁测试。测试未覆盖存储 256 MiB 总量、64 MiB 单文件及 10,000 文件的极限压力；这些配额也不是对任意同进程文件访问的强制隔离。完整真实 UI 和游戏进程仍需发行构建回归；每种 Mixin 操作还需要各自的目标、匹配和运行效果用例。
 
 ## 贡献和本地留痕
 

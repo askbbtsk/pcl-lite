@@ -188,6 +188,97 @@ public sealed class PluginPackageTests
         var error = PluginPackage.ValidateManifest(manifest, ["plugin.json", "Plugin.dll"]);
 
         Assert.IsNotNull(error);
+        Assert.ThrowsExactly<ArgumentException>(() =>
+            PluginPackage.ValidateRelativePath(new string('a', PluginPackage.MaximumRelativePathLength + 1)));
+    }
+
+    [TestMethod]
+    public async Task ManifestAndMixinJsonAreBoundedAndNullSafe()
+    {
+        var files = CreateFiles();
+        files[PluginPackage.ManifestFileName] = new byte[PluginPackage.MaximumManifestBytes + 1];
+        var oversizedManifestPath = CreateTempPath();
+        try
+        {
+            await WritePackageAsync(oversizedManifestPath, files, (PluginPackageSignature?)null);
+            var oversized = await PluginPackage.InspectAsync(oversizedManifestPath);
+            Assert.IsFalse(oversized.IsValid);
+            StringAssert.Contains(oversized.Error!, "64 KiB");
+        }
+        finally { DeleteIfExists(oversizedManifestPath); }
+
+        var manifest = new PluginManifest
+        {
+            Id = "test.plugin",
+            Name = "Test plugin",
+            Version = "1.0.0",
+            Author = new string('a', 129),
+            EntryAssembly = "Plugin.dll"
+        };
+        Assert.IsNotNull(PluginPackage.ValidateManifest(manifest, ["Plugin.dll"]));
+
+        foreach (var json in new[]
+                 {
+                     "{\"package\":\"test\",\"mixins\":null}",
+                     "{\"package\":null,\"mixins\":[\"Test.Mixin\"]}",
+                     "{\"package\":\"test\",\"mixins\":[\"Test.Mixin\"],\"injectors\":null}"
+                 })
+        {
+            files = CreateFiles();
+            var mixinManifest = JsonSerializer.Deserialize<PluginManifest>(files[PluginPackage.ManifestFileName],
+                PluginPackage.SerializerOptions)! with { MixinConfigs = ["mixins.json"] };
+            files[PluginPackage.ManifestFileName] = JsonSerializer.SerializeToUtf8Bytes(mixinManifest,
+                PluginPackage.SerializerOptions);
+            files["mixins.json"] = Encoding.UTF8.GetBytes(json);
+            var error = PluginPackage.ValidateMixinConfigurations(mixinManifest, files);
+            Assert.IsNotNull(error, $"Expected invalid mixin config to be rejected: {json}");
+        }
+
+        files = CreateFiles();
+        var path = CreateTempPath();
+        try
+        {
+            var malformedManifest = Encoding.UTF8.GetString(files[PluginPackage.ManifestFileName])
+                .Replace("\"mixinConfigs\": []", "\"mixinConfigs\": null", StringComparison.Ordinal);
+            files[PluginPackage.ManifestFileName] = Encoding.UTF8.GetBytes(malformedManifest);
+            await WritePackageAsync(path, files, (PluginPackageSignature?)null);
+            var check = await PluginPackage.InspectAsync(path);
+            Assert.IsFalse(check.IsValid);
+            Assert.IsNotNull(check.Error);
+        }
+        finally { DeleteIfExists(path); }
+    }
+
+    [TestMethod]
+    public async Task InstallRejectsOversizedPackageBeforeSnapshotAndCleansCanceledSnapshot()
+    {
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-copy-test-" + Guid.NewGuid().ToString("N"));
+        var oversizedPath = CreateTempPath();
+        var smallPath = CreateTempPath();
+        try
+        {
+            await using (var oversized = new FileStream(oversizedPath, FileMode.CreateNew, FileAccess.Write))
+                oversized.SetLength(PluginPackage.MaximumPackageBytes + 1);
+            await using var manager = new PluginRuntimeManager(pluginsDirectory);
+            await Assert.ThrowsExactlyAsync<InvalidDataException>(() =>
+                manager.InstallAsync(oversizedPath, (_, _) => Task.FromResult(true)));
+            Assert.IsFalse(Directory.Exists(Path.Combine(pluginsDirectory, ".package-snapshot")) &&
+                           Directory.EnumerateFiles(Path.Combine(pluginsDirectory, ".package-snapshot")).Any());
+
+            await File.WriteAllBytesAsync(smallPath, [1, 2, 3]);
+            using var canceled = new CancellationTokenSource();
+            canceled.Cancel();
+            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                manager.InstallAsync(smallPath, (_, _) => Task.FromResult(true), canceled.Token));
+            Assert.IsFalse(Directory.Exists(Path.Combine(pluginsDirectory, ".package-snapshot")) &&
+                           Directory.EnumerateFiles(Path.Combine(pluginsDirectory, ".package-snapshot")).Any());
+        }
+        finally
+        {
+            DeleteIfExists(oversizedPath);
+            DeleteIfExists(smallPath);
+            if (Directory.Exists(pluginsDirectory)) Directory.Delete(pluginsDirectory, recursive: true);
+        }
     }
 
     [TestMethod]
@@ -338,6 +429,35 @@ public sealed class PluginPackageTests
             foreach (var packagePath in packages) DeleteIfExists(packagePath);
             PluginPageRegistry.RemovePlugin("runtime.good.one");
             PluginPageRegistry.RemovePlugin("runtime.good.two");
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
+    public async Task RuntimeSkipsInstalledPluginWithOversizedSignatureMetadata()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-signature-limit-" + Guid.NewGuid().ToString("N"));
+        var packagePath = CreateTempPath();
+        try
+        {
+            await WritePackageAsync(packagePath,
+                CreateRuntimeFiles("runtime.signature.limit", typeof(GoodRuntimePlugin).FullName!), certificate);
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+                await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+
+            await using var runtime = new PluginRuntimeManager(pluginsDirectory);
+            var signaturePath = Path.Combine(pluginsDirectory, "runtime.signature.limit", PluginPackage.SignatureFileName);
+            Assert.IsTrue(File.Exists(signaturePath));
+            await File.WriteAllBytesAsync(signaturePath, new byte[PluginPackage.MaximumSignatureBytes + 1]);
+            await runtime.LoadEnabledAsync();
+
+            Assert.AreEqual(0, runtime.GetInstalled().Count);
+            Assert.IsFalse(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.signature.limit", "started.txt")));
+        }
+        finally
+        {
+            DeleteIfExists(packagePath);
             DeleteRuntimeDirectory(pluginsDirectory);
         }
     }

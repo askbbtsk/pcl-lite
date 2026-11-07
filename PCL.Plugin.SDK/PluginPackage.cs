@@ -51,6 +51,10 @@ public static class PluginPackage
     public const int MaximumPackageEntries = 10_000;
     public const long MaximumPackageBytes = 100L * 1024 * 1024;
     public const long MaximumExpandedBytes = 500L * 1024 * 1024;
+    public const int MaximumManifestBytes = 64 * 1024;
+    public const int MaximumRelativePathLength = 1024;
+    public const int MaximumPathSegmentLength = 128;
+    public const int MaximumPathDepth = 32;
     public const long MaximumSignatureBytes = 64L * 1024;
     public const int MaximumMixinConfigurationBytes = 256 * 1024;
     public const int MaximumMixinsPerConfiguration = 512;
@@ -58,7 +62,8 @@ public static class PluginPackage
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
+        WriteIndented = true,
+        MaxDepth = 32
     };
 
     public static async Task<PluginPackageCheck> InspectAsync(string packagePath,
@@ -84,6 +89,9 @@ public static class PluginPackage
                 cancellationToken.ThrowIfCancellationRequested();
                 if (entry.FullName.EndsWith('/')) continue;
                 ValidateRelativePath(entry.FullName);
+                if (entry.FullName.Equals(ManifestFileName, StringComparison.Ordinal) &&
+                    entry.Length > MaximumManifestBytes)
+                    return new(default!, false, false, null, null, null, "", "Plugin manifest exceeds the 64 KiB limit.");
                 if (!seenNames.Add(entry.FullName.Replace('\\', '/')))
                     return new(default!, false, false, null, null, null, "", $"Duplicate package entry: {entry.FullName}");
                 if (entry.FullName.Equals(SignatureFileName, StringComparison.Ordinal)) continue;
@@ -93,23 +101,22 @@ public static class PluginPackage
                 if (expanded > MaximumExpandedBytes)
                     return new(default!, false, false, null, null, null, "", "Expanded package exceeds the 500 MiB limit.");
                 await using var input = entry.Open();
-                using var output = new MemoryStream(entry.Length > int.MaxValue ? 0 : (int)entry.Length);
-                var buffer = new byte[81920];
-                int read;
-                while ((read = await input.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+                var contents = GC.AllocateUninitializedArray<byte>(checked((int)entry.Length));
+                var offset = 0;
+                while (offset < contents.Length)
                 {
-                    if (output.Length + read > MaximumExpandedBytes - (expanded - entry.Length))
-                        return new(default!, false, false, null, null, null, "", "Expanded package exceeds the 500 MiB limit.");
-                    await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+                    var read = await input.ReadAsync(contents.AsMemory(offset), cancellationToken).ConfigureAwait(false);
+                    if (read == 0) break;
+                    offset += read;
                 }
-                if (output.Length != entry.Length)
+                if (offset != contents.Length || await input.ReadAsync(new byte[1], cancellationToken).ConfigureAwait(false) != 0)
                     return new(default!, false, false, null, null, null, "", $"Package entry length is invalid: {entry.FullName}");
-                files[entry.FullName] = output.ToArray();
+                files[entry.FullName] = contents;
             }
 
             if (!files.TryGetValue(ManifestFileName, out var manifestBytes))
                 return new(default!, false, false, null, null, null, "", "Package manifest is missing.");
-            var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestBytes, JsonOptions);
+            var manifest = DeserializeManifest(manifestBytes);
             var validationError = ValidateManifest(manifest, files.Keys);
             if (validationError is not null)
                 return new(manifest!, false, false, null, null, null, CreateFileContentHash(files), validationError);
@@ -231,8 +238,7 @@ public static class PluginPackage
             var content = item.Value;
             if (item.Key.Equals(ManifestFileName, StringComparison.Ordinal))
             {
-                var manifest = JsonSerializer.Deserialize<PluginManifest>(content, JsonOptions)
-                               ?? throw new InvalidDataException("Plugin manifest is invalid.");
+                var manifest = DeserializeManifest(content);
                 content = JsonSerializer.SerializeToUtf8Bytes(manifest, JsonOptions);
             }
             writer.Write(Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
@@ -255,8 +261,7 @@ public static class PluginPackage
             var content = item.Value;
             if (item.Key.Equals(ManifestFileName, StringComparison.Ordinal))
             {
-                var manifest = JsonSerializer.Deserialize<PluginManifest>(content, JsonOptions)
-                               ?? throw new InvalidDataException("Plugin manifest is invalid.");
+                var manifest = DeserializeManifest(content);
                 content = JsonSerializer.SerializeToUtf8Bytes(manifest, JsonOptions);
             }
             writer.Write(Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
@@ -275,19 +280,32 @@ public static class PluginPackage
             !char.IsAsciiLetterOrDigit(manifest.Id[0])) return "Plugin id must contain lowercase letters, digits, dots, and hyphens.";
         if (string.IsNullOrWhiteSpace(manifest.Name) || manifest.Name.Length > 120) return "Plugin name is missing or too long.";
         if (string.IsNullOrWhiteSpace(manifest.Version) || manifest.Version.Length > 64) return "Plugin version is missing or too long.";
+        if (string.IsNullOrWhiteSpace(manifest.Author) || manifest.Author.Length > 128) return "Plugin author is missing or too long.";
+        if (manifest.Description is null || manifest.Description.Length > 4096) return "Plugin description is missing or too long.";
         if (manifest.ApiVersion != PluginApiVersion.Current) return $"Plugin API version {manifest.ApiVersion} is not supported.";
+        if (manifest.EntryAssembly is null || manifest.EntryAssembly.Length > 512)
+            return "Plugin entry assembly path is missing or too long.";
         try { ValidateRelativePath(manifest.EntryAssembly); }
         catch (ArgumentException ex) { return ex.Message; }
         if (!manifest.EntryAssembly.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)) return "Entry assembly must be a DLL.";
         if (!fileNames.Contains(manifest.EntryAssembly, StringComparer.Ordinal)) return "Entry assembly is missing from package.";
-        if (string.IsNullOrWhiteSpace(manifest.EntryType)) return "Plugin entry type is required.";
+        if (string.IsNullOrWhiteSpace(manifest.EntryType) || manifest.EntryType.Length > 512)
+            return "Plugin entry type is missing or too long.";
+        if (manifest.Website is not null && !IsSafeHttpsUri(manifest.Website))
+            return "Plugin website must be an absolute HTTPS URL without credentials.";
+        if (manifest.ReleaseAssetUrl is not null && !IsGitHubReleaseAssetUri(manifest.ReleaseAssetUrl))
+            return "Plugin release asset URL must be an HTTPS GitHub release asset URL.";
+        if (manifest.MixinConfigs is null) return "Mixin configuration list cannot be null.";
+        if (manifest.MixinConfigs.Count > 64) return "Plugin declares too many Mixin configurations.";
         var mixinConfigurations = new List<string>();
         if (!string.IsNullOrWhiteSpace(manifest.MixinConfig)) mixinConfigurations.Add(manifest.MixinConfig);
-        mixinConfigurations.AddRange((manifest.MixinConfigs ?? []).Where(path => !string.IsNullOrWhiteSpace(path)));
+        if (manifest.MixinConfigs.Any(string.IsNullOrWhiteSpace)) return "Mixin configuration paths cannot be empty.";
+        mixinConfigurations.AddRange(manifest.MixinConfigs);
         if (mixinConfigurations.Count > 64) return "Plugin declares too many Mixin configurations.";
         var seenMixinConfigurations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var path in mixinConfigurations)
         {
+            if (path.Length > 512) return "Mixin configuration path is too long.";
             try { ValidateRelativePath(path); }
             catch (ArgumentException ex) { return ex.Message; }
             if (!path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
@@ -302,9 +320,13 @@ public static class PluginPackage
     public static string? ValidateMixinConfigurations(PluginManifest manifest,
         IReadOnlyDictionary<string, byte[]> files)
     {
+        if (manifest is null) return "Package manifest is invalid.";
+        if (files is null) return "Package files are missing.";
+        if (manifest.MixinConfigs is null) return "Mixin configuration list cannot be null.";
         var paths = new List<string>();
         if (!string.IsNullOrWhiteSpace(manifest.MixinConfig)) paths.Add(manifest.MixinConfig);
-        paths.AddRange((manifest.MixinConfigs ?? []).Where(path => !string.IsNullOrWhiteSpace(path)));
+        if (manifest.MixinConfigs.Any(string.IsNullOrWhiteSpace)) return "Mixin configuration paths cannot be empty.";
+        paths.AddRange(manifest.MixinConfigs);
         foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (!files.TryGetValue(path, out var bytes)) return $"Mixin configuration is missing from package: {path}";
@@ -314,16 +336,18 @@ public static class PluginPackage
             try { configuration = JsonSerializer.Deserialize<MixinConfiguration>(bytes, JsonOptions); }
             catch (JsonException ex) { return $"Mixin configuration is invalid ({path}): {ex.Message}"; }
             if (configuration is null) return $"Mixin configuration is empty: {path}";
-            if (configuration.Mixins.Count is 0 or > MaximumMixinsPerConfiguration)
+            if (configuration.Mixins is null || configuration.Mixins.Count is 0 or > MaximumMixinsPerConfiguration)
                 return $"Mixin configuration must declare 1 to {MaximumMixinsPerConfiguration} Mixin types: {path}";
             if (configuration.Mixins.Any(name => string.IsNullOrWhiteSpace(name) || name.Length > 256))
                 return $"Mixin configuration contains an empty or oversized type name: {path}";
             if (configuration.Mixins.Distinct(StringComparer.Ordinal).Count() != configuration.Mixins.Count)
                 return $"Mixin configuration contains duplicate type names: {path}";
-            if (configuration.Package.Length > 256 || (configuration.Plugin?.Length ?? 0) > 256)
+            if (configuration.Package is null || configuration.Package.Length > 256 || (configuration.Plugin?.Length ?? 0) > 256)
                 return $"Mixin configuration contains an oversized type name: {path}";
             if (configuration.Injectors is null || configuration.Injectors.DefaultRequire is < 0 or > 1000)
                 return $"Mixin configuration has an invalid defaultRequire value: {path}";
+            if (configuration.Priority is < -10_000 or > 10_000)
+                return $"Mixin configuration has an invalid priority: {path}";
         }
         return null;
     }
@@ -331,16 +355,21 @@ public static class PluginPackage
     public static void ValidateRelativePath(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || path.Contains('\0') || path.Contains(':') ||
-            path.StartsWith('/') || path.StartsWith('\\') || Path.IsPathRooted(path))
+            path.Length > MaximumRelativePathLength || path.StartsWith('/') || path.StartsWith('\\') ||
+            Path.IsPathRooted(path))
             throw new ArgumentException($"Unsafe package path: {path}");
         var normalized = path.Replace('\\', '/');
-        if (normalized.Split('/').Any(part => part is "" or "." or ".."))
+        var segments = normalized.Split('/');
+        if (segments.Length > MaximumPathDepth || segments.Any(part => part is "" or "." or ".." ||
+                part.Length > MaximumPathSegmentLength))
             throw new ArgumentException($"Unsafe package path: {path}");
     }
 
     public static async Task<IReadOnlyDictionary<string, byte[]>> ReadPackageFilesAsync(string packagePath,
         CancellationToken cancellationToken = default)
     {
+        if (new FileInfo(packagePath).Length > MaximumPackageBytes)
+            throw new InvalidDataException("Package exceeds the 100 MiB limit.");
         using var archive = ZipFile.OpenRead(packagePath);
         if (archive.Entries.Count > MaximumPackageEntries)
             throw new InvalidDataException("Package contains too many entries.");
@@ -353,17 +382,58 @@ public static class PluginPackage
             ValidateRelativePath(entry.FullName);
             if (!seenNames.Add(entry.FullName.Replace('\\', '/'))) throw new InvalidDataException($"Duplicate package entry: {entry.FullName}");
             if (!files.TryAdd(entry.FullName, [])) throw new InvalidDataException($"Duplicate package entry: {entry.FullName}");
+            if (entry.FullName.Equals(ManifestFileName, StringComparison.Ordinal) && entry.Length > MaximumManifestBytes)
+                throw new InvalidDataException("Plugin manifest exceeds the 64 KiB limit.");
             total = checked(total + entry.Length);
             if (total > MaximumExpandedBytes) throw new InvalidDataException("Expanded package is too large.");
             await using var source = entry.Open();
-            using var target = new MemoryStream();
-            await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
-            files[entry.FullName] = target.ToArray();
+            var contents = GC.AllocateUninitializedArray<byte>(checked((int)entry.Length));
+            var offset = 0;
+            while (offset < contents.Length)
+            {
+                var read = await source.ReadAsync(contents.AsMemory(offset), cancellationToken).ConfigureAwait(false);
+                if (read == 0) break;
+                offset += read;
+            }
+            if (offset != contents.Length || await source.ReadAsync(new byte[1], cancellationToken).ConfigureAwait(false) != 0)
+                throw new InvalidDataException($"Package entry length is invalid: {entry.FullName}");
+            files[entry.FullName] = contents;
         }
         return files;
     }
 
     public static JsonSerializerOptions SerializerOptions => new(JsonOptions);
+
+    /// <summary>Parses a bounded, depth-limited plugin manifest.</summary>
+    public static PluginManifest DeserializeManifest(ReadOnlySpan<byte> manifestBytes)
+    {
+        if (manifestBytes.Length > MaximumManifestBytes)
+            throw new InvalidDataException("Plugin manifest exceeds the 64 KiB limit.");
+        try
+        {
+            return JsonSerializer.Deserialize<PluginManifest>(manifestBytes, JsonOptions)
+                   ?? throw new InvalidDataException("Plugin manifest is invalid.");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException("Plugin manifest is invalid.", ex);
+        }
+    }
+
+    private static bool IsSafeHttpsUri(string value) => value.Length <= 2048 &&
+        Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps &&
+        !string.IsNullOrWhiteSpace(uri.Host) && string.IsNullOrEmpty(uri.UserInfo);
+
+    private static bool IsGitHubReleaseAssetUri(string value)
+    {
+        if (!IsSafeHttpsUri(value) || !Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+            !uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) || uri.Port != 443 ||
+            !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment)) return false;
+        var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return segments.Length == 6 && segments[2].Equals("releases", StringComparison.OrdinalIgnoreCase) &&
+               segments[3].Equals("download", StringComparison.OrdinalIgnoreCase) &&
+               Uri.UnescapeDataString(segments[5]).EndsWith(Extension, StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 /// <summary>Utilities for plugin authors to create signing certificates and packages.</summary>
@@ -395,15 +465,18 @@ public static class PluginAuthoring
             var relative = Path.GetRelativePath(sourceDirectory, path).Replace('\\', '/');
             PluginPackage.ValidateRelativePath(relative);
             if (relative.Equals(PluginPackage.SignatureFileName, StringComparison.Ordinal)) continue;
-            expandedBytes = checked(expandedBytes + new FileInfo(path).Length);
+            var fileLength = new FileInfo(path).Length;
+            if (relative.Equals(PluginPackage.ManifestFileName, StringComparison.Ordinal) &&
+                fileLength > PluginPackage.MaximumManifestBytes)
+                throw new InvalidDataException("Plugin manifest exceeds the 64 KiB limit.");
+            expandedBytes = checked(expandedBytes + fileLength);
             if (files.Count >= PluginPackage.MaximumPackageEntries - 1 || expandedBytes > PluginPackage.MaximumExpandedBytes)
                 throw new InvalidDataException("Plugin source exceeds the package entry or expanded size limit.");
             files.Add(relative, await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false));
         }
         if (!files.TryGetValue(PluginPackage.ManifestFileName, out var manifestBytes))
             throw new InvalidDataException("plugin.json is missing.");
-        var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestBytes, PluginPackage.SerializerOptions)
-                       ?? throw new InvalidDataException("plugin.json is invalid.");
+        var manifest = PluginPackage.DeserializeManifest(manifestBytes);
         var validationError = PluginPackage.ValidateManifest(manifest, files.Keys);
         if (validationError is not null) throw new InvalidDataException(validationError);
         validationError = PluginPackage.ValidateMixinConfigurations(manifest, files);

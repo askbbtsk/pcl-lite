@@ -20,6 +20,8 @@ public sealed record PluginManifest
     public required string Author { get; init; }
     public string Description { get; init; } = "";
     public int ApiVersion { get; init; } = PluginApiVersion.Current;
+    /// <summary>Optional SemVer range for supported PCL Core versions.</summary>
+    public string? PclCoreVersion { get; init; }
     public required string EntryAssembly { get; init; }
     public string EntryType { get; init; } = "Plugin";
     public string? MixinConfig { get; init; }
@@ -39,6 +41,7 @@ public sealed record PluginPackageCheck(PluginManifest Manifest, bool IsSigned, 
     public bool IsValid => Error is null && (!IsSigned || SignatureValid);
     public PluginGitHubProvenance? GitHubProvenance { get; init; }
     public string? PreviousSignerThumbprint { get; init; }
+    public string? CompatibilityWarning { get; init; }
     public bool SignerChanged => PreviousSignerThumbprint is not null &&
         (!IsSigned || !string.Equals(PreviousSignerThumbprint, SignerThumbprint, StringComparison.OrdinalIgnoreCase));
 }
@@ -288,6 +291,9 @@ public static class PluginPackage
         if (string.IsNullOrWhiteSpace(manifest.Author) || manifest.Author.Length > 128) return "Plugin author is missing or too long.";
         if (manifest.Description is null || manifest.Description.Length > 4096) return "Plugin description is missing or too long.";
         if (manifest.ApiVersion != PluginApiVersion.Current) return $"Plugin API version {manifest.ApiVersion} is not supported.";
+        if (manifest.PclCoreVersion is { } coreVersionRange &&
+            (coreVersionRange.Length > 256 || !PluginVersionRange.IsValid(coreVersionRange)))
+            return "Plugin PCL Core version range is invalid.";
         if (manifest.EntryAssembly is null || manifest.EntryAssembly.Length > 512)
             return "Plugin entry assembly path is missing or too long.";
         try { ValidateRelativePath(manifest.EntryAssembly); }

@@ -342,6 +342,44 @@ public sealed class PluginPackageTests
     }
 
     [TestMethod]
+    public async Task IncompatibleCoreRangeIsShownAtInstallAndSkippedAtStartup()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-core-range-" + Guid.NewGuid().ToString("N"));
+        var packagePath = CreateTempPath();
+        try
+        {
+            var files = CreateRuntimeFiles("runtime.core.range", typeof(GoodRuntimePlugin).FullName!);
+            var manifest = JsonSerializer.Deserialize<PluginManifest>(files[PluginPackage.ManifestFileName],
+                PluginPackage.SerializerOptions)! with { PclCoreVersion = ">=999.0.0" };
+            files[PluginPackage.ManifestFileName] = JsonSerializer.SerializeToUtf8Bytes(manifest,
+                PluginPackage.SerializerOptions);
+            await WritePackageAsync(packagePath, files, certificate);
+
+            PluginPackageCheck? prompt = null;
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+            {
+                await installer.InstallAsync(packagePath, (check, _) =>
+                {
+                    prompt = check;
+                    return Task.FromResult(true);
+                });
+            }
+            Assert.IsNotNull(prompt?.CompatibilityWarning);
+
+            await using var runtime = new PluginRuntimeManager(pluginsDirectory);
+            await runtime.LoadEnabledAsync();
+            Assert.IsFalse(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.core.range", "started.txt")));
+            Assert.IsFalse(runtime.GetInstalled().Any(plugin => plugin.Manifest.Id == "runtime.core.range" && plugin.Running));
+        }
+        finally
+        {
+            DeleteIfExists(packagePath);
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
     public async Task MarketInstallCorroboratesGitHubDigestAndReleaseTime()
     {
         using var certificate = CreateCertificate();

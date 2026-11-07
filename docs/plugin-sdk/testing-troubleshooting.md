@@ -39,6 +39,8 @@ dotnet build .\PCL.Plugin.Sample\PCL.Plugin.Sample.csproj
 
 依赖版本范围和拓扑加载由 `PluginDependencyResolverTests` 覆盖；`PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` 通过两个独立程序集验证依赖先启动且其公开类型可由消费者加载；`RuntimeBlocksDependentsWhenProviderLifecycleFails` 验证提供方启动失败后的传播。该管理器当前不会自动下载或更新依赖。
 
+`PluginPackageTests.IncompatibleCoreRangeIsShownAtInstallAndSkippedAtStartup` 验证清单声明不兼容的 PCL Core 版本范围时，安装确认展示警告而运行时不加载插件。
+
 ## 贡献和本地留痕
 
 每个功能改动应有对应的测试和文档。提交前检查 `git diff`，只提交本功能文件，避免把工作区其他改动一起纳入。不要提交 PFX、插件运行数据、打包产物或私钥。保持 Mixin 引擎有明确来源归属，并保留适用许可证文本。

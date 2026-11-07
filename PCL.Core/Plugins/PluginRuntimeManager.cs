@@ -277,6 +277,12 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     check, cancellationToken).ConfigureAwait(false)
             };
         }
+        if (check.Manifest.PclCoreVersion is { } coreVersionRange &&
+            !PluginVersionRange.Satisfies(Basics.VersionName, coreVersionRange))
+            check = check with
+            {
+                CompatibilityWarning = $"Plugin supports PCL Core {coreVersionRange}; current version is {Basics.VersionName}."
+            };
         var previousState = await _ReadStateAsync(check.Manifest.Id, cancellationToken).ConfigureAwait(false);
         if (previousState.ExpectedSigner is not null)
             check = check with { PreviousSignerThumbprint = previousState.ExpectedSigner };
@@ -387,6 +393,10 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     throw new InvalidDataException("Plugin id does not match its installation directory.");
                 var error = PluginPackage.ValidateManifest(manifest, files.Keys);
                 if (error is not null) throw new InvalidDataException(error);
+                if (manifest.PclCoreVersion is { } coreVersionRange &&
+                    !PluginVersionRange.Satisfies(Basics.VersionName, coreVersionRange))
+                    throw new InvalidDataException(
+                        $"Plugin supports PCL Core {coreVersionRange}; current version is {Basics.VersionName}.");
                 error = PluginPackage.ValidateMixinConfigurations(manifest, files);
                 if (error is not null) throw new InvalidDataException(error);
                 var state = await _ReadStateAsync(manifest.Id, cancellationToken).ConfigureAwait(false);

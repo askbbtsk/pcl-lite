@@ -2895,6 +2895,7 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
 这可能是密钥轮换，也可能是供应链风险；请先核对可信发布来源。</sys:String>
     <sys:String x:Key="Plugin.Install.SignerChangedConfirm">仍要更新</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedSigner">无（新版本未签名）</sys:String>
+    <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">兼容性警告：{0} 安装后仍会保存，但此启动器版本不会加载它。请使用声明兼容的启动器版本。</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">确认安装插件</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">签名人：{0}
 证书指纹：{1}

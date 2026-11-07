@@ -3820,6 +3820,7 @@ New version certificate fingerprint/status: {1}
 This may be a key rotation or a supply-chain risk. Verify the trusted release source before continuing.</sys:String>
     <sys:String x:Key="Plugin.Install.SignerChangedConfirm">Update anyway</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedSigner">None (new version is unsigned)</sys:String>
+    <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">Compatibility warning: {0} can be installed, but this launcher version will not load it. Use a launcher version within the declared range.</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">Confirm plugin installation</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">Signer: {0}
 Certificate fingerprint: {1}

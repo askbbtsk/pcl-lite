@@ -2838,6 +2838,7 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
 這可能是金鑰輪替，也可能是供應鏈風險；請先核對可信發布來源。</sys:String>
     <sys:String x:Key="Plugin.Install.SignerChangedConfirm">仍要更新</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedSigner">無（新版本未簽名）</sys:String>
+    <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">相容性警告：{0} 安裝後仍會保存，但此啟動器版本不會載入它。請使用宣告相容的啟動器版本。</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">確認安裝外掛</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">簽名人：{0}
 憑證指紋：{1}

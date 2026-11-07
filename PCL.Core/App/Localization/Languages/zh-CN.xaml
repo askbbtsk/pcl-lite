@@ -2876,6 +2876,8 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Plugin.Market.Refresh">刷新市场</sys:String>
     <sys:String x:Key="Plugin.Market.Install">安装</sys:String>
     <sys:String x:Key="Plugin.Market.Update">更新</sys:String>
+    <sys:String x:Key="Plugin.Market.Current">已是最新版本</sys:String>
+    <sys:String x:Key="Plugin.Market.Downgrade">降级…</sys:String>
     <sys:String x:Key="Plugin.Market.Empty">市场暂时没有可用插件。</sys:String>
     <sys:String x:Key="Plugin.Market.LoadFailed">无法加载插件市场：{0}</sys:String>
     <sys:String x:Key="Plugin.Install.Local">从本地文件安装</sys:String>
@@ -2896,6 +2898,15 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Plugin.Install.SignerChangedConfirm">仍要更新</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedSigner">无（新版本未签名）</sys:String>
     <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">兼容性警告：{0} 安装后仍会保存，但此启动器版本不会加载它。请使用声明兼容的启动器版本。</sys:String>
+    <sys:String x:Key="Plugin.Install.SourceChanged">安装来源发生变化：{0}（{1}）→ {2}（{3}）。请确认新的来源可信。</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSource">未知来源</sys:String>
+    <sys:String x:Key="Plugin.Install.DowngradeWarning">这是降级：当前版本 {0}，目标版本 {1}。旧版本可能包含已修复的问题。</sys:String>
+    <sys:String x:Key="Plugin.Install.PackageChanged">相同版本的插件包内容与上次安装不同，请核对签名人及发布来源。</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownHash">未知</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Market">插件市场</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Local">本地文件</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Unknown">来源未知（旧安装记录）</sys:String>
+    <sys:String x:Key="Plugin.Installed.Provenance">来源：{0}　安装时间：{1}　包 SHA-256：{2}</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">确认安装插件</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">签名人：{0}
 证书指纹：{1}

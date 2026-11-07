@@ -42,8 +42,26 @@ public sealed record PluginPackageCheck(PluginManifest Manifest, bool IsSigned, 
     public PluginGitHubProvenance? GitHubProvenance { get; init; }
     public string? PreviousSignerThumbprint { get; init; }
     public string? CompatibilityWarning { get; init; }
+    public string? PreviousVersion { get; init; }
+    public string? PackageSha256 { get; init; }
+    public string? PreviousInstallSourceType { get; init; }
+    public string? PreviousInstallSourceUrl { get; init; }
+    public string? PreviousPackageSha256 { get; init; }
+    public string? CurrentInstallSourceType { get; init; }
+    public string? CurrentInstallSourceUrl { get; init; }
+    public string? CurrentInstallPackageUrl { get; init; }
     public bool SignerChanged => PreviousSignerThumbprint is not null &&
         (!IsSigned || !string.Equals(PreviousSignerThumbprint, SignerThumbprint, StringComparison.OrdinalIgnoreCase));
+    public bool SourceChanged => PreviousVersion is not null && CurrentInstallSourceType is not null &&
+        (PreviousInstallSourceType is null ||
+         !string.Equals(PreviousInstallSourceType, CurrentInstallSourceType, StringComparison.Ordinal) ||
+         !string.Equals(PreviousInstallSourceUrl, CurrentInstallSourceUrl, StringComparison.Ordinal));
+    public bool PackageChanged => PreviousVersion is not null &&
+        PluginVersionRange.TryCompareVersions(PreviousVersion, Manifest.Version, out var versionComparison) &&
+        versionComparison == 0 && PreviousPackageSha256 is not null && PackageSha256 is not null &&
+        !string.Equals(PreviousPackageSha256, PackageSha256, StringComparison.OrdinalIgnoreCase);
+    public bool IsDowngrade => PreviousVersion is not null &&
+        PluginVersionRange.TryCompareVersions(Manifest.Version, PreviousVersion, out var comparison) && comparison < 0;
 }
 
 public sealed record PluginGitHubProvenance(string Repository, string Tag, DateTimeOffset PublishedAtUtc,

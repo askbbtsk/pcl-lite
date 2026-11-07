@@ -108,8 +108,20 @@ internal static class PluginPageSupport
         var compatibilityWarning = check.CompatibilityWarning is null
             ? string.Empty
             : "\n\n" + Lang.Text("Plugin.Install.CoreCompatibilityWarning", check.CompatibilityWarning);
+        var sourceWarning = check.SourceChanged
+            ? "\n\n" + Lang.Text("Plugin.Install.SourceChanged", GetSourceName(check.PreviousInstallSourceType),
+                check.PreviousInstallSourceUrl ?? Lang.Text("Plugin.Install.UnknownSource"),
+                GetSourceName(check.CurrentInstallSourceType), check.CurrentInstallSourceUrl ?? Lang.Text("Plugin.Install.UnknownSource"))
+            : string.Empty;
+        var downgradeWarning = check.IsDowngrade
+            ? "\n\n" + Lang.Text("Plugin.Install.DowngradeWarning", check.PreviousVersion!, check.Manifest.Version)
+            : string.Empty;
+        var packageChangedWarning = check.PackageChanged
+            ? "\n\n" + Lang.Text("Plugin.Install.PackageChanged")
+            : string.Empty;
+        var updateWarning = sourceWarning + downgradeWarning + packageChangedWarning;
         if (!check.IsSigned)
-            return dispatcher.InvokeAsync(() => ModMain.MyMsgBox(Lang.Text("Plugin.Install.UnsignedMessage", pluginInfo, githubDetails + mixinWarning + signerChangeWarning + compatibilityWarning),
+            return dispatcher.InvokeAsync(() => ModMain.MyMsgBox(Lang.Text("Plugin.Install.UnsignedMessage", pluginInfo, githubDetails + mixinWarning + signerChangeWarning + compatibilityWarning + updateWarning),
                 check.SignerChanged ? Lang.Text("Plugin.Install.SignerChangedTitle") : Lang.Text("Plugin.Install.UnsignedTitle"),
                 check.SignerChanged ? Lang.Text("Plugin.Install.SignerChangedConfirm") : Lang.Text("Plugin.Install.UnsignedConfirm"),
                 Lang.Text("Plugin.Install.Cancel"), isWarn: true) == 1).Task;
@@ -117,11 +129,12 @@ internal static class PluginPageSupport
         var signedAt = check.SignedAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz") ?? Lang.Text("Plugin.Install.UnknownTime");
         var info = Lang.Text("Plugin.Install.SignerInfo", check.Signer ?? Lang.Text("Plugin.Install.UnknownSigner"),
             check.SignerThumbprint ?? Lang.Text("Plugin.Install.UnknownSigner"), signedAt, pluginInfo,
-            githubDetails + mixinWarning + signerChangeWarning + compatibilityWarning);
+            githubDetails + mixinWarning + signerChangeWarning + compatibilityWarning + updateWarning);
         return dispatcher.InvokeAsync(() => ModMain.MyMsgBox(info,
             check.SignerChanged ? Lang.Text("Plugin.Install.SignerChangedTitle") : Lang.Text("Plugin.Install.SignedTitle"),
             check.SignerChanged ? Lang.Text("Plugin.Install.SignerChangedConfirm") : Lang.Text("Plugin.Install.Confirm"),
-            Lang.Text("Plugin.Install.Cancel"), isWarn: check.SignerChanged || check.CompatibilityWarning is not null) == 1).Task;
+            Lang.Text("Plugin.Install.Cancel"), isWarn: check.SignerChanged || check.CompatibilityWarning is not null ||
+                check.SourceChanged || check.IsDowngrade || check.PackageChanged) == 1).Task;
     }
 
     public static void ShowPluginNotice(string message, PluginNotificationKind kind = PluginNotificationKind.Info)
@@ -135,4 +148,11 @@ internal static class PluginPageSupport
         };
         ModBase.RunInUi(() => HintService.Hint(message, hint));
     }
+
+    private static string GetSourceName(string? sourceType) => sourceType switch
+    {
+        "market" => Lang.Text("Plugin.Installed.Source.Market"),
+        "local" => Lang.Text("Plugin.Installed.Source.Local"),
+        _ => Lang.Text("Plugin.Installed.Source.Unknown")
+    };
 }

@@ -50,6 +50,15 @@ public sealed class PagePluginsInstalled : MyPageRight
         {
             var card = new StackPanel();
             card.Children.Add(PluginPageSupport.Text($"{plugin.Manifest.Author}  ·  {plugin.Manifest.Version}"));
+            var sourceText = plugin.InstallSourceType switch
+            {
+                "market" => Lang.Text("Plugin.Installed.Source.Market"),
+                "local" => Lang.Text("Plugin.Installed.Source.Local"),
+                _ => Lang.Text("Plugin.Installed.Source.Unknown")
+            };
+            card.Children.Add(PluginPageSupport.Text(Lang.Text("Plugin.Installed.Provenance", sourceText,
+                plugin.InstalledAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz") ?? Lang.Text("Plugin.Install.UnknownTime"),
+                plugin.InstalledPackageSha256 ?? Lang.Text("Plugin.Install.UnknownHash")), 12));
             card.Children.Add(PluginPageSupport.Text(plugin.Error is null
                 ? (plugin.Running ? Lang.Text("Plugin.Installed.Running") : Lang.Text("Plugin.Installed.Disabled"))
                 : Lang.Text("Plugin.Installed.Error", plugin.Error)));

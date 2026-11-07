@@ -17,6 +17,16 @@ public static class PluginVersionRange
     /// <summary>Returns whether a value is a SemVer 2.0 version string.</summary>
     public static bool IsValidVersion(string? version) => TryParseVersion(version, out _);
 
+    /// <summary>Compares two SemVer values, ignoring build metadata as required by SemVer 2.0.</summary>
+    public static bool TryCompareVersions(string? left, string? right, out int comparison)
+    {
+        comparison = 0;
+        if (!TryParseVersion(left, out var leftVersion) || !TryParseVersion(right, out var rightVersion))
+            return false;
+        comparison = Compare(leftVersion, rightVersion);
+        return true;
+    }
+
     /// <summary>Checks a plugin version against an exact version or bounded SemVer comparator set.</summary>
     public static bool Satisfies(string? version, string? range)
     {

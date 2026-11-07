@@ -39,6 +39,8 @@ dotnet build .\PCL.Plugin.Sample\PCL.Plugin.Sample.csproj
 
 依赖版本范围和拓扑加载由 `PluginDependencyResolverTests` 覆盖；`PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` 通过两个独立程序集验证依赖先启动且其公开类型可由消费者加载；`RuntimeBlocksDependentsWhenProviderLifecycleFails` 验证提供方启动失败后的传播。该管理器当前不会自动下载或更新依赖。
 
+市场更新状态由 SemVer 比较驱动：`PluginPackageTests.MarketCandidatesDistinguishCurrentUpgradeDowngradeAndSourceOrPackageChanges` 覆盖当前版本、升级、降级、市场源变化和同版本包摘要变化；`LocalInstallRecordsProvenanceAndDeclinedDowngradeKeepsInstalledPackage` 检查来源、包摘要、安装时间以及拒绝降级后旧安装保持不变。`MarketIndexRecordsResolvedSourceAndRequiresSemVerVersions` 验证索引来源记录与 SemVer 校验。更新暂存应用后会校验包文件与待提交状态一致，再提交来源记录。
+
 `PluginPackageTests.IncompatibleCoreRangeIsShownAtInstallAndSkippedAtStartup` 验证清单声明不兼容的 PCL Core 版本范围时，安装确认展示警告而运行时不加载插件。
 
 ## 贡献和本地留痕

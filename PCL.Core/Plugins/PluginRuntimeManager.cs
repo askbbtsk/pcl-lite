@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using PCL.Core.App;
 using PCL.Core.Logging;
 using PCL.Core.IO.Net;
@@ -19,12 +20,28 @@ using PCL.Mixin;
 namespace PCL.Core.Plugins;
 
 public sealed record InstalledPlugin(PluginManifest Manifest, string Directory, bool Enabled, bool Running,
-    string? Error = null, bool PendingRestart = false);
+    string? Error = null, bool PendingRestart = false)
+{
+    public string? InstallSourceType { get; init; }
+    public string? InstallSourceUrl { get; init; }
+    public string? InstallPackageUrl { get; init; }
+    public string? InstalledPackageSha256 { get; init; }
+    public DateTimeOffset? InstalledAtUtc { get; init; }
+}
 
 public sealed record PluginMarketEntry(string Id, string Name, string Version, string Author, string Description,
-    string PackageUrl, string? Website = null, string? Sha256 = null);
+    string PackageUrl, string? Website = null, string? Sha256 = null)
+{
+    [JsonIgnore]
+    public string? SourceUrl { get; init; }
+}
 
 public sealed record PluginMarketIndex(int SchemaVersion, IReadOnlyList<PluginMarketEntry> Plugins);
+
+public enum PluginMarketUpdateKind { NotInstalled, Current, UpdateAvailable, DowngradeAvailable }
+
+public sealed record PluginMarketUpdateCandidate(PluginMarketEntry Entry, InstalledPlugin? Installed,
+    PluginMarketUpdateKind Kind);
 
 public sealed record PluginPage(string PluginId, string PageId, string Title, Func<System.Windows.FrameworkElement> CreateView);
 
@@ -107,9 +124,32 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     public IReadOnlyList<InstalledPlugin> GetInstalled() { lock (_sync) return _installed.ToArray(); }
     public IReadOnlyList<InstalledPlugin> GetMarketInstallState(IReadOnlyList<PluginMarketEntry> market)
     {
-        var installed = GetInstalled().ToDictionary(item => item.Manifest.Id, StringComparer.Ordinal);
+        var installed = GetInstalled().ToDictionary(item => item.Manifest.Id, StringComparer.OrdinalIgnoreCase);
         return market.Where(item => installed.ContainsKey(item.Id))
             .Select(item => installed[item.Id]).ToArray();
+    }
+
+    /// <summary>Compares a validated market catalog with installed versions without downloading packages.</summary>
+    public IReadOnlyList<PluginMarketUpdateCandidate> GetMarketUpdateCandidates(IReadOnlyList<PluginMarketEntry> market)
+    {
+        var installed = GetInstalled().ToDictionary(item => item.Manifest.Id, StringComparer.OrdinalIgnoreCase);
+        return market.Select(entry =>
+        {
+            if (!installed.TryGetValue(entry.Id, out var current))
+                return new PluginMarketUpdateCandidate(entry, null, PluginMarketUpdateKind.NotInstalled);
+            if (!PluginVersionRange.TryCompareVersions(entry.Version, current.Manifest.Version, out var comparison))
+                throw new InvalidDataException($"Invalid market or installed plugin version: {entry.Id}.");
+            var sourceChanged = !string.Equals(current.InstallSourceType, "market", StringComparison.Ordinal) ||
+                                (entry.SourceUrl is not null &&
+                                 !string.Equals(current.InstallSourceUrl, entry.SourceUrl, StringComparison.Ordinal));
+            var packageChanged = entry.Sha256 is not null && current.InstalledPackageSha256 is not null &&
+                                 !string.Equals(entry.Sha256, current.InstalledPackageSha256,
+                                     StringComparison.OrdinalIgnoreCase);
+            var kind = comparison > 0 || (comparison == 0 && (sourceChanged || packageChanged))
+                ? PluginMarketUpdateKind.UpdateAvailable
+                : comparison < 0 ? PluginMarketUpdateKind.DowngradeAvailable : PluginMarketUpdateKind.Current;
+            return new PluginMarketUpdateCandidate(entry, current, kind);
+        }).ToArray();
     }
 
     public async Task<PluginMarketIndex> GetMarketAsync(Uri indexUri, CancellationToken cancellationToken = default)
@@ -131,6 +171,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         if (index.Plugins is null || index.Plugins.Count > MaximumMarketEntries)
             throw new InvalidDataException($"Plugin market index may contain at most {MaximumMarketEntries} entries.");
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var entries = new List<PluginMarketEntry>(index.Plugins.Count);
         foreach (var entry in index.Plugins)
         {
             if (entry is null) throw new InvalidDataException("Plugin market contains an empty entry.");
@@ -151,10 +192,14 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 throw new InvalidDataException($"Plugin website URL must use HTTPS: {entry.Id}");
             if (string.IsNullOrWhiteSpace(entry.Sha256) || entry.Sha256.Length != 64 || entry.Sha256.Any(c => !Uri.IsHexDigit(c)))
                 throw new InvalidDataException($"Plugin market entry must include a SHA-256 digest: {entry.Id}");
+            if (!PluginVersionRange.IsValidVersion(entry.Version))
+                throw new InvalidDataException($"Plugin market entry has an invalid SemVer version: {entry.Id}");
             if (!_TryParseGitHubReleaseAsset(entry.PackageUrl, out _))
                 throw new InvalidDataException($"Plugin market package must be a GitHub release asset: {entry.Id}");
+            var sourceUri = new UriBuilder(finalUri) { Query = string.Empty, Fragment = string.Empty }.Uri;
+            entries.Add(entry with { SourceUrl = sourceUri.AbsoluteUri });
         }
-        return index;
+        return index with { Plugins = entries };
     }
 
     public async Task<PluginPackageCheck> InstallFromMarketAsync(PluginMarketEntry entry,
@@ -209,14 +254,15 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             if (!string.Equals(check.Manifest.Id, entry.Id, StringComparison.Ordinal) ||
                 !string.Equals(check.Manifest.Version, entry.Version, StringComparison.Ordinal))
                 throw new InvalidDataException("Downloaded plugin does not match the selected market entry.");
-            var provenanceUrl = check.Manifest.ReleaseAssetUrl ?? entry.PackageUrl;
+            var provenanceUrl = entry.PackageUrl;
             if (_TryParseGitHubReleaseAsset(provenanceUrl, out _))
                 check = check with { GitHubProvenance = await _VerifyGitHubReleaseAsync(path, provenanceUrl, check, cancellationToken).ConfigureAwait(false) };
-            await InstallAsync(path, (current, token) => confirmInstallation(current with
+            var installedCheck = await _InstallAsync(path, (current, token) => confirmInstallation(current with
             {
                 GitHubProvenance = check.GitHubProvenance
-            }, token), cancellationToken).ConfigureAwait(false);
-            return check;
+            }, token), "market", entry.SourceUrl, entry.PackageUrl, entry.Sha256, cancellationToken)
+                .ConfigureAwait(false);
+            return installedCheck with { GitHubProvenance = check.GitHubProvenance };
         }
         finally
         {
@@ -227,6 +273,15 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     public async Task<PluginPackageCheck> InstallAsync(string packagePath,
         Func<PluginPackageCheck, CancellationToken, Task<bool>> confirmInstallation,
         CancellationToken cancellationToken = default)
+    {
+        return await _InstallAsync(packagePath, confirmInstallation, "local", null, null, null,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<PluginPackageCheck> _InstallAsync(string packagePath,
+        Func<PluginPackageCheck, CancellationToken, Task<bool>> confirmInstallation,
+        string sourceType, string? sourceUrl, string? packageUrl, string? expectedPackageSha256,
+        CancellationToken cancellationToken)
     {
         var snapshotDirectory = Path.Combine(_pluginsDirectory, ".package-snapshot");
         Directory.CreateDirectory(snapshotDirectory);
@@ -253,7 +308,9 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     await snapshot.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
                 }
             }
-            return await _InstallSnapshotAsync(snapshotPath, confirmInstallation, cancellationToken).ConfigureAwait(false);
+            return await _InstallSnapshotAsync(snapshotPath, confirmInstallation, sourceType, sourceUrl,
+                packageUrl, expectedPackageSha256,
+                cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -263,17 +320,19 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
 
     private async Task<PluginPackageCheck> _InstallSnapshotAsync(string packagePath,
         Func<PluginPackageCheck, CancellationToken, Task<bool>> confirmInstallation,
+        string sourceType, string? sourceUrl, string? packageUrl, string? expectedPackageSha256,
         CancellationToken cancellationToken)
     {
         var check = await PluginPackage.InspectAsync(packagePath, cancellationToken).ConfigureAwait(false);
         if (check.Error is not null || !check.IsValid) throw new InvalidDataException(check.Error ?? "Plugin package is invalid.");
-        if (!string.IsNullOrWhiteSpace(check.Manifest.ReleaseAssetUrl))
+        var provenanceUrl = packageUrl ?? check.Manifest.ReleaseAssetUrl;
+        if (!string.IsNullOrWhiteSpace(provenanceUrl))
         {
-            if (!_TryParseGitHubReleaseAsset(check.Manifest.ReleaseAssetUrl, out _))
+            if (!_TryParseGitHubReleaseAsset(provenanceUrl, out _))
                 throw new InvalidDataException("The package GitHub release asset URL is invalid.");
             check = check with
             {
-                GitHubProvenance = await _VerifyGitHubReleaseAsync(packagePath, check.Manifest.ReleaseAssetUrl,
+                GitHubProvenance = await _VerifyGitHubReleaseAsync(packagePath, provenanceUrl,
                     check, cancellationToken).ConfigureAwait(false)
             };
         }
@@ -284,6 +343,25 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 CompatibilityWarning = $"Plugin supports PCL Core {coreVersionRange}; current version is {Basics.VersionName}."
             };
         var previousState = await _ReadStateAsync(check.Manifest.Id, cancellationToken).ConfigureAwait(false);
+        await using (var packageStream = File.OpenRead(packagePath))
+        {
+            check = check with
+            {
+                PackageSha256 = Convert.ToHexString(await SHA256.HashDataAsync(packageStream, cancellationToken)
+                    .ConfigureAwait(false)),
+                PreviousVersion = await _ReadInstalledVersionAsync(check.Manifest.Id, cancellationToken)
+                    .ConfigureAwait(false) ?? previousState.InstalledVersion,
+                PreviousInstallSourceType = previousState.InstallSourceType,
+                PreviousInstallSourceUrl = previousState.InstallSourceUrl,
+                PreviousPackageSha256 = previousState.InstalledPackageSha256,
+                CurrentInstallSourceType = sourceType,
+                CurrentInstallSourceUrl = sourceUrl,
+                CurrentInstallPackageUrl = packageUrl
+            };
+        }
+        if (expectedPackageSha256 is not null && !string.Equals(expectedPackageSha256,
+                check.PackageSha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Plugin package hash does not match its source metadata.");
         if (previousState.ExpectedSigner is not null)
             check = check with { PreviousSignerThumbprint = previousState.ExpectedSigner };
         if (!await confirmInstallation(check, cancellationToken).ConfigureAwait(false))
@@ -299,8 +377,17 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         var movedPreviousTarget = false;
         var movedNewTarget = false;
         var transactionCompleted = false;
+        var pendingStatePath = Path.Combine(pendingRoot, ".state-" + check.Manifest.Id + ".json");
+        var pendingStateBackupPath = pendingStatePath + ".rollback";
+        var hadPendingState = File.Exists(pendingStatePath);
+        var nextState = new PluginState(check.PreviousVersion is null || previousState.Enabled, !check.IsSigned,
+            ExpectedHash: check.ContentHash, ExpectedSigner: check.SignerThumbprint,
+            InstalledVersion: check.Manifest.Version, InstallSourceType: sourceType,
+            InstallSourceUrl: sourceUrl, InstallPackageUrl: packageUrl,
+            InstalledPackageSha256: check.PackageSha256, InstalledAtUtc: DateTimeOffset.UtcNow);
         try
         {
+            if (hadPendingState) File.Copy(pendingStatePath, pendingStateBackupPath, overwrite: true);
             Directory.CreateDirectory(staging);
             foreach (var (relative, contents) in files)
             {
@@ -311,6 +398,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                 await File.WriteAllBytesAsync(destination, contents, cancellationToken).ConfigureAwait(false);
             }
+            await _WritePendingStateAsync(pendingStatePath, nextState, cancellationToken).ConfigureAwait(false);
             if (Directory.Exists(target))
             {
                 Directory.Move(target, backup);
@@ -318,10 +406,6 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             }
             Directory.Move(staging, target);
             movedNewTarget = true;
-            await _WriteStateAsync(check.Manifest.Id,
-                    new PluginState(true, !check.IsSigned, ExpectedHash: check.ContentHash,
-                        ExpectedSigner: check.SignerThumbprint), cancellationToken)
-                .ConfigureAwait(false);
             if (movedPreviousTarget)
             {
                 try { Directory.Delete(backup, recursive: true); }
@@ -330,8 +414,15 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             lock (_sync)
             {
                 _installed.RemoveAll(item => item.Manifest.Id == check.Manifest.Id);
-                _installed.Add(new(check.Manifest, Path.Combine(_pluginsDirectory, check.Manifest.Id), true, false,
-                    null, true));
+                _installed.Add(new(check.Manifest, Path.Combine(_pluginsDirectory, check.Manifest.Id), nextState.Enabled, false,
+                    null, true)
+                {
+                    InstallSourceType = sourceType,
+                    InstallSourceUrl = sourceUrl,
+                    InstallPackageUrl = packageUrl,
+                    InstalledPackageSha256 = check.PackageSha256,
+                    InstalledAtUtc = DateTimeOffset.UtcNow
+                });
             }
             transactionCompleted = true;
             return check;
@@ -348,10 +439,15 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 try { Directory.Move(backup, target); }
                 catch (Exception restoreError) { LogWrapper.Error(restoreError, "Plugin", "无法恢复旧的待安装插件目录"); }
             }
-            if (movedNewTarget)
+            if (hadPendingState && File.Exists(pendingStateBackupPath))
             {
-                try { await _WriteStateAsync(check.Manifest.Id, previousState, CancellationToken.None).ConfigureAwait(false); }
-                catch (Exception restoreError) { LogWrapper.Error(restoreError, "Plugin", "无法回滚插件状态文件"); }
+                try { File.Copy(pendingStateBackupPath, pendingStatePath, overwrite: true); }
+                catch (Exception restoreError) { LogWrapper.Error(restoreError, "Plugin", "无法恢复先前插件状态暂存文件"); }
+            }
+            else if (File.Exists(pendingStatePath))
+            {
+                try { File.Delete(pendingStatePath); }
+                catch (Exception restoreError) { LogWrapper.Error(restoreError, "Plugin", "无法移除失败安装的插件状态暂存文件"); }
             }
             throw;
         }
@@ -367,6 +463,11 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 try { Directory.Delete(backup, recursive: true); }
                 catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", "无法清理插件安装备份目录"); }
             }
+            if (transactionCompleted || !movedNewTarget)
+            {
+                try { if (File.Exists(pendingStateBackupPath)) File.Delete(pendingStateBackupPath); }
+                catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", "无法清理插件状态备份文件"); }
+            }
         }
     }
 
@@ -377,12 +478,14 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         Directory.CreateDirectory(_pluginsDirectory);
         lock (_sync) _installed.Clear();
         var candidates = new List<PluginDependencyCandidate>();
+        var statesById = new Dictionary<string, PluginState>(StringComparer.Ordinal);
         foreach (var directory in Directory.EnumerateDirectories(_pluginsDirectory)
                      .Where(path => !Path.GetFileName(path).StartsWith(".", StringComparison.Ordinal))
                      .OrderBy(Path.GetFileName, StringComparer.Ordinal))
         {
             cancellationToken.ThrowIfCancellationRequested();
             PluginManifest? manifest = null;
+            PluginState? pluginState = null;
             try
             {
                 var files = await ReadInstalledFilesAsync(directory, cancellationToken).ConfigureAwait(false);
@@ -400,6 +503,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 error = PluginPackage.ValidateMixinConfigurations(manifest, files);
                 if (error is not null) throw new InvalidDataException(error);
                 var state = await _ReadStateAsync(manifest.Id, cancellationToken).ConfigureAwait(false);
+                pluginState = state;
                 var signaturePath = Path.Combine(directory, PluginPackage.SignatureFileName);
                 if (File.Exists(signaturePath))
                 {
@@ -425,23 +529,27 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                         throw new InvalidDataException("Unsigned plugin contents changed after installation.");
                 }
                 var enabled = await _IsEnabledAsync(manifest.Id, cancellationToken).ConfigureAwait(false);
+                statesById[manifest.Id] = state;
                 candidates.Add(new(manifest, directory, enabled));
             }
             catch (Exception ex)
             {
                 LogWrapper.Warn(ex, "Plugin", $"跳过无效插件目录 {Path.GetFileName(directory)}");
-                if (manifest is not null) _AddInstalled(new(manifest, directory, false, false, ex.Message));
+                if (manifest is not null) _AddInstalled(_WithInstallMetadata(
+                    new(manifest, directory, false, false, ex.Message), pluginState));
             }
         }
 
         foreach (var candidate in candidates.Where(candidate => !candidate.Enabled))
-            _AddInstalled(new(candidate.Manifest, candidate.Directory, false, false));
+            _AddInstalled(_WithInstallMetadata(new(candidate.Manifest, candidate.Directory, false, false),
+                statesById.GetValueOrDefault(candidate.Manifest.Id)));
 
         var dependencyResolution = PluginDependencyResolver.Resolve(candidates);
         foreach (var (pluginId, error) in dependencyResolution.Blocked)
         {
             var candidate = candidates.Single(item => item.Manifest.Id == pluginId);
-            _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false, error));
+            _AddInstalled(_WithInstallMetadata(new(candidate.Manifest, candidate.Directory, true, false, error),
+                statesById.GetValueOrDefault(candidate.Manifest.Id)));
             LogWrapper.Warn("Plugin", $"插件 {pluginId} 依赖检查失败：{error}");
         }
 
@@ -450,8 +558,8 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             cancellationToken.ThrowIfCancellationRequested();
             if (IsSafeMode)
             {
-                _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false,
-                    "Plugin loading skipped by safe mode."));
+                _AddInstalled(_WithInstallMetadata(new(candidate.Manifest, candidate.Directory, true, false,
+                    "Plugin loading skipped by safe mode."), statesById.GetValueOrDefault(candidate.Manifest.Id)));
                 continue;
             }
 
@@ -459,18 +567,21 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             if (failedDependency is not null)
             {
                 var error = $"Plugin dependency failed during Mixin preparation: {failedDependency}.";
-                _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false, error));
+                _AddInstalled(_WithInstallMetadata(new(candidate.Manifest, candidate.Directory, true, false, error),
+                    statesById.GetValueOrDefault(candidate.Manifest.Id)));
                 continue;
             }
             try
             {
                 await _PreparePluginAsync(candidate.Directory, candidate.Manifest, cancellationToken).ConfigureAwait(false);
-                _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false, null));
+                _AddInstalled(_WithInstallMetadata(new(candidate.Manifest, candidate.Directory, true, false, null),
+                    statesById.GetValueOrDefault(candidate.Manifest.Id)));
             }
             catch (Exception ex)
             {
                 LogWrapper.Error(ex, "Plugin", $"插件 {candidate.Manifest.Id} 加载或应用 Mixin 失败");
-                _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false, ex.Message));
+                _AddInstalled(_WithInstallMetadata(new(candidate.Manifest, candidate.Directory, true, false, ex.Message),
+                    statesById.GetValueOrDefault(candidate.Manifest.Id)));
             }
         }
     }
@@ -719,6 +830,17 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
 
     private void _AddInstalled(InstalledPlugin plugin) { lock (_sync) _installed.Add(plugin); }
 
+    private static InstalledPlugin _WithInstallMetadata(InstalledPlugin plugin, PluginState? state) => state is null
+        ? plugin
+        : plugin with
+        {
+            InstallSourceType = state.InstallSourceType,
+            InstallSourceUrl = state.InstallSourceUrl,
+            InstallPackageUrl = state.InstallPackageUrl,
+            InstalledPackageSha256 = state.InstalledPackageSha256,
+            InstalledAtUtc = state.InstalledAtUtc
+        };
+
     private async Task<bool> _IsEnabledAsync(string id, CancellationToken cancellationToken)
     {
         var state = await _ReadStateAsync(id, cancellationToken).ConfigureAwait(false);
@@ -756,7 +878,8 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
 
     private async Task<PluginState> _ReadStateAsync(string id, CancellationToken cancellationToken)
     {
-        var path = Path.Combine(_stateDirectory, id + ".json");
+        var pendingPath = Path.Combine(_pluginsDirectory, ".pending-install", ".state-" + id + ".json");
+        var path = File.Exists(pendingPath) ? pendingPath : Path.Combine(_stateDirectory, id + ".json");
         if (!File.Exists(path)) return new(true, false);
         try
         {
@@ -766,11 +889,43 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         catch { return new(true, false); }
     }
 
+    private async Task<string?> _ReadInstalledVersionAsync(string id, CancellationToken cancellationToken)
+    {
+        var pendingDirectory = Path.Combine(_pluginsDirectory, ".pending-install", id);
+        var directory = Directory.Exists(pendingDirectory)
+            ? pendingDirectory
+            : Path.Combine(_pluginsDirectory, id);
+        if (!Directory.Exists(directory)) return null;
+        if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidDataException("Plugin installation directory cannot be a symbolic link or junction.");
+        var manifestPath = Path.Combine(directory, PluginPackage.ManifestFileName);
+        if (!File.Exists(manifestPath))
+            throw new InvalidDataException("Installed plugin manifest is missing; refusing to replace an unreadable plugin.");
+        if ((File.GetAttributes(manifestPath) & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidDataException("Installed plugin manifest cannot be a symbolic link.");
+        var bytes = await _ReadBoundedFileAsync(manifestPath, PluginPackage.MaximumManifestBytes, cancellationToken)
+            .ConfigureAwait(false);
+        var manifest = PluginPackage.DeserializeManifest(bytes);
+        if (!string.Equals(manifest.Id, id, StringComparison.Ordinal) ||
+            !PluginVersionRange.IsValidVersion(manifest.Version))
+            throw new InvalidDataException("Installed plugin manifest has an invalid id or version.");
+        return manifest.Version;
+    }
+
     private async Task _WriteStateAsync(string id, PluginState state, CancellationToken cancellationToken)
     {
-        var path = Path.Combine(_stateDirectory, id + ".json");
+        var pendingPath = Path.Combine(_pluginsDirectory, ".pending-install", ".state-" + id + ".json");
+        var path = File.Exists(pendingPath) ? pendingPath : Path.Combine(_stateDirectory, id + ".json");
         var temp = path + ".tmp";
         Directory.CreateDirectory(_stateDirectory);
+        await File.WriteAllTextAsync(temp, JsonSerializer.Serialize(state), cancellationToken).ConfigureAwait(false);
+        File.Move(temp, path, overwrite: true);
+    }
+
+    private static async Task _WritePendingStateAsync(string path, PluginState state,
+        CancellationToken cancellationToken)
+    {
+        var temp = path + ".tmp";
         await File.WriteAllTextAsync(temp, JsonSerializer.Serialize(state), cancellationToken).ConfigureAwait(false);
         File.Move(temp, path, overwrite: true);
     }
@@ -948,6 +1103,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         var pendingInstall = Path.Combine(_pluginsDirectory, ".pending-install");
         if (Directory.Exists(pendingInstall))
         {
+            var pendingFailure = false;
             foreach (var staged in Directory.EnumerateDirectories(pendingInstall)
                          .Where(path => !Path.GetFileName(path).StartsWith(".", StringComparison.Ordinal)))
             {
@@ -956,19 +1112,121 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 {
                     _ValidateId(id);
                     var target = Path.Combine(_pluginsDirectory, id);
-                    var backup = Path.Combine(_pluginsDirectory, ".replace-backup-" + Guid.NewGuid().ToString("N"));
-                    if (Directory.Exists(target)) Directory.Move(target, backup);
-                    try { Directory.Move(staged, target); }
+                    var backup = Path.Combine(_pluginsDirectory, ".replace-backup-" + id);
+                    var statePath = Path.Combine(_stateDirectory, id + ".json");
+                    var stateBackup = statePath + ".rollback";
+                    var stateWasPresent = File.Exists(statePath);
+                    var stateUpdated = false;
+                    var movedOld = Directory.Exists(backup);
+                    var movedNew = false;
+                    try
+                    {
+                        if (Directory.Exists(target))
+                        {
+                            if (Directory.Exists(backup)) Directory.Delete(backup, recursive: true);
+                            Directory.Move(target, backup);
+                            movedOld = true;
+                        }
+                        if (stateWasPresent) File.Copy(statePath, stateBackup, overwrite: true);
+                        var pendingState = Path.Combine(pendingInstall, ".state-" + id + ".json");
+                        if (File.Exists(pendingState))
+                        {
+                            var pendingPluginState = JsonSerializer.Deserialize<PluginState>(File.ReadAllBytes(pendingState))
+                                                     ?? throw new InvalidDataException("Pending plugin state is invalid.");
+                            if (!_InstalledDirectoryMatchesState(staged, pendingPluginState))
+                                throw new InvalidDataException("Pending plugin files do not match their staged state.");
+                        }
+                        Directory.Move(staged, target);
+                        movedNew = true;
+                        if (File.Exists(pendingState))
+                        {
+                            var desiredState = JsonSerializer.Deserialize<PluginState>(File.ReadAllBytes(pendingState))
+                                               ?? throw new InvalidDataException("Pending plugin state is invalid.");
+                            var stateTemp = statePath + ".tmp";
+                            File.WriteAllText(stateTemp, JsonSerializer.Serialize(desiredState));
+                            File.Move(stateTemp, statePath, overwrite: true);
+                            stateUpdated = true;
+                        }
+                    }
                     catch
                     {
-                        if (Directory.Exists(backup)) Directory.Move(backup, target);
+                        if (movedNew && Directory.Exists(target) && !Directory.Exists(staged))
+                            Directory.Move(target, staged);
+                        if (movedOld && Directory.Exists(backup) && !Directory.Exists(target))
+                            Directory.Move(backup, target);
+                        if (stateUpdated)
+                        {
+                            if (stateWasPresent && File.Exists(stateBackup)) File.Copy(stateBackup, statePath, overwrite: true);
+                            else if (!stateWasPresent && File.Exists(statePath)) File.Delete(statePath);
+                        }
                         throw;
                     }
-                    if (Directory.Exists(backup)) Directory.Delete(backup, recursive: true);
+                    var committedState = Path.Combine(pendingInstall, ".state-" + id + ".json");
+                    try { if (File.Exists(committedState)) File.Delete(committedState); }
+                    catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", $"无法清理已提交的插件状态：{id}"); }
+                    if (Directory.Exists(backup))
+                    {
+                        try { Directory.Delete(backup, recursive: true); }
+                        catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", $"无法清理旧插件备份：{id}"); }
+                    }
+                    if (File.Exists(stateBackup)) File.Delete(stateBackup);
                 }
-                catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", $"应用插件更新失败：{id}"); }
+                catch (Exception ex)
+                {
+                    pendingFailure = true;
+                    LogWrapper.Warn(ex, "Plugin", $"应用插件更新失败：{id}；将在下次启动重试");
+                }
             }
-            try { Directory.Delete(pendingInstall, recursive: true); } catch { }
+            foreach (var pendingState in Directory.EnumerateFiles(pendingInstall, ".state-*.json"))
+            {
+                var id = Path.GetFileNameWithoutExtension(pendingState)[".state-".Length..];
+                try
+                {
+                    _ValidateId(id);
+                    var staged = Path.Combine(pendingInstall, id);
+                    if (Directory.Exists(staged)) continue;
+                    var target = Path.Combine(_pluginsDirectory, id);
+                    var backup = Path.Combine(_pluginsDirectory, ".replace-backup-" + id);
+                    var state = JsonSerializer.Deserialize<PluginState>(File.ReadAllBytes(pendingState));
+                    if (state is not null && Directory.Exists(target) && _InstalledDirectoryMatchesState(target, state))
+                    {
+                        File.Move(pendingState, Path.Combine(_stateDirectory, id + ".json"), overwrite: true);
+                        if (Directory.Exists(backup)) Directory.Delete(backup, recursive: true);
+                    }
+                    else
+                    {
+                        if (Directory.Exists(backup))
+                        {
+                            if (Directory.Exists(target))
+                                Directory.Move(target, Path.Combine(pendingInstall, ".rejected-" + id + "-" + Guid.NewGuid().ToString("N")));
+                            Directory.Move(backup, target);
+                        }
+                        File.Delete(pendingState);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    pendingFailure = true;
+                    LogWrapper.Warn(ex, "Plugin", $"恢复插件状态失败：{id}；将在下次启动重试");
+                }
+            }
+            if (!pendingFailure)
+            {
+                try { Directory.Delete(pendingInstall, recursive: true); } catch { }
+            }
+        }
+
+        foreach (var backup in Directory.EnumerateDirectories(_pluginsDirectory, ".replace-backup-*"))
+        {
+            var id = Path.GetFileName(backup)[".replace-backup-".Length..];
+            try
+            {
+                _ValidateId(id);
+                var target = Path.Combine(_pluginsDirectory, id);
+                if (Directory.Exists(target)) Directory.Delete(backup, recursive: true);
+                else Directory.Move(backup, target);
+            }
+            catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", $"恢复或清理插件备份失败：{id}"); }
         }
 
         foreach (var statePath in Directory.EnumerateFiles(_stateDirectory, "*.json"))
@@ -987,6 +1245,35 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         }
     }
 
+    private static bool _InstalledDirectoryMatchesState(string directory, PluginState state)
+    {
+        if (string.IsNullOrWhiteSpace(state.ExpectedHash)) return false;
+        try
+        {
+            var files = ReadInstalledFilesAsync(directory, CancellationToken.None).GetAwaiter().GetResult();
+            if (!string.Equals(state.ExpectedHash, PluginPackage.CreateFileContentHash(files),
+                    StringComparison.OrdinalIgnoreCase)) return false;
+            if (!files.TryGetValue(PluginPackage.ManifestFileName, out var manifestBytes)) return false;
+            var manifest = PluginPackage.DeserializeManifest(manifestBytes);
+            if (!string.Equals(manifest.Id, Path.GetFileName(directory), StringComparison.Ordinal) ||
+                !string.Equals(manifest.Version, state.InstalledVersion, StringComparison.Ordinal)) return false;
+            var signaturePath = Path.Combine(directory, PluginPackage.SignatureFileName);
+            if (File.Exists(signaturePath))
+            {
+                if (new FileInfo(signaturePath).Length > PluginPackage.MaximumSignatureBytes || state.ExpectedSigner is null) return false;
+                var signatureBytes = File.ReadAllBytes(signaturePath);
+                var signature = JsonSerializer.Deserialize<PluginPackageSignature>(signatureBytes,
+                    PluginPackage.SerializerOptions);
+                if (signature is null) return false;
+                var result = PluginPackage.VerifyFiles(files, signature);
+                return result.Valid && string.Equals(result.Thumbprint, state.ExpectedSigner,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+            return state.UnsignedApproved && state.ExpectedSigner is null;
+        }
+        catch { return false; }
+    }
+
     private static void _ValidateId(string id)
     {
         if (string.IsNullOrWhiteSpace(id) || id.Length > 64 || id.Any(c => !(char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c is '.' or '-')))
@@ -994,7 +1281,9 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     }
 
     private sealed record PluginState(bool Enabled, bool UnsignedApproved, bool UninstallPending = false,
-        string? ExpectedHash = null, string? ExpectedSigner = null);
+        string? ExpectedHash = null, string? ExpectedSigner = null, string? InstalledVersion = null,
+        string? InstallSourceType = null, string? InstallSourceUrl = null, string? InstallPackageUrl = null,
+        string? InstalledPackageSha256 = null, DateTimeOffset? InstalledAtUtc = null);
     private sealed record RunningPlugin(IPclPlugin Plugin, PluginContext Context, PluginAssemblyLoadContext LoadContext,
         PluginManifest Manifest, Assembly Assembly);
     private sealed record PreparedPlugin(PluginManifest Manifest, PluginAssemblyLoadContext LoadContext,

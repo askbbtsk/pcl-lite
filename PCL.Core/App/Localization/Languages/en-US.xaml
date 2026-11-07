@@ -2876,6 +2876,8 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Plugin.Market.Refresh">Refresh marketplace</sys:String>
     <sys:String x:Key="Plugin.Market.Install">Install</sys:String>
     <sys:String x:Key="Plugin.Market.Update">Update</sys:String>
+    <sys:String x:Key="Plugin.Market.Current">Up to date</sys:String>
+    <sys:String x:Key="Plugin.Market.Downgrade">Downgrade…</sys:String>
     <sys:String x:Key="Plugin.Market.Empty">No plugins are currently available.</sys:String>
     <sys:String x:Key="Plugin.Market.LoadFailed">Could not load the plugin marketplace: {0}</sys:String>
     <sys:String x:Key="Plugin.Install.Local">Install from file</sys:String>
@@ -2896,6 +2898,15 @@ This may be a key rotation or a supply-chain risk. Verify the trusted release so
     <sys:String x:Key="Plugin.Install.SignerChangedConfirm">Update anyway</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedSigner">None (new version is unsigned)</sys:String>
     <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">Compatibility warning: {0} can be installed, but this launcher version will not load it. Use a launcher version within the declared range.</sys:String>
+    <sys:String x:Key="Plugin.Install.SourceChanged">The installation source changed: {0} ({1}) → {2} ({3}). Verify that the new source is trusted.</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSource">Unknown source</sys:String>
+    <sys:String x:Key="Plugin.Install.DowngradeWarning">This is a downgrade: current version {0}, target version {1}. The older release may contain fixed issues.</sys:String>
+    <sys:String x:Key="Plugin.Install.PackageChanged">The package contents differ from the previously installed package with the same version. Verify the signer and release source.</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownHash">Unknown</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Market">Marketplace</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Local">Local file</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Unknown">Unknown source (legacy install)</sys:String>
+    <sys:String x:Key="Plugin.Installed.Provenance">Source: {0}　Installed: {1}　Package SHA-256: {2}</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">Confirm plugin installation</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">Signer: {0}
 Certificate fingerprint: {1}

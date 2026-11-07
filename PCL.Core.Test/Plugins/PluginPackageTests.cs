@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -342,6 +343,120 @@ public sealed class PluginPackageTests
     }
 
     [TestMethod]
+    public async Task LocalInstallRecordsProvenanceAndDeclinedDowngradeKeepsInstalledPackage()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-market-state-" + Guid.NewGuid().ToString("N"));
+        var originalPath = CreateTempPath();
+        var downgradePath = CreateTempPath();
+        try
+        {
+            var originalFiles = CreateFiles();
+            await WritePackageAsync(originalPath, originalFiles, certificate);
+            var downgradeFiles = CreateFiles();
+            var downgradeManifest = PluginPackage.DeserializeManifest(downgradeFiles[PluginPackage.ManifestFileName]);
+            downgradeFiles[PluginPackage.ManifestFileName] = JsonSerializer.SerializeToUtf8Bytes(
+                downgradeManifest with { Version = "0.9.0" }, PluginPackage.SerializerOptions);
+            await WritePackageAsync(downgradePath, downgradeFiles, certificate);
+
+            await using var manager = new PluginRuntimeManager(pluginsDirectory);
+            PluginPackageCheck? initialCheck = null;
+            await manager.InstallAsync(originalPath, (check, _) =>
+            {
+                initialCheck = check;
+                return Task.FromResult(true);
+            });
+            Assert.IsNotNull(initialCheck);
+            Assert.AreEqual("local", initialCheck.CurrentInstallSourceType);
+            Assert.IsNotNull(initialCheck.PackageSha256);
+            var installedBefore = manager.GetInstalled().Single();
+            Assert.AreEqual("local", installedBefore.InstallSourceType);
+            Assert.AreEqual(initialCheck.PackageSha256, installedBefore.InstalledPackageSha256);
+            Assert.IsNotNull(installedBefore.InstalledAtUtc);
+
+            PluginPackageCheck? downgradePrompt = null;
+            await Assert.ThrowsAsync<OperationCanceledException>(() => manager.InstallAsync(downgradePath,
+                (check, _) =>
+                {
+                    downgradePrompt = check;
+                    return Task.FromResult(false);
+                }));
+            Assert.IsNotNull(downgradePrompt);
+            Assert.IsTrue(downgradePrompt.IsDowngrade);
+            Assert.AreEqual("1.0.0", downgradePrompt.PreviousVersion);
+            Assert.IsFalse(downgradePrompt.PackageChanged);
+            Assert.AreEqual("1.0.0", manager.GetInstalled().Single().Manifest.Version);
+        }
+        finally
+        {
+            DeleteIfExists(originalPath);
+            DeleteIfExists(downgradePath);
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
+    public async Task MarketCandidatesDistinguishCurrentUpgradeDowngradeAndSourceOrPackageChanges()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-market-candidates-" + Guid.NewGuid().ToString("N"));
+        var packagePath = CreateTempPath();
+        var catalogUrl = "https://market.example/plugins/index.json";
+        try
+        {
+            await WritePackageAsync(packagePath, CreateFiles(), certificate);
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+                await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+
+            Assert.IsFalse(File.Exists(Path.Combine(pluginsDirectory, ".plugin-state", "test.plugin.json")),
+                "Install metadata must not replace the state for the on-disk plugin before restart.");
+            Assert.IsTrue(File.Exists(Path.Combine(pluginsDirectory, ".pending-install", ".state-test.plugin.json")));
+
+            await using (var pendingApplier = new PluginRuntimeManager(pluginsDirectory)) { }
+            Assert.IsTrue(File.Exists(Path.Combine(pluginsDirectory, ".plugin-state", "test.plugin.json")));
+            Assert.IsFalse(Directory.Exists(Path.Combine(pluginsDirectory, ".pending-install")));
+
+            var statePath = Path.Combine(pluginsDirectory, ".plugin-state", "test.plugin.json");
+            await using var packageStream = File.OpenRead(packagePath);
+            var packageHash = Convert.ToHexString(await SHA256.HashDataAsync(packageStream));
+            var stateJson = JsonNode.Parse(await File.ReadAllTextAsync(statePath))!.AsObject();
+            stateJson["InstalledVersion"] = "1.0.0";
+            stateJson["InstallSourceType"] = "market";
+            stateJson["InstallSourceUrl"] = catalogUrl;
+            stateJson["InstallPackageUrl"] = "https://github.com/example/plugins/releases/download/v1.0.0/test.pclplugin";
+            stateJson["InstalledPackageSha256"] = packageHash;
+            stateJson["InstalledAtUtc"] = DateTimeOffset.UtcNow;
+            await File.WriteAllTextAsync(statePath, stateJson.ToJsonString());
+
+            await using var manager = new PluginRuntimeManager(pluginsDirectory);
+            await manager.PrepareEnabledAsync();
+            var installed = manager.GetInstalled().Single();
+            Assert.AreEqual("market", installed.InstallSourceType);
+            Assert.AreEqual(catalogUrl, installed.InstallSourceUrl);
+            Assert.AreEqual(packageHash, installed.InstalledPackageSha256);
+
+            var current = new PluginMarketEntry("test.plugin", "Test plugin", "1.0.0", "Test signer", "",
+                "https://github.com/example/plugins/releases/download/v1.0.0/test.pclplugin",
+                Sha256: packageHash) { SourceUrl = catalogUrl };
+            Assert.AreEqual(PluginMarketUpdateKind.Current,
+                manager.GetMarketUpdateCandidates([current]).Single().Kind);
+            Assert.AreEqual(PluginMarketUpdateKind.UpdateAvailable,
+                manager.GetMarketUpdateCandidates([current with { Version = "1.1.0" }]).Single().Kind);
+            Assert.AreEqual(PluginMarketUpdateKind.DowngradeAvailable,
+                manager.GetMarketUpdateCandidates([current with { Version = "0.9.0" }]).Single().Kind);
+            Assert.AreEqual(PluginMarketUpdateKind.UpdateAvailable,
+                manager.GetMarketUpdateCandidates([current with { SourceUrl = "https://other.example/index.json" }]).Single().Kind);
+            Assert.AreEqual(PluginMarketUpdateKind.UpdateAvailable,
+                manager.GetMarketUpdateCandidates([current with { Sha256 = new string('a', 64) }]).Single().Kind);
+        }
+        finally
+        {
+            DeleteIfExists(packagePath);
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
     public async Task IncompatibleCoreRangeIsShownAtInstallAndSkippedAtStartup()
     {
         using var certificate = CreateCertificate();
@@ -442,9 +557,21 @@ public sealed class PluginPackageTests
                 manager.InstallFromMarketAsync(entry, (_, _) => Task.FromResult(false)));
             Assert.IsFalse(Directory.Exists(Path.Combine(pluginsDirectory, ".pending-install")));
 
-            var result = await manager.InstallFromMarketAsync(entry, (_, _) => Task.FromResult(true));
+            await manager.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+            PluginPackageCheck? sourceTransition = null;
+            var sourcedEntry = entry with { SourceUrl = "https://market.example/plugins/index.json" };
+            var result = await manager.InstallFromMarketAsync(sourcedEntry, (check, _) =>
+            {
+                sourceTransition = check;
+                return Task.FromResult(true);
+            });
 
             Assert.IsTrue(result.IsSigned);
+            Assert.IsNotNull(sourceTransition);
+            Assert.IsTrue(sourceTransition.SourceChanged);
+            Assert.AreEqual("local", sourceTransition.PreviousInstallSourceType);
+            Assert.AreEqual("market", sourceTransition.CurrentInstallSourceType);
+            Assert.AreEqual(sourcedEntry.SourceUrl, sourceTransition.CurrentInstallSourceUrl);
             Assert.IsTrue(result.SignatureValid);
             Assert.IsNotNull(result.GitHubProvenance);
             Assert.AreEqual("example/plugins", result.GitHubProvenance.Repository);
@@ -505,6 +632,28 @@ public sealed class PluginPackageTests
                 "https://github.com/example/plugins/releases/download/v1.0.0/plugin.pclplugin",
                 Sha256: new string('a', 64))]));
         downgradeRedirect = true;
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => manager.GetMarketAsync(indexUri));
+    }
+
+    [TestMethod]
+    public async Task MarketIndexRecordsResolvedSourceAndRequiresSemVerVersions()
+    {
+        var indexJson = string.Empty;
+        using var client = new HttpClient(new TestHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(indexJson, Encoding.UTF8, "application/json")
+        }));
+        await using var manager = new PluginRuntimeManager(
+            Path.Combine(Path.GetTempPath(), "pcl-plugin-market-source-" + Guid.NewGuid().ToString("N")), client);
+        var indexUri = new Uri("https://market.example/catalog/plugins.json");
+        var entry = new PluginMarketEntry("market.plugin", "Plugin", "1.2.3", "Author", "",
+            "https://github.com/example/plugins/releases/download/v1.2.3/plugin.pclplugin",
+            Sha256: new string('a', 64));
+        indexJson = JsonSerializer.Serialize(new PluginMarketIndex(1, [entry]));
+        var index = await manager.GetMarketAsync(indexUri);
+        Assert.AreEqual(indexUri.AbsoluteUri, index.Plugins.Single().SourceUrl);
+
+        indexJson = JsonSerializer.Serialize(new PluginMarketIndex(1, [entry with { Version = "v1.2.3" }]));
         await Assert.ThrowsExactlyAsync<InvalidDataException>(() => manager.GetMarketAsync(indexUri));
     }
 

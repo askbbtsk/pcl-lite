@@ -2819,6 +2819,8 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Plugin.Market.Refresh">重新整理市集</sys:String>
     <sys:String x:Key="Plugin.Market.Install">安裝</sys:String>
     <sys:String x:Key="Plugin.Market.Update">更新</sys:String>
+    <sys:String x:Key="Plugin.Market.Current">已是最新版本</sys:String>
+    <sys:String x:Key="Plugin.Market.Downgrade">降級…</sys:String>
     <sys:String x:Key="Plugin.Market.Empty">目前沒有可用的外掛。</sys:String>
     <sys:String x:Key="Plugin.Market.LoadFailed">無法載入外掛市集：{0}</sys:String>
     <sys:String x:Key="Plugin.Install.Local">從本機檔案安裝</sys:String>
@@ -2839,6 +2841,15 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Plugin.Install.SignerChangedConfirm">仍要更新</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedSigner">無（新版本未簽名）</sys:String>
     <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">相容性警告：{0} 安裝後仍會保存，但此啟動器版本不會載入它。請使用宣告相容的啟動器版本。</sys:String>
+    <sys:String x:Key="Plugin.Install.SourceChanged">安裝來源已變更：{0}（{1}）→ {2}（{3}）。請確認新來源可信。</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSource">未知來源</sys:String>
+    <sys:String x:Key="Plugin.Install.DowngradeWarning">這是降級：目前版本 {0}，目標版本 {1}。舊版可能包含已修正的問題。</sys:String>
+    <sys:String x:Key="Plugin.Install.PackageChanged">相同版本的外掛套件內容與上次安裝不同，請核對簽名者與發布來源。</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownHash">未知</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Market">外掛市集</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Local">本機檔案</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Unknown">來源未知（舊安裝記錄）</sys:String>
+    <sys:String x:Key="Plugin.Installed.Provenance">來源：{0}　安裝時間：{1}　套件 SHA-256：{2}</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">確認安裝外掛</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">簽名人：{0}
 憑證指紋：{1}

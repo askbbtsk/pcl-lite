@@ -47,21 +47,37 @@ public sealed class PagePluginsMarket : MyPageRight
         try
         {
             var index = await manager.GetMarketAsync(new Uri(ProjectLinks.PluginCatalog));
-            var installed = manager.GetInstalled().ToDictionary(item => item.Manifest.Id, StringComparer.Ordinal);
+            var candidates = manager.GetMarketUpdateCandidates(index.Plugins);
             if (index.Plugins.Count == 0)
             {
                 _status.Text = Lang.Text("Plugin.Market.Empty");
                 return;
             }
-            foreach (var entry in index.Plugins)
+            foreach (var candidate in candidates)
             {
+                var entry = candidate.Entry;
                 var stack = new StackPanel();
                 stack.Children.Add(PluginPageSupport.Text($"{entry.Author}  ·  {entry.Version}", 12));
                 stack.Children.Add(PluginPageSupport.Text(entry.Description));
                 var row = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
-                var alreadyInstalled = installed.ContainsKey(entry.Id);
-                var buttonText = alreadyInstalled ? Lang.Text("Plugin.Market.Update") : Lang.Text("Plugin.Market.Install");
-                row.Children.Add(PluginPageSupport.Button(buttonText, async (_, _) => await InstallMarketAsync(entry), true));
+                switch (candidate.Kind)
+                {
+                    case PluginMarketUpdateKind.Current:
+                        row.Children.Add(PluginPageSupport.Text(Lang.Text("Plugin.Market.Current"), 12));
+                        break;
+                    case PluginMarketUpdateKind.UpdateAvailable:
+                        row.Children.Add(PluginPageSupport.Button(Lang.Text("Plugin.Market.Update"),
+                            async (_, _) => await InstallMarketAsync(entry), true));
+                        break;
+                    case PluginMarketUpdateKind.DowngradeAvailable:
+                        row.Children.Add(PluginPageSupport.Button(Lang.Text("Plugin.Market.Downgrade"),
+                            async (_, _) => await InstallMarketAsync(entry), true));
+                        break;
+                    default:
+                        row.Children.Add(PluginPageSupport.Button(Lang.Text("Plugin.Market.Install"),
+                            async (_, _) => await InstallMarketAsync(entry), true));
+                        break;
+                }
                 if (Uri.TryCreate(entry.Website, UriKind.Absolute, out var website) && website.Scheme == Uri.UriSchemeHttps)
                     row.Children.Add(PluginPageSupport.Button(Lang.Text("Download.Version.OpenWebsite"),
                         (_, _) => ModBase.OpenWebsite(website.AbsoluteUri)));

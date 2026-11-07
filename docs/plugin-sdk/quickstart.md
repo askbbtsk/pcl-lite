@@ -56,16 +56,18 @@ public sealed class ExamplePlugin : IPclPlugin
 
 ## 构建、签名、打包
 
+请先建立干净的 Release 输出目录，只放插件运行所需的程序集、依赖、资源、`plugin.json` 和 Mixin 配置。`PCL.Plugin.Tools pack` 会读取输入目录中的所有普通文件（仅跳过已有 `signature.json`），不会自动排除 PDB、XML 文档、测试程序集、测试数据或大型资源；这些文件会计入签名和包大小。不要直接把整个 Debug/测试输出目录发布到市场。打包器会拒绝符号链接，并在压缩包超过 100 MiB 或解压载荷超过 500 MiB 时失败。
+
 请使用仓库工具，不要手工拼签名 JSON：
 
 ```powershell
 dotnet build .\Example.Plugin.csproj -c Release
 dotnet run --project .\PCL.Plugin.Tools -- cert "CN=Example Hello" .\secrets\example-signing.pfx
-dotnet run --project .\PCL.Plugin.Tools -- pack .\bin\Release\net10.0-windows .\secrets\example-signing.pfx .\dist\example.pclplugin
+dotnet run --project .\PCL.Plugin.Tools -- pack .\staging .\secrets\example-signing.pfx .\dist\example.pclplugin
 ```
 
 工具会交互读取 PFX 密码，不要把密码写进命令行、源代码或仓库。对安装弹窗显示的签名人、签名时间和包信息进行检查；本地自签名只提供完整性校验，不证明现实身份。详见[包格式与安全](packaging-security.md)。
 
 ## 手动安装与调试
 
-在启动器的插件页面选择本地 `.pclplugin` 安装。启用、禁用、更新和卸载后重启启动器。测试时使用临时插件 ID、独立数据目录和测试签名证书，避免覆盖日常安装。
+在启动器的插件页面选择本地 `.pclplugin` 安装。启用、禁用、更新、实验功能开关和卸载后重启启动器。测试时使用临时插件 ID、独立数据目录和测试签名证书，避免覆盖日常安装。

@@ -36,6 +36,8 @@ public sealed class PluginApiRuntimeTests
         var openedUrl = default(Uri);
         var openedPath = string.Empty;
         var launchRequest = string.Empty;
+        var startedEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var exitedEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var stopCalled = false;
         var symlinkProbeSkipped = false;
         var observedLogs = new List<(LogLevel Level, string Message)>();
@@ -58,6 +60,8 @@ public sealed class PluginApiRuntimeTests
                 notificationKind = kind;
                 if (message == "probe stopped") stopCalled = true;
                 if (message == "symlink-probe-unavailable") symlinkProbeSkipped = true;
+                if (message.StartsWith("lifecycle-started|", StringComparison.Ordinal)) startedEvent.TrySetResult(message);
+                if (message.StartsWith("lifecycle-exited|", StringComparison.Ordinal)) exitedEvent.TrySetResult(message);
             };
             LogWrapper.OnLog += CaptureLog;
             PluginHostBridge.ConfirmAsync = (title, message, token) =>
@@ -98,6 +102,12 @@ public sealed class PluginApiRuntimeTests
             Assert.AreEqual("https://example.test/path", openedUrl?.AbsoluteUri);
             Assert.AreEqual(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.api.probe"), openedPath);
             Assert.AreEqual("instance-a", launchRequest);
+            PluginRuntimeManager.Notify(new PluginGameStartedEvent("instance-b", "Started probe", 12345));
+            PluginRuntimeManager.Notify(new PluginGameExitedEvent("instance-b", "Exited probe", 7));
+            Assert.AreEqual("lifecycle-started|instance-b|Started probe|12345",
+                await startedEvent.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.AreEqual("lifecycle-exited|instance-b|Exited probe|7",
+                await exitedEvent.Task.WaitAsync(TimeSpan.FromSeconds(5)));
             Assert.IsTrue(observedLogs.Any(log => log.Level == LogLevel.Trace && log.Message == "trace"),
                 "Logger.Trace must preserve the Trace log level.");
             Assert.IsTrue(observedLogs.Any(log => log.Level == LogLevel.Debug && log.Message == "debug"),
@@ -190,6 +200,8 @@ public sealed class PluginApiRuntimeTests
             {
                 "/get" => "get-response",
                 "/post" => "post-response",
+                "/not-found" => "not-found-response",
+                "/redirect" => "redirect-response",
                 "/download" => "download-payload",
                 "/download-length-short" => "download-length-mismatch",
                 "/download-length-long" => "tiny",
@@ -201,6 +213,20 @@ public sealed class PluginApiRuntimeTests
             };
             if (request.RequestUri.AbsolutePath == "/post" && request.Content is null)
                 throw new InvalidOperationException("POST content was not forwarded.");
+            if (request.RequestUri.AbsolutePath == "/not-found")
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound)
+                {
+                    Content = new StringContent(body, Encoding.UTF8, "text/plain")
+                });
+            if (request.RequestUri.AbsolutePath == "/redirect")
+            {
+                var response = new HttpResponseMessage(HttpStatusCode.Found)
+                {
+                    Content = new StringContent(body, Encoding.UTF8, "text/plain")
+                };
+                response.Headers.Location = new Uri(request.RequestUri, "/get");
+                return Task.FromResult(response);
+            }
             if (request.RequestUri.AbsolutePath == "/download-fail")
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -286,6 +312,18 @@ public sealed class ApiProbePlugin : IPclPlugin
             await context.Storage.WriteTextAsync("event-count.txt", eventCount.ToString(), token);
             if (value.InstanceName == "throw") throw new InvalidOperationException("isolated event failure");
         });
+        _ = context.Events.Subscribe<PluginGameStartedEvent>((value, token) =>
+        {
+            token.ThrowIfCancellationRequested();
+            context.Ui.ShowNotification($"lifecycle-started|{value.InstanceId}|{value.InstanceName}|{value.ProcessId}");
+            return Task.CompletedTask;
+        });
+        _ = context.Events.Subscribe<PluginGameExitedEvent>((value, token) =>
+        {
+            token.ThrowIfCancellationRequested();
+            context.Ui.ShowNotification($"lifecycle-exited|{value.InstanceId}|{value.InstanceName}|{value.ExitCode}");
+            return Task.CompletedTask;
+        });
         await context.Events.PublishAsync(new PluginGameLaunchingEvent("instance-a", "one"), cancellationToken);
         await context.Events.PublishAsync(new PluginGameLaunchingEvent("instance-a", "two"), cancellationToken);
         Require(eventCount == 2, "event publish/subscribe");
@@ -304,6 +342,13 @@ public sealed class ApiProbePlugin : IPclPlugin
         var post = await context.Network.SendAsync(HttpMethod.Post, new Uri("https://plugin.test/post"), "request",
             "text/plain", cancellationToken);
         Require(post.StatusCode == 200 && post.Content == "post-response", "HTTP POST");
+        var notFound = await context.Network.GetAsync(new Uri("https://plugin.test/not-found"), cancellationToken);
+        Require(notFound.StatusCode == 404 && notFound.Content == "not-found-response",
+            "HTTP non-2xx response status and body are returned to the plugin");
+        var redirect = await context.Network.GetAsync(new Uri("https://plugin.test/redirect"), cancellationToken);
+        Require(redirect.StatusCode == 302 && redirect.Headers.TryGetValue("Location", out var redirectLocations) &&
+                redirectLocations.Any(location => location.EndsWith("/get", StringComparison.Ordinal)),
+            "HTTP redirect status and Location header are returned to the plugin");
         using (var canceled = new CancellationTokenSource())
         {
             canceled.Cancel();

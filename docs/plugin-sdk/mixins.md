@@ -2,12 +2,14 @@
 
 Mixin 由插件程序集中的 C# 属性和处理器构成，不是脚本。启动器在主窗体创建前加载启用包并应用 Mixin 配置；普通 `IPclPlugin.StartAsync` 生命周期在 `WindowCreated` 后开始。Mixin 与宿主 API 插件共享同一个 `.pclplugin` 包和签名。`PCL_LITE_SAFE_MODE=1` 或 `--safe-mode` 会跳过插件和 Mixin 加载，可用于恢复启动器。
 
+清单还可以用 `experimentalFeatures` 把一组 Mixin 配置声明为独立的实验功能。新组默认关闭；用户启用后需要重启，运行时才会应用。某个实验组应用失败时，只回滚该组已经应用的配置，记录错误并将该组持久化为关闭，插件的其他 Mixin 和普通入口仍可继续运行。这个回滚范围不等于进程沙箱，也不能抵消已经执行过的任意插件代码。
+
 ## 基本结构
 
 1. 在插件项目中引用 `PCL.Plugin.SDK`，使用 `PCL.Mixin` 属性。
 2. 在 `plugin.json` 声明 `mixinConfig`（单个）或 `mixinConfigs`（多个）。
 3. 将 JSON 配置和程序集一并放入包并签名。
-4. 通过实际打包后的插件，在测试版启动器上验证目标方法、冲突和恢复行为。
+4. 通过实际打包后的插件，在测试版启动器上验证目标方法、冲突和恢复行为；使用实验组时还要分别验证默认关闭、启用后的重启和失败后单组回滚。
 
 每份 Mixin JSON 限制为 256 KiB、1–512 个 Mixin 类型名；清单最多声明 64 份配置，配置路径不区分大小写且不能重复。配置中的 `package`、`plugin` 和每个类型名最长 256 个字符，`injectors.defaultRequire` 必须为 0–1000，类型名不能重复。配置文件必须在包内并被签名覆盖。
 
@@ -23,6 +25,25 @@ Mixin 由插件程序集中的 C# 属性和处理器构成，不是脚本。启�
 | `plugin` | string/null | 可选配置处理器类型名，最多 256 字符 |
 
 清单属性名为 `mixinConfig`（单个路径）或 `mixinConfigs`（路径数组）。混合使用时路径总数也不能超过 64。无效/缺失 JSON 在安装或启动校验阶段拒绝；`required:false` 不会让损坏的配置文件变成可忽略错误。
+
+## 独立实验功能组
+
+如需让部分 Mixin 可单独选择，不要把它们放入始终应用的 `mixinConfig(s)`；在 `plugin.json` 的 `experimentalFeatures` 中声明命名组，并为每组提供 1–64 个独立配置路径。每个实验组默认关闭，用户启用并重启后才会应用；开关选择会持久保存，变更需重启生效。
+
+```json
+{
+  "experimentalFeatures": [
+    {
+      "id": "experimental.patch",
+      "name": "Experimental patch",
+      "description": "Optional changes to launcher behavior",
+      "mixinConfigs": ["mixins/experimental-patch.json"]
+    }
+  ]
+}
+```
+
+实验配置路径须存在于签名包内，且不能与常规 Mixin 配置或其他实验组的路径重复。某组配置读取或应用失败时，宿主会回滚该组此前已应用的配置、记录错误并持久关闭该组；普通插件入口和其他成功的 Mixin 组仍可继续运行。失败组可在已安装插件页重新启用后重试。此回滚只撤销该组的 Mixin 注册，不会撤销它运行过的任意代码，也不提供进程隔离。
 
 示意清单：
 

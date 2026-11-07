@@ -2850,6 +2850,11 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Plugin.Installed.Source.Local">本機檔案</sys:String>
     <sys:String x:Key="Plugin.Installed.Source.Unknown">來源未知（舊安裝記錄）</sys:String>
     <sys:String x:Key="Plugin.Installed.Provenance">來源：{0}　安裝時間：{1}　套件 SHA-256：{2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.SigningInfo">簽名人：{0}　憑證指紋：{1}　簽名時間：{2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignature">未簽名</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignatureTime">不適用</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatures">實驗功能（預設關閉）</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatureError">此功能上次載入失敗，已自動關閉：{0}</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">確認安裝外掛</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">簽名人：{0}
 憑證指紋：{1}

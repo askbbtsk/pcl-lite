@@ -26,10 +26,21 @@ public sealed record PluginManifest
     public string EntryType { get; init; } = "Plugin";
     public string? MixinConfig { get; init; }
     public IReadOnlyList<string> MixinConfigs { get; init; } = [];
+    /// <summary>Optional experimental Mixin groups. New groups are disabled until a user enables them.</summary>
+    public IReadOnlyList<PluginExperimentalFeature> ExperimentalFeatures { get; init; } = [];
     public Dictionary<string, string> Dependencies { get; init; } = new(StringComparer.Ordinal);
     public string? Website { get; init; }
     /// <summary>Optional direct GitHub release asset URL used to corroborate package hash and publish time.</summary>
     public string? ReleaseAssetUrl { get; init; }
+}
+
+/// <summary>A named, independently selectable group of experimental Mixin configuration files.</summary>
+public sealed record PluginExperimentalFeature
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public string Description { get; init; } = "";
+    public required IReadOnlyList<string> MixinConfigs { get; init; }
 }
 
 public sealed record PluginPackageSignature(int SchemaVersion, string Algorithm, string Certificate,
@@ -325,6 +336,8 @@ public static class PluginPackage
         if (manifest.ReleaseAssetUrl is not null && !IsGitHubReleaseAssetUri(manifest.ReleaseAssetUrl))
             return "Plugin release asset URL must be an HTTPS GitHub release asset URL.";
         if (manifest.MixinConfigs is null) return "Mixin configuration list cannot be null.";
+        if (manifest.ExperimentalFeatures is null) return "Experimental feature list cannot be null.";
+        if (manifest.ExperimentalFeatures.Count > 64) return "Plugin declares too many experimental Mixin features.";
         if (manifest.MixinConfigs.Count > 64) return "Plugin declares too many Mixin configurations.";
         if (manifest.Dependencies is null || manifest.Dependencies.Count > 64)
             return "Plugin dependency list is missing or exceeds 64 entries.";
@@ -355,6 +368,31 @@ public static class PluginPackage
                 return $"Mixin configuration is missing from package: {path}";
             if (!seenMixinConfigurations.Add(path)) return $"Duplicate Mixin configuration: {path}";
         }
+        var seenFeatureIds = new HashSet<string>(StringComparer.Ordinal);
+        var seenFeatureConfigPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var feature in manifest.ExperimentalFeatures)
+        {
+            if (feature is null || string.IsNullOrWhiteSpace(feature.Id) || feature.Id.Length > 64 ||
+                feature.Id.Any(c => !(char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c is '.' or '-')))
+                return "Experimental feature id is invalid.";
+            if (!seenFeatureIds.Add(feature.Id)) return $"Duplicate experimental feature id: {feature.Id}";
+            if (string.IsNullOrWhiteSpace(feature.Name) || feature.Name.Length > 128 ||
+                feature.Description is null || feature.Description.Length > 2048)
+                return $"Experimental feature metadata is invalid: {feature.Id}";
+            if (feature.MixinConfigs is null || feature.MixinConfigs.Count is 0 or > 64)
+                return $"Experimental feature must declare 1 to 64 Mixin configurations: {feature.Id}";
+            foreach (var path in feature.MixinConfigs)
+            {
+                try { ValidateRelativePath(path); }
+                catch (ArgumentException ex) { return ex.Message; }
+                if (path.Length > 512 || !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    return $"Experimental feature configuration path is invalid: {feature.Id}/{path}";
+                if (!fileNames.Contains(path, StringComparer.Ordinal))
+                    return $"Experimental feature configuration is missing from package: {feature.Id}/{path}";
+                if (!seenMixinConfigurations.Add(path) || !seenFeatureConfigPaths.Add(path))
+                    return $"Mixin configuration path is assigned more than once: {path}";
+            }
+        }
         return null;
     }
 
@@ -368,6 +406,12 @@ public static class PluginPackage
         if (!string.IsNullOrWhiteSpace(manifest.MixinConfig)) paths.Add(manifest.MixinConfig);
         if (manifest.MixinConfigs.Any(string.IsNullOrWhiteSpace)) return "Mixin configuration paths cannot be empty.";
         paths.AddRange(manifest.MixinConfigs);
+        foreach (var feature in manifest.ExperimentalFeatures ?? [])
+        {
+            if (feature is null || feature.MixinConfigs is null)
+                return "Experimental feature Mixin configuration list cannot be null.";
+            paths.AddRange(feature.MixinConfigs);
+        }
         foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (!files.TryGetValue(path, out var bytes)) return $"Mixin configuration is missing from package: {path}";

@@ -3832,6 +3832,11 @@ This may be a key rotation or a supply-chain risk. Verify the trusted release so
     <sys:String x:Key="Plugin.Installed.Source.Local">Local file</sys:String>
     <sys:String x:Key="Plugin.Installed.Source.Unknown">Unknown source (legacy install)</sys:String>
     <sys:String x:Key="Plugin.Installed.Provenance">Source: {0}　Installed: {1}　Package SHA-256: {2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.SigningInfo">Signer: {0}　Certificate fingerprint: {1}　Signed: {2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignature">Unsigned</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignatureTime">N/A</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatures">Experimental features (off by default)</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatureError">This feature failed to load and was disabled: {0}</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">Confirm plugin installation</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">Signer: {0}
 Certificate fingerprint: {1}

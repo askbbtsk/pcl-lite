@@ -187,6 +187,21 @@ internal sealed class MixinRuntime : IMixinRuntime, IDisposable
         }
     }
 
+    internal void RollbackApplication(Assembly assembly, string applicationId)
+    {
+        ArgumentNullException.ThrowIfNull(assembly);
+        ArgumentException.ThrowIfNullOrWhiteSpace(applicationId);
+        lock (_lock)
+        {
+            _appliedApplications.Remove(new ApplicationKey(assembly, applicationId));
+            var affected = new HashSet<MethodBase>();
+            RemoveApplicationHandlers(applicationId, assembly, affected);
+            RemoveShadowMethods((_, registration) => registration.SourceAssembly == assembly &&
+                                                     registration.ApplicationId == applicationId);
+            foreach (var target in affected) RefreshPatch(target);
+        }
+    }
+
     public void Dispose()
     {
         lock (_lock)
@@ -236,6 +251,7 @@ internal sealed class MixinRuntime : IMixinRuntime, IDisposable
                     {
                         var mixinAffected = new HashSet<MethodBase>();
                         var sequenceBefore = _sequence;
+                        var shadowMethodsBefore = _shadowMethods.Keys.ToHashSet();
                         var counted = false;
                         try
                         {
@@ -278,8 +294,7 @@ internal sealed class MixinRuntime : IMixinRuntime, IDisposable
                         {
                             if (counted) mixinCount--;
                             RemoveHandlersAfterSequence(sequenceBefore, assembly, mixinAffected);
-                            RemoveShadowMethods((_, registration) =>
-                                registration.ApplicationId == applicationId && registration.MixinType == mixinType);
+                            RemoveShadowMethods((shadow, _) => !shadowMethodsBefore.Contains(shadow));
                             foreach (var target in mixinAffected) RefreshPatch(target);
                             warnings.Add(
                                 $"可选 Mixin 失败：{mixinType.FullName} -> " +

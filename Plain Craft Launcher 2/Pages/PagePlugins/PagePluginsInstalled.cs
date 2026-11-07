@@ -59,9 +59,37 @@ public sealed class PagePluginsInstalled : MyPageRight
             card.Children.Add(PluginPageSupport.Text(Lang.Text("Plugin.Installed.Provenance", sourceText,
                 plugin.InstalledAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz") ?? Lang.Text("Plugin.Install.UnknownTime"),
                 plugin.InstalledPackageSha256 ?? Lang.Text("Plugin.Install.UnknownHash")), 12));
+            card.Children.Add(PluginPageSupport.Text(Lang.Text("Plugin.Installed.SigningInfo",
+                plugin.Signer ?? Lang.Text("Plugin.Installed.NoSignature"),
+                plugin.SignerThumbprint ?? "—",
+                plugin.SignedAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz") ??
+                Lang.Text(plugin.Signer is null ? "Plugin.Installed.NoSignatureTime" : "Plugin.Install.UnknownTime")), 12));
             card.Children.Add(PluginPageSupport.Text(plugin.Error is null
                 ? (plugin.Running ? Lang.Text("Plugin.Installed.Running") : Lang.Text("Plugin.Installed.Disabled"))
                 : Lang.Text("Plugin.Installed.Error", plugin.Error)));
+            if (plugin.ExperimentalFeatures.Count > 0)
+            {
+                card.Children.Add(PluginPageSupport.Text(Lang.Text("Plugin.Installed.ExperimentalFeatures"), 14, true));
+                foreach (var feature in plugin.ExperimentalFeatures)
+                {
+                    var featurePanel = new StackPanel { Margin = new Thickness(0, 4, 0, 8) };
+                    var toggle = new MyCheckBox { Text = feature.Manifest.Name, Margin = new Thickness(0, 2, 0, 2) };
+                    toggle.SetChecked(feature.Enabled, false);
+                    toggle.Change += async (_, user) =>
+                    {
+                        if (!user) return;
+                        await SetExperimentalFeatureEnabledAsync(plugin.Manifest.Id, feature.Manifest.Id,
+                            toggle.Checked == true);
+                    };
+                    featurePanel.Children.Add(toggle);
+                    if (!string.IsNullOrWhiteSpace(feature.Manifest.Description))
+                        featurePanel.Children.Add(PluginPageSupport.Text(feature.Manifest.Description, 12));
+                    if (feature.Error is not null)
+                        featurePanel.Children.Add(PluginPageSupport.Text(
+                            Lang.Text("Plugin.Installed.ExperimentalFeatureError", feature.Error), 12));
+                    card.Children.Add(featurePanel);
+                }
+            }
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 7, 0, 0) };
             actions.Children.Add(PluginPageSupport.Button(plugin.Enabled ? Lang.Text("Plugin.Installed.Disable") : Lang.Text("Plugin.Installed.Enable"),
                 async (_, _) => await SetEnabledAsync(plugin.Manifest.Id, !plugin.Enabled), true));
@@ -109,6 +137,24 @@ public sealed class PagePluginsInstalled : MyPageRight
             Refresh();
         }
         catch (Exception ex) { PluginPageSupport.ShowPluginNotice(ex.Message, PCL.Plugin.SDK.PluginNotificationKind.Error); }
+    }
+
+    private async Task SetExperimentalFeatureEnabledAsync(string pluginId, string featureId, bool enabled)
+    {
+        var manager = PluginManagerService.Manager;
+        if (manager is null) return;
+        try
+        {
+            await manager.SetExperimentalFeatureEnabledAsync(pluginId, featureId, enabled);
+            PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Installed.Restart"), PCL.Plugin.SDK.PluginNotificationKind.Info);
+            Refresh();
+        }
+        catch (Exception ex)
+        {
+            PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Install.Failed", ex.Message),
+                PCL.Plugin.SDK.PluginNotificationKind.Error);
+            Refresh();
+        }
     }
 
     private async Task UninstallAsync(string id, string name)

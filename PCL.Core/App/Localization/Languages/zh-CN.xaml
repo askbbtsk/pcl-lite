@@ -2907,6 +2907,11 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Plugin.Installed.Source.Local">本地文件</sys:String>
     <sys:String x:Key="Plugin.Installed.Source.Unknown">来源未知（旧安装记录）</sys:String>
     <sys:String x:Key="Plugin.Installed.Provenance">来源：{0}　安装时间：{1}　包 SHA-256：{2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.SigningInfo">签名人：{0}　证书指纹：{1}　签名时间：{2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignature">未签名</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignatureTime">不适用</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatures">实验功能（默认关闭）</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatureError">此功能上次加载失败，已自动关闭：{0}</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">确认安装插件</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">签名人：{0}
 证书指纹：{1}

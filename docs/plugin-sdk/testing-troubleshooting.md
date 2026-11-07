@@ -43,6 +43,8 @@ dotnet build .\PCL.Plugin.Sample\PCL.Plugin.Sample.csproj
 
 `PluginPackageTests.IncompatibleCoreRangeIsShownAtInstallAndSkippedAtStartup` 验证清单声明不兼容的 PCL Core 版本范围时，安装确认展示警告而运行时不加载插件。
 
+独立实验 Mixin 组由 `PluginPackageTests.ExperimentalFeatureManifestRequiresUniqueSignedMixinConfigurationGroups`、`ExperimentalFeatureIsOffByDefaultAndPersistsUserChoiceAcrossRestart` 和 `FailedExperimentalFeatureRollsBackOnlyItsMixinGroupsAndKeepsPluginRunning` 覆盖：分别验证清单路径唯一性、默认关闭与重启持久化、失败时仅回滚该组并保持插件入口运行。
+
 ## 贡献和本地留痕
 
 每个功能改动应有对应的测试和文档。提交前检查 `git diff`，只提交本功能文件，避免把工作区其他改动一起纳入。不要提交 PFX、插件运行数据、打包产物或私钥。保持 Mixin 引擎有明确来源归属，并保留适用许可证文本。

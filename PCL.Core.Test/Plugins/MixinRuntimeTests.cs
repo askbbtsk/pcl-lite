@@ -277,6 +277,23 @@ public class MixinRuntimeTest
     }
 
     [TestMethod]
+    public void FailedOptionalMixinTarget_ShouldKeepShadowRegistrationFromEarlierTarget()
+    {
+        OptionalMultiTargetMixin.Seen = 0;
+        using var runtime = new MixinRuntime();
+        var result = runtime.ApplyConfiguration(typeof(MixinRuntimeTest).Assembly, new MixinConfiguration
+        {
+            Required = true,
+            Mixins = [typeof(OptionalMultiTargetMixin).FullName!]
+        }, "optional-multi-target.json");
+
+        Assert.IsTrue(result.Warnings.Any(warning => warning.Contains(nameof(OptionalMultiTargetMixin), StringComparison.Ordinal)));
+        Assert.AreEqual(5, new OptionalMultiTarget().Run());
+        Assert.AreEqual(23, OptionalMultiTargetMixin.Seen,
+            "The successful first target must retain its field and method Shadow registrations after the second target fails.");
+    }
+
+    [TestMethod]
     public void PriorityAndConflictDiagnostics_ShouldShowApplicationOrder()
     {
         ConflictTarget.Order.Clear();
@@ -957,6 +974,40 @@ public class MixinRuntimeTest
             return Read();
         }
         private int Helper(int multiplier) => _fixed * multiplier;
+    }
+
+    public sealed class OptionalMultiTarget
+    {
+        private readonly int _value = 11;
+        private int Helper(int amount) => _value + amount;
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public int Run() => 5;
+    }
+
+    public sealed class EmptyOptionalTarget
+    {
+        private readonly int _value = 1;
+        private int Helper(int amount) => _value + amount;
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public int Run() => 0;
+    }
+
+    [Mixin(typeof(OptionalMultiTarget))]
+    [Mixin(typeof(EmptyOptionalTarget), Optional = true)]
+    private sealed class OptionalMultiTargetMixin
+    {
+        public static int Seen;
+
+#pragma warning disable CS0169, CS0414, CS0649
+        [Shadow("_value")]
+        private int Value;
+#pragma warning restore CS0169, CS0414
+
+        [Shadow("Helper")]
+        private int Helper(int amount) => throw new NotSupportedException();
+
+        [Inject(nameof(OptionalMultiTarget.Run), At = MixinAt.Head)]
+        private void Before() => Seen = Value + Helper(1);
     }
 
     [Mixin(typeof(ShadowTarget))]

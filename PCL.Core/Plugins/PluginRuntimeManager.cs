@@ -27,7 +27,13 @@ public sealed record InstalledPlugin(PluginManifest Manifest, string Directory, 
     public string? InstallPackageUrl { get; init; }
     public string? InstalledPackageSha256 { get; init; }
     public DateTimeOffset? InstalledAtUtc { get; init; }
+    public string? Signer { get; init; }
+    public string? SignerThumbprint { get; init; }
+    public DateTimeOffset? SignedAtUtc { get; init; }
+    public IReadOnlyList<InstalledPluginFeature> ExperimentalFeatures { get; init; } = [];
 }
+
+public sealed record InstalledPluginFeature(PluginExperimentalFeature Manifest, bool Enabled, string? Error = null);
 
 public sealed record PluginMarketEntry(string Id, string Name, string Version, string Author, string Description,
     string PackageUrl, string? Website = null, string? Sha256 = null)
@@ -380,11 +386,18 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         var pendingStatePath = Path.Combine(pendingRoot, ".state-" + check.Manifest.Id + ".json");
         var pendingStateBackupPath = pendingStatePath + ".rollback";
         var hadPendingState = File.Exists(pendingStatePath);
+        var featureStates = _GetDeclaredFeatureStates(check.Manifest, previousState);
+        var featureErrors = _GetDeclaredFeatureErrors(check.Manifest, previousState);
         var nextState = new PluginState(check.PreviousVersion is null || previousState.Enabled, !check.IsSigned,
             ExpectedHash: check.ContentHash, ExpectedSigner: check.SignerThumbprint,
             InstalledVersion: check.Manifest.Version, InstallSourceType: sourceType,
             InstallSourceUrl: sourceUrl, InstallPackageUrl: packageUrl,
-            InstalledPackageSha256: check.PackageSha256, InstalledAtUtc: DateTimeOffset.UtcNow);
+            InstalledPackageSha256: check.PackageSha256, InstalledAtUtc: DateTimeOffset.UtcNow,
+            Signer: check.Signer, SignedAtUtc: check.SignedAtUtc)
+        {
+            ExperimentalFeatures = featureStates,
+            ExperimentalFeatureErrors = featureErrors
+        };
         try
         {
             if (hadPendingState) File.Copy(pendingStatePath, pendingStateBackupPath, overwrite: true);
@@ -421,7 +434,11 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     InstallSourceUrl = sourceUrl,
                     InstallPackageUrl = packageUrl,
                     InstalledPackageSha256 = check.PackageSha256,
-                    InstalledAtUtc = DateTimeOffset.UtcNow
+                    InstalledAtUtc = nextState.InstalledAtUtc,
+                    Signer = nextState.Signer,
+                    SignerThumbprint = nextState.ExpectedSigner,
+                    SignedAtUtc = nextState.SignedAtUtc,
+                    ExperimentalFeatures = _BuildInstalledFeatures(check.Manifest, nextState)
                 });
             }
             transactionCompleted = true;
@@ -517,9 +534,27 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     if (state.ExpectedSigner is null || !string.Equals(state.ExpectedSigner, result.Thumbprint,
                             StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("Plugin signing certificate changed after installation.");
+                    if (state.Signer is not null && !string.Equals(state.Signer, result.Signer, StringComparison.Ordinal))
+                        throw new InvalidDataException("Plugin signer metadata changed after installation.");
+                    if (state.SignedAtUtc is { } expectedSignedAt &&
+                        signature.SignedAtUtc.ToUniversalTime() != expectedSignedAt.ToUniversalTime())
+                        throw new InvalidDataException("Plugin signing time changed after installation.");
                     if (!string.Equals(state.ExpectedHash, PluginPackage.CreateFileContentHash(files),
                             StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("Plugin contents changed after installation.");
+                    if (state.Signer is null || state.SignedAtUtc is null)
+                    {
+                        state = state with
+                        {
+                            Signer = state.Signer ?? result.Signer,
+                            SignedAtUtc = state.SignedAtUtc ?? signature.SignedAtUtc
+                        };
+                        try { await _WriteStateAsync(manifest.Id, state, cancellationToken).ConfigureAwait(false); }
+                        catch (Exception ex)
+                        {
+                            LogWrapper.Warn(ex, "Plugin", $"无法保存插件 {manifest.Id} 的签名展示信息");
+                        }
+                    }
                 }
                 else
                 {
@@ -573,9 +608,11 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             }
             try
             {
-                await _PreparePluginAsync(candidate.Directory, candidate.Manifest, cancellationToken).ConfigureAwait(false);
+                var pluginState = await _PreparePluginAsync(candidate.Directory, candidate.Manifest,
+                    statesById[candidate.Manifest.Id], cancellationToken).ConfigureAwait(false);
+                statesById[candidate.Manifest.Id] = pluginState;
                 _AddInstalled(_WithInstallMetadata(new(candidate.Manifest, candidate.Directory, true, false, null),
-                    statesById.GetValueOrDefault(candidate.Manifest.Id)));
+                    pluginState));
             }
             catch (Exception ex)
             {
@@ -648,6 +685,48 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         }
     }
 
+    public async Task SetExperimentalFeatureEnabledAsync(string pluginId, string featureId, bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        _ValidateId(pluginId);
+        if (string.IsNullOrWhiteSpace(featureId) || featureId.Length > 64 ||
+            featureId.Any(c => !(char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c is '.' or '-')))
+            throw new ArgumentException("Invalid experimental feature id.", nameof(featureId));
+        InstalledPlugin installed;
+        lock (_sync)
+            installed = _installed.FirstOrDefault(item => item.Manifest.Id == pluginId)
+                        ?? throw new InvalidOperationException("Plugin is not installed.");
+        var feature = installed.Manifest.ExperimentalFeatures.FirstOrDefault(item => item.Id == featureId)
+                      ?? throw new ArgumentException("Experimental feature is not declared by this plugin.", nameof(featureId));
+        var state = await _ReadStateAsync(pluginId, cancellationToken).ConfigureAwait(false);
+        var featureStates = new Dictionary<string, bool>(state.ExperimentalFeatures ?? new(), StringComparer.Ordinal);
+        featureStates[feature.Id] = enabled;
+        var errors = new Dictionary<string, string>(state.ExperimentalFeatureErrors ?? new(), StringComparer.Ordinal);
+        errors.Remove(feature.Id);
+        await _WriteStateAsync(pluginId, state with
+        {
+            ExperimentalFeatures = featureStates,
+            ExperimentalFeatureErrors = errors
+        }, cancellationToken).ConfigureAwait(false);
+        lock (_sync)
+        {
+            var index = _installed.FindIndex(item => item.Manifest.Id == pluginId);
+            if (index >= 0)
+            {
+                var current = _installed[index];
+                _installed[index] = current with
+                {
+                    PendingRestart = true,
+                    ExperimentalFeatures = _BuildInstalledFeatures(current.Manifest, state with
+                    {
+                        ExperimentalFeatures = featureStates,
+                        ExperimentalFeatureErrors = errors
+                    })
+                };
+            }
+        }
+    }
+
     public async Task UninstallAsync(string pluginId, CancellationToken cancellationToken = default)
     {
         _ValidateId(pluginId);
@@ -690,7 +769,8 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
 
     private static PluginRuntimeManager? _current;
 
-    private async Task _PreparePluginAsync(string directory, PluginManifest manifest, CancellationToken cancellationToken)
+    private async Task<PluginState> _PreparePluginAsync(string directory, PluginManifest manifest, PluginState state,
+        CancellationToken cancellationToken)
     {
         var assemblyPath = Path.Combine(directory, manifest.EntryAssembly.Replace('/', Path.DirectorySeparatorChar));
         var sharedAssemblies = _ResolveDependencyAssemblies(manifest);
@@ -698,10 +778,11 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         var assembly = loadContext.LoadFromAssemblyPath(Path.GetFullPath(assemblyPath));
         try
         {
-            await _ApplyPluginMixinsAsync(assembly, manifest, cancellationToken).ConfigureAwait(false);
+            state = await _ApplyPluginMixinsAsync(assembly, manifest, state, cancellationToken).ConfigureAwait(false);
             var type = assembly.GetType(manifest.EntryType, throwOnError: true, ignoreCase: false)!;
             if (!typeof(IPclPlugin).IsAssignableFrom(type)) throw new InvalidDataException("Plugin entry type must implement IPclPlugin.");
             lock (_sync) _prepared.Add(manifest.Id, new(manifest, loadContext, assembly, type));
+            return state;
         }
         catch
         {
@@ -767,7 +848,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         prepared.LoadContext.Unload();
     }
 
-    private async Task _ApplyPluginMixinsAsync(Assembly assembly, PluginManifest manifest,
+    private async Task<PluginState> _ApplyPluginMixinsAsync(Assembly assembly, PluginManifest manifest, PluginState state,
         CancellationToken cancellationToken)
     {
         var paths = new List<string>();
@@ -776,19 +857,8 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         foreach (var relativePath in paths.Distinct(StringComparer.Ordinal))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var path = Path.Combine(Path.GetDirectoryName(assembly.Location)!, relativePath.Replace('/', Path.DirectorySeparatorChar));
-            MixinConfiguration configuration;
-            try
-            {
-                await using var stream = File.OpenRead(path);
-                configuration = await JsonSerializer.DeserializeAsync<MixinConfiguration>(stream,
-                    PluginPackage.SerializerOptions, cancellationToken).ConfigureAwait(false)
-                    ?? throw new InvalidDataException($"Mixin configuration is empty: {relativePath}");
-            }
-            catch (Exception ex) when (ex is IOException or JsonException)
-            {
-                throw new InvalidDataException($"Mixin configuration cannot be read: {relativePath}", ex);
-            }
+            var configuration = await _ReadMixinConfigurationAsync(assembly, relativePath, cancellationToken)
+                .ConfigureAwait(false);
 
             try
             {
@@ -803,6 +873,67 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             {
                 LogWrapper.Warn(ex, "Plugin", $"可选 Mixin 配置失败，跳过：{manifest.Id}/{relativePath}");
             }
+        }
+
+        foreach (var feature in manifest.ExperimentalFeatures ?? [])
+        {
+            if (state.ExperimentalFeatures?.GetValueOrDefault(feature.Id) != true) continue;
+            cancellationToken.ThrowIfCancellationRequested();
+            var applicationIds = new List<string>();
+            try
+            {
+                foreach (var relativePath in feature.MixinConfigs)
+                {
+                    var configuration = await _ReadMixinConfigurationAsync(assembly, relativePath, cancellationToken)
+                        .ConfigureAwait(false);
+                    var applicationId = $"{manifest.Id}/experimental/{feature.Id}/{relativePath}";
+                    var result = (_mixinRuntime ??= new MixinRuntime("pcl-lite.plugins"))
+                        .ApplyConfiguration(assembly, configuration, applicationId);
+                    applicationIds.Add(applicationId);
+                    LogWrapper.Info("Plugin", $"实验 Mixin 已应用：{manifest.Id}/{feature.Id}/{relativePath}；" +
+                        $"类型={result.MixinCount}；目标方法={result.TargetMethodCount}");
+                    foreach (var warning in result.Warnings)
+                        LogWrapper.Warn("Plugin", $"实验 Mixin 诊断 {manifest.Id}/{feature.Id}/{relativePath}：{warning}");
+                }
+            }
+            catch (Exception ex)
+            {
+                foreach (var applicationId in applicationIds)
+                    _mixinRuntime?.RollbackApplication(assembly, applicationId);
+                var featureStates = new Dictionary<string, bool>(state.ExperimentalFeatures ?? new(), StringComparer.Ordinal)
+                {
+                    [feature.Id] = false
+                };
+                var featureErrors = new Dictionary<string, string>(state.ExperimentalFeatureErrors ?? new(), StringComparer.Ordinal)
+                {
+                    [feature.Id] = ex.Message
+                };
+                state = state with
+                {
+                    ExperimentalFeatures = featureStates,
+                    ExperimentalFeatureErrors = featureErrors
+                };
+                await _WriteStateAsync(manifest.Id, state, cancellationToken).ConfigureAwait(false);
+                LogWrapper.Warn(ex, "Plugin", $"实验 Mixin 功能已单独关闭：{manifest.Id}/{feature.Id}");
+            }
+        }
+        return state;
+    }
+
+    private static async Task<MixinConfiguration> _ReadMixinConfigurationAsync(Assembly assembly, string relativePath,
+        CancellationToken cancellationToken)
+    {
+        var path = Path.Combine(Path.GetDirectoryName(assembly.Location)!, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        try
+        {
+            await using var stream = File.OpenRead(path);
+            return await JsonSerializer.DeserializeAsync<MixinConfiguration>(stream,
+                       PluginPackage.SerializerOptions, cancellationToken).ConfigureAwait(false)
+                   ?? throw new InvalidDataException($"Mixin configuration is empty: {relativePath}");
+        }
+        catch (Exception ex) when (ex is IOException or JsonException)
+        {
+            throw new InvalidDataException($"Mixin configuration cannot be read: {relativePath}", ex);
         }
     }
 
@@ -838,8 +969,38 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             InstallSourceUrl = state.InstallSourceUrl,
             InstallPackageUrl = state.InstallPackageUrl,
             InstalledPackageSha256 = state.InstalledPackageSha256,
-            InstalledAtUtc = state.InstalledAtUtc
+            InstalledAtUtc = state.InstalledAtUtc,
+            Signer = state.Signer,
+            SignerThumbprint = state.ExpectedSigner,
+            SignedAtUtc = state.SignedAtUtc,
+            ExperimentalFeatures = _BuildInstalledFeatures(plugin.Manifest, state)
         };
+
+    private static Dictionary<string, bool> _GetDeclaredFeatureStates(PluginManifest manifest, PluginState state)
+    {
+        var result = new Dictionary<string, bool>(StringComparer.Ordinal);
+        foreach (var feature in manifest.ExperimentalFeatures ?? [])
+            result[feature.Id] = state.ExperimentalFeatures?.GetValueOrDefault(feature.Id) ?? false;
+        return result;
+    }
+
+    private static Dictionary<string, string> _GetDeclaredFeatureErrors(PluginManifest manifest, PluginState state)
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var feature in manifest.ExperimentalFeatures ?? [])
+            if (state.ExperimentalFeatureErrors?.TryGetValue(feature.Id, out var error) == true)
+                result[feature.Id] = error;
+        return result;
+    }
+
+    private static IReadOnlyList<InstalledPluginFeature> _BuildInstalledFeatures(PluginManifest manifest,
+        PluginState? state)
+    {
+        if (state is null) return [];
+        return (manifest.ExperimentalFeatures ?? []).Select(feature => new InstalledPluginFeature(feature,
+            state.ExperimentalFeatures?.GetValueOrDefault(feature.Id) ?? false,
+            state.ExperimentalFeatureErrors?.GetValueOrDefault(feature.Id))).ToArray();
+    }
 
     private async Task<bool> _IsEnabledAsync(string id, CancellationToken cancellationToken)
     {
@@ -1283,7 +1444,12 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private sealed record PluginState(bool Enabled, bool UnsignedApproved, bool UninstallPending = false,
         string? ExpectedHash = null, string? ExpectedSigner = null, string? InstalledVersion = null,
         string? InstallSourceType = null, string? InstallSourceUrl = null, string? InstallPackageUrl = null,
-        string? InstalledPackageSha256 = null, DateTimeOffset? InstalledAtUtc = null);
+        string? InstalledPackageSha256 = null, DateTimeOffset? InstalledAtUtc = null,
+        string? Signer = null, DateTimeOffset? SignedAtUtc = null)
+    {
+        public Dictionary<string, bool> ExperimentalFeatures { get; init; } = new(StringComparer.Ordinal);
+        public Dictionary<string, string> ExperimentalFeatureErrors { get; init; } = new(StringComparer.Ordinal);
+    }
     private sealed record RunningPlugin(IPclPlugin Plugin, PluginContext Context, PluginAssemblyLoadContext LoadContext,
         PluginManifest Manifest, Assembly Assembly);
     private sealed record PreparedPlugin(PluginManifest Manifest, PluginAssemblyLoadContext LoadContext,

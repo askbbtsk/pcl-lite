@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.Plugins;
+using PCL.Mixin;
 using PCL.Plugin.Dependency.TestSupport;
 using PCL.Plugin.SDK;
 
@@ -195,6 +196,53 @@ public sealed class PluginPackageTests
     }
 
     [TestMethod]
+    public void ExperimentalFeatureManifestRequiresUniqueSignedMixinConfigurationGroups()
+    {
+        var files = CreateFiles();
+        var featureConfig = JsonSerializer.SerializeToUtf8Bytes(new MixinConfiguration
+        {
+            Mixins = ["Test.ExperimentalMixin"]
+        }, PluginPackage.SerializerOptions);
+        files["mixins/experimental.json"] = featureConfig;
+        var manifest = PluginPackage.DeserializeManifest(files[PluginPackage.ManifestFileName]) with
+        {
+            ExperimentalFeatures =
+            [
+                new PluginExperimentalFeature
+                {
+                    Id = "experimental.ui",
+                    Name = "Experimental UI",
+                    Description = "An independently selectable patch group.",
+                    MixinConfigs = ["mixins/experimental.json"]
+                }
+            ]
+        };
+        files[PluginPackage.ManifestFileName] = JsonSerializer.SerializeToUtf8Bytes(manifest,
+            PluginPackage.SerializerOptions);
+
+        Assert.IsNull(PluginPackage.ValidateManifest(manifest, files.Keys));
+        Assert.IsNull(PluginPackage.ValidateMixinConfigurations(manifest, files));
+        using var certificate = CreateCertificate();
+        var signed = PluginPackage.SignFiles(files, certificate);
+        Assert.IsTrue(PluginPackage.VerifyFiles(files, signed).Valid);
+
+        var overlapsRequired = manifest with { MixinConfigs = ["mixins/experimental.json"] };
+        Assert.IsNotNull(PluginPackage.ValidateManifest(overlapsRequired, files.Keys));
+        var duplicateId = manifest with
+        {
+            ExperimentalFeatures = manifest.ExperimentalFeatures.Append(
+                manifest.ExperimentalFeatures[0] with { Name = "Duplicate feature" }).ToArray()
+        };
+        Assert.IsNotNull(PluginPackage.ValidateManifest(duplicateId, files.Keys));
+        var missingConfig = manifest with
+        {
+            ExperimentalFeatures =
+            [manifest.ExperimentalFeatures[0] with { MixinConfigs = ["mixins/missing.json"] }]
+        };
+        Assert.IsNotNull(PluginPackage.ValidateManifest(missingConfig, files.Keys));
+    }
+
+    [TestMethod]
     public async Task ManifestAndMixinJsonAreBoundedAndNullSafe()
     {
         var files = CreateFiles();
@@ -369,10 +417,16 @@ public sealed class PluginPackageTests
             Assert.IsNotNull(initialCheck);
             Assert.AreEqual("local", initialCheck.CurrentInstallSourceType);
             Assert.IsNotNull(initialCheck.PackageSha256);
+            Assert.IsNotNull(initialCheck.Signer);
+            Assert.IsNotNull(initialCheck.SignerThumbprint);
+            Assert.IsNotNull(initialCheck.SignedAtUtc);
             var installedBefore = manager.GetInstalled().Single();
             Assert.AreEqual("local", installedBefore.InstallSourceType);
             Assert.AreEqual(initialCheck.PackageSha256, installedBefore.InstalledPackageSha256);
             Assert.IsNotNull(installedBefore.InstalledAtUtc);
+            Assert.AreEqual(initialCheck.Signer, installedBefore.Signer);
+            Assert.AreEqual(initialCheck.SignerThumbprint, installedBefore.SignerThumbprint);
+            Assert.AreEqual(initialCheck.SignedAtUtc, installedBefore.SignedAtUtc);
 
             PluginPackageCheck? downgradePrompt = null;
             await Assert.ThrowsAsync<OperationCanceledException>(() => manager.InstallAsync(downgradePath,
@@ -434,6 +488,11 @@ public sealed class PluginPackageTests
             Assert.AreEqual("market", installed.InstallSourceType);
             Assert.AreEqual(catalogUrl, installed.InstallSourceUrl);
             Assert.AreEqual(packageHash, installed.InstalledPackageSha256);
+            var packageCheck = await PluginPackage.InspectAsync(packagePath);
+            Assert.AreEqual(packageCheck.Signer, installed.Signer);
+            Assert.AreEqual(packageCheck.SignerThumbprint, installed.SignerThumbprint);
+            Assert.AreEqual(packageCheck.SignedAtUtc, installed.SignedAtUtc);
+            Assert.IsNotNull(installed.InstalledAtUtc);
 
             var current = new PluginMarketEntry("test.plugin", "Test plugin", "1.0.0", "Test signer", "",
                 "https://github.com/example/plugins/releases/download/v1.0.0/test.pclplugin",
@@ -451,6 +510,99 @@ public sealed class PluginPackageTests
         }
         finally
         {
+            DeleteIfExists(packagePath);
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
+    public async Task ExperimentalFeatureIsOffByDefaultAndPersistsUserChoiceAcrossRestart()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-feature-toggle-" + Guid.NewGuid().ToString("N"));
+        var packagePath = CreateTempPath();
+        try
+        {
+            await WritePackageAsync(packagePath, CreateFeatureRuntimeFiles("runtime.feature.toggle",
+                includeStableConfig: false, includeFailingConfig: false), certificate);
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+            {
+                await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+                var feature = installer.GetInstalled().Single().ExperimentalFeatures.Single();
+                Assert.IsFalse(feature.Enabled, "New experimental Mixin features must default to off.");
+            }
+
+            await using (var runtime = new PluginRuntimeManager(pluginsDirectory))
+            {
+                await runtime.LoadEnabledAsync();
+                Assert.AreEqual("1", await ReadFeatureProbeValueAsync(pluginsDirectory, "runtime.feature.toggle",
+                    "experimental.txt"));
+                await runtime.SetExperimentalFeatureEnabledAsync("runtime.feature.toggle", "experimental.patch", true);
+                Assert.IsTrue(runtime.GetInstalled().Single().ExperimentalFeatures.Single().Enabled);
+                Assert.IsTrue(runtime.GetInstalled().Single().PendingRestart);
+            }
+
+            await using (var runtime = new PluginRuntimeManager(pluginsDirectory))
+            {
+                await runtime.LoadEnabledAsync();
+                Assert.AreEqual("2", await ReadFeatureProbeValueAsync(pluginsDirectory, "runtime.feature.toggle",
+                    "experimental.txt"));
+                await runtime.SetExperimentalFeatureEnabledAsync("runtime.feature.toggle", "experimental.patch", false);
+            }
+
+            await using (var runtime = new PluginRuntimeManager(pluginsDirectory))
+            {
+                await runtime.LoadEnabledAsync();
+                Assert.AreEqual("1", await ReadFeatureProbeValueAsync(pluginsDirectory, "runtime.feature.toggle",
+                    "experimental.txt"));
+            }
+        }
+        finally
+        {
+            PluginPageRegistry.RemovePlugin("runtime.feature.toggle");
+            DeleteIfExists(packagePath);
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
+    public async Task FailedExperimentalFeatureRollsBackOnlyItsMixinGroupsAndKeepsPluginRunning()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-feature-failure-" + Guid.NewGuid().ToString("N"));
+        var packagePath = CreateTempPath();
+        try
+        {
+            await WritePackageAsync(packagePath, CreateFeatureRuntimeFiles("runtime.feature.failure",
+                includeStableConfig: true, includeFailingConfig: true), certificate);
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+                await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+
+            await using (var runtime = new PluginRuntimeManager(pluginsDirectory))
+            {
+                await runtime.LoadEnabledAsync();
+                await runtime.SetExperimentalFeatureEnabledAsync("runtime.feature.failure", "experimental.patch", true);
+            }
+
+            await using (var runtime = new PluginRuntimeManager(pluginsDirectory))
+            {
+                await runtime.LoadEnabledAsync();
+                var installed = runtime.GetInstalled().Single();
+                Assert.IsTrue(installed.Running, installed.Error);
+                Assert.AreEqual("9", await ReadFeatureProbeValueAsync(pluginsDirectory, "runtime.feature.failure",
+                    "stable.txt"), "The ordinary plugin Mixin must remain applied.");
+                Assert.AreEqual("1", await ReadFeatureProbeValueAsync(pluginsDirectory, "runtime.feature.failure",
+                    "experimental.txt"), "Earlier configurations from the failed feature group must be rolled back.");
+                var feature = installed.ExperimentalFeatures.Single();
+                Assert.IsFalse(feature.Enabled, "A failed experimental feature must persist as disabled.");
+                Assert.IsNotNull(feature.Error);
+                Assert.IsTrue(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.feature.failure", "started.txt")),
+                    "An experimental feature failure must not stop the plugin entrypoint.");
+            }
+        }
+        finally
+        {
+            PluginPageRegistry.RemovePlugin("runtime.feature.failure");
             DeleteIfExists(packagePath);
             DeleteRuntimeDirectory(pluginsDirectory);
         }
@@ -880,6 +1032,48 @@ public sealed class PluginPackageTests
         };
     }
 
+    private static Dictionary<string, byte[]> CreateFeatureRuntimeFiles(string id, bool includeStableConfig,
+        bool includeFailingConfig)
+    {
+        var files = CreateRuntimeFiles(id, typeof(ExperimentalFeatureProbePlugin).FullName!);
+        var featurePaths = new List<string> { "mixins/experimental.json" };
+        if (includeFailingConfig) featurePaths.Add("mixins/experimental-failure.json");
+        var manifest = PluginPackage.DeserializeManifest(files[PluginPackage.ManifestFileName]) with
+        {
+            MixinConfigs = includeStableConfig ? ["mixins/stable.json"] : [],
+            ExperimentalFeatures =
+            [
+                new PluginExperimentalFeature
+                {
+                    Id = "experimental.patch",
+                    Name = "Experimental patch",
+                    Description = "A separately controlled compiled Mixin group.",
+                    MixinConfigs = featurePaths
+                }
+            ]
+        };
+        files[PluginPackage.ManifestFileName] = JsonSerializer.SerializeToUtf8Bytes(manifest,
+            PluginPackage.SerializerOptions);
+        files["mixins/experimental.json"] = JsonSerializer.SerializeToUtf8Bytes(new MixinConfiguration
+        {
+            Mixins = [typeof(ExperimentalFeatureMixin).FullName!]
+        }, PluginPackage.SerializerOptions);
+        if (includeFailingConfig)
+            files["mixins/experimental-failure.json"] = JsonSerializer.SerializeToUtf8Bytes(new MixinConfiguration
+            {
+                Mixins = ["Missing.Feature.Mixin"]
+            }, PluginPackage.SerializerOptions);
+        if (includeStableConfig)
+            files["mixins/stable.json"] = JsonSerializer.SerializeToUtf8Bytes(new MixinConfiguration
+            {
+                Mixins = [typeof(StableFeatureMixin).FullName!]
+            }, PluginPackage.SerializerOptions);
+        return files;
+    }
+
+    private static Task<string> ReadFeatureProbeValueAsync(string pluginsDirectory, string pluginId, string fileName) =>
+        File.ReadAllTextAsync(Path.Combine(pluginsDirectory, ".plugin-data", pluginId, fileName));
+
     private static Dictionary<string, byte[]> CreateDependencyProviderFiles(string id, string entryType)
     {
         var assemblyPath = typeof(DependencyProviderPlugin).Assembly.Location;
@@ -950,6 +1144,44 @@ public sealed class PluginPackageTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(send(request));
     }
+}
+
+public static class ExperimentalFeatureTarget
+{
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    public static int GetValue() => 1;
+}
+
+[Mixin(typeof(ExperimentalFeatureTarget))]
+public static class ExperimentalFeatureMixin
+{
+    [Overwrite(nameof(ExperimentalFeatureTarget.GetValue))]
+    public static int GetValue() => 2;
+}
+
+public static class StableFeatureTarget
+{
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    public static int GetValue() => 3;
+}
+
+[Mixin(typeof(StableFeatureTarget))]
+public static class StableFeatureMixin
+{
+    [Overwrite(nameof(StableFeatureTarget.GetValue))]
+    public static int GetValue() => 9;
+}
+
+public sealed class ExperimentalFeatureProbePlugin : IPclPlugin
+{
+    public async Task StartAsync(IPluginContext context, CancellationToken cancellationToken)
+    {
+        await context.Storage.WriteTextAsync("experimental.txt", ExperimentalFeatureTarget.GetValue().ToString(), cancellationToken);
+        await context.Storage.WriteTextAsync("stable.txt", StableFeatureTarget.GetValue().ToString(), cancellationToken);
+        await context.Storage.WriteTextAsync("started.txt", "yes", cancellationToken);
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 public sealed class DependencyConsumerPlugin : IPclPlugin

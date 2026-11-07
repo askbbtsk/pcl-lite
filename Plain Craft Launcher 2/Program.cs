@@ -3,6 +3,9 @@ using System.Windows.Input;
 using PCL.Core.App;
 using PCL.Core.App.Essentials;
 using PCL.Core.App.IoC;
+using PCL.Core.App.Localization;
+using PCL.Core.Plugins;
+using PCL.Plugin.SDK;
 using PCL.Core.Utils.OS;
 using PCL.Network;
 
@@ -25,6 +28,7 @@ internal static class Program
         }
 #endif
         Console.WriteLine("Welcome to PCL Lite!");
+        _ConfigurePluginBridge();
         // 网络授权弹窗：必须早于任何联网操作注册
         PCL.Network.NetworkConsentDialog.Register();
         // Preloading tasks
@@ -49,5 +53,38 @@ internal static class Program
         _ = Tablet.TabletDevices;
         // Start lifecycle
         Lifecycle.OnInitialize();
+    }
+
+    private static void _ConfigurePluginBridge()
+    {
+        PluginHostBridge.GetInstancesAsync = cancellationToken =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            IReadOnlyList<PluginGameInstance> instances = ModBase.RunInUiWait(() => ModInstanceList.mcInstanceList
+                .Values.SelectMany(items => items)
+                .DistinctBy(instance => instance.PathInstance, StringComparer.OrdinalIgnoreCase)
+                .Select(instance => new PluginGameInstance(instance.PathInstance, instance.Name,
+                    instance.Info?.VanillaName ?? "Unknown", instance.PathInstance,
+                    ReferenceEquals(instance, ModInstanceList.McMcInstanceSelected)))
+                .ToArray());
+            return Task.FromResult(instances);
+        };
+        PluginHostBridge.LaunchInstanceAsync = async (instanceId, cancellationToken) =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var instance = ModInstanceList.mcInstanceList.Values.SelectMany(items => items)
+                    .FirstOrDefault(item => string.Equals(item.PathInstance, instanceId, StringComparison.OrdinalIgnoreCase));
+                return instance is not null && ModLaunch.McLaunchStart(new ModLaunch.McLaunchOptions { instance = instance });
+            }).Task.ConfigureAwait(false);
+        };
+        PluginHostBridge.ShowNotification = PluginPageSupport.ShowPluginNotice;
+        PluginHostBridge.ConfirmAsync = (title, message, cancellationToken) =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Application.Current.Dispatcher.InvokeAsync(() => ModMain.MyMsgBox(message, title,
+                Lang.Text("Common.Action.Confirm"), Lang.Text("Common.Action.Cancel")) == 1).Task;
+        };
     }
 }

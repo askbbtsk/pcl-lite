@@ -14,6 +14,7 @@ using PCL.Core.App.Localization;
 using PCL.Core.Logging;
 using PCL.Core.Minecraft;
 using PCL.Core.UI;
+using PCL.Core.UI.Navigation;
 using PCL.Core.UI.Theme;
 using PCL.Core.Utils;
 using PCL.Core.Utils.OS;
@@ -88,6 +89,9 @@ public partial class FormMain
         HintWrapper.OnShow += HintService.HintWrapper_OnShow;
         // 加载 UI
         InitializeComponent();
+        RefreshNavigationOverflow();
+        PanTitleMain.SizeChanged += PanTitleSelect_SizeChanged;
+        Loaded += (_, _) => QueueNavigationOverflowRefresh();
         Opacity = 0d;
         try
         {
@@ -617,6 +621,184 @@ public partial class FormMain
 
         if (WindowState == WindowState.Maximized)
             WindowState = WindowState.Normal; // 修复 #1938
+
+        QueueNavigationOverflowRefresh();
+    }
+
+    private bool _navigationExpanded;
+    private bool _navigationReflowQueued;
+    private HashSet<int> _navigationAutoCollapsedIds = [];
+
+    /// <summary>根据用户折叠列表，把折叠页面排在导航三角按钮后面。</summary>
+    public void RefreshNavigationOverflow()
+    {
+        if (PanTitleSelect is null || BtnTitleNavOverflow is null) return;
+        if (!IsLoaded || PanTitle.ActualWidth <= 0d || PanTitleSelectViewport.ActualHeight <= 0d)
+        {
+            QueueNavigationOverflowRefresh();
+            return;
+        }
+
+        var buttons = new (MyRadioButton Button, int Id)[]
+        {
+            (BtnTitleSelect0, 0), (BtnTitleSelect1, 1), (BtnTitleSelect2, 2),
+            (BtnTitleSelectLunar, 13), (BtnTitleSelect4, 4),
+            (BtnTitleSelect3, 3), (BtnTitleSelectPlugins, 14)
+        };
+        var preferredCollapsedIds = ParseCollapsedNavigationIds(Config.Preference.TopBarCollapsedTabs);
+        var visibleButtons = buttons.Where(item => !IsNavigationFeatureHidden(item.Id)).ToArray();
+        var foldingEnabled = visibleButtons.Length > 5;
+        if (!foldingEnabled) _navigationExpanded = false;
+
+        var infiniteSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        var sideReservedWidth = Math.Max(GetTitleLeftReservedWidth(), GetTitleRightReservedWidth());
+        var viewportMargins = PanTitleSelectViewport.Margin.Left + PanTitleSelectViewport.Margin.Right;
+        var availableNavigationWidth = Math.Max(0d,
+            PanTitle.ActualWidth - sideReservedWidth * 2d - viewportMargins - 2d);
+        PanTitleSelectViewport.MaxWidth = availableNavigationWidth;
+
+        var measuredTabs = new List<TopBarNavigationItem>(visibleButtons.Length);
+        foreach (var (button, id) in visibleButtons)
+        {
+            var previousVisibility = button.Visibility;
+            button.Visibility = Visibility.Visible;
+            button.Measure(infiniteSize);
+            measuredTabs.Add(new TopBarNavigationItem(id, button.DesiredSize.Width));
+            button.Visibility = previousVisibility;
+        }
+
+        var overflowButtonWidth = BtnTitleNavOverflow.Width + BtnTitleNavOverflow.Margin.Left + BtnTitleNavOverflow.Margin.Right;
+        var autoCollapsedIds = foldingEnabled
+            ? TopBarNavigationLayout.SelectCollapsedTabs(measuredTabs, preferredCollapsedIds,
+                availableNavigationWidth, overflowButtonWidth)
+            : new HashSet<int>();
+        if (autoCollapsedIds.Count == 0) _navigationExpanded = false;
+        _navigationAutoCollapsedIds = autoCollapsedIds.ToHashSet();
+
+        var mainButtons = new List<MyRadioButton>();
+        var overflowButtons = new List<MyRadioButton>();
+        foreach (var (button, id) in buttons)
+        {
+            var featureHidden = IsNavigationFeatureHidden(id);
+            var isCollapsed = autoCollapsedIds.Contains(id);
+            button.Visibility = featureHidden || isCollapsed && !_navigationExpanded
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            (isCollapsed ? overflowButtons : mainButtons).Add(button);
+        }
+
+        var desiredChildren = mainButtons.Cast<UIElement>()
+            .Append(BtnTitleNavOverflow)
+            .Concat(overflowButtons)
+            .ToArray();
+        if (PanTitleSelect.Children.Count != desiredChildren.Length ||
+            !PanTitleSelect.Children.Cast<UIElement>().SequenceEqual(desiredChildren))
+        {
+            PanTitleSelect.Children.Clear();
+            foreach (var child in desiredChildren) PanTitleSelect.Children.Add(child);
+        }
+
+        BtnTitleNavOverflow.Visibility = _navigationAutoCollapsedIds.Count > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        BtnTitleNavOverflow.SvgIcon = _navigationExpanded
+            ? "lucide/chevron-down"
+            : "lucide/chevron-right";
+        BtnTitleNavOverflow.ToolTip = Lang.Text(_navigationExpanded
+            ? "Main.Tab.OverflowHide"
+            : "Main.Tab.OverflowShow");
+        UpdateNavigationOverflowPosition();
+    }
+
+    private static HashSet<int> ParseCollapsedNavigationIds(string? value)
+    {
+        var validIds = new HashSet<int> { 1, 2, 3, 4, 13, 14 };
+        return (value ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(text => int.TryParse(text, out var id) ? id : -1)
+            .Where(validIds.Contains)
+            .ToHashSet();
+    }
+
+    private double GetTitleRightReservedWidth()
+    {
+        var reservedWidth = 0d;
+        foreach (var button in new[] { BtnTitleClose, BtnTitleMin, BtnTitleHelp })
+        {
+            if (button.Visibility != Visibility.Visible) continue;
+            var buttonWidth = double.IsFinite(button.Width)
+                ? button.Width
+                : Math.Max(0d, button.DesiredSize.Width - button.Margin.Left - button.Margin.Right);
+            reservedWidth = Math.Max(reservedWidth, button.Margin.Right + buttonWidth);
+        }
+        return reservedWidth;
+    }
+
+    private double GetTitleLeftReservedWidth()
+    {
+        var infiniteSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        var columnWidths = new double[PanTitleLeft.ColumnDefinitions.Count];
+        foreach (var child in PanTitleLeft.Children.OfType<FrameworkElement>())
+        {
+            if (child.Visibility != Visibility.Visible) continue;
+            child.Measure(infiniteSize);
+            var column = Grid.GetColumn(child);
+            if (column >= 0 && column < columnWidths.Length)
+                columnWidths[column] = Math.Max(columnWidths[column], child.DesiredSize.Width);
+        }
+
+        // PanTitle_SizeChanged reserves 30 DIPs around the logo column. Include that
+        // room here so the middle navigation never forces the PCL Lite mark to shrink.
+        return columnWidths.Sum() + 30d;
+    }
+
+    private static bool IsNavigationFeatureHidden(int id)
+    {
+        if (PageSetupUI.HiddenForceShow) return false;
+        var hidden = Config.Preference.Hide;
+        return id switch
+        {
+            1 => hidden.PageDownload,
+            2 => hidden.PageBedrock,
+            3 => hidden.PageSetup,
+            4 => hidden.PageTools,
+            13 => hidden.PageLunar,
+            _ => false
+        };
+    }
+
+    private void BtnTitleNavOverflow_Click(object sender, EventArgs e)
+    {
+        if (_navigationAutoCollapsedIds.Count == 0) return;
+        _navigationExpanded = !_navigationExpanded;
+        RefreshNavigationOverflow();
+    }
+
+    private void PanTitleSelect_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        Dispatcher.BeginInvoke(UpdateNavigationOverflowPosition, System.Windows.Threading.DispatcherPriority.Loaded);
+        QueueNavigationOverflowRefresh();
+    }
+
+    private void QueueNavigationOverflowRefresh()
+    {
+        if (_navigationReflowQueued || PanTitleSelect is null || !IsLoaded) return;
+        _navigationReflowQueued = true;
+        Dispatcher.BeginInvoke(() =>
+        {
+            _navigationReflowQueued = false;
+            RefreshNavigationOverflow();
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void UpdateNavigationOverflowPosition()
+    {
+        if (PanTitleSelect is null || PanTitleSelectViewport is null || !PanTitleSelectViewport.IsLoaded) return;
+
+        // 正常态保持居中；展开态靠右排列折叠导航。
+        PanTitleSelect.HorizontalAlignment = _navigationExpanded
+            ? HorizontalAlignment.Right
+            : HorizontalAlignment.Center;
+        PanTitleSelect.RenderTransform = Transform.Identity;
     }
 
     // 标题栏改变大小
@@ -626,6 +808,7 @@ public partial class FormMain
             PanTitleLeft.ColumnDefinitions[0].MaxWidth = 0;
         else
             PanTitleLeft.ColumnDefinitions[0].MaxWidth = PanTitleMain.ColumnDefinitions[0].ActualWidth - 30;
+        QueueNavigationOverflowRefresh();
     }
 
     // 最小化
@@ -1343,6 +1526,9 @@ public partial class FormMain
         /// </summary>
         Bedrock = 2,
 
+        /// <summary>Plugin marketplace and installed plugin management. Added without renumbering existing pages.</summary>
+        Plugins = 14,
+
         /// <summary>
         ///     设置。
         /// </summary>
@@ -1440,6 +1626,9 @@ public partial class FormMain
         SetupJava = 9,
         SetupLauncherMisc = 10,
         SetupLauncherLanguage = 11,
+
+        PluginMarket = 20,
+        PluginInstalled = 21,
 
         /// <summary>
         ///     Lunar Client 的启动设置（Java、内存、JVM 参数）。
@@ -1571,6 +1760,12 @@ public partial class FormMain
                     if (ModMain.frmBedrockLeft is null)
                         ModMain.frmBedrockLeft = new PageBedrockLeft();
                     return ModMain.frmBedrockLeft.pageID;
+                }
+
+                case PageType.Plugins:
+                {
+                    ModMain.frmPluginsLeft ??= new PagePluginsLeft();
+                    return ModMain.frmPluginsLeft.pageID;
                 }
 
                 case PageType.Lunar:
@@ -1738,6 +1933,12 @@ public partial class FormMain
                             break;
                         }
 
+                    break;
+                }
+                case PageType.Plugins:
+                {
+                    ModMain.frmPluginsLeft ??= new PagePluginsLeft();
+                    ModMain.frmPluginsLeft.Select(subType, stack == pageCurrent);
                     break;
                 }
                 case PageType.Lunar:
@@ -1923,6 +2124,17 @@ public partial class FormMain
                             subType = ModMain.frmBedrockLeft.pageID;
                         PageChangeAnim(ModMain.frmBedrockLeft,
                             (FrameworkElement)ModMain.frmBedrockLeft.PageGet(subType));
+                        break;
+                    }
+                case PageType.Plugins: // 插件市场
+                    {
+                        ModMain.frmPluginsLeft ??= new PagePluginsLeft();
+                        if (subType is PageSubType.PluginMarket or PageSubType.PluginInstalled)
+                            ModMain.frmPluginsLeft.pageID = subType;
+                        else
+                            subType = ModMain.frmPluginsLeft.pageID;
+                        PageChangeAnim(ModMain.frmPluginsLeft,
+                            (FrameworkElement)ModMain.frmPluginsLeft.PageGet(subType));
                         break;
                     }
                 case PageType.Lunar: // Lunar Client（实验特性）

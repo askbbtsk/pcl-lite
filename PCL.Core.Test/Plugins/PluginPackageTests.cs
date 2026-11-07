@@ -1,0 +1,404 @@
+using System;
+using System.IO.Compression;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PCL.Core.Plugins;
+using PCL.Plugin.SDK;
+
+namespace PCL.Core.Test.Plugins;
+
+[TestClass]
+public sealed class PluginPackageTests
+{
+    [TestMethod]
+    public void PackageSignatureValidatesAndDetectsChangedPayload()
+    {
+        using var signingKey = RSA.Create(3072);
+        var certificateRequest = new CertificateRequest("CN=PCL Plugin Test", signingKey,
+            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var certificate = certificateRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5),
+            DateTimeOffset.UtcNow.AddYears(1));
+        var files = CreateFiles();
+        var signature = PluginPackage.SignFiles(files, certificate);
+
+        var valid = PluginPackage.VerifyFiles(files, signature);
+        Assert.IsTrue(valid.Valid, valid.Error);
+        Assert.AreEqual(certificate.Thumbprint, valid.Thumbprint);
+        Assert.IsNotNull(valid.Signer);
+
+        var replacementRequest = new CertificateRequest("CN=Replacement signer", signingKey,
+            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var replacementCertificate = replacementRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5),
+            DateTimeOffset.UtcNow.AddYears(1));
+        var replacedSigner = signature with
+        {
+            Certificate = Convert.ToBase64String(replacementCertificate.Export(X509ContentType.Cert)),
+            CertificateThumbprint = replacementCertificate.Thumbprint
+        };
+        Assert.IsFalse(PluginPackage.VerifyFiles(files, replacedSigner).Valid,
+            "The package signature must bind the exact certificate used to sign it.");
+
+        files["Plugin.dll"] = [9, 8, 7, 6];
+        var changed = PluginPackage.VerifyFiles(files, signature);
+        Assert.IsFalse(changed.Valid);
+    }
+
+    [TestMethod]
+    public async Task InspectReportsSignerTimeAndUnsignedPackages()
+    {
+        using var certificate = CreateCertificate();
+        var files = CreateFiles();
+        var signature = PluginPackage.SignFiles(files, certificate);
+        var signedPath = CreateTempPath();
+        var unsignedPath = CreateTempPath();
+        try
+        {
+            await WritePackageAsync(signedPath, files, signature);
+            var signed = await PluginPackage.InspectAsync(signedPath);
+            Assert.IsTrue(signed.IsValid, signed.Error);
+            Assert.IsTrue(signed.IsSigned);
+            Assert.AreEqual(certificate.Thumbprint, signed.SignerThumbprint);
+            Assert.AreEqual(signature.SignedAtUtc, signed.SignedAtUtc);
+
+            await WritePackageAsync(unsignedPath, files, (PluginPackageSignature?)null);
+            var unsigned = await PluginPackage.InspectAsync(unsignedPath);
+            Assert.IsTrue(unsigned.IsValid, unsigned.Error);
+            Assert.IsFalse(unsigned.IsSigned);
+            Assert.IsNull(unsigned.SignedAtUtc);
+        }
+        finally
+        {
+            DeleteIfExists(signedPath);
+            DeleteIfExists(unsignedPath);
+        }
+    }
+
+    [TestMethod]
+    public async Task InspectRejectsTamperingAndUnsafeArchivePaths()
+    {
+        using var certificate = CreateCertificate();
+        var files = CreateFiles();
+        var signature = PluginPackage.SignFiles(files, certificate);
+        var tamperedPath = CreateTempPath();
+        var traversalPath = CreateTempPath();
+        var duplicatePath = CreateTempPath();
+        try
+        {
+            var modified = new Dictionary<string, byte[]>(files, StringComparer.Ordinal)
+            {
+                ["Plugin.dll"] = [1, 3, 3, 7]
+            };
+            await WritePackageAsync(tamperedPath, modified, signature);
+            var tampered = await PluginPackage.InspectAsync(tamperedPath);
+            Assert.IsFalse(tampered.IsValid);
+            Assert.IsFalse(tampered.SignatureValid);
+
+            await using (var stream = File.Create(traversalPath))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
+            {
+                var entry = archive.CreateEntry("../outside.txt");
+                await using var content = entry.Open();
+                await content.WriteAsync(new byte[] { 1 });
+            }
+            var traversal = await PluginPackage.InspectAsync(traversalPath);
+            Assert.IsFalse(traversal.IsValid);
+            Assert.IsNotNull(traversal.Error);
+
+            await using (var stream = File.Create(duplicatePath))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
+            {
+                foreach (var name in new[] { PluginPackage.ManifestFileName, PluginPackage.ManifestFileName })
+                {
+                    var entry = archive.CreateEntry(name);
+                    await using var content = entry.Open();
+                    await content.WriteAsync(files[PluginPackage.ManifestFileName]);
+                }
+            }
+            var duplicate = await PluginPackage.InspectAsync(duplicatePath);
+            Assert.IsFalse(duplicate.IsValid);
+            Assert.IsNotNull(duplicate.Error);
+        }
+        finally
+        {
+            DeleteIfExists(tamperedPath);
+            DeleteIfExists(traversalPath);
+            DeleteIfExists(duplicatePath);
+        }
+    }
+
+    [TestMethod]
+    public void ManifestRejectsMissingEntryAndInvalidIdentifiers()
+    {
+        var manifest = new PluginManifest
+        {
+            Id = "Bad/Plugin",
+            Name = "Test plugin",
+            Version = "1.0.0",
+            Author = "Test",
+            EntryAssembly = "../Plugin.dll"
+        };
+
+        var error = PluginPackage.ValidateManifest(manifest, ["plugin.json", "Plugin.dll"]);
+
+        Assert.IsNotNull(error);
+    }
+
+    [TestMethod]
+    public async Task MarketInstallCorroboratesGitHubDigestAndReleaseTime()
+    {
+        using var certificate = CreateCertificate();
+        var files = CreateFiles();
+        var signature = PluginPackage.SignFiles(files, certificate);
+        var packagePath = CreateTempPath();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-install-test-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            await WritePackageAsync(packagePath, files, signature);
+            var packageBytes = await File.ReadAllBytesAsync(packagePath);
+            var packageHash = Convert.ToHexString(SHA256.HashData(packageBytes)).ToLowerInvariant();
+            var assetUrl = "https://github.com/example/plugins/releases/download/v1.0.0/test.plugin.pclplugin";
+            var publishedAt = DateTimeOffset.UtcNow;
+            var releaseDigest = "sha256:" + packageHash;
+            using var client = new HttpClient(new TestHttpMessageHandler(request =>
+            {
+                if (request.RequestUri!.Host == "api.github.com")
+                {
+                    var releaseJson = JsonSerializer.Serialize(new
+                    {
+                        tag_name = "v1.0.0",
+                        published_at = publishedAt,
+                        assets = new[] { new { name = "test.plugin.pclplugin", digest = releaseDigest } }
+                    });
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(releaseJson, Encoding.UTF8, "application/json")
+                    };
+                }
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(packageBytes) };
+            }));
+            await using var manager = new PluginRuntimeManager(pluginsDirectory, client);
+            var entry = new PluginMarketEntry("test.plugin", "Test plugin", "1.0.0", "Test signer", "",
+                assetUrl, Sha256: packageHash);
+
+            releaseDigest = "sha256:" + new string('0', 64);
+            await Assert.ThrowsExactlyAsync<InvalidDataException>(() =>
+                manager.InstallFromMarketAsync(entry, (_, _) => Task.FromResult(true)));
+            Assert.IsFalse(Directory.Exists(Path.Combine(pluginsDirectory, ".pending-install")));
+
+            releaseDigest = "sha256:" + packageHash;
+            await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+                manager.InstallFromMarketAsync(entry, (_, _) => Task.FromResult(false)));
+            Assert.IsFalse(Directory.Exists(Path.Combine(pluginsDirectory, ".pending-install")));
+
+            var result = await manager.InstallFromMarketAsync(entry, (_, _) => Task.FromResult(true));
+
+            Assert.IsTrue(result.IsSigned);
+            Assert.IsTrue(result.SignatureValid);
+            Assert.IsNotNull(result.GitHubProvenance);
+            Assert.AreEqual("example/plugins", result.GitHubProvenance.Repository);
+            Assert.AreEqual("v1.0.0", result.GitHubProvenance.Tag);
+            Assert.AreEqual(packageHash, result.GitHubProvenance.Sha256);
+            Assert.AreEqual(publishedAt, result.GitHubProvenance.PublishedAtUtc);
+            Assert.IsFalse(result.GitHubProvenance.SignatureTimeAfterPublication);
+
+            publishedAt = DateTimeOffset.UtcNow.AddMinutes(-10);
+            var conflictingTime = await manager.InstallFromMarketAsync(entry, (_, _) => Task.FromResult(true));
+            Assert.IsTrue(conflictingTime.SignatureValid);
+            Assert.IsTrue(conflictingTime.GitHubProvenance!.SignatureTimeAfterPublication);
+        }
+        finally
+        {
+            DeleteIfExists(packagePath);
+            if (Directory.Exists(pluginsDirectory)) Directory.Delete(pluginsDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task RuntimeIsolatesStartupFailureAndPluginStorage()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-runtime-test-" + Guid.NewGuid().ToString("N"));
+        var packages = new List<string>();
+        try
+        {
+            await InstallRuntimePackagesAsync(pluginsDirectory, certificate, packages);
+            AssertRuntimeLoadsPlugins(pluginsDirectory);
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+        finally
+        {
+            foreach (var packagePath in packages) DeleteIfExists(packagePath);
+            PluginPageRegistry.RemovePlugin("runtime.good.one");
+            PluginPageRegistry.RemovePlugin("runtime.good.two");
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    private static async Task InstallRuntimePackagesAsync(string pluginsDirectory, X509Certificate2 certificate,
+        ICollection<string> packages)
+    {
+        await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+        {
+            foreach (var (id, entryType) in new[]
+                     {
+                         ("runtime.good.one", typeof(GoodRuntimePlugin).FullName!),
+                         ("runtime.bad", typeof(FailingRuntimePlugin).FullName!),
+                         ("runtime.good.two", typeof(GoodRuntimePlugin).FullName!)
+                     })
+            {
+                var packagePath = CreateTempPath();
+                packages.Add(packagePath);
+                await WritePackageAsync(packagePath, CreateRuntimeFiles(id, entryType), certificate);
+                await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+            }
+        }
+    }
+
+    private static void AssertRuntimeLoadsPlugins(string pluginsDirectory)
+    {
+        var runtime = new PluginRuntimeManager(pluginsDirectory);
+        try
+        {
+            runtime.LoadEnabledAsync().GetAwaiter().GetResult();
+            var installed = runtime.GetInstalled().ToDictionary(plugin => plugin.Manifest.Id, StringComparer.Ordinal);
+
+            Assert.IsTrue(installed["runtime.good.one"].Running);
+            Assert.IsFalse(installed["runtime.bad"].Running);
+            Assert.IsNotNull(installed["runtime.bad"].Error);
+            Assert.IsTrue(installed["runtime.good.two"].Running);
+            Assert.IsTrue(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.good.one", "started.txt")));
+            Assert.IsTrue(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.good.two", "started.txt")));
+            Assert.AreEqual(2, PluginPageRegistry.GetAll().Count(page => page.PluginId.StartsWith("runtime.good.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            runtime.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        }
+    }
+
+    private static X509Certificate2 CreateCertificate()
+    {
+        const string password = "test-only-password";
+        var pfx = PluginAuthoring.CreateSigningCertificate("CN=PCL Plugin Test", password);
+        return X509CertificateLoader.LoadPkcs12(pfx, password, X509KeyStorageFlags.EphemeralKeySet);
+    }
+
+    private static Dictionary<string, byte[]> CreateFiles()
+    {
+        var manifest = new PluginManifest
+        {
+            Id = "test.plugin",
+            Name = "Test plugin",
+            Version = "1.0.0",
+            Author = "Test signer",
+            EntryAssembly = "Plugin.dll",
+            EntryType = "Test.Plugin"
+        };
+        return new Dictionary<string, byte[]>(StringComparer.Ordinal)
+        {
+            [PluginPackage.ManifestFileName] = JsonSerializer.SerializeToUtf8Bytes(manifest, PluginPackage.SerializerOptions),
+            ["Plugin.dll"] = [0, 1, 2, 3]
+        };
+    }
+
+    private static Dictionary<string, byte[]> CreateRuntimeFiles(string id, string entryType)
+    {
+        var manifest = new PluginManifest
+        {
+            Id = id,
+            Name = id,
+            Version = "1.0.0",
+            Author = "Runtime test",
+            EntryAssembly = "PCL.Core.Test.dll",
+            EntryType = entryType
+        };
+        return new Dictionary<string, byte[]>(StringComparer.Ordinal)
+        {
+            [PluginPackage.ManifestFileName] = JsonSerializer.SerializeToUtf8Bytes(manifest, PluginPackage.SerializerOptions),
+            [manifest.EntryAssembly] = File.ReadAllBytes(typeof(PluginPackageTests).Assembly.Location)
+        };
+    }
+
+    private static async Task WritePackageAsync(string path, IReadOnlyDictionary<string, byte[]> files,
+        PluginPackageSignature? signature)
+    {
+        await using var stream = File.Create(path);
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
+        foreach (var (name, contents) in files)
+        {
+            var entry = archive.CreateEntry(name);
+            await using var output = entry.Open();
+            await output.WriteAsync(contents);
+        }
+        if (signature is null) return;
+        var signatureEntry = archive.CreateEntry(PluginPackage.SignatureFileName);
+        await using var signatureOutput = signatureEntry.Open();
+        await JsonSerializer.SerializeAsync(signatureOutput, signature, PluginPackage.SerializerOptions);
+    }
+
+    private static Task WritePackageAsync(string path, IReadOnlyDictionary<string, byte[]> files, X509Certificate2 certificate) =>
+        WritePackageAsync(path, files, PluginPackage.SignFiles(files, certificate));
+
+    private static string CreateTempPath() => Path.Combine(Path.GetTempPath(), "pcl-plugin-test-" + Guid.NewGuid().ToString("N") + PluginPackage.Extension);
+
+    private static void DeleteIfExists(string path)
+    {
+        if (File.Exists(path)) File.Delete(path);
+    }
+
+    private static void DeleteRuntimeDirectory(string path)
+    {
+        for (var attempt = 0; attempt < 10 && Directory.Exists(path); attempt++)
+        {
+            try { Directory.Delete(path, recursive: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                Thread.Sleep(50);
+            }
+        }
+        if (Directory.Exists(path))
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                try { Directory.Delete(path, recursive: true); } catch { }
+            };
+    }
+
+    private sealed class TestHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> send) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(send(request));
+    }
+}
+
+public sealed class GoodRuntimePlugin : IPclPlugin
+{
+    public async Task StartAsync(IPluginContext context, CancellationToken cancellationToken)
+    {
+        await context.Storage.WriteTextAsync("started.txt", context.DataDirectory, cancellationToken);
+        context.Ui.RegisterPage("test", context.Plugin.Id, () => new System.Windows.Controls.TextBlock());
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+public sealed class FailingRuntimePlugin : IPclPlugin
+{
+    public Task StartAsync(IPluginContext context, CancellationToken cancellationToken) =>
+        throw new InvalidOperationException("intentional test startup failure");
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}

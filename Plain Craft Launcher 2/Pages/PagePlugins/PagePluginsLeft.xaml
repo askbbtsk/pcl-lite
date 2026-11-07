@@ -1,0 +1,19 @@
+<local:MyPageLeft x:Class="PCL.PagePluginsLeft"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:local="clr-namespace:PCL"
+                  Width="260">
+    <local:MyScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel x:Name="PanItem" Margin="0,12,0,0">
+            <TextBlock Text="{DynamicResource Plugin.Left.Category}" Margin="13,5,5,3" Opacity="0.6" FontSize="12" />
+            <local:MyListItem x:Name="ItemMarket" Tag="20" Height="36" MinPaddingRight="35"
+                              Type="RadioBox" Check="PageCheck"
+                              Title="{DynamicResource Plugin.Left.Market}"
+                              SvgIcon="lucide/package-plus" LogoScale="0.9" />
+            <local:MyListItem x:Name="ItemInstalled" Tag="21" Height="36" MinPaddingRight="35"
+                              Type="RadioBox" Check="PageCheck"
+                              Title="{DynamicResource Plugin.Left.Installed}"
+                              SvgIcon="lucide/puzzle" LogoScale="0.9" />
+        </StackPanel>
+    </local:MyScrollViewer>
+</local:MyPageLeft>

@@ -18,6 +18,8 @@ using PCL.Core.Minecraft.Profile.Authentication;
 using PCL.Core.Minecraft.Profile.Models;
 using System.Globalization;
 using PCL.Core.Logging;
+using PCL.Core.Plugins;
+using PCL.Plugin.SDK;
 
 namespace PCL;
 
@@ -220,6 +222,9 @@ public static class ModLaunch
         }
 
         ModMain.frmMain.AprilGiveup();
+        var launchEventInstance = currentLaunchOptions.instance ?? ModInstanceList.McMcInstanceSelected;
+        if (launchEventInstance is not null)
+            PluginRuntimeManager.Notify(new PluginGameLaunchingEvent(launchEventInstance.PathInstance, launchEventInstance.Name));
         // 禁止进入实例选择页面（否则就可以在启动中切换 McInstanceCurrent 了）
         ModMain.frmMain.pageStack =
             ModMain.frmMain.pageStack.Where(p => p.page != FormMain.PageType.InstanceSelect).ToList();
@@ -2564,8 +2569,23 @@ public static class ModLaunch
         startInfo.Arguments = mcLaunchArgument;
         gameProcess.StartInfo = startInfo;
 
+        var startedInstance = currentLaunchOptions?.instance ?? ModInstanceList.McMcInstanceSelected;
+        var startedId = startedInstance?.PathInstance;
+        var startedName = startedInstance?.Name;
+        if (startedId is not null && startedName is not null)
+        {
+            gameProcess.EnableRaisingEvents = true;
+            gameProcess.Exited += (_, _) =>
+            {
+                try { PluginRuntimeManager.Notify(new PluginGameExitedEvent(startedId, startedName, gameProcess.ExitCode)); }
+                catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", "发布游戏退出事件失败"); }
+            };
+        }
+
         // 开始进程
         gameProcess.Start();
+        if (startedId is not null && startedName is not null)
+            PluginRuntimeManager.Notify(new PluginGameStartedEvent(startedId, startedName, gameProcess.Id));
         McLaunchLog("已启动游戏进程：" + startInfo.FileName);
         if (loader.IsAborted)
         {

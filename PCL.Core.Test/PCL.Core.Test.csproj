@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PCL.Core\PCL.Core.csproj" />
+    <ProjectReference Include="..\PCL.Plugin.SDK\PCL.Plugin.SDK.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Net\**" />

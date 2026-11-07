@@ -196,6 +196,30 @@ public sealed class PluginApiRuntimeTests
             cancellationToken.ThrowIfCancellationRequested();
             if (request.RequestUri?.Host != "plugin.test")
                 throw new InvalidOperationException("Unexpected network host in API probe.");
+            if (request.RequestUri.AbsolutePath == "/binary")
+            {
+                var content = new ByteArrayContent([0x00, 0xFF, 0x10, 0x80, 0x41]);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+            }
+            if (request.RequestUri.AbsolutePath == "/utf16")
+            {
+                var content = new ByteArrayContent(Encoding.Unicode.GetBytes("charset ✓"));
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain")
+                {
+                    CharSet = "utf-16"
+                };
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+            }
+            if (request.RequestUri.AbsolutePath == "/unknown-charset")
+            {
+                var content = new ByteArrayContent(Encoding.UTF8.GetBytes("fallback"));
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain")
+                {
+                    CharSet = "unknown-charset"
+                };
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+            }
             var body = request.RequestUri.AbsolutePath switch
             {
                 "/get" => "get-response",
@@ -355,6 +379,16 @@ public sealed class ApiProbePlugin : IPclPlugin
         var get = await context.Network.GetAsync(new Uri("https://plugin.test/get"), cancellationToken);
         Require(get.StatusCode == 200 && get.Content == "get-response", "HTTP GET");
         Require(get.Headers.ContainsKey("Content-Type"), "HTTP response headers");
+        var binary = await context.Network.GetAsync(new Uri("https://plugin.test/binary"), cancellationToken);
+        Require(binary.ContentType == "application/octet-stream" &&
+                binary.ContentBytes.Span.SequenceEqual(new byte[] { 0x00, 0xFF, 0x10, 0x80, 0x41 }),
+            "HTTP binary response bytes and content type");
+        var utf16 = await context.Network.GetAsync(new Uri("https://plugin.test/utf16"), cancellationToken);
+        Require(utf16.Content == "charset ✓" && utf16.ContentBytes.Span.SequenceEqual(Encoding.Unicode.GetBytes("charset ✓")),
+            "HTTP text response follows its declared UTF-16 charset");
+        var unknownCharset = await context.Network.GetAsync(new Uri("https://plugin.test/unknown-charset"), cancellationToken);
+        Require(unknownCharset.Content == "fallback" && unknownCharset.ContentType?.Contains("unknown-charset", StringComparison.Ordinal) == true,
+            "unsupported HTTP charset falls back to UTF-8 and preserves the original content type");
         var post = await context.Network.SendAsync(HttpMethod.Post, new Uri("https://plugin.test/post"), "request",
             "text/plain", cancellationToken);
         Require(post.StatusCode == 200 && post.Content == "post-response", "HTTP POST");

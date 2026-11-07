@@ -47,12 +47,12 @@ IDisposable subscription = context.Events.Subscribe<PluginGameStartedEvent>(
 
 ## 网络和下载
 
-- `Network.GetAsync`、`Network.SendAsync`：HTTP 请求，返回状态码、正文和响应头。请求和响应正文各不超过 16 MiB；检查状态码并处理超时/取消/网络错误。
+- `Network.GetAsync`、`Network.SendAsync`：HTTP 请求，返回状态码、原始 `ContentBytes`、`ContentType`、响应头及正文 `Content`。文本正文按响应的 charset 解码；未声明或不支持的 charset 回退 UTF-8。二进制响应使用 `ContentBytes`，不要使用可能含替换字符的 `Content`。
 - `Launcher.DownloadAsync(uri, relativePath, progress, cancellationToken)`：只允许 HTTPS，单次下载不超过 64 MiB，目标限定在插件数据目录，和 Storage 共用配额锁，写入随机临时文件，完整成功且 Content-Length 匹配后原子替换，可报告字节进度。
 
 HTTP API 可向插件配置的地址发送请求，不代表该地址可信。避免把令牌放入 URL 或日志；校验远端数据和下载内容。大文件应使用流式处理，不要额外复制整个内容到内存。
 
-`Network` 返回完整字符串正文而不是流，响应会在内存中缓冲。16 MiB 是接口保护上限，插件应请求更小的内容。
+`Network` 返回完整字节正文而不是流，响应会在内存中缓冲；`Content` 是方便处理文本的解码视图。请求和响应正文各不超过 16 MiB，插件应请求更小的内容。
 
 ## Minecraft 和启动器
 

@@ -91,7 +91,14 @@ public interface IPluginNetwork
         CancellationToken cancellationToken = default);
 }
 
-public sealed record PluginHttpResponse(int StatusCode, string Content, IReadOnlyDictionary<string, string[]> Headers);
+public sealed record PluginHttpResponse(int StatusCode, string Content, IReadOnlyDictionary<string, string[]> Headers)
+{
+    /// <summary>Response payload bytes. Host responses retain the original bytes; use this for binary content.</summary>
+    public ReadOnlyMemory<byte> ContentBytes { get; init; } = System.Text.Encoding.UTF8.GetBytes(Content);
+
+    /// <summary>Raw Content-Type header value, if the response supplied one.</summary>
+    public string? ContentType { get; init; }
+}
 
 public interface IPluginMinecraft
 {

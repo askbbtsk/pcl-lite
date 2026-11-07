@@ -1687,9 +1687,25 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     throw new InvalidDataException("Plugin HTTP response exceeds the 16 MiB limit.");
                 await bodyStream.WriteAsync(buffer.AsMemory(0, count), cancellationToken).ConfigureAwait(false);
             }
-            var body = System.Text.Encoding.UTF8.GetString(bodyStream.ToArray());
-            return new((int)response.StatusCode, body, response.Headers.Concat(response.Content.Headers)
-                .ToDictionary(pair => pair.Key, pair => pair.Value.ToArray(), StringComparer.OrdinalIgnoreCase));
+            var bodyBytes = bodyStream.ToArray();
+            var mediaType = response.Content.Headers.ContentType;
+            var body = _GetResponseEncoding(mediaType?.CharSet).GetString(bodyBytes);
+            return new PluginHttpResponse((int)response.StatusCode, body, response.Headers.Concat(response.Content.Headers)
+                .ToDictionary(pair => pair.Key, pair => pair.Value.ToArray(), StringComparer.OrdinalIgnoreCase))
+            {
+                ContentBytes = bodyBytes,
+                ContentType = mediaType?.ToString()
+            };
+        }
+
+        private static System.Text.Encoding _GetResponseEncoding(string? charset)
+        {
+            if (string.IsNullOrWhiteSpace(charset)) return System.Text.Encoding.UTF8;
+            try { return System.Text.Encoding.GetEncoding(charset.Trim().Trim('"', '\'')); }
+            catch (Exception exception) when (exception is ArgumentException or NotSupportedException)
+            {
+                return System.Text.Encoding.UTF8;
+            }
         }
     }
 

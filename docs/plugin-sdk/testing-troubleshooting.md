@@ -37,7 +37,7 @@ dotnet build .\PCL.Plugin.Sample\PCL.Plugin.Sample.csproj
 
 宿主 API 专项测试 `PluginApiRuntimeTests.LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions` 覆盖插件生命周期和停止、独立存储/设置、日志等级、UI 桥接、事件、HTTP 16 MiB 响应上限、Minecraft 桥接、HTTPS 下载 64 MiB 上限、取消、超限声明 Content-Length、声明长度与实际字节数不符时保留原文件，以及临时文件原子清理。包与市场安全测试覆盖低于 2048 位 RSA 拒绝、市场索引/Release JSON 响应限制、条目上限和 HTTPS 重定向限制。Mixin 集成测试 `PluginMixinPackageRuntimeTests.SignedPackagesApplyMixinRollbackFailedPluginAndRestoreHostMethodOnShutdown` 验证签名包安装和加载、Mixin 应用、必需配置失败回滚，以及管理器释放时恢复目标方法；另有安全模式跳过补丁测试。测试未覆盖存储 256 MiB 总量、64 MiB 单文件及 10,000 文件的极限压力；这些配额也不是对任意同进程文件访问的强制隔离。完整真实 UI 和游戏进程仍需发行构建回归；每种 Mixin 操作还需要各自的目标、匹配和运行效果用例。
 
-依赖版本范围和拓扑加载由 `PluginDependencyResolverTests` 覆盖；签名包的跨插件启动先后由 `PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` 覆盖。该管理器当前不会自动下载或更新依赖。
+依赖版本范围和拓扑加载由 `PluginDependencyResolverTests` 覆盖；`PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` 通过两个独立程序集验证依赖先启动且其公开类型可由消费者加载；`RuntimeBlocksDependentsWhenProviderLifecycleFails` 验证提供方启动失败后的传播。该管理器当前不会自动下载或更新依赖。
 
 ## 贡献和本地留痕
 

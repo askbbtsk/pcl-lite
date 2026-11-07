@@ -572,7 +572,8 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private async Task _PreparePluginAsync(string directory, PluginManifest manifest, CancellationToken cancellationToken)
     {
         var assemblyPath = Path.Combine(directory, manifest.EntryAssembly.Replace('/', Path.DirectorySeparatorChar));
-        var loadContext = new PluginAssemblyLoadContext(directory, assemblyPath);
+        var sharedAssemblies = _ResolveDependencyAssemblies(manifest);
+        var loadContext = new PluginAssemblyLoadContext(directory, assemblyPath, sharedAssemblies);
         var assembly = loadContext.LoadFromAssemblyPath(Path.GetFullPath(assemblyPath));
         try
         {
@@ -588,6 +589,34 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             loadContext.Unload();
             throw;
         }
+    }
+
+    private Dictionary<string, Assembly> _ResolveDependencyAssemblies(PluginManifest manifest)
+    {
+        var result = new Dictionary<string, Assembly>(StringComparer.OrdinalIgnoreCase);
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+
+        void AddDependency(string pluginId)
+        {
+            if (!visited.Add(pluginId)) return;
+            if (!_prepared.TryGetValue(pluginId, out var dependency))
+                throw new InvalidDataException($"Required plugin dependency is not prepared: {pluginId}.");
+            var assembly = dependency.Assembly;
+            var name = assembly.GetName().Name;
+            if (!string.IsNullOrWhiteSpace(name) && result.TryGetValue(name, out var existing))
+            {
+                if (!ReferenceEquals(existing, assembly))
+                    throw new InvalidDataException($"Conflicting dependency assemblies use the same name: {name}.");
+            }
+            else if (!string.IsNullOrWhiteSpace(name)) result[name] = assembly;
+
+            foreach (var transitiveDependency in dependency.Manifest.Dependencies.Keys.Order(StringComparer.Ordinal))
+                AddDependency(transitiveDependency);
+        }
+
+        foreach (var dependencyId in manifest.Dependencies.Keys.Order(StringComparer.Ordinal))
+            AddDependency(dependencyId);
+        return result;
     }
 
     private async Task _StartPluginAsync(PreparedPlugin prepared, CancellationToken cancellationToken)
@@ -961,12 +990,20 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private sealed record PreparedPlugin(PluginManifest Manifest, PluginAssemblyLoadContext LoadContext,
         Assembly Assembly, Type EntryType);
 
-    private sealed class PluginAssemblyLoadContext(string pluginDirectory, string entryAssemblyPath) : AssemblyLoadContext(isCollectible: true)
+    private sealed class PluginAssemblyLoadContext(string pluginDirectory, string entryAssemblyPath,
+        IReadOnlyDictionary<string, Assembly> sharedDependencies) : AssemblyLoadContext(isCollectible: true)
     {
         private readonly AssemblyDependencyResolver _resolver = new(Path.GetFullPath(entryAssemblyPath));
+        public IReadOnlyDictionary<string, Assembly> SharedDependencies { get; } = sharedDependencies;
         protected override Assembly? Load(AssemblyName assemblyName)
         {
             if (assemblyName.Name == typeof(IPclPlugin).Assembly.GetName().Name) return typeof(IPclPlugin).Assembly;
+            if (assemblyName.Name is not null && SharedDependencies.TryGetValue(assemblyName.Name, out var sharedAssembly))
+            {
+                if (!AssemblyName.ReferenceMatchesDefinition(assemblyName, sharedAssembly.GetName()))
+                    throw new FileLoadException($"Plugin dependency assembly identity does not match: {assemblyName.FullName}.");
+                return sharedAssembly;
+            }
             var path = _resolver.ResolveAssemblyToPath(assemblyName);
             return path is null ? null : LoadFromAssemblyPath(path);
         }

@@ -12,6 +12,9 @@
   <Project Path="PCL.Plugin.SDK\PCL.Plugin.SDK.csproj" Type="C#" />
   <Project Path="PCL.Plugin.Sample\PCL.Plugin.Sample.csproj" Type="C#" />
   <Project Path="PCL.Plugin.Tools\PCL.Plugin.Tools.csproj" Type="C#" />
+  <Project Path="PCL.Plugin.Dependency.TestSupport\PCL.Plugin.Dependency.TestSupport.csproj" Type="C#">
+    <Build Solution="*|*" Project="false" />
+    </Project>
   <Project Path="PCL.Core.SourceGenerators\PCL.Core.SourceGenerators.csproj" Type="C#" />
   <Project Path="PCL.Core.Test\PCL.Core.Test.csproj" Type="C#">
     <Build Solution="*|*" Project="false" />

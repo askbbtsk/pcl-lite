@@ -20,10 +20,10 @@
 - 波浪范围：`~1.2.3`，即大于等于该版本且低于下一个 minor
 - 任意 SemVer：`*`
 
-当前管理器**不会自动下载或更新依赖**。作者应在测试和发布说明中清楚列出需要先安装的插件。缺失、禁用、版本不匹配、依赖环或依赖插件加载失败时，依赖它的插件会显示具体错误并跳过加载；其 Mixin 不会留下部分补丁。依赖插件先应用 Mixin、先执行 `StartAsync`，停止时按相反顺序释放。
+当前管理器**不会自动下载或更新依赖**。作者应在测试和发布说明中清楚列出需要先安装的插件。依赖插件的入口程序集会共享给消费者的加载上下文，因此消费者可在编译时引用依赖插件公开的 .NET 类型，而不用把同一个依赖 DLL 再复制进包；同名依赖程序集冲突会拒绝加载。缺失、禁用、版本不匹配、依赖环或依赖插件加载失败时，依赖它的插件会显示具体错误并跳过加载；其 Mixin 不会留下部分补丁。依赖插件先应用 Mixin、先执行 `StartAsync`，停止时按相反顺序释放。
 
 禁用、卸载或更新依赖后重启启动器，依赖关系才会重新检查。插件依赖不是沙箱或权限边界；插件仍在同一个启动器进程和用户权限下运行。不要通过直接读取其他插件的私有数据目录来建立依赖协议。
 
 ## 验证
 
-`PluginDependencyResolverTests` 覆盖 SemVer 范围、预发布版本、依赖拓扑、缺失/禁用/不匹配依赖以及环和下游阻断。`PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` 通过真实签名包安装、加载两个编译程序集，确认依赖先启动后消费者启动；`RuntimeBlocksDependentsWhenProviderLifecycleFails` 确认依赖启动失败会阻止消费者运行。
+`PluginDependencyResolverTests` 覆盖 SemVer 范围、预发布版本、依赖拓扑、缺失/禁用/不匹配依赖以及环和下游阻断。`PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` 通过真实签名包安装、加载两个不同编译程序集，确认依赖程序集可共享且依赖先启动；`RuntimeBlocksDependentsWhenProviderLifecycleFails` 确认依赖启动失败会阻止消费者运行。

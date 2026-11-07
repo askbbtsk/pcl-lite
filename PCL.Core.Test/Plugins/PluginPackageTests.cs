@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.Plugins;
+using PCL.Plugin.Dependency.TestSupport;
 using PCL.Plugin.SDK;
 
 namespace PCL.Core.Test.Plugins;
@@ -513,7 +514,10 @@ public sealed class PluginPackageTests
                 {
                     var packagePath = CreateTempPath();
                     packagePaths.Add(packagePath);
-                    await WritePackageAsync(packagePath, CreateRuntimeFiles(id, type, dependencies), certificate);
+                    var files = id == "zeta.provider"
+                        ? CreateDependencyProviderFiles(id, type)
+                        : CreateRuntimeFiles(id, type, dependencies);
+                    await WritePackageAsync(packagePath, files, certificate);
                     await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
                 }
             }
@@ -689,6 +693,25 @@ public sealed class PluginPackageTests
         };
     }
 
+    private static Dictionary<string, byte[]> CreateDependencyProviderFiles(string id, string entryType)
+    {
+        var assemblyPath = typeof(DependencyProviderPlugin).Assembly.Location;
+        var manifest = new PluginManifest
+        {
+            Id = id,
+            Name = id,
+            Version = "1.0.0",
+            Author = "Runtime test",
+            EntryAssembly = Path.GetFileName(assemblyPath),
+            EntryType = entryType
+        };
+        return new Dictionary<string, byte[]>(StringComparer.Ordinal)
+        {
+            [PluginPackage.ManifestFileName] = JsonSerializer.SerializeToUtf8Bytes(manifest, PluginPackage.SerializerOptions),
+            [manifest.EntryAssembly] = File.ReadAllBytes(assemblyPath)
+        };
+    }
+
     private static async Task WritePackageAsync(string path, IReadOnlyDictionary<string, byte[]> files,
         PluginPackageSignature? signature)
     {
@@ -742,20 +765,12 @@ public sealed class PluginPackageTests
     }
 }
 
-public sealed class DependencyProviderPlugin : IPclPlugin
-{
-    public Task StartAsync(IPluginContext context, CancellationToken cancellationToken) =>
-        context.Storage.WriteTextAsync("ready.txt", "ready", cancellationToken);
-
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-}
-
 public sealed class DependencyConsumerPlugin : IPclPlugin
 {
     public Task StartAsync(IPluginContext context, CancellationToken cancellationToken)
     {
         var dependencyReadyPath = Path.Combine(context.Launcher.PluginsDirectory, ".plugin-data", "zeta.provider", "ready.txt");
-        if (!File.Exists(dependencyReadyPath))
+        if (!File.Exists(dependencyReadyPath) || SharedPluginApi.GetProviderToken() != "shared-provider-assembly-ready")
             throw new InvalidOperationException("The required provider was not started before this plugin.");
         return context.Storage.WriteTextAsync("started.txt", "started", cancellationToken);
     }

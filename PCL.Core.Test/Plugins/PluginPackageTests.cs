@@ -216,6 +216,13 @@ public sealed class PluginPackageTests
             EntryAssembly = "Plugin.dll"
         };
         Assert.IsNotNull(PluginPackage.ValidateManifest(manifest, ["Plugin.dll"]));
+        var invalidDependencyManifest = manifest with
+        {
+            Author = "Test",
+            Dependencies = new(StringComparer.Ordinal) { ["test.plugin"] = "*" }
+        };
+        Assert.IsNotNull(PluginPackage.ValidateManifest(invalidDependencyManifest, ["Plugin.dll"]));
+        Assert.IsFalse(PluginVersionRange.IsValid("^1.02.0"));
 
         foreach (var json in new[]
                  {
@@ -486,6 +493,46 @@ public sealed class PluginPackageTests
     }
 
     [TestMethod]
+    public async Task RuntimeStartsCompiledPluginsInDependencyOrder()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-dependency-runtime-" + Guid.NewGuid().ToString("N"));
+        var packagePaths = new List<string>();
+        try
+        {
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+            {
+                foreach (var (id, type, dependencies) in new[]
+                         {
+                             ("zeta.provider", typeof(DependencyProviderPlugin).FullName!,
+                                 (IReadOnlyDictionary<string, string>)new Dictionary<string, string>()),
+                             ("alpha.consumer", typeof(DependencyConsumerPlugin).FullName!,
+                                 (IReadOnlyDictionary<string, string>)new Dictionary<string, string>
+                                     { ["zeta.provider"] = "^1.0.0" })
+                         })
+                {
+                    var packagePath = CreateTempPath();
+                    packagePaths.Add(packagePath);
+                    await WritePackageAsync(packagePath, CreateRuntimeFiles(id, type, dependencies), certificate);
+                    await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+                }
+            }
+
+            await using var runtime = new PluginRuntimeManager(pluginsDirectory);
+            await runtime.LoadEnabledAsync();
+            var installed = runtime.GetInstalled().ToDictionary(plugin => plugin.Manifest.Id);
+            Assert.IsTrue(installed["zeta.provider"].Running, installed["zeta.provider"].Error);
+            Assert.IsTrue(installed["alpha.consumer"].Running, installed["alpha.consumer"].Error);
+            Assert.IsTrue(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "alpha.consumer", "started.txt")));
+        }
+        finally
+        {
+            foreach (var packagePath in packagePaths) DeleteIfExists(packagePath);
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
     public async Task RuntimeSkipsInstalledPluginWithOversizedSignatureMetadata()
     {
         using var certificate = CreateCertificate();
@@ -581,7 +628,8 @@ public sealed class PluginPackageTests
         };
     }
 
-    private static Dictionary<string, byte[]> CreateRuntimeFiles(string id, string entryType)
+    private static Dictionary<string, byte[]> CreateRuntimeFiles(string id, string entryType,
+        IReadOnlyDictionary<string, string>? dependencies = null)
     {
         var manifest = new PluginManifest
         {
@@ -590,7 +638,8 @@ public sealed class PluginPackageTests
             Version = "1.0.0",
             Author = "Runtime test",
             EntryAssembly = "PCL.Core.Test.dll",
-            EntryType = entryType
+            EntryType = entryType,
+            Dependencies = dependencies?.ToDictionary(item => item.Key, item => item.Value) ?? new(StringComparer.Ordinal)
         };
         return new Dictionary<string, byte[]>(StringComparer.Ordinal)
         {
@@ -650,6 +699,27 @@ public sealed class PluginPackageTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(send(request));
     }
+}
+
+public sealed class DependencyProviderPlugin : IPclPlugin
+{
+    public Task StartAsync(IPluginContext context, CancellationToken cancellationToken) =>
+        context.Storage.WriteTextAsync("ready.txt", "ready", cancellationToken);
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+public sealed class DependencyConsumerPlugin : IPclPlugin
+{
+    public Task StartAsync(IPluginContext context, CancellationToken cancellationToken)
+    {
+        var dependencyReadyPath = Path.Combine(context.Launcher.PluginsDirectory, ".plugin-data", "zeta.provider", "ready.txt");
+        if (!File.Exists(dependencyReadyPath))
+            throw new InvalidOperationException("The required provider was not started before this plugin.");
+        return context.Storage.WriteTextAsync("started.txt", "started", cancellationToken);
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 public sealed class GoodRuntimePlugin : IPclPlugin

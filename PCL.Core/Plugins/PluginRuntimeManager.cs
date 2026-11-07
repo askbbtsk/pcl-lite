@@ -370,6 +370,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         _current = this;
         Directory.CreateDirectory(_pluginsDirectory);
         lock (_sync) _installed.Clear();
+        var candidates = new List<PluginDependencyCandidate>();
         foreach (var directory in Directory.EnumerateDirectories(_pluginsDirectory)
                      .Where(path => !Path.GetFileName(path).StartsWith(".", StringComparison.Ordinal))
                      .OrderBy(Path.GetFileName, StringComparer.Ordinal))
@@ -413,30 +414,53 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     if (!string.Equals(state.ExpectedHash, PluginPackage.CreateFileContentHash(files), StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("Unsigned plugin contents changed after installation.");
                 }
-                if (await _IsEnabledAsync(manifest.Id, cancellationToken).ConfigureAwait(false))
-                {
-                    if (IsSafeMode)
-                    {
-                        _AddInstalled(new(manifest, directory, true, false, "Plugin loading skipped by safe mode."));
-                        continue;
-                    }
-                    try
-                    {
-                        await _PreparePluginAsync(directory, manifest, cancellationToken).ConfigureAwait(false);
-                        _AddInstalled(new(manifest, directory, true, false, null));
-                    }
-                    catch (Exception ex)
-                    {
-                        LogWrapper.Error(ex, "Plugin", $"插件 {manifest.Id} 加载或应用 Mixin 失败");
-                        _AddInstalled(new(manifest, directory, true, false, ex.Message));
-                    }
-                }
-                else _AddInstalled(new(manifest, directory, false, false));
+                var enabled = await _IsEnabledAsync(manifest.Id, cancellationToken).ConfigureAwait(false);
+                candidates.Add(new(manifest, directory, enabled));
             }
             catch (Exception ex)
             {
                 LogWrapper.Warn(ex, "Plugin", $"跳过无效插件目录 {Path.GetFileName(directory)}");
                 if (manifest is not null) _AddInstalled(new(manifest, directory, false, false, ex.Message));
+            }
+        }
+
+        foreach (var candidate in candidates.Where(candidate => !candidate.Enabled))
+            _AddInstalled(new(candidate.Manifest, candidate.Directory, false, false));
+
+        var dependencyResolution = PluginDependencyResolver.Resolve(candidates);
+        foreach (var (pluginId, error) in dependencyResolution.Blocked)
+        {
+            var candidate = candidates.Single(item => item.Manifest.Id == pluginId);
+            _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false, error));
+            LogWrapper.Warn("Plugin", $"插件 {pluginId} 依赖检查失败：{error}");
+        }
+
+        foreach (var candidate in dependencyResolution.LoadOrder)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsSafeMode)
+            {
+                _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false,
+                    "Plugin loading skipped by safe mode."));
+                continue;
+            }
+
+            var failedDependency = candidate.Manifest.Dependencies.Keys.FirstOrDefault(id => !_prepared.ContainsKey(id));
+            if (failedDependency is not null)
+            {
+                var error = $"Plugin dependency failed during Mixin preparation: {failedDependency}.";
+                _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false, error));
+                continue;
+            }
+            try
+            {
+                await _PreparePluginAsync(candidate.Directory, candidate.Manifest, cancellationToken).ConfigureAwait(false);
+                _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false, null));
+            }
+            catch (Exception ex)
+            {
+                LogWrapper.Error(ex, "Plugin", $"插件 {candidate.Manifest.Id} 加载或应用 Mixin 失败");
+                _AddInstalled(new(candidate.Manifest, candidate.Directory, true, false, ex.Message));
             }
         }
     }
@@ -447,6 +471,20 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         foreach (var prepared in _prepared.Values.ToArray())
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var failedDependency = prepared.Manifest.Dependencies.Keys.FirstOrDefault(id =>
+                !_running.Any(plugin => string.Equals(plugin.Manifest.Id, id, StringComparison.Ordinal)));
+            if (failedDependency is not null)
+            {
+                var error = $"Plugin dependency failed to start: {failedDependency}.";
+                LogWrapper.Warn("Plugin", $"插件 {prepared.Manifest.Id} 未启动：{error}");
+                lock (_sync)
+                {
+                    var index = _installed.FindIndex(item => item.Manifest.Id == prepared.Manifest.Id);
+                    if (index >= 0) _installed[index] = _installed[index] with { Running = false, Error = error };
+                }
+                _RollbackPrepared(prepared);
+                continue;
+            }
             try
             {
                 await _StartPluginAsync(prepared, cancellationToken).ConfigureAwait(false);

@@ -11,6 +11,7 @@ PCL Lite 插件是 **编译后的 .NET 程序集**，不是脚本。普通插件
 | 新建、构建、打包最小插件 | [快速开始](quickstart.md) |
 | 调用启动器提供的全部接口 | [宿主 API 参考](api-reference.md) |
 | 改启动器内部方法、字段或 IL 调用 | [Mixin 指南](mixins.md) |
+| 声明插件间依赖和版本要求 | [依赖与加载顺序](dependencies.md) |
 | 清单、证书、签名、安装和信任 | [包格式与安全](packaging-security.md) |
 | 测试、故障定位和提交前检查 | [测试与排错](testing-troubleshooting.md) |
 

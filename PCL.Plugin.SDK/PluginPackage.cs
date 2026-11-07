@@ -24,6 +24,7 @@ public sealed record PluginManifest
     public string EntryType { get; init; } = "Plugin";
     public string? MixinConfig { get; init; }
     public IReadOnlyList<string> MixinConfigs { get; init; } = [];
+    public Dictionary<string, string> Dependencies { get; init; } = new(StringComparer.Ordinal);
     public string? Website { get; init; }
     /// <summary>Optional direct GitHub release asset URL used to corroborate package hash and publish time.</summary>
     public string? ReleaseAssetUrl { get; init; }
@@ -283,6 +284,7 @@ public static class PluginPackage
             !char.IsAsciiLetterOrDigit(manifest.Id[0])) return "Plugin id must contain lowercase letters, digits, dots, and hyphens.";
         if (string.IsNullOrWhiteSpace(manifest.Name) || manifest.Name.Length > 120) return "Plugin name is missing or too long.";
         if (string.IsNullOrWhiteSpace(manifest.Version) || manifest.Version.Length > 64) return "Plugin version is missing or too long.";
+        if (!PluginVersionRange.IsValidVersion(manifest.Version)) return "Plugin version must follow SemVer 2.0.";
         if (string.IsNullOrWhiteSpace(manifest.Author) || manifest.Author.Length > 128) return "Plugin author is missing or too long.";
         if (manifest.Description is null || manifest.Description.Length > 4096) return "Plugin description is missing or too long.";
         if (manifest.ApiVersion != PluginApiVersion.Current) return $"Plugin API version {manifest.ApiVersion} is not supported.";
@@ -300,6 +302,18 @@ public static class PluginPackage
             return "Plugin release asset URL must be an HTTPS GitHub release asset URL.";
         if (manifest.MixinConfigs is null) return "Mixin configuration list cannot be null.";
         if (manifest.MixinConfigs.Count > 64) return "Plugin declares too many Mixin configurations.";
+        if (manifest.Dependencies is null || manifest.Dependencies.Count > 64)
+            return "Plugin dependency list is missing or exceeds 64 entries.";
+        var seenDependencies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (dependencyId, versionRange) in manifest.Dependencies)
+        {
+            if (!IsValidPluginId(dependencyId) || !seenDependencies.Add(dependencyId))
+                return $"Plugin dependency id is invalid or duplicated: {dependencyId}";
+            if (string.Equals(dependencyId, manifest.Id, StringComparison.OrdinalIgnoreCase))
+                return "A plugin cannot depend on itself.";
+            if (!PluginVersionRange.IsValid(versionRange))
+                return $"Plugin dependency version range is invalid: {dependencyId} ({versionRange})";
+        }
         var mixinConfigurations = new List<string>();
         if (!string.IsNullOrWhiteSpace(manifest.MixinConfig)) mixinConfigurations.Add(manifest.MixinConfig);
         if (manifest.MixinConfigs.Any(string.IsNullOrWhiteSpace)) return "Mixin configuration paths cannot be empty.";
@@ -367,6 +381,10 @@ public static class PluginPackage
                 part.Length > MaximumPathSegmentLength))
             throw new ArgumentException($"Unsafe package path: {path}");
     }
+
+    private static bool IsValidPluginId(string? id) => !string.IsNullOrWhiteSpace(id) && id.Length <= 64 &&
+        char.IsAsciiLetterOrDigit(id[0]) &&
+        id.All(character => char.IsAsciiLetterLower(character) || char.IsAsciiDigit(character) || character is '.' or '-');
 
     public static async Task<IReadOnlyDictionary<string, byte[]>> ReadPackageFilesAsync(string packagePath,
         CancellationToken cancellationToken = default)

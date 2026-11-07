@@ -533,6 +533,47 @@ public sealed class PluginPackageTests
     }
 
     [TestMethod]
+    public async Task RuntimeBlocksDependentsWhenProviderLifecycleFails()
+    {
+        using var certificate = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-dependency-failure-" + Guid.NewGuid().ToString("N"));
+        var packagePaths = new List<string>();
+        try
+        {
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+            {
+                foreach (var (id, type, dependencies) in new[]
+                         {
+                             ("zeta.provider", typeof(FailingRuntimePlugin).FullName!,
+                                 (IReadOnlyDictionary<string, string>)new Dictionary<string, string>()),
+                             ("alpha.consumer", typeof(DependencyConsumerPlugin).FullName!,
+                                 (IReadOnlyDictionary<string, string>)new Dictionary<string, string>
+                                     { ["zeta.provider"] = "^1.0.0" })
+                         })
+                {
+                    var packagePath = CreateTempPath();
+                    packagePaths.Add(packagePath);
+                    await WritePackageAsync(packagePath, CreateRuntimeFiles(id, type, dependencies), certificate);
+                    await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+                }
+            }
+
+            await using var runtime = new PluginRuntimeManager(pluginsDirectory);
+            await runtime.LoadEnabledAsync();
+            var installed = runtime.GetInstalled().ToDictionary(plugin => plugin.Manifest.Id);
+            Assert.IsFalse(installed["zeta.provider"].Running);
+            Assert.IsFalse(installed["alpha.consumer"].Running);
+            StringAssert.Contains(installed["alpha.consumer"].Error!, "dependency failed to start");
+            Assert.IsFalse(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "alpha.consumer", "started.txt")));
+        }
+        finally
+        {
+            foreach (var packagePath in packagePaths) DeleteIfExists(packagePath);
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
     public async Task RuntimeSkipsInstalledPluginWithOversizedSignatureMetadata()
     {
         using var certificate = CreateCertificate();

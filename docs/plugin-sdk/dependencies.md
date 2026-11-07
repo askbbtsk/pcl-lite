@@ -26,4 +26,4 @@
 
 ## 验证
 
-`PluginDependencyResolverTests` 覆盖 SemVer 范围、预发布版本、依赖拓扑、缺失/禁用/不匹配依赖以及环和下游阻断。`PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` 通过真实签名包安装、加载两个编译程序集，确认依赖先启动后消费者启动。
+`PluginDependencyResolverTests` 覆盖 SemVer 范围、预发布版本、依赖拓扑、缺失/禁用/不匹配依赖以及环和下游阻断。`PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` 通过真实签名包安装、加载两个编译程序集，确认依赖先启动后消费者启动；`RuntimeBlocksDependentsWhenProviderLifecycleFails` 确认依赖启动失败会阻止消费者运行。

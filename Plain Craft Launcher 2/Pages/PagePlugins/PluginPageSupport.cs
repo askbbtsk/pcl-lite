@@ -101,16 +101,24 @@ internal static class PluginPageSupport
         var mixinWarning = mixinCount == 0
             ? string.Empty
             : "\n\n" + Lang.Text("Plugin.Install.MixinWarning", mixinCount);
+        var signerChangeWarning = check.SignerChanged
+            ? "\n\n" + Lang.Text("Plugin.Install.SignerChanged", check.PreviousSignerThumbprint,
+                check.IsSigned ? check.SignerThumbprint : Lang.Text("Plugin.Install.UnsignedSigner"))
+            : string.Empty;
         if (!check.IsSigned)
-            return dispatcher.InvokeAsync(() => ModMain.MyMsgBox(Lang.Text("Plugin.Install.UnsignedMessage", pluginInfo, githubDetails + mixinWarning),
-                Lang.Text("Plugin.Install.UnsignedTitle"), Lang.Text("Plugin.Install.UnsignedConfirm"),
+            return dispatcher.InvokeAsync(() => ModMain.MyMsgBox(Lang.Text("Plugin.Install.UnsignedMessage", pluginInfo, githubDetails + mixinWarning + signerChangeWarning),
+                check.SignerChanged ? Lang.Text("Plugin.Install.SignerChangedTitle") : Lang.Text("Plugin.Install.UnsignedTitle"),
+                check.SignerChanged ? Lang.Text("Plugin.Install.SignerChangedConfirm") : Lang.Text("Plugin.Install.UnsignedConfirm"),
                 Lang.Text("Plugin.Install.Cancel"), isWarn: true) == 1).Task;
 
         var signedAt = check.SignedAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz") ?? Lang.Text("Plugin.Install.UnknownTime");
         var info = Lang.Text("Plugin.Install.SignerInfo", check.Signer ?? Lang.Text("Plugin.Install.UnknownSigner"),
-            check.SignerThumbprint ?? Lang.Text("Plugin.Install.UnknownSigner"), signedAt, pluginInfo, githubDetails + mixinWarning);
-        return dispatcher.InvokeAsync(() => ModMain.MyMsgBox(info, Lang.Text("Plugin.Install.SignedTitle"),
-            Lang.Text("Plugin.Install.Confirm"), Lang.Text("Plugin.Install.Cancel"), isWarn: false) == 1).Task;
+            check.SignerThumbprint ?? Lang.Text("Plugin.Install.UnknownSigner"), signedAt, pluginInfo,
+            githubDetails + mixinWarning + signerChangeWarning);
+        return dispatcher.InvokeAsync(() => ModMain.MyMsgBox(info,
+            check.SignerChanged ? Lang.Text("Plugin.Install.SignerChangedTitle") : Lang.Text("Plugin.Install.SignedTitle"),
+            check.SignerChanged ? Lang.Text("Plugin.Install.SignerChangedConfirm") : Lang.Text("Plugin.Install.Confirm"),
+            Lang.Text("Plugin.Install.Cancel"), isWarn: check.SignerChanged) == 1).Task;
     }
 
     public static void ShowPluginNotice(string message, PluginNotificationKind kind = PluginNotificationKind.Info)

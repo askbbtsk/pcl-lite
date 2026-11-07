@@ -282,6 +282,58 @@ public sealed class PluginPackageTests
     }
 
     [TestMethod]
+    public async Task UpdateConfirmationShowsSignerRotationAndUnsignedDowngrade()
+    {
+        using var originalSigner = CreateCertificate();
+        using var replacementSigner = CreateCertificate();
+        var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-plugin-signer-transition-" + Guid.NewGuid().ToString("N"));
+        var originalPath = CreateTempPath();
+        var replacementPath = CreateTempPath();
+        var unsignedPath = CreateTempPath();
+        try
+        {
+            var files = CreateFiles();
+            await WritePackageAsync(originalPath, files, originalSigner);
+            await WritePackageAsync(replacementPath, files, replacementSigner);
+            await WritePackageAsync(unsignedPath, files, (PluginPackageSignature?)null);
+
+            await using var manager = new PluginRuntimeManager(pluginsDirectory);
+            await manager.InstallAsync(originalPath, (_, _) => Task.FromResult(true));
+
+            PluginPackageCheck? rotationPrompt = null;
+            await Assert.ThrowsAsync<OperationCanceledException>(() => manager.InstallAsync(replacementPath,
+                (check, _) =>
+                {
+                    rotationPrompt = check;
+                    return Task.FromResult(false);
+                }));
+            Assert.IsNotNull(rotationPrompt);
+            Assert.IsTrue(rotationPrompt.SignerChanged);
+            Assert.AreEqual(originalSigner.Thumbprint, rotationPrompt.PreviousSignerThumbprint);
+            Assert.AreEqual(replacementSigner.Thumbprint, rotationPrompt.SignerThumbprint);
+
+            PluginPackageCheck? downgradePrompt = null;
+            await Assert.ThrowsAsync<OperationCanceledException>(() => manager.InstallAsync(unsignedPath,
+                (check, _) =>
+                {
+                    downgradePrompt = check;
+                    return Task.FromResult(false);
+                }));
+            Assert.IsNotNull(downgradePrompt);
+            Assert.IsTrue(downgradePrompt.SignerChanged);
+            Assert.AreEqual(originalSigner.Thumbprint, downgradePrompt.PreviousSignerThumbprint);
+            Assert.IsFalse(downgradePrompt.IsSigned);
+        }
+        finally
+        {
+            DeleteIfExists(originalPath);
+            DeleteIfExists(replacementPath);
+            DeleteIfExists(unsignedPath);
+            DeleteRuntimeDirectory(pluginsDirectory);
+        }
+    }
+
+    [TestMethod]
     public async Task MarketInstallCorroboratesGitHubDigestAndReleaseTime()
     {
         using var certificate = CreateCertificate();

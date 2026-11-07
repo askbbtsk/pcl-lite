@@ -277,6 +277,9 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     check, cancellationToken).ConfigureAwait(false)
             };
         }
+        var previousState = await _ReadStateAsync(check.Manifest.Id, cancellationToken).ConfigureAwait(false);
+        if (previousState.ExpectedSigner is not null)
+            check = check with { PreviousSignerThumbprint = previousState.ExpectedSigner };
         if (!await confirmInstallation(check, cancellationToken).ConfigureAwait(false))
             throw new OperationCanceledException("Plugin installation was declined.", cancellationToken);
 
@@ -287,7 +290,6 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         var staging = Path.Combine(pendingRoot, ".stage-" + Guid.NewGuid().ToString("N"));
         var target = Path.Combine(pendingRoot, check.Manifest.Id);
         var backup = Path.Combine(pendingRoot, ".backup-" + Guid.NewGuid().ToString("N"));
-        var previousState = await _ReadStateAsync(check.Manifest.Id, cancellationToken).ConfigureAwait(false);
         var movedPreviousTarget = false;
         var movedNewTarget = false;
         var transactionCompleted = false;

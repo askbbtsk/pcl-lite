@@ -37,6 +37,9 @@ public sealed record PluginPackageCheck(PluginManifest Manifest, bool IsSigned, 
 {
     public bool IsValid => Error is null && (!IsSigned || SignatureValid);
     public PluginGitHubProvenance? GitHubProvenance { get; init; }
+    public string? PreviousSignerThumbprint { get; init; }
+    public bool SignerChanged => PreviousSignerThumbprint is not null &&
+        (!IsSigned || !string.Equals(PreviousSignerThumbprint, SignerThumbprint, StringComparison.OrdinalIgnoreCase));
 }
 
 public sealed record PluginGitHubProvenance(string Repository, string Tag, DateTimeOffset PublishedAtUtc,

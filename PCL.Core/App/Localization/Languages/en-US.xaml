@@ -2888,6 +2888,13 @@ This plugin is unsigned, so the launcher cannot verify whether it was modified. 
 {1}
 Install anyway?</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedConfirm">Install anyway</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedTitle">Plugin signer changed</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChanged">This version uses a different signing certificate from the installed version.
+Previous certificate fingerprint: {0}
+New version certificate fingerprint/status: {1}
+This may be a key rotation or a supply-chain risk. Verify the trusted release source before continuing.</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedConfirm">Update anyway</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedSigner">None (new version is unsigned)</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">Confirm plugin installation</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">Signer: {0}
 Certificate fingerprint: {1}

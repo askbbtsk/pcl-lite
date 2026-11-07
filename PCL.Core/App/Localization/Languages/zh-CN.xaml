@@ -2888,6 +2888,13 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
 {1}
 仍要安装吗？</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedConfirm">仍然安装</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedTitle">插件签名人已更改</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChanged">此版本的签名证书与已安装版本不同。
+旧证书指纹：{0}
+新版本证书指纹/状态：{1}
+这可能是密钥轮换，也可能是供应链风险；请先核对可信发布来源。</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedConfirm">仍要更新</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedSigner">无（新版本未签名）</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">确认安装插件</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">签名人：{0}
 证书指纹：{1}

@@ -172,6 +172,50 @@ public sealed class PluginMixinPackageRuntimeTests
         }
     }
 
+    [TestMethod]
+    public async Task SignedPluginCanOverwriteAnActualPclCoreMethodAndRestoreItOnShutdown()
+    {
+        using var certificate = CreateCertificate();
+        var root = Path.Combine(Path.GetTempPath(), "pcl-mixin-host-method-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var packagePath = Path.Combine(root, "host-method.pclplugin");
+            await CreatePackageAsync(packagePath, certificate, "runtime.mixin.host.method", [
+                new MixinConfiguration { Mixins = [typeof(LauncherSurfaceMixin).FullName!] }
+            ]);
+            var pluginsDirectory = Path.Combine(root, "Plugins");
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+                await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+
+            var runtime = new PluginRuntimeManager(pluginsDirectory);
+            try
+            {
+                await runtime.LoadEnabledAsync();
+                Assert.AreEqual(0, runtime.GetInstalled().Count,
+                    "The signed plugin must overwrite PluginRuntimeManager.GetInstalled in PCL.Core.");
+                Assert.IsTrue(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.mixin.host.method", "started.txt")),
+                    "The plugin entrypoint should still run after the host method patch is applied.");
+            }
+            finally { await runtime.DisposeAsync(); }
+
+            Assert.AreEqual(1, runtime.GetInstalled().Count,
+                "Disposal must restore the original PCL.Core method before plugin assembly unload.");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                for (var attempt = 0; attempt < 10 && Directory.Exists(root); attempt++)
+                {
+                    try { Directory.Delete(root, recursive: true); }
+                    catch (IOException) { GC.Collect(); GC.WaitForPendingFinalizers(); Thread.Sleep(40); }
+                    catch (UnauthorizedAccessException) { GC.Collect(); GC.WaitForPendingFinalizers(); Thread.Sleep(40); }
+                }
+            }
+        }
+    }
+
     private static async Task CreatePackageAsync(string packagePath, X509Certificate2 certificate,
         string pluginId, IReadOnlyList<MixinConfiguration> configurations)
     {
@@ -223,6 +267,14 @@ public sealed class PluginMixinPackageRuntimeTests
         public static int Compute(int value) => value * 2;
     }
 
+    [Mixin(typeof(PluginRuntimeManager))]
+    public static class LauncherSurfaceMixin
+    {
+        [Overwrite(nameof(PluginRuntimeManager.GetInstalled))]
+        public static IReadOnlyList<InstalledPlugin> HideInstalledPlugins([This] PluginRuntimeManager manager) =>
+            Array.Empty<InstalledPlugin>();
+    }
+
     [Mixin("PCL.Core.Test.Plugins.PluginMixinPackageRuntimeTests+HostTarget, PCL.Core.Test")]
     public static class HostTargetMixin
     {
@@ -233,6 +285,7 @@ public sealed class PluginMixinPackageRuntimeTests
 
 public sealed class MixinPackageProbePlugin : IPclPlugin
 {
-    public Task StartAsync(IPluginContext context, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StartAsync(IPluginContext context, CancellationToken cancellationToken) =>
+        context.Storage.WriteTextAsync("started.txt", "started", cancellationToken);
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

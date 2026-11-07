@@ -18,7 +18,7 @@ Mixin 由插件程序集中的 C# 属性和处理器构成，不是脚本。启�
 | `required` | bool | `true`；仅表示补丁应用失败时是否使该插件失败 |
 | `package` | string | 空字符串；类型名解析用的命名空间前缀，最多 256 字符 |
 | `mixins` | string 数组 | 必填，1–512 个唯一类型名，每项最多 256 字符 |
-| `priority` | int | 默认 `1000`；控制补丁顺序，当前没有额外数值范围校验 |
+| `priority` | int | 默认 `1000`；控制补丁顺序，范围 -10,000–10,000 |
 | `injectors.defaultRequire` | int | 默认 `1`，范围 0–1000 |
 | `plugin` | string/null | 可选配置处理器类型名，最多 256 字符 |
 
@@ -89,4 +89,4 @@ public static class ExampleMixin
 - 保持补丁少而窄。避免静态持有大对象/大图像，不要在 handler 中做阻塞 I/O、长计算或同步等待。
 - 不改 Bedrock / CIK 现有逻辑。触碰 Minecraft 启动流程时，应增加明确的 CIK 不变回归断言。
 
-必需配置的补丁应用失败会回滚该插件已应用的补丁；可选配置的补丁应用失败会记录警告并继续。安全模式会在应用补丁前跳过插件。`PluginMixinPackageRuntimeTests` 已通过真实签名包安装及加载路径验证 Mixin 应用、必需配置失败回滚和释放时恢复目标方法；它没有覆盖每种 Mixin 操作，也不证明任意已执行代码都能安全卸载。Mixin 没有沙箱。
+必需配置的补丁应用失败会回滚该插件已应用的补丁；可选配置的补丁应用失败会记录警告并继续。安全模式会在应用补丁前跳过插件。`PluginMixinPackageRuntimeTests` 已通过真实签名包安装及加载路径验证 Mixin 应用、必需配置失败回滚和释放时恢复目标方法；另有用签名插件实际覆盖 `PCL.Core.PluginRuntimeManager.GetInstalled` 并在退出时恢复的宿主方法测试。测试仍未覆盖每种 Mixin 操作，也不证明任意已执行代码都能安全卸载。Mixin 没有沙箱。

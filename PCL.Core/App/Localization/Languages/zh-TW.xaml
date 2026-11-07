@@ -2831,6 +2831,13 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
 {1}
 仍要安裝嗎？</sys:String>
     <sys:String x:Key="Plugin.Install.UnsignedConfirm">仍要安裝</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedTitle">外掛簽名人已變更</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChanged">此版本的簽名憑證與已安裝版本不同。
+舊憑證指紋：{0}
+新版本憑證指紋/狀態：{1}
+這可能是金鑰輪替，也可能是供應鏈風險；請先核對可信發布來源。</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedConfirm">仍要更新</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedSigner">無（新版本未簽名）</sys:String>
     <sys:String x:Key="Plugin.Install.SignedTitle">確認安裝外掛</sys:String>
     <sys:String x:Key="Plugin.Install.SignerInfo">簽名人：{0}
 憑證指紋：{1}

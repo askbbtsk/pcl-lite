@@ -54,6 +54,43 @@ public sealed class PluginPackageTests
     }
 
     [TestMethod]
+    public void PackageSignatureRejectsRsaKeysBelow2048Bits()
+    {
+        using var signingKey = RSA.Create(1024);
+        var request = new CertificateRequest("CN=Weak test signer", signingKey,
+            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5),
+            DateTimeOffset.UtcNow.AddYears(1));
+        var files = CreateFiles();
+        Assert.ThrowsExactly<ArgumentException>(() => PluginPackage.SignFiles(files, certificate));
+
+        var signedAt = DateTimeOffset.UtcNow;
+        var certificateBytes = certificate.Export(X509ContentType.Cert);
+        using var payload = new MemoryStream();
+        using (var writer = new StreamWriter(payload, new UTF8Encoding(false), leaveOpen: true))
+        {
+            writer.Write("signatureSchema\0");
+            writer.Write("1\n");
+            writer.Write("signatureAlgorithm\0RSA-SHA256-PKCS1\n");
+            writer.Write("certificateThumbprint\0");
+            writer.Write(certificate.Thumbprint);
+            writer.Write("\ncertificateSha256\0");
+            writer.Write(Convert.ToHexString(SHA256.HashData(certificateBytes)).ToLowerInvariant());
+            writer.Write('\n');
+            writer.Flush();
+        }
+        payload.Write(PluginPackage.CreateSignaturePayload(files, signedAt));
+        var weakSignature = new PluginPackageSignature(1, "RSA-SHA256-PKCS1",
+            Convert.ToBase64String(certificateBytes),
+            Convert.ToBase64String(signingKey.SignData(payload.ToArray(), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)),
+            certificate.Thumbprint, signedAt);
+
+        var verification = PluginPackage.VerifyFiles(files, weakSignature);
+        Assert.IsFalse(verification.Valid);
+        StringAssert.Contains(verification.Error!, "2048-bit");
+    }
+
+    [TestMethod]
     public async Task InspectReportsSignerTimeAndUnsignedPackages()
     {
         using var certificate = CreateCertificate();
@@ -169,11 +206,13 @@ public sealed class PluginPackageTests
             var assetUrl = "https://github.com/example/plugins/releases/download/v1.0.0/test.plugin.pclplugin";
             var publishedAt = DateTimeOffset.UtcNow;
             var releaseDigest = "sha256:" + packageHash;
+            var releaseJsonOverride = (string?)null;
+            var downgradeAssetRedirect = false;
             using var client = new HttpClient(new TestHttpMessageHandler(request =>
             {
                 if (request.RequestUri!.Host == "api.github.com")
                 {
-                    var releaseJson = JsonSerializer.Serialize(new
+                    var releaseJson = releaseJsonOverride ?? JsonSerializer.Serialize(new
                     {
                         tag_name = "v1.0.0",
                         published_at = publishedAt,
@@ -184,11 +223,25 @@ public sealed class PluginPackageTests
                         Content = new StringContent(releaseJson, Encoding.UTF8, "application/json")
                     };
                 }
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(packageBytes) };
+                var packageResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(packageBytes) };
+                if (downgradeAssetRedirect)
+                    packageResponse.RequestMessage = new HttpRequestMessage(HttpMethod.Get,
+                        "http://attacker.example/plugin.pclplugin");
+                return packageResponse;
             }));
             await using var manager = new PluginRuntimeManager(pluginsDirectory, client);
             var entry = new PluginMarketEntry("test.plugin", "Test plugin", "1.0.0", "Test signer", "",
                 assetUrl, Sha256: packageHash);
+
+            downgradeAssetRedirect = true;
+            await Assert.ThrowsExactlyAsync<InvalidDataException>(() =>
+                manager.InstallFromMarketAsync(entry, (_, _) => Task.FromResult(true)));
+            downgradeAssetRedirect = false;
+
+            releaseJsonOverride = new string(' ', 2 * 1024 * 1024 + 1);
+            await Assert.ThrowsExactlyAsync<InvalidDataException>(() =>
+                manager.InstallFromMarketAsync(entry, (_, _) => Task.FromResult(true)));
+            releaseJsonOverride = null;
 
             releaseDigest = "sha256:" + new string('0', 64);
             await Assert.ThrowsExactlyAsync<InvalidDataException>(() =>
@@ -221,6 +274,49 @@ public sealed class PluginPackageTests
             DeleteIfExists(packagePath);
             if (Directory.Exists(pluginsDirectory)) Directory.Delete(pluginsDirectory, recursive: true);
         }
+    }
+
+    [TestMethod]
+    public async Task MarketIndexBoundsResponseSizeEntryCountMetadataAndRedirectScheme()
+    {
+        var indexJson = string.Empty;
+        var downgradeRedirect = false;
+        using var client = new HttpClient(new TestHttpMessageHandler(request =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(indexJson, Encoding.UTF8, "application/json")
+            };
+            if (downgradeRedirect)
+                response.RequestMessage = new HttpRequestMessage(HttpMethod.Get,
+                    "http://attacker.example/plugins/index.json");
+            return response;
+        }));
+        await using var manager = new PluginRuntimeManager(Path.Combine(Path.GetTempPath(), "pcl-market-bounds-" + Guid.NewGuid().ToString("N")), client);
+        var indexUri = new Uri("https://market.example/plugins/index.json");
+
+        indexJson = new string(' ', 2 * 1024 * 1024 + 1);
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => manager.GetMarketAsync(indexUri));
+
+        indexJson = JsonSerializer.Serialize(new PluginMarketIndex(1,
+            Enumerable.Range(0, 1001).Select(index => new PluginMarketEntry(
+                $"market.plugin{index}", "Plugin", "1.0.0", "Author", "",
+                "https://github.com/example/plugins/releases/download/v1.0.0/plugin.pclplugin",
+                Sha256: new string('a', 64))).ToArray()));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => manager.GetMarketAsync(indexUri));
+
+        indexJson = JsonSerializer.Serialize(new PluginMarketIndex(1,
+            [new PluginMarketEntry("market.plugin", new string('n', 129), "1.0.0", "Author", "",
+                "https://github.com/example/plugins/releases/download/v1.0.0/plugin.pclplugin",
+                Sha256: new string('a', 64))]));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => manager.GetMarketAsync(indexUri));
+
+        indexJson = JsonSerializer.Serialize(new PluginMarketIndex(1,
+            [new PluginMarketEntry("market.plugin", "Plugin", "1.0.0", "Author", "",
+                "https://github.com/example/plugins/releases/download/v1.0.0/plugin.pclplugin",
+                Sha256: new string('a', 64))]));
+        downgradeRedirect = true;
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => manager.GetMarketAsync(indexUri));
     }
 
     [TestMethod]

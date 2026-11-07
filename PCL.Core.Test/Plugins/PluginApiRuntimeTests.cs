@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.IO;
@@ -12,6 +13,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PCL.Core.Logging;
 using PCL.Core.Plugins;
 using PCL.Plugin.SDK;
 
@@ -34,6 +36,13 @@ public sealed class PluginApiRuntimeTests
         var openedUrl = default(Uri);
         var openedPath = string.Empty;
         var launchRequest = string.Empty;
+        var stopCalled = false;
+        var symlinkProbeSkipped = false;
+        var observedLogs = new List<(LogLevel Level, string Message)>();
+        void CaptureLog(LogLevel level, string message, string? module, Exception? exception)
+        {
+            if (module == "Plugin/runtime.api.probe") observedLogs.Add((level, message));
+        }
         var previousNotice = PluginHostBridge.ShowNotification;
         var previousConfirm = PluginHostBridge.ConfirmAsync;
         var previousGetInstances = PluginHostBridge.GetInstancesAsync;
@@ -47,7 +56,10 @@ public sealed class PluginApiRuntimeTests
             {
                 notification = message;
                 notificationKind = kind;
+                if (message == "probe stopped") stopCalled = true;
+                if (message == "symlink-probe-unavailable") symlinkProbeSkipped = true;
             };
+            LogWrapper.OnLog += CaptureLog;
             PluginHostBridge.ConfirmAsync = (title, message, token) =>
             {
                 token.ThrowIfCancellationRequested();
@@ -78,22 +90,30 @@ public sealed class PluginApiRuntimeTests
 
             var installed = runtime.GetInstalled().Single();
             Assert.IsTrue(installed.Running, installed.Error);
+            Assert.IsFalse(symlinkProbeSkipped,
+                "The host must allow this integration test to create symlinks so storage rejection is verified.");
             Assert.AreEqual("probe notice", notification);
             Assert.AreEqual(PluginNotificationKind.Warning, notificationKind);
             Assert.AreEqual("Probe title:Probe message", confirmation);
             Assert.AreEqual("https://example.test/path", openedUrl?.AbsoluteUri);
             Assert.AreEqual(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.api.probe"), openedPath);
             Assert.AreEqual("instance-a", launchRequest);
+            Assert.IsTrue(observedLogs.Any(log => log.Level == LogLevel.Trace && log.Message == "trace"),
+                "Logger.Trace must preserve the Trace log level.");
+            Assert.IsTrue(observedLogs.Any(log => log.Level == LogLevel.Debug && log.Message == "debug"),
+                "Logger.Debug must preserve the Debug log level.");
             Assert.IsTrue(File.Exists(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.api.probe", "probe-complete.json")));
             Assert.AreEqual(1, PluginPageRegistry.GetAll().Count(page => page.PluginId == "runtime.api.probe"));
 
             await runtime.DisposeAsync();
+            Assert.IsTrue(stopCalled, "The host must call IPclPlugin.StopAsync before unloading the plugin.");
             await runtime.PublishAsync(new PluginGameLaunchingEvent("instance-a", "after-dispose"));
             var eventCount = await File.ReadAllTextAsync(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.api.probe", "event-count.txt"));
             Assert.AreEqual("3", eventCount, "The stopped plugin must no longer receive manager events.");
         }
         finally
         {
+            LogWrapper.OnLog -= CaptureLog;
             PluginHostBridge.ShowNotification = previousNotice;
             PluginHostBridge.ConfirmAsync = previousConfirm;
             PluginHostBridge.GetInstancesAsync = previousGetInstances;
@@ -248,6 +268,7 @@ public sealed class ApiProbePlugin : IPclPlugin
         }
         Require(await context.Settings.GetAsync<string>("cancel-remove", cancellationToken) == "preserved", "canceled settings removal preservation");
         await RequireThrowsAsync<ArgumentException>(() => context.Settings.SetAsync("../escape", "bad", cancellationToken), "settings key validation");
+        await VerifySymbolicLinksRejectedAsync(context, cancellationToken);
 
         var eventCount = 0;
         _ = context.Events.Subscribe<PluginGameLaunchingEvent>(async (value, token) =>
@@ -353,7 +374,62 @@ public sealed class ApiProbePlugin : IPclPlugin
         await context.Storage.WriteJsonAsync("probe-complete.json", new ApiProbeSettings("complete", 1), cancellationToken);
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        PluginHostBridge.ShowNotification?.Invoke("probe stopped", PluginNotificationKind.Info);
+        return Task.CompletedTask;
+    }
+
+    private static async Task VerifySymbolicLinksRejectedAsync(IPluginContext context, CancellationToken cancellationToken)
+    {
+        var dataParent = Directory.GetParent(context.DataDirectory)!.FullName;
+        var externalDirectory = Path.Combine(dataParent, "api-probe-link-target");
+        var linkedDirectory = Path.Combine(context.DataDirectory, "linked-outside");
+        var settingsDirectory = Path.Combine(context.DataDirectory, "settings");
+        var settingsBackup = settingsDirectory + ".api-probe-backup";
+        Directory.CreateDirectory(externalDirectory);
+        await File.WriteAllTextAsync(Path.Combine(externalDirectory, "secret.txt"), "outside", cancellationToken);
+
+        var dataLinkCreated = false;
+        var settingsLinkCreated = false;
+        try
+        {
+            try
+            {
+                Directory.CreateSymbolicLink(linkedDirectory, externalDirectory);
+                dataLinkCreated = true;
+                Directory.Move(settingsDirectory, settingsBackup);
+                Directory.CreateSymbolicLink(settingsDirectory, externalDirectory);
+                settingsLinkCreated = true;
+            }
+            catch (Exception exception) when (exception is UnauthorizedAccessException or IOException or
+                                               PlatformNotSupportedException or Win32Exception)
+            {
+                PluginHostBridge.ShowNotification?.Invoke("symlink-probe-unavailable", PluginNotificationKind.Warning);
+                return; // Symbolic-link creation may be disabled by the test host's Windows policy.
+            }
+
+            await RequireThrowsAsync<InvalidDataException>(
+                () => context.Storage.ReadTextAsync("linked-outside/secret.txt", cancellationToken),
+                "storage symbolic link read rejection");
+            await RequireThrowsAsync<InvalidDataException>(
+                () => context.Storage.WriteTextAsync("linked-outside/modified.txt", "bad", cancellationToken),
+                "storage symbolic link write rejection");
+            await RequireThrowsAsync<InvalidDataException>(
+                () => context.Settings.GetAsync<string>("linked", cancellationToken),
+                "settings symbolic link read rejection");
+            await RequireThrowsAsync<InvalidDataException>(
+                () => context.Settings.RemoveAsync("linked", cancellationToken),
+                "settings symbolic link delete rejection");
+        }
+        finally
+        {
+            if (settingsLinkCreated && Directory.Exists(settingsDirectory)) Directory.Delete(settingsDirectory, recursive: false);
+            if (Directory.Exists(settingsBackup)) Directory.Move(settingsBackup, settingsDirectory);
+            if (dataLinkCreated && Directory.Exists(linkedDirectory)) Directory.Delete(linkedDirectory, recursive: false);
+            if (Directory.Exists(externalDirectory)) Directory.Delete(externalDirectory, recursive: true);
+        }
+    }
 
     private static void Require(bool condition, string label)
     {

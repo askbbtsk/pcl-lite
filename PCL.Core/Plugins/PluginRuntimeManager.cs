@@ -10,7 +10,6 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
-using System.Net.Http.Json;
 using PCL.Core.App;
 using PCL.Core.Logging;
 using PCL.Core.IO.Net;
@@ -68,6 +67,9 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private const long MaximumPluginStoredFileBytes = 64L * 1024 * 1024;
     private const long MaximumPluginDownloadBytes = MaximumPluginStoredFileBytes;
     private const long MaximumPluginHttpBodyBytes = 16L * 1024 * 1024;
+    private const int MaximumMarketIndexBytes = 2 * 1024 * 1024;
+    private const int MaximumMarketEntries = 1000;
+    private const int MaximumGitHubApiResponseBytes = 2 * 1024 * 1024;
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> PluginDataLocks = new(StringComparer.OrdinalIgnoreCase);
     private readonly string _pluginsDirectory;
     private readonly string _stateDirectory;
@@ -112,20 +114,41 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
 
     public async Task<PluginMarketIndex> GetMarketAsync(Uri indexUri, CancellationToken cancellationToken = default)
     {
-        if (indexUri.Scheme != Uri.UriSchemeHttps) throw new InvalidDataException("Plugin market index must use HTTPS.");
-        using var response = await _httpClient.GetAsync(indexUri, cancellationToken).ConfigureAwait(false);
+        if (indexUri is null || !indexUri.IsAbsoluteUri || indexUri.Scheme != Uri.UriSchemeHttps)
+            throw new InvalidDataException("Plugin market index must use an absolute HTTPS URL.");
+        using var response = await _httpClient.GetAsync(indexUri, HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        var index = await JsonSerializer.DeserializeAsync<PluginMarketIndex>(stream,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }, cancellationToken).ConfigureAwait(false)
+        var finalUri = response.RequestMessage?.RequestUri ?? indexUri;
+        if (finalUri.Scheme != Uri.UriSchemeHttps)
+            throw new InvalidDataException("Plugin market index redirected away from HTTPS.");
+        var bytes = await _ReadBoundedContentAsync(response.Content, MaximumMarketIndexBytes, cancellationToken)
+            .ConfigureAwait(false);
+        var index = JsonSerializer.Deserialize<PluginMarketIndex>(bytes,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true, MaxDepth = 32 })
                     ?? throw new InvalidDataException("Plugin market index is empty.");
         if (index.SchemaVersion != 1) throw new InvalidDataException("Plugin market schema is not supported.");
-        var ids = new HashSet<string>(StringComparer.Ordinal);
+        if (index.Plugins is null || index.Plugins.Count > MaximumMarketEntries)
+            throw new InvalidDataException($"Plugin market index may contain at most {MaximumMarketEntries} entries.");
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in index.Plugins)
         {
+            if (entry is null) throw new InvalidDataException("Plugin market contains an empty entry.");
+            try { _ValidateId(entry.Id); }
+            catch (ArgumentException ex) { throw new InvalidDataException("Plugin market contains an invalid plugin id.", ex); }
             if (!ids.Add(entry.Id)) throw new InvalidDataException($"Duplicate plugin market id: {entry.Id}");
+            if (string.IsNullOrWhiteSpace(entry.Name) || entry.Name.Length > 128 ||
+                string.IsNullOrWhiteSpace(entry.Author) || entry.Author.Length > 128 ||
+                string.IsNullOrWhiteSpace(entry.Version) || entry.Version.Length > 64 ||
+                entry.Description is null || entry.Description.Length > 4096 ||
+                string.IsNullOrWhiteSpace(entry.PackageUrl) || entry.PackageUrl.Length > 2048 ||
+                (entry.Website?.Length ?? 0) > 2048)
+                throw new InvalidDataException($"Plugin market entry has invalid or oversized metadata: {entry.Id}");
             if (!Uri.TryCreate(entry.PackageUrl, UriKind.Absolute, out var packageUri) || packageUri.Scheme != Uri.UriSchemeHttps)
                 throw new InvalidDataException($"Plugin package URL must use HTTPS: {entry.Id}");
+            if (entry.Website is not null &&
+                (!Uri.TryCreate(entry.Website, UriKind.Absolute, out var websiteUri) || websiteUri.Scheme != Uri.UriSchemeHttps))
+                throw new InvalidDataException($"Plugin website URL must use HTTPS: {entry.Id}");
             if (string.IsNullOrWhiteSpace(entry.Sha256) || entry.Sha256.Length != 64 || entry.Sha256.Any(c => !Uri.IsHexDigit(c)))
                 throw new InvalidDataException($"Plugin market entry must include a SHA-256 digest: {entry.Id}");
             if (!_TryParseGitHubReleaseAsset(entry.PackageUrl, out _))
@@ -152,6 +175,9 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                        .ConfigureAwait(false))
             {
                 response.EnsureSuccessStatusCode();
+                var finalUri = response.RequestMessage?.RequestUri ?? uri;
+                if (finalUri.Scheme != Uri.UriSchemeHttps)
+                    throw new InvalidDataException("Plugin package download redirected away from HTTPS.");
                 if (response.Content.Headers.ContentLength > PluginPackage.MaximumPackageBytes)
                     throw new InvalidDataException("Plugin package exceeds the download size limit.");
                 await using var input = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -659,13 +685,22 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         using var request = new HttpRequestMessage(HttpMethod.Get, apiUri);
         request.Headers.UserAgent.ParseAdd("PCL-Lite-PluginManager/1.0");
         request.Headers.Accept.ParseAdd("application/vnd.github+json");
-        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        var release = await response.Content.ReadFromJsonAsync<GitHubReleaseResponse>(GitHubJsonOptions, cancellationToken)
-                      .ConfigureAwait(false) ?? throw new InvalidDataException("GitHub returned an empty release response.");
+        var finalUri = response.RequestMessage?.RequestUri ?? apiUri;
+        if (finalUri.Scheme != Uri.UriSchemeHttps ||
+            !finalUri.Host.Equals("api.github.com", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("GitHub release API redirected to an unexpected endpoint.");
+        var releaseBytes = await _ReadBoundedContentAsync(response.Content, MaximumGitHubApiResponseBytes,
+            cancellationToken).ConfigureAwait(false);
+        var release = JsonSerializer.Deserialize<GitHubReleaseResponse>(releaseBytes, GitHubJsonOptions)
+                      ?? throw new InvalidDataException("GitHub returned an empty release response.");
         if (!string.Equals(release.TagName, asset.Tag, StringComparison.Ordinal))
             throw new InvalidDataException("GitHub release tag does not match the package URL.");
-        var releaseAsset = release.Assets.FirstOrDefault(item =>
+        if (release.Assets is null || release.Assets.Count > 1000)
+            throw new InvalidDataException("GitHub release contains an invalid number of assets.");
+        var releaseAsset = release.Assets.FirstOrDefault(item => item is not null &&
             string.Equals(item.Name, asset.AssetName, StringComparison.Ordinal));
         if (releaseAsset is null)
             throw new InvalidDataException("GitHub release does not contain the named plugin package asset.");
@@ -718,16 +753,57 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     {
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         long total = 0;
-        foreach (var path in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+        var rootAttributes = File.GetAttributes(directory);
+        if ((rootAttributes & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidDataException("Plugin installation directory cannot be a symbolic link or junction.");
+        var pending = new Stack<string>();
+        pending.Push(directory);
+        var entryCount = 0;
+        while (pending.TryPop(out var current))
         {
-            var relative = Path.GetRelativePath(directory, path).Replace('\\', '/');
-            if (relative.Equals(PluginPackage.SignatureFileName, StringComparison.Ordinal)) continue;
-            PluginPackage.ValidateRelativePath(relative);
-            total = checked(total + new FileInfo(path).Length);
-            if (total > PluginPackage.MaximumExpandedBytes) throw new InvalidDataException("Plugin exceeds the expanded size limit.");
-            files.Add(relative, await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false));
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var path in Directory.EnumerateFileSystemEntries(current))
+            {
+                if (++entryCount > PluginPackage.MaximumPackageEntries)
+                    throw new InvalidDataException("Plugin installation exceeds the package entry limit.");
+                var attributes = File.GetAttributes(path);
+                if ((attributes & FileAttributes.ReparsePoint) != 0)
+                    throw new InvalidDataException("Plugin installation cannot contain symbolic links or junctions.");
+                if ((attributes & FileAttributes.Directory) != 0)
+                {
+                    pending.Push(path);
+                    continue;
+                }
+                var relative = Path.GetRelativePath(directory, path).Replace('\\', '/');
+                if (relative.Equals(PluginPackage.SignatureFileName, StringComparison.Ordinal)) continue;
+                PluginPackage.ValidateRelativePath(relative);
+                total = checked(total + new FileInfo(path).Length);
+                if (total > PluginPackage.MaximumExpandedBytes)
+                    throw new InvalidDataException("Plugin exceeds the expanded size limit.");
+                files.Add(relative, await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false));
+            }
         }
         return files;
+    }
+
+    private static async Task<byte[]> _ReadBoundedContentAsync(HttpContent content, int maximumBytes,
+        CancellationToken cancellationToken)
+    {
+        if (content.Headers.ContentLength is { } contentLength && contentLength > maximumBytes)
+            throw new InvalidDataException($"HTTP response exceeds the {maximumBytes}-byte limit.");
+        await using var input = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        using var output = new MemoryStream(Math.Min(maximumBytes, content.Headers.ContentLength is { } size
+            ? (int)size
+            : 16 * 1024));
+        var buffer = new byte[81920];
+        int read;
+        while ((read = await input.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+        {
+            if (output.Length + read > maximumBytes)
+                throw new InvalidDataException($"HTTP response exceeds the {maximumBytes}-byte limit.");
+            await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+        }
+        return output.ToArray();
     }
 
     private void _CleanupPendingDeletes()
@@ -834,7 +910,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
 
     private sealed class PluginLogger(string id) : IPluginLogger
     {
-        public void Trace(string message) => LogWrapper.Debug("Plugin/" + id, message);
+        public void Trace(string message) => LogWrapper.Trace("Plugin/" + id, message);
         public void Debug(string message) => LogWrapper.Debug("Plugin/" + id, message);
         public void Info(string message) => LogWrapper.Info("Plugin/" + id, message);
         public void Warn(string message, Exception? exception = null) => LogWrapper.Warn(exception, "Plugin/" + id, message);
@@ -845,6 +921,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     {
         public async Task<string?> ReadTextAsync(string relativePath, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var path = Resolve(relativePath);
             return File.Exists(path) ? await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false) : null;
         }
@@ -854,13 +931,16 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             var contentBytes = System.Text.Encoding.UTF8.GetByteCount(contents);
             if (contentBytes > MaximumPluginStoredFileBytes)
                 throw new InvalidDataException("Plugin storage file exceeds the 64 MiB per-file limit.");
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var rootPath = Path.GetFullPath(root);
             var gate = _GetPluginDataLock(rootPath);
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-            var temporaryPath = path + ".tmp-" + Guid.NewGuid().ToString("N");
+            string? temporaryPath = null;
             try
             {
+                path = Resolve(relativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                path = Resolve(relativePath);
+                temporaryPath = path + ".tmp-" + Guid.NewGuid().ToString("N");
                 var usage = PluginRuntimeManager._GetPluginDataUsage(rootPath);
                 var replacedBytes = File.Exists(path) ? new FileInfo(path).Length : 0;
                 var projectedBytes = checked(usage.Bytes - replacedBytes + contentBytes);
@@ -873,7 +953,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             }
             finally
             {
-                try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+                try { if (temporaryPath is not null && File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
                 gate.Release();
             }
         }
@@ -884,12 +964,45 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         }
         public Task WriteJsonAsync<T>(string relativePath, T value, CancellationToken cancellationToken = default) =>
             WriteTextAsync(relativePath, JsonSerializer.Serialize(value), cancellationToken);
+        public void RemoveFile(string relativePath)
+        {
+            var path = Resolve(relativePath);
+            if (!File.Exists(path)) return;
+            path = Resolve(relativePath);
+            File.Delete(path);
+        }
         private string Resolve(string relative)
         {
             PluginPackage.ValidateRelativePath(relative);
-            var path = Path.GetFullPath(Path.Combine(root, relative));
-            if (!path.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            var rootPath = Path.GetFullPath(root);
+            var path = Path.GetFullPath(Path.Combine(rootPath, relative));
+            if (!path.StartsWith(rootPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("Path escapes plugin storage.", nameof(relative));
+            var dataRootAncestor = rootPath;
+            for (var depth = 0; depth < 3 && dataRootAncestor is not null; depth++)
+            {
+                try
+                {
+                    if ((File.GetAttributes(dataRootAncestor) & FileAttributes.ReparsePoint) != 0)
+                        throw new InvalidDataException("Plugin data cannot be stored below a symbolic link or junction.");
+                }
+                catch (FileNotFoundException) { }
+                catch (DirectoryNotFoundException) { }
+                dataRootAncestor = Path.GetDirectoryName(dataRootAncestor);
+            }
+            var current = rootPath;
+            foreach (var segment in Path.GetRelativePath(rootPath, path)
+                         .Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries))
+            {
+                current = Path.Combine(current, segment);
+                try
+                {
+                    if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+                        throw new InvalidDataException("Plugin data cannot contain symbolic links or junctions.");
+                }
+                catch (FileNotFoundException) { break; }
+                catch (DirectoryNotFoundException) { break; }
+            }
             return path;
         }
 
@@ -905,8 +1018,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         public Task RemoveAsync(string key, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var path = Path.Combine(root, "settings", _SafeKey(key) + ".json");
-            if (File.Exists(path)) File.Delete(path);
+            _storage.RemoveFile("settings/" + _SafeKey(key) + ".json");
             return Task.CompletedTask;
         }
         private static string _SafeKey(string key) => string.IsNullOrWhiteSpace(key) || key.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '-' or '_'))

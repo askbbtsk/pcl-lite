@@ -158,6 +158,8 @@ public static class PluginPackage
                 return (false, thumbprint, certificate.Subject, "Certificate thumbprint does not match.");
             using var rsa = certificate.GetRSAPublicKey();
             if (rsa is null) return (false, thumbprint, certificate.Subject, "Only RSA signing certificates are supported.");
+            if (rsa.KeySize < 2048)
+                return (false, thumbprint, certificate.Subject, "RSA signing certificates must use at least a 2048-bit key.");
             var valid = rsa.VerifyData(CreatePackageSignaturePayload(files, signature.SignedAtUtc,
                     signature.SchemaVersion, signature.Algorithm, signature.CertificateThumbprint, certificateBytes),
                 Convert.FromBase64String(signature.Signature),
@@ -177,6 +179,7 @@ public static class PluginPackage
         ArgumentNullException.ThrowIfNull(certificate);
         if (!certificate.HasPrivateKey) throw new ArgumentException("Certificate must contain its private key.", nameof(certificate));
         using var rsa = certificate.GetRSAPrivateKey() ?? throw new ArgumentException("RSA certificate required.", nameof(certificate));
+        if (rsa.KeySize < 2048) throw new ArgumentException("RSA signing certificates must use at least a 2048-bit key.", nameof(certificate));
         var signedAtUtc = DateTimeOffset.UtcNow;
         const int schemaVersion = 1;
         const string algorithm = "RSA-SHA256-PKCS1";

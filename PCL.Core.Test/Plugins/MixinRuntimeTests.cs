@@ -1036,8 +1036,10 @@ public class MixinRuntimeTest
     [Mixin(typeof(MutableShadowTarget))]
     private sealed class MutableShadowMixin
     {
+#pragma warning disable CS0414
         [Shadow("_value"), Final, Mutable]
         private int Value;
+#pragma warning restore CS0414
 
         [Inject(nameof(MutableShadowTarget.Change), At = MixinAt.Head)]
         private void Write() => Value = 9;

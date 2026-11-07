@@ -26,7 +26,9 @@ PCL Lite 插件是 **编译后的 .NET 程序集**，不是脚本。普通插件
 
 ## API 状态说明
 
-SDK 当前版本号为 API v1。契约覆盖生命周期、日志、独立存储与设置、WPF 页面/通知/确认、类型化事件、HTTP、下载、启动器信息及 Minecraft 实例查询/启动。`PluginApiRuntimeTests` 已覆盖这些宿主接口的正常、取消、错误、网络响应上限、下载原子替换和事件清理路径；完整启动器 UI 与真实 Minecraft 进程仍需发行构建回归。`PluginMixinPackageRuntimeTests` 覆盖签名包安装、Mixin 应用、必需配置失败时回滚以及释放时恢复目标方法；这不是对每种 Mixin 操作或实际启动器/游戏进程的全覆盖验证。
+SDK 当前版本号为 API v1，含 11 个公开接口、46 个接口成员。契约覆盖生命周期、日志、独立存储与设置、WPF 页面/通知/确认、类型化事件、HTTP、下载、启动器信息及 Minecraft 实例查询/启动；没有未实现的接口存根。`PluginApiRuntimeTests` 已覆盖这些宿主接口的正常、取消、错误、网络响应上限、下载原子替换、日志等级、停止生命周期、符号链接拒绝和事件清理路径；完整启动器 UI 与真实 Minecraft 进程仍需发行构建回归。`PluginMixinPackageRuntimeTests` 覆盖签名包安装、Mixin 应用、安全模式跳过、必需配置失败时回滚、拒绝安装目录 junction 以及释放时恢复目标方法。
+
+Mixin 属性和操作集与 PCL2-Nex 当前公开实现保持同一范围：注入、覆盖、重定向、参数/参数组/常量/局部变量修改、Accessor/Invoker、Shadow/Unique、Slice、优先级与匹配约束。操作语义仍需按目标启动器版本逐项验证；与 Nex 一样，这不是脚本运行时，也没有进程沙箱。
 
 ## 关键约定
 
@@ -35,4 +37,4 @@ SDK 当前版本号为 API v1。契约覆盖生命周期、日志、独立存储
 - Mixin：编译程序集 + 清单中的 `mixinConfig` 或 `mixinConfigs`；在窗体构建前应用。配置文件和程序集都由包签名覆盖。
 - 恢复模式：设置环境变量 `PCL_LITE_SAFE_MODE=1` 或使用 `--safe-mode` 启动会跳过已启用插件的加载和 Mixin 应用，方便移除故障插件；包仍会被检查并显示状态。它只影响本次启动，不会永久关闭插件。
 - 发布包：`.pclplugin` ZIP 包。推荐使用本地 PFX 证书签名；不提交证书私钥或密码。
-- 限额：压缩包最大 100 MiB，解压内容最大 500 MiB，最多 10,000 个包条目；Mixin 配置最多 64 个，每份配置最大 256 KiB、最多 512 个类型名。插件数据树（包括 Storage、Settings 和 Launcher.DownloadAsync）使用每插件 256 MiB、单文件 64 MiB、10,000 文件上限；HTTP 请求/响应正文各限 16 MiB；单次 HTTPS 下载限 64 MiB，下载和存储写入共用并发配额锁，先写临时文件并在完整且 Content-Length 匹配后原子替换。插件自身仍应控制依赖体积和内存占用。
+- 限额：压缩包最大 100 MiB，解压内容最大 500 MiB，最多 10,000 个包条目；Mixin 配置最多 64 个，每份配置最大 256 KiB、最多 512 个类型名。插件数据树（包括 Storage、Settings 和 Launcher.DownloadAsync）使用每插件 256 MiB、单文件 64 MiB、10,000 文件上限；HTTP 请求/响应正文各限 16 MiB；单次 HTTPS 下载限 64 MiB。市场索引和 GitHub Release API 响应各限 2 MiB，索引最多 1,000 条；市场、包和 Release API 重定向必须保持 HTTPS。下载和存储写入共用并发配额锁，先写临时文件并在完整且 Content-Length 匹配后原子替换。插件自身仍应控制依赖体积和内存占用。

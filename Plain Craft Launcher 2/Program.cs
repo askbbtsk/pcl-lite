@@ -86,5 +86,7 @@ internal static class Program
             return Application.Current.Dispatcher.InvokeAsync(() => ModMain.MyMsgBox(message, title,
                 Lang.Text("Common.Action.Confirm"), Lang.Text("Common.Action.Cancel")) == 1).Task;
         };
+        PluginHostBridge.OpenUrl = uri => Basics.OpenPath(uri.AbsoluteUri);
+        PluginHostBridge.OpenPath = path => Basics.OpenPath(path);
     }
 }

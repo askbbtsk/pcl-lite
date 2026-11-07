@@ -20,6 +20,97 @@ namespace PCL.Core.Test.Plugins;
 public sealed class PluginMixinPackageRuntimeTests
 {
     [TestMethod]
+    public async Task InstalledPluginDirectoryRejectsJunctionBeforeLoadingItsContents()
+    {
+        using var certificate = CreateCertificate();
+        var root = Path.Combine(Path.GetTempPath(), "pcl-plugin-junction-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+
+        try
+        {
+            var packagePath = Path.Combine(root, "junction.pclplugin");
+            await CreatePackageAsync(packagePath, certificate, "runtime.mixin.junction", [
+                new MixinConfiguration { Mixins = [typeof(HostTargetMixin).FullName!] }
+            ]);
+            var pluginsDirectory = Path.Combine(root, "Plugins");
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+                await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+
+            await using (var firstStart = new PluginRuntimeManager(pluginsDirectory))
+            {
+                await firstStart.LoadEnabledAsync();
+                Assert.AreEqual(17, HostTarget.Compute(6));
+            }
+            Assert.AreEqual(12, HostTarget.Compute(6));
+
+            var installedPath = Path.Combine(pluginsDirectory, "runtime.mixin.junction");
+            var realDirectory = Path.Combine(root, "real-plugin-directory");
+            Directory.Move(installedPath, realDirectory);
+            Directory.CreateSymbolicLink(installedPath, realDirectory);
+
+            await using var runtime = new PluginRuntimeManager(pluginsDirectory);
+            await runtime.LoadEnabledAsync();
+
+            Assert.AreEqual(0, runtime.GetInstalled().Count,
+                "A symlinked installation directory must be rejected before manifest or payload reads.");
+            Assert.AreEqual(12, HostTarget.Compute(6), "Rejected plugin directories must not apply Mixin patches.");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                for (var attempt = 0; attempt < 10 && Directory.Exists(root); attempt++)
+                {
+                    try { Directory.Delete(root, recursive: true); }
+                    catch (IOException) { GC.Collect(); GC.WaitForPendingFinalizers(); Thread.Sleep(40); }
+                    catch (UnauthorizedAccessException) { GC.Collect(); GC.WaitForPendingFinalizers(); Thread.Sleep(40); }
+                }
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task SafeModeSkipsSignedPluginMixinWithoutPatchingHostMethod()
+    {
+        using var certificate = CreateCertificate();
+        var root = Path.Combine(Path.GetTempPath(), "pcl-mixin-safe-mode-" + Guid.NewGuid().ToString("N"));
+        var previousSafeMode = Environment.GetEnvironmentVariable("PCL_LITE_SAFE_MODE");
+        Directory.CreateDirectory(root);
+
+        try
+        {
+            var packagePath = Path.Combine(root, "safe-mode.pclplugin");
+            await CreatePackageAsync(packagePath, certificate, "runtime.mixin.safe", [
+                new MixinConfiguration { Mixins = [typeof(HostTargetMixin).FullName!] }
+            ]);
+            var pluginsDirectory = Path.Combine(root, "Plugins");
+            await using (var installer = new PluginRuntimeManager(pluginsDirectory))
+                await installer.InstallAsync(packagePath, (_, _) => Task.FromResult(true));
+
+            Environment.SetEnvironmentVariable("PCL_LITE_SAFE_MODE", "1");
+            await using var runtime = new PluginRuntimeManager(pluginsDirectory);
+            await runtime.LoadEnabledAsync();
+
+            Assert.IsTrue(runtime.GetInstalled().Single().Enabled);
+            Assert.IsFalse(runtime.GetInstalled().Single().Running);
+            Assert.AreEqual(12, HostTarget.Compute(6), "Safe mode must skip all third-party Mixin patches.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PCL_LITE_SAFE_MODE", previousSafeMode);
+            if (Directory.Exists(root))
+            {
+                for (var attempt = 0; attempt < 10 && Directory.Exists(root); attempt++)
+                {
+                    try { Directory.Delete(root, recursive: true); }
+                    catch (IOException) { GC.Collect(); GC.WaitForPendingFinalizers(); Thread.Sleep(40); }
+                    catch (UnauthorizedAccessException) { GC.Collect(); GC.WaitForPendingFinalizers(); Thread.Sleep(40); }
+                }
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task SignedPackagesApplyMixinRollbackFailedPluginAndRestoreHostMethodOnShutdown()
     {
         using var certificate = CreateCertificate();

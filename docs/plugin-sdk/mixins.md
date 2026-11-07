@@ -100,6 +100,13 @@ public static class ExampleMixin
 
 不要以“某属性可编译”推断某注入点有效。每个操作都应有针对目标方法的测试，包括匹配失败、重载歧义、冲突排序以及回滚。
 
+### 值类型调用和字段重定向
+
+- `ModifyArg` / `ModifyArgs` 改写值类型实例方法调用时，运行时保留调用栈中的托管指针接收者。
+- `Redirect` 值类型实例方法调用时，处理器第一个参数应为 `ref TargetStruct`；普通引用类型接收者仍使用 `TargetClass`。
+- `stfld` 写值类型字段时，处理器接收者应为 `ref TargetStruct`，后续参数为待写字段值。`ldfld` 的栈形状受目标 IL 生产方式影响；应检查当前目标指令，并分别测试读与写，不能只凭字段声明类型推断处理器签名。
+- 当前自动化覆盖 struct 方法调用的 `ModifyArg` / `ModifyArgs` / `Redirect`，以及局部变量 struct 的字段读写重定向。其他编译器、嵌套 struct 或地址加载形式必须以目标构建的实际测试为准。
+
 ## 安全、兼容和资源要求
 
 - Mixin handler 在启动器进程内执行，和启动器拥有相同权限；它可以触达当前用户可访问的文件和进程。

@@ -474,7 +474,13 @@ internal static class MixinTranspiler
         {
             MethodInfo method => new CallSignature(
                 instruction.opcode != OpCodes.Newobj && !method.IsStatic,
-                method.DeclaringType,
+                // An instance call on a value type consumes a managed pointer
+                // (the C# compiler normally emits ldloca/ldarga before call).
+                // Preserve that stack shape when spilling the call arguments;
+                // treating it as a value type produces invalid IL.
+                instruction.opcode != OpCodes.Newobj && !method.IsStatic && method.DeclaringType!.IsValueType
+                    ? method.DeclaringType.MakeByRefType()
+                    : method.DeclaringType,
                 method.GetParameters().Select(parameter => parameter.ParameterType).ToArray()),
             ConstructorInfo constructor => new CallSignature(
                 false,
@@ -492,7 +498,12 @@ internal static class MixinTranspiler
         switch (instruction.operand)
         {
             case MethodInfo method:
-                input = (method.IsStatic ? [] : new[] { method.DeclaringType! })
+                input = (method.IsStatic ? [] : new[]
+                    {
+                        method.DeclaringType!.IsValueType
+                            ? method.DeclaringType.MakeByRefType()
+                            : method.DeclaringType
+                    })
                     .Concat(method.GetParameters().Select(parameter => parameter.ParameterType)).ToArray();
                 output = method.ReturnType;
                 break;
@@ -503,7 +514,8 @@ internal static class MixinTranspiler
             case FieldInfo field when instruction.opcode == OpCodes.Ldfld:
                 input = [field.DeclaringType!]; output = field.FieldType; break;
             case FieldInfo field when instruction.opcode == OpCodes.Stfld:
-                input = [field.DeclaringType!, field.FieldType]; output = typeof(void); break;
+                input = [field.DeclaringType!.IsValueType ? field.DeclaringType.MakeByRefType() : field.DeclaringType,
+                    field.FieldType]; output = typeof(void); break;
             case FieldInfo field when instruction.opcode == OpCodes.Ldsfld:
                 input = []; output = field.FieldType; break;
             case FieldInfo field when instruction.opcode == OpCodes.Stsfld:

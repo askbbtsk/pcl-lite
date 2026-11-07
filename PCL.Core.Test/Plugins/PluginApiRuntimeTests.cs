@@ -302,6 +302,22 @@ public sealed class ApiProbePlugin : IPclPlugin
         }
         Require(await context.Settings.GetAsync<string>("cancel-remove", cancellationToken) == "preserved", "canceled settings removal preservation");
         await RequireThrowsAsync<ArgumentException>(() => context.Settings.SetAsync("../escape", "bad", cancellationToken), "settings key validation");
+
+        // Settings writes and deletes share the per-plugin data lock. Exercise concurrent
+        // replacement/removal of one key, then verify that the final committed value is intact.
+        var settingsRaceOperations = Enumerable.Range(0, 4).SelectMany(worker =>
+            Enumerable.Range(0, 12).SelectMany(iteration => new Task[]
+            {
+                context.Settings.SetAsync("concurrent-race", new ApiProbeSettings($"{worker}:{iteration}", iteration), cancellationToken),
+                context.Settings.RemoveAsync("concurrent-race", cancellationToken)
+            })).ToArray();
+        await Task.WhenAll(settingsRaceOperations);
+        var finalRaceValue = new ApiProbeSettings("committed-after-race", 999);
+        await context.Settings.SetAsync("concurrent-race", finalRaceValue, cancellationToken);
+        Require(await context.Settings.GetAsync<ApiProbeSettings>("concurrent-race", cancellationToken) == finalRaceValue,
+            "concurrent setting writes and removes preserve the final committed JSON value");
+        Require(!Directory.EnumerateFiles(context.DataDirectory, "*.tmp-*", SearchOption.AllDirectories).Any(),
+            "concurrent setting writes and removes leave no temporary files");
         await VerifySymbolicLinksRejectedAsync(context, cancellationToken);
 
         var eventCount = 0;

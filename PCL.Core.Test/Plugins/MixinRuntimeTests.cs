@@ -54,6 +54,18 @@ public class MixinRuntimeTest
     }
 
     [TestMethod]
+    public void ModifyArg_ShouldPreserveManagedPointerReceiverForStructCalls()
+    {
+        using var runtime = ApplyAll();
+
+        Assert.AreEqual(18, StructArgumentTarget.Run(3));
+        Assert.AreEqual(28, StructArgumentTarget.RunModifyArgs(3));
+        Assert.AreEqual(9, StructArgumentTarget.RunRedirect());
+        Assert.AreEqual(24, StructArgumentTarget.RunFieldRedirect());
+        Assert.AreEqual(24, StructArgumentTarget.RunFieldWriteRedirect(4));
+    }
+
+    [TestMethod]
     public void HeadInject_WithRefArgument_ShouldUpdateTheOriginalMethodArgument()
     {
         using var runtime = ApplyAll();
@@ -732,6 +744,76 @@ public class MixinRuntimeTest
             args.Set(0, 2);
             args.Set(1, 3);
         }
+    }
+
+    public struct StructArgumentTarget
+    {
+        public int Value;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public int Add(int amount) => Value + amount;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static int Run(int value)
+        {
+            var target = new StructArgumentTarget { Value = 5 };
+            return target.Add(value);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static int RunModifyArgs(int value)
+        {
+            var target = new StructArgumentTarget { Value = 5 };
+            return target.Add(value);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static int RunRedirect()
+        {
+            var target = new StructArgumentTarget { Value = 6 };
+            return target.Add(1);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static int RunFieldRedirect()
+        {
+            var target = new StructArgumentTarget { Value = 4 };
+            return target.Value;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static int RunFieldWriteRedirect(int value)
+        {
+            var target = new StructArgumentTarget();
+            target.Value = value;
+            return target.Value;
+        }
+
+    }
+
+    [Mixin(typeof(StructArgumentTarget))]
+    private static class StructArgumentMixin
+    {
+        [ModifyArg(nameof(StructArgumentTarget.Run),
+            Target = "PCL.Core.Test.Plugins.MixinRuntimeTest+StructArgumentTarget::Add(System.Int32)", Index = 0)]
+        private static int Increase(int value) => value + 10;
+
+        [ModifyArgs(nameof(StructArgumentTarget.RunModifyArgs),
+            Target = "PCL.Core.Test.Plugins.MixinRuntimeTest+StructArgumentTarget::Add(System.Int32)")]
+        private static void Replace(MixinArgs args) => args.Set(0, args.Get<int>(0) + 20);
+
+        [Redirect(nameof(StructArgumentTarget.RunRedirect),
+            Target = "PCL.Core.Test.Plugins.MixinRuntimeTest+StructArgumentTarget::Add(System.Int32)")]
+        private static int Redirect(ref StructArgumentTarget instance, int amount) => instance.Value + amount + 2;
+
+        [Redirect(nameof(StructArgumentTarget.RunFieldRedirect), At = MixinAt.Field,
+            Target = "PCL.Core.Test.Plugins.MixinRuntimeTest+StructArgumentTarget::Value", Ordinal = 1)]
+        private static int RedirectField(StructArgumentTarget instance) => instance.Value + 20;
+
+        [Redirect(nameof(StructArgumentTarget.RunFieldWriteRedirect), At = MixinAt.Field,
+            Target = "PCL.Core.Test.Plugins.MixinRuntimeTest+StructArgumentTarget::Value", Ordinal = 0)]
+        private static void RedirectFieldWrite(ref StructArgumentTarget instance, int value) => instance.Value = value + 20;
+
     }
 
     public static class RefArgumentTarget

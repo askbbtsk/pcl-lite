@@ -1553,12 +1553,21 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         }
         public Task WriteJsonAsync<T>(string relativePath, T value, CancellationToken cancellationToken = default) =>
             WriteTextAsync(relativePath, JsonSerializer.Serialize(value), cancellationToken);
-        public void RemoveFile(string relativePath)
+        public async Task RemoveFileAsync(string relativePath, CancellationToken cancellationToken = default)
         {
-            var path = Resolve(relativePath);
-            if (!File.Exists(path)) return;
-            path = Resolve(relativePath);
-            File.Delete(path);
+            var rootPath = Path.GetFullPath(root);
+            var gate = PluginRuntimeManager._GetPluginDataLock(rootPath);
+            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var path = Resolve(relativePath);
+                if (File.Exists(path)) File.Delete(path);
+            }
+            finally
+            {
+                gate.Release();
+            }
         }
         private string Resolve(string relative)
         {
@@ -1604,12 +1613,8 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             _storage.ReadJsonAsync<T>("settings/" + _SafeKey(key) + ".json", cancellationToken);
         public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken = default) =>
             _storage.WriteJsonAsync("settings/" + _SafeKey(key) + ".json", value, cancellationToken);
-        public Task RemoveAsync(string key, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            _storage.RemoveFile("settings/" + _SafeKey(key) + ".json");
-            return Task.CompletedTask;
-        }
+        public Task RemoveAsync(string key, CancellationToken cancellationToken = default) =>
+            _storage.RemoveFileAsync("settings/" + _SafeKey(key) + ".json", cancellationToken);
         private static string _SafeKey(string key) => string.IsNullOrWhiteSpace(key) || key.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '-' or '_'))
             ? throw new ArgumentException("Settings keys may contain letters, digits, '-' and '_'.", nameof(key)) : key;
     }

@@ -43,6 +43,8 @@ dotnet build .\PCL.Plugin.Sample\PCL.Plugin.Sample.csproj
 
 `PluginPackageTests.IncompatibleCoreRangeIsShownAtInstallAndSkippedAtStartup` 验证清单声明不兼容的 PCL Core 版本范围时，安装确认展示警告而运行时不加载插件。
 
+`MixinRuntimeTest.ModifyArg_ShouldPreserveManagedPointerReceiverForStructCalls` 验证 struct 实例方法的 `ModifyArg`、`ModifyArgs` 和 `Redirect`，并覆盖局部 struct 的字段读取/写入重定向签名；不要把单个 IL 形态的测试扩大解释为对所有编译器和嵌套 struct IL 的保证。
+
 独立实验 Mixin 组由 `PluginPackageTests.ExperimentalFeatureManifestRequiresUniqueSignedMixinConfigurationGroups`、`ExperimentalFeatureIsOffByDefaultAndPersistsUserChoiceAcrossRestart` 和 `FailedExperimentalFeatureRollsBackOnlyItsMixinGroupsAndKeepsPluginRunning` 覆盖：分别验证清单路径唯一性、默认关闭与重启持久化、失败时仅回滚该组并保持插件入口运行。
 
 ## 贡献和本地留痕

@@ -6,6 +6,8 @@ Mixin 由插件程序集中的 C# 属性和处理器构成，不是脚本。启�
 
 ## 基本结构
 
+首次添加或排查补丁时，按[Mixin 调试工作流](mixin-debugging.md)从目标源码、方法重载和 IL 匹配点开始，先写目标行为测试，再选择最窄的注入操作。本文说明 Mixin 的声明与约束；调试专题说明怎样把这些约束落实到当前启动器构建。
+
 1. 在插件项目中引用 `PCL.Plugin.SDK`，使用 `PCL.Mixin` 属性。
 2. 在 `plugin.json` 声明 `mixinConfig`（单个）或 `mixinConfigs`（多个）。
 3. 将 JSON 配置和程序集一并放入包并签名。

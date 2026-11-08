@@ -71,3 +71,22 @@ Mixin 是编译程序集中的方法补丁，见 [Mixin 指南](mixins.md)。与
 ## 覆盖状态
 
 当前宿主 API 的专项探针覆盖正常、失败、取消、资源释放和桥接行为；完整 UI、真实下载服务和真实 Minecraft 启动仍需发行构建回归。`PluginMixinPackageRuntimeTests` 覆盖签名包经安装和加载后应用 Mixin、必需配置失败回滚及释放时恢复目标方法；该单项集成测试不代表所有 Mixin 操作均已覆盖。提交新 API 或 Mixin 操作时，增加相应运行时测试；参见[测试与排错](testing-troubleshooting.md)。
+
+## 接口实现与验证索引
+
+新增或修改接口前，先沿下表找到生产适配器和探针。多数 API 行为通过同一个已签名测试插件端到端调用；WPF 页面导航和真实游戏启动仍需按[测试与排错](testing-troubleshooting.md)做发行版烟测。
+
+| SDK 接口 | PCL Lite 生产实现 | 自动化验证 |
+|---|---|---|
+| `IPclPlugin` | `PCL.Core/Plugins/PluginRuntimeManager.cs`：`_PreparePluginAsync`、`_StartPluginAsync`、`DisposeAsync` 停止路径 | `PluginApiRuntimeTests.LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions`；依赖顺序见 `PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` |
+| `IPluginContext`、`IPluginMetadata` | `PluginRuntimeManager.cs`：`PluginContext`、`PluginMetadata` | `PluginApiRuntimeTests.LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions` |
+| `IPluginLogger` | `PluginRuntimeManager.cs`：`PluginLogger` | 同上（验证五个日志等级） |
+| `IPluginStorage` | `PluginRuntimeManager.cs`：`PluginStorage` | 同上（文本/JSON、路径限制、取消、并发写入和失败清理） |
+| `IPluginSettings` | `PluginRuntimeManager.cs`：`PluginSettings` | 同上（读写、删除和取消） |
+| `IPluginUi` | `PluginRuntimeManager.cs`：`PluginUi`、`PluginPageRegistry`；生产 WPF 桥接在 `Plain Craft Launcher 2/Program.cs` 的 `_ConfigurePluginBridge`，插件视图在 `Plain Craft Launcher 2/Pages/PagePlugins/PagePluginsInstalled.cs` 创建 | 同上（UI 桥接探针）；实际视图导航仍需启动器烟测 |
+| `IPluginEvents` | `PluginRuntimeManager.cs`：`PluginEvents`、`PublishAsync` | 同上（订阅、分发、异常隔离、插件停止后清理） |
+| `IPluginNetwork` | `PluginRuntimeManager.cs`：`PluginNetwork` | 同上（HTTP、二进制、字符集、错误状态、响应大小上限） |
+| `IPluginMinecraft` | `PluginRuntimeManager.cs`：`PluginMinecraft`；生产实例和启动桥接在 `Plain Craft Launcher 2/Program.cs` 的 `_ConfigurePluginBridge` | 同上（使用替身桥接）；真实实例与进程仍需烟测 |
+| `IPluginLauncher` | `PluginRuntimeManager.cs`：`PluginLauncher` | 同上（信息、打开路径及 HTTPS 下载限制/原子写入） |
+
+运行插件探针：`dotnet test .\PCL.Core.Test\PCL.Core.Test.csproj --filter FullyQualifiedName~PluginApiRuntimeTests`。测试通过只证明测试桥接和当前适配器契约；若改动生产 WPF 桥接，还要构建启动器并验证页面线程、实例 ID 映射和启动结果。

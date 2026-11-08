@@ -149,10 +149,11 @@ Get-AuthenticodeSignature "publish-x64/Plain Craft Launcher 2.exe" | Select Stat
 `.github/workflows/release-publish.yml` 是 `workflow_dispatch`，要手动触发，并且**必须从 `main` 派发**：
 
 ```powershell
+# 正式版填 Release；Beta 会发成 prerelease；版本号不带前导 v
 gh workflow run release-publish.yml `
   --repo askbbtsk/pcl-lite --ref main `
-  -f configuration=Beta `       # 正式版填 Release；填 Beta 会发成 prerelease
-  -f version=1.7.2              # 不带前导 v
+  -f configuration=Beta `
+  -f version=1.7.2
 ```
 
 它会 x64 / ARM64 各编一份，用 Sigstore 签名，先建 draft Release，最后一步再发布。

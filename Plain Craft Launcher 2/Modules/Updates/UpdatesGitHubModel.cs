@@ -45,7 +45,6 @@ public class UpdatesGitHubModel : IUpdateSource
     [
         "https://cors.isteed.cc/",
         "https://gh-proxy.com/",
-        "https://gitproxy.click/",
     ];
 
     private JsonArray? _releases;

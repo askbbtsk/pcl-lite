@@ -757,6 +757,7 @@
     <sys:String x:Key="Download.Version.ReleaseDate">Released on {0}</sys:String>
     <sys:String x:Key="Download.Version.SaveAs">Save as</sys:String>
     <sys:String x:Key="Download.Version.SaveInstaller">Save installer</sys:String>
+    <sys:String x:Key="Download.Version.LiteLoader.InstallerUnavailable">The standalone installer source for this LiteLoader version is unavailable. Install it through the launcher instead.</sys:String>
     <sys:String x:Key="Download.Version.SelectSaveLocation">Select save location</sys:String>
     <sys:String x:Key="Download.Version.VersionList">Version list</sys:String>
     <sys:String x:Key="Download.Version.VersionListCount">Version list ({0})</sys:String>

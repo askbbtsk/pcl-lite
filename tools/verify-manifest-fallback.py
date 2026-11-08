@@ -36,7 +36,7 @@ TIMEOUT = 8
 ANCHOR_OWNER = "bedkillerspacex-boop"
 ANCHOR_REPO = "PCL-Lite-service"
 
-PROXIES = ["https://cors.isteed.cc/", "https://gh-proxy.com/", "https://gitproxy.click/"]
+PROXIES = ["https://cors.isteed.cc/", "https://gh-proxy.com/"]
 
 V1_FILE = "update.json"
 V2_FILE = "updatev2.json"

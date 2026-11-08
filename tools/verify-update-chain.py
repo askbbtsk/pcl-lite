@@ -29,7 +29,7 @@ ANCHOR_OWNER = "bedkillerspacex-boop"
 ANCHOR_REPO = "PCL-Lite-service"
 ANCHOR_RAW = f"https://raw.githubusercontent.com/{ANCHOR_OWNER}/{ANCHOR_REPO}/main/update.json"
 
-PROXIES = ["https://cors.isteed.cc/", "https://gh-proxy.com/", "https://gitproxy.click/"]
+PROXIES = ["https://cors.isteed.cc/", "https://gh-proxy.com/"]
 
 
 def _opener(use_proxy):

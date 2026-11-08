@@ -43,7 +43,7 @@
 1. GitHub Contents API（`api.github.com`，和后面取 Release 同一个域名，常常最快）
 2. `raw` 直连
 3. `raw` + 每个 GitHub 反代（复用 `UpdatesGitHubModel.DownloadProxies`，
-   目前是 `cors.isteed.cc` / `gh-proxy.com` / `gitproxy.click`）
+   目前是 `cors.isteed.cc` / `gh-proxy.com`）
 4. jsDelivr CDN
 
 每个通道单独 6 秒超时、不重试。串行试的写法在国内很难受：排在前面的通道一旦被墙，
@@ -153,7 +153,6 @@ PCL_TEST_PROXY=http://127.0.0.1:7890 python tools/verify-manifest-fallback.py --
 https://github.com/askbbtsk/pcl-lite/releases/download/<tag>/<file>.exe   ← 先试
 https://cors.isteed.cc/https://github.com/...                             ← 直连失败才轮到
 https://gh-proxy.com/https://github.com/...
-https://gitproxy.click/https://github.com/...
 ```
 
 理由很直接：反代是第三方中转，把一个马上要被执行的 exe 先交给别人的服务器过一道，

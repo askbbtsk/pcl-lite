@@ -748,6 +748,7 @@
     <sys:String x:Key="Download.Version.ReleaseDate">發布於 {0}</sys:String>
     <sys:String x:Key="Download.Version.SaveAs">另存新檔</sys:String>
     <sys:String x:Key="Download.Version.SaveInstaller">儲存安裝器</sys:String>
+    <sys:String x:Key="Download.Version.LiteLoader.InstallerUnavailable">目前 LiteLoader 版本的獨立安裝器下載來源無法使用，請改用啟動器內安裝。</sys:String>
     <sys:String x:Key="Download.Version.SelectSaveLocation">選擇儲存位置</sys:String>
     <sys:String x:Key="Download.Version.VersionList">版本清單</sys:String>
     <sys:String x:Key="Download.Version.VersionListCount">版本清單（{0}）</sys:String>

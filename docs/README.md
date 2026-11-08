@@ -13,6 +13,7 @@
 | [BUILD.md](BUILD.md) | 怎么编译、密钥怎么注入、怎么签名、怎么发 Release | 想自己构建一个能用的版本 |
 | [AZURE-LOGIN.md](AZURE-LOGIN.md) | 从零注册 Azure 应用，拿到自己的 `client_id` 走微软正版登录 | 想让正版登录用自己的应用 |
 | [MCP.md](MCP.md) | 内置 MCP 服务，让 AI 客户端直接操作启动器 | 想接 Claude / Cursor / Cherry Studio |
+| [LUNAR.md](LUNAR.md) | Lunar Client 启动链路：不启动 Lunar 启动器直接拉起游戏的完整事实、认证与账号文件 | 想排查 Lunar 启动失败、想改 Lunar 相关逻辑 |
 | [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md) | 主页语言 API：同一份主页内容按语言展示不同内容，兼容原版主页协议 | 想写多语言主页、想给页面加语言分支 |
 | [../plugin_docs.md](../plugin_docs.md) | 插件 SDK、API、签名、Mixin 与测试指南 | 开发或排查插件 |
 | [UPDATE.md](UPDATE.md) | 更新清单 `update.json`：为什么要有它、格式、发版时怎么改、换仓库怎么不翻车 | 要发版、要换仓库、更新检查出问题 |
@@ -48,7 +49,7 @@ pcl-lite/
 改版本号只需要动一处：
 
 1. `Plain Craft Launcher 2/metadata.json` → `version.{base,suffix,code}`
-   **界面显示的是这个**，不是 csproj。`suffix` 为空表示正式版，非空会拼成 `1.7.1-hotfix-4` 这样。
+   **界面显示的是这个**，不是 csproj。`suffix` 为空表示正式版，非空会拼成 `1.7.2-hotfix-2` 这样。
 
 两个 csproj（`Plain Craft Launcher 2/Plain Craft Launcher 2.csproj`、`PCL.Core/PCL.Core.csproj`）
 不写死版本号，而是用宏从 `metadata.json` 里正则取出 `base` 与 `suffix` 再拼成

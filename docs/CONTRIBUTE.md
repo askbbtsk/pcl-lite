@@ -182,14 +182,14 @@ public const string GitHubRepo = "pcl-lite";
 
 ```json
 {
-  "version": { "base": "1.7.2", "suffix": "", "code": 77 }
+  "version": { "base": "1.7.2", "suffix": "hotfix-2", "code": 79 }
 }
 ```
 
 规则：
 
 - **`base` 必须是三段**（`1.7.2`）。写成两段（`1.7`）会让 `SemVer.Parse` 抛异常，**整个更新检查直接炸**
-- `suffix` 为空 = 正式版；`snapshot` / `pre` / `nightly` / `hotfix-N` 会拼成 `1.7.1-hotfix-4` 这样
+- `suffix` 为空 = 正式版；`snapshot` / `pre` / `nightly` / `hotfix-N` 会拼成 `1.7.2-hotfix-2` 这样
 - `code` 每次发版 +1，**不许回退**。客户端用它判断"同版本号的不同构建"
 - 两个 csproj 的 `AssemblyVersion` / `FileVersion` / `InformationalVersion` 由宏从 `metadata.json`
   正则取出 `base` / `suffix` 再拼，**不用手改**

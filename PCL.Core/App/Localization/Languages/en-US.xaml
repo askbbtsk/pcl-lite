@@ -1706,6 +1706,14 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Welcome.Network.Manage">Manage network allowlist</sys:String>
     <sys:String x:Key="Welcome.Network.Status.All">All connections allowed ({0} network purposes)</sys:String>
     <sys:String x:Key="Welcome.Network.Status.Partial">{0} of {1} network purposes allowed</sys:String>
+    <sys:String x:Key="Welcome.Recent.Title">Selected instance</sys:String>
+    <sys:String x:Key="Welcome.Recent.Empty">No instance selected — pick one on the Launch page.</sys:String>
+    <sys:String x:Key="Welcome.Recent.Launch">Launch game</sys:String>
+    <sys:String x:Key="Welcome.Performance.Title">Performance</sys:String>
+    <sys:String x:Key="Welcome.Performance.Subtitle">Live from this PC — computed locally</sys:String>
+    <sys:String x:Key="Welcome.Performance.Cpu">CPU usage</sys:String>
+    <sys:String x:Key="Welcome.Performance.Memory">Memory usage</sys:String>
+    <sys:String x:Key="Welcome.Performance.Detail">Used {0} of {1}  ·  {2} available</sys:String>
     <sys:String x:Key="Welcome.Community.Title">Community</sys:String>
     <sys:String x:Key="Welcome.Community.Desc">Stuck on something, want to report a bug, or just curious what others are doing? Drop by the group.</sys:String>
     <sys:String x:Key="Community.Qq.Link">QQ Group: 1085542362</sys:String>

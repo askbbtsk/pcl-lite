@@ -50,6 +50,32 @@ jobs:
         with:
           tool: git-cliff
 
+      - name: Verify metadata version
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          metadata="Plain Craft Launcher 2/metadata.json"
+          if [[ ! -f "$metadata" ]]; then
+            echo "Missing $metadata" >&2
+            exit 1
+          fi
+          # metadata.json 带 UTF-8 BOM，jq 会因此报 Invalid numeric literal，先剥掉
+          sed '1s/^\xEF\xBB\xBF//' "$metadata" > /tmp/metadata.json
+          base=$(jq -er '.version.base' /tmp/metadata.json)
+          suffix=$(jq -r '.version.suffix // ""' /tmp/metadata.json)
+          code=$(jq -er '.version.code' /tmp/metadata.json)
+          if [[ -n "$suffix" && "$suffix" != "null" ]]; then
+            declared="${base}-${suffix}"
+          else
+            declared="$base"
+          fi
+          if [[ "$declared" != "$RELEASE_VERSION" ]]; then
+            echo "metadata.json 声明的是 '${declared}'，但请求发布的是 '${RELEASE_VERSION}'。" >&2
+            echo "请先修改 Plain Craft Launcher 2/metadata.json 的 version.base / version.suffix 再发版。" >&2
+            exit 1
+          fi
+          echo "metadata.json 与发布版本一致：${declared}（code ${code}）"
+
       - name: Create local release tag
         env:
           RELEASE_VERSION: ${{ inputs.version }}

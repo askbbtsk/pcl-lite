@@ -50,9 +50,8 @@ public class LegacyMcPingService : IMcPingService
     /// <returns></returns>
     public async Task<McPingResult?> PingAsync(CancellationToken cancellationToken = default)
     {
-        // TODO: 实现旧版协议的探测逻辑
-        // 这里需要迁移原来McPing类中的PingOldAsync方法逻辑
-        
+        // 旧版（1.4–1.6）协议：发 0xFE 0x01，服务端回 0xFF + 字符数 + UTF-16BE 的
+        // "§1\0协议号\0版本名\0MOTD\0在线数\0上限"，随后由服务端断开连接。
         using var so = new Socket(SocketType.Stream, ProtocolType.Tcp);
         using var timeoutCts = new CancellationTokenSource(_timeout);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);

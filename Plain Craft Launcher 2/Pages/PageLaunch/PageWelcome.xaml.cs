@@ -22,7 +22,6 @@ namespace PCL;
 public partial class PageWelcome
 {
     private TextBlock? _networkStatus;
-    private TextBlock? _privacyStatus;
 
     public PageWelcome()
     {
@@ -44,7 +43,6 @@ public partial class PageWelcome
         PanRoot.Children.Clear();
         PanRoot.Children.Add(_BuildHero());
         PanRoot.Children.Add(_BuildNetworkCard());
-        PanRoot.Children.Add(_BuildPrivacyCard());
         PanRoot.Children.Add(_BuildCommunityCard());
         // 主页语言 API：同一父容器下只保留命中当前语言的分支
         HomepageLanguageApi.ApplyToTree(this, LocalizationService.CurrentLanguage.Code);
@@ -145,46 +143,6 @@ public partial class PageWelcome
         return card;
     }
 
-    private MyCard _BuildPrivacyCard()
-    {
-        var card = new MyCard
-        {
-            Margin = new Thickness(0, 15, 0, 0),
-            Title = Lang.Text("Welcome.Privacy.Title"),
-            CanSwap = false
-        };
-
-        var panel = new StackPanel { Margin = new Thickness(25, 38, 25, 18) };
-
-        var description = new StackPanel();
-        _AddLocalizedText(description, 13, false,
-            ("zh-CN", "没有任何遥测与崩溃上报，不收集任何使用数据；崩溃分析全程在本地完成。" +
-                      "已安装的版本在断网状态下依然可以启动。"),
-            ("zh-TW", "沒有任何遙測與崩潰回報，不收集任何使用資料；崩潰分析全程在本機完成。" +
-                      "已安裝的版本在斷網狀態下依然可以啟動。"),
-            ("en", "No telemetry, no crash reporting, no usage data collection. Crash analysis " +
-                   "happens entirely on your own machine, and installed versions keep launching " +
-                   "while you are offline."));
-        panel.Children.Add(description);
-
-        _privacyStatus = _Text("", 13, bold: true);
-        _privacyStatus.Margin = new Thickness(0, 12, 0, 0);
-        panel.Children.Add(_privacyStatus);
-
-        var buttons = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Margin = new Thickness(0, 14, 0, 0)
-        };
-        buttons.Children.Add(_Button(Lang.Text("Welcome.Privacy.OpenDownload"),
-            () => _Navigate(FormMain.PageType.Download)));
-        panel.Children.Add(buttons);
-
-        card.Children.Add(panel);
-        card.Loaded += (_, _) => RefreshStatus();
-        return card;
-    }
-
     /// <summary>
     ///     社区卡片：官方 QQ 交流群。
     ///     <para>
@@ -240,13 +198,6 @@ public partial class PageWelcome
                 : Lang.Text("Welcome.Network.Status.Partial", allowed, purposes.Length);
         }
 
-        if (_privacyStatus is not null)
-        {
-            var privacy = Config.System.PrivacyMode
-                ? Lang.Text("Welcome.Privacy.Mode.On")
-                : Lang.Text("Welcome.Privacy.Mode.Off");
-            _privacyStatus.Text = Lang.Text("Welcome.Privacy.Status", privacy);
-        }
     }
 
     #endregion

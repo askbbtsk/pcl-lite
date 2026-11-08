@@ -109,6 +109,9 @@ public static class ProjectLinks
     public static string UpdateManifestMirror =>
         $"https://cdn.jsdelivr.net/gh/{ServiceOwner}/{ServiceRepo}@main/update.json";
 
+    /// <summary>Static plugin marketplace index hosted alongside the update service manifests.</summary>
+    public static string PluginCatalog => ManifestRaw(ServiceOwner, ServiceRepo, "plugins/index.json");
+
     /// <summary>
     /// 更新清单的第三条通道：GitHub Contents API。
     /// <para>

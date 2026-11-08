@@ -8,7 +8,9 @@ using PCL.Core.App.Localization;
 using PCL.Core.UI;
 using PCL.Core.Utils;
 using PCL.Core.Utils.Exts;
+using PCL.Core.Plugins;
 using PCL.Network;
+using PCL.Plugin.SDK;
 
 namespace PCL;
 
@@ -94,6 +96,7 @@ public static class ModInstanceList
                 McMcInstanceSelected = null;
                 States.Game.SelectedInstance = "";
                 ModBase.Log("[Minecraft] 未找到可用 Minecraft 实例");
+                PluginRuntimeManager.Notify(new PluginInstanceListChangedEvent(path));
                 return;
             }
 
@@ -123,6 +126,8 @@ public static class ModInstanceList
                 ModBase.WriteIni(Path.Combine(path, "PCL.ini"), "InstanceCache", folderListCheck.ToString());
                 mcInstanceList = InitMcInstanceListWithoutCache(path);
             }
+
+            PluginRuntimeManager.Notify(new PluginInstanceListChangedEvent(path));
 
             _isFirstMcInstanceListLoad = false;
 

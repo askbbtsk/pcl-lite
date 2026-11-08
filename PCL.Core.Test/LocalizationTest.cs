@@ -110,6 +110,23 @@ public class LocalizationTest
         Assert.AreEqual(LocalizationService.DefaultLanguageCode, LocalizationService.ResolveLanguage("zh-HK").Code);
     }
 
+    [TestMethod]
+    public void EnglishResourcesAreConsolidatedAndLegacyConfigurationIsMapped()
+    {
+        CollectionAssert.AreEqual(new[] { "zh-CN", "zh-TW", "en-US" },
+            LocalizationService.SupportedLanguages.Select(language => language.Code).ToArray());
+        Assert.AreEqual("English", LocalizationService.SupportedLanguages.Single(language => language.Code == "en-US").NativeName);
+        Assert.IsFalse(LocalizationService.IsLanguageSupported("en-GB"));
+        Assert.AreEqual("en-US", LocalizationService.ResolveLanguage("en-GB").Code);
+
+        var languageDirectory = Path.Combine(GetRepositoryRoot(), "PCL.Core", "App", "Localization", "Languages");
+        Assert.IsFalse(File.Exists(Path.Combine(languageDirectory, "en-GB.xaml")));
+        var english = XDocument.Load(Path.Combine(languageDirectory, "en-US.xaml"));
+        var metaNameKey = XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml");
+        Assert.AreEqual("English", english.Descendants()
+            .Single(element => element.Attribute(metaNameKey)?.Value == "Meta.Name").Value);
+    }
+
     private static HashSet<string> LoadKeys(string language)
     {
         return LoadKeyList(language).ToHashSet();

@@ -57,7 +57,7 @@ public sealed partial class LocalizationService
     /// <summary>
     ///     受支持的 UI 语言。
     ///     <para>
-    ///         只保留简体中文、繁體中文与英文（en-US / en-GB）：这三个语种的翻译是完整的，
+    ///         只保留简体中文、繁體中文与英文：这三个语种的翻译是完整的，
     ///         其余语种长期只有机翻残页，留在列表里只会让人点到一半翻译的界面。
     ///     </para>
     /// </summary>
@@ -65,8 +65,7 @@ public sealed partial class LocalizationService
     [
         _DefaultLanguage,
         new("zh-TW", "繁體中文（台灣）", "zh-TW", LocalizationFontProfile.TraditionalChinese),
-        new("en-US", "English (US)", "en-US", LocalizationFontProfile.English),
-        new("en-GB", "English (United Kingdom)", "en-GB", LocalizationFontProfile.English)
+        new("en-US", "English", "en-US", LocalizationFontProfile.English)
     ];
 
     [RegisterConfigEvent]
@@ -167,6 +166,10 @@ public sealed partial class LocalizationService
             string.Equals(languageCode, Auto, StringComparison.OrdinalIgnoreCase)) return _ResolveSystemLanguage();
 
         var normalizedCode = _NormalizeCultureCode(languageCode);
+        // Keep old en-GB configurations usable after the English resources were
+        // consolidated into the single en-US language entry.
+        if (string.Equals(normalizedCode, "en-GB", StringComparison.OrdinalIgnoreCase))
+            normalizedCode = "en-US";
         return SupportedLanguages.FirstOrDefault(language =>
                    string.Equals(language.Code, normalizedCode, StringComparison.OrdinalIgnoreCase))
                ?? _DefaultLanguage;

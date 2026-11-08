@@ -34,7 +34,7 @@ dotnet build "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" -c Debug
 - 分支：从 `main` 切，PR 提到 `main`
 - **`update.json` 一个字都不用改**，它是 `{"update": "self"}`，所有仓库里内容都一样（第 4 节）
 - **不要改 `metadata.json` 的版本号**，合并后统一发版（第 5 节）
-- 加文案要 zh-CN / zh-TW / en-US / en-GB **四份一起加**
+- 加文案要 zh-CN / zh-TW / en-US **三份一起加**
 - 提 PR 前跑一遍 `dotnet test PCL.Core.Test`，已知的环境性失败在第 9 节
 
 ---
@@ -273,13 +273,13 @@ python tools/audit-xaml-events.py
 
 ## 8. 加文案的规矩
 
-语言文件在 `PCL.Core/App/Localization/Languages/*.xaml`，四份：
+语言文件在 `PCL.Core/App/Localization/Languages/*.xaml`，三份：
 
 ```
-zh-CN.xaml  zh-TW.xaml  en-US.xaml  en-GB.xaml
+zh-CN.xaml  zh-TW.xaml  en-US.xaml
 ```
 
-- **四份必须同时加**，缺了会回退到 zh-CN（不是报错，是悄悄显示中文，很难发现）
+- **三份必须同时加**，缺了会回退到 zh-CN（不是报错，是悄悄显示中文，很难发现）
 - 键名要短、要有层级，比如 `Lunar.Social.Placeholder`
 - 简体中文里带 `{` `}` 的要转义
 - code-behind 里的提示文案也要走 `Lang.Text("...")`，不要硬编码中文字符串
@@ -304,7 +304,7 @@ for name, ks in keys.items():
 PY
 ```
 
-四份键数应当完全一致，缺的会回退到 zh-CN。
+三份键数应当完全一致，缺的会回退到 zh-CN。
 
 ---
 

@@ -79,12 +79,15 @@ public class MyPageLeft : Grid
                         new ModAnimation.AniEaseOutFluent()));
                     aniList.Add(ModAnimation.AaTranslateX(element, 20d, 300, delay,
                         new ModAnimation.AniEaseOutBack(ModAnimation.AniEasePower.Weak)));
-                    if (element is MyListItem)
+                    if (element is MyListItem listItem)
                         aniList.Add(ModAnimation.AaCode(() =>
                         {
-                            ((MyListItem)element).isMouseOverAnimationEnabled = true;
-                            ((MyListItem)element).RefreshColor(this, new EventArgs());
-                        }, delay + 280));
+                            // 位移动画结束后恢复列表项缩放变换，再启用悬停缩放动画。
+                            // 提前恢复会与仍在运行的 TranslateX 动画争用 RenderTransform。
+                            listItem.RenderTransform = new ScaleTransform(1d, 1d);
+                            listItem.isMouseOverAnimationEnabled = true;
+                            listItem.RefreshColor(this, new EventArgs());
+                        }, delay + 510));
                     delay += Math.Max(15 - id, 7) * 2;
                     id += 1;
                 }

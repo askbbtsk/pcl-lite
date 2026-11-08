@@ -1,0 +1,4 @@
+This directory contains a derivative of PCL2-Nex PCL.Core/Mixin, licensed under Apache-2.0.
+Upstream: https://github.com/PCL-Nex-Developer/PCL2-Nex/tree/7afc7babbbc590383faf56bbd57d5f028975dbb7/PCL.Core/Mixin
+Copyright (c) PCL Nex Developer. Changes by PCL Lite maintainers.
+See the repository LICENSE for the Apache License, Version 2.0.

@@ -94,7 +94,7 @@ PCL Lite 的主页协议在 PCL 原版基础上增加了**语言协商**能力�
 取值顺序：
 
 1. `languages` 中与当前语言**完整代码**相同的分支（`zh-CN` 命中 `zh-CN`）
-2. `languages` 中与当前语言**中性代码**相同的分支（`en` 命中 `en-US` 与 `en-GB`）
+2. `languages` 中与当前语言**中性代码**相同的分支（`en` 命中 `en-US`）
 3. `default` 分支
 4. 都没有 → 主页显示为空白，并记录警告
 
@@ -112,7 +112,7 @@ XAML 中任意元素都可以带上语言标签，实例化后启动器只保留
 <StackPanel>
     <TextBlock Tag="lang:zh-CN" Text="只在简体中文下显示" />
     <TextBlock Tag="lang:zh-TW" Text="只在繁體中文下顯示" />
-    <TextBlock Tag="lang:en" Text="Shown for both en-US and en-GB" />
+    <TextBlock Tag="lang:en" Text="Shown for English" />
     <TextBlock Tag="lang:default" Text="任何语言都没有命中时的兜底" />
     <TextBlock Text="我没有 Tag，所有语言都显示" />
 </StackPanel>
@@ -121,7 +121,7 @@ XAML 中任意元素都可以带上语言标签，实例化后启动器只保留
 匹配规则：
 
 - `lang:zh-CN` 精确匹配完整代码
-- `lang:zh` / `lang:en` 等中性标签匹配同语言的所有区域（`lang:en` 同时覆盖 `en-US` 与 `en-GB`）
+- `lang:zh` / `lang:en` 等中性标签匹配同语言的所有区域（当前英文资源使用 `en-US`）
 - `lang:default` 是兜底分支，仅在没有更精确的分支命中时保留
 - 比较忽略大小写，`lang:ZH_cn` 同样有效
 

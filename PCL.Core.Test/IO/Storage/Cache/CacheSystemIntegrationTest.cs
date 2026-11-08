@@ -168,29 +168,32 @@ public class CacheSystemIntegrationTest
     public async Task MixedExpirationDates_ShouldExpireIndependently()
     {
         // Arrange
-        var shortLived = new CachePolicy { AbsoluteExpiration = TimeSpan.FromMilliseconds(100) };
-        var mediumLived = new CachePolicy { AbsoluteExpiration = TimeSpan.FromMilliseconds(200) };
-        var longLived = new CachePolicy { AbsoluteExpiration = TimeSpan.FromMilliseconds(400) };
+        // Keep wide gaps between expiry points. SQLite writes and scheduler delays
+        // occur between insertion and assertions, so sub-second gaps make this test
+        // depend on machine load rather than whether entries expire independently.
+        var shortLived = new CachePolicy { AbsoluteExpiration = TimeSpan.FromMilliseconds(300) };
+        var mediumLived = new CachePolicy { AbsoluteExpiration = TimeSpan.FromMilliseconds(1800) };
+        var longLived = new CachePolicy { AbsoluteExpiration = TimeSpan.FromMilliseconds(5000) };
 
         await _cache.SetAsync("short", "expires first", shortLived);
         await _cache.SetAsync("medium", "expires second", mediumLived);
         await _cache.SetAsync("long", "expires last", longLived);
 
         // Act & Assert
-        // After 150ms, only short should be expired
-        await Task.Delay(150);
+        // After about 1s, only short should be expired.
+        await Task.Delay(1000);
         Assert.IsFalse((await _cache.GetAsync<string>("short")).Found);
         Assert.IsTrue((await _cache.GetAsync<string>("medium")).Found);
         Assert.IsTrue((await _cache.GetAsync<string>("long")).Found);
 
-        // After another 100ms (250ms total), short and medium should be expired
-        await Task.Delay(100);
+        // After another 1.5s (about 2.5s total), short and medium should be expired.
+        await Task.Delay(1500);
         Assert.IsFalse((await _cache.GetAsync<string>("short")).Found);
         Assert.IsFalse((await _cache.GetAsync<string>("medium")).Found);
         Assert.IsTrue((await _cache.GetAsync<string>("long")).Found);
 
-        // After another 200ms (450ms total), all should be expired
-        await Task.Delay(200);
+        // After another 3s (about 5.5s total), all should be expired.
+        await Task.Delay(3000);
         Assert.IsFalse((await _cache.GetAsync<string>("long")).Found);
     }
 

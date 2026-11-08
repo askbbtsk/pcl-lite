@@ -49,6 +49,7 @@ public partial class PageSetupUI
             // 启动器
             SliderLauncherOpacity.Value = Config.Preference.Theme.WindowOpacity;
             CheckLauncherLogo.Checked = Config.Preference.ShowStartupLogo;
+            RefreshTopBarCollapsedTabs();
             ComboDarkMode.SelectedIndex = (int)Config.Preference.Theme.ColorMode;
             RefreshCustomTheme();
             CheckShowLaunchingHint.Checked = Config.Preference.ShowLaunchingHint;
@@ -213,6 +214,40 @@ public partial class PageSetupUI
         var sender = (MyCheckBox)senderRaw;
         if (ModAnimation.AniControlEnabled == 0)
             SetByTag(sender.Tag?.ToString(), sender.Checked);
+    }
+
+    private void RefreshTopBarCollapsedTabs()
+    {
+        var collapsedIds = (Config.Preference.TopBarCollapsedTabs ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(value => int.TryParse(value, out var id) ? id : -1)
+            .ToHashSet();
+        CheckTopBarCollapseDownload.Checked = collapsedIds.Contains(1);
+        CheckTopBarCollapseBedrock.Checked = collapsedIds.Contains(2);
+        CheckTopBarCollapseSettings.Checked = collapsedIds.Contains(3);
+        CheckTopBarCollapseTools.Checked = collapsedIds.Contains(4);
+        CheckTopBarCollapseLunar.Checked = collapsedIds.Contains(13);
+        CheckTopBarCollapsePlugins.Checked = collapsedIds.Contains(14);
+    }
+
+    private void TopBarCollapsedTab_Change(object senderRaw, bool user)
+    {
+        if (!user || ModAnimation.AniControlEnabled != 0 || senderRaw is not MyCheckBox checkBox ||
+            !int.TryParse(checkBox.Tag?.ToString(), out var id))
+            return;
+
+        var collapsedIds = (Config.Preference.TopBarCollapsedTabs ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(value => int.TryParse(value, out var currentId) ? currentId : -1)
+            .Where(currentId => currentId is 1 or 2 or 3 or 4 or 13 or 14)
+            .ToHashSet();
+        if (checkBox.Checked == true)
+            collapsedIds.Add(id);
+        else
+            collapsedIds.Remove(id);
+
+        Config.Preference.TopBarCollapsedTabs = string.Join(",", collapsedIds.Order());
+        ModMain.frmMain?.RefreshNavigationOverflow();
     }
 
     private void TextBoxChange(object senderRaw, RoutedEventArgs e)
@@ -1166,31 +1201,8 @@ public partial class PageSetupUI
             // 获取配置组引用以缩短代码
             var conf = Config.Preference.Hide;
 
-            // 顶部栏：下载、基岩版、Lunar、设置、工具
-            var isAllTitleHidden = !HiddenForceShow && conf.PageDownload && conf.PageBedrock
-                                   && conf.PageLunar && conf.PageSetup && conf.PageTools;
-
-            if (isAllTitleHidden)
-            {
-                ModMain.frmMain.PanTitleSelect.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                ModMain.frmMain.PanTitleSelect.Visibility = Visibility.Visible;
-                ModMain.frmMain.BtnTitleSelect1.Visibility = !HiddenForceShow && conf.PageDownload
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
-                ModMain.frmMain.BtnTitleSelect2.Visibility = !HiddenForceShow && conf.PageBedrock
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
-                ModMain.frmMain.BtnTitleSelectLunar.Visibility = !HiddenForceShow && conf.PageLunar
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
-                ModMain.frmMain.BtnTitleSelect3.Visibility =
-                    !HiddenForceShow && conf.PageSetup ? Visibility.Collapsed : Visibility.Visible;
-                ModMain.frmMain.BtnTitleSelect4.Visibility =
-                    !HiddenForceShow && conf.PageTools ? Visibility.Collapsed : Visibility.Visible;
-            }
+            // 主导航布局由 FormMain 按折叠名单和实际可见页面数统一重排。
+            ModMain.frmMain.PanTitleSelect.Visibility = Visibility.Visible;
 
             // 功能隐藏设置卡片
             if (ModMain.frmSetupUI is not null)
@@ -1271,6 +1283,8 @@ public partial class PageSetupUI
                 ModMain.frmSetupLeft.PanItem.Visibility =
                     setupCount < 2 && !HiddenForceShow ? Visibility.Collapsed : Visibility.Visible;
             }
+
+            ModMain.frmMain.RefreshNavigationOverflow();
 
             // 工具子页面 (FrmToolsLeft)
             if (ModMain.frmToolsLeft is not null)

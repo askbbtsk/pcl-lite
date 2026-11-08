@@ -10,6 +10,7 @@ public static class HintService
         public string Text;
         public HintType Type;
         public bool Log;
+        public Func<Task>? OnClick;
     }
 
     private static ModBase.SafeList<HintMessage> HintWaiting
@@ -18,11 +19,11 @@ public static class HintService
         set;
     }
 
-    public static void Hint(string? text, HintType type = HintType.Info, bool log = true)
+    public static void Hint(string? text, HintType type = HintType.Info, bool log = true, Func<Task>? onClick = null)
     {
         var normalized = (text ?? "").Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " ");
         if (HintWaiting.Any(h => h.Text == normalized && h.Type == type)) return;
-        HintWaiting.Add(new HintMessage { Text = normalized, Type = type, Log = log });
+        HintWaiting.Add(new HintMessage { Text = normalized, Type = type, Log = log, OnClick = onClick });
     }
 
     public static void HintWrapper_OnShow(string message, HintTheme messageTheme)
@@ -80,7 +81,8 @@ public static class HintService
                     HintType.Warning => "lucide/triangle-alert",
                     _ => "lucide/info"
                 },
-                DisplayDuration = (800d + ModBase.MathClamp(currentHint.Text.Length, 5d, 23d) * 180d) * ModAnimation.aniSpeed
+                DisplayDuration = (800d + ModBase.MathClamp(currentHint.Text.Length, 5d, 23d) * 180d) * ModAnimation.aniSpeed,
+                OnClick = currentHint.OnClick
             };
 
             ModMain.frmMain.PanHint.Children.Add(toast);

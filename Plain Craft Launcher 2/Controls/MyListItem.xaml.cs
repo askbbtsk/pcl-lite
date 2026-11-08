@@ -63,6 +63,11 @@ public partial class MyListItem : IMyRadio
         // 触发颜色动画
         if (IsLoaded && ModAnimation.AniControlEnabled == 0) // 防止默认属性变更触发动画
         {
+            // 页面进入动画会临时把整个列表项的 RenderTransform 设为 TranslateTransform。
+            // 该动画结束前不能把它强转为 ScaleTransform，否则鼠标状态变化会导致启动器崩溃。
+            var canAnimateScale = IsScaleAnimationEnabled && RenderTransform is ScaleTransform &&
+                                  RectBack.RenderTransform is ScaleTransform;
+
             // 有动画
             var ani = new List<ModAnimation.AniData>();
             if (IsMouseOver && isMouseOverAnimationEnabled)
@@ -85,7 +90,7 @@ public partial class MyListItem : IMyRadio
                     ModAnimation.AaOpacity(RectBack, 1d - RectBack.Opacity, time,
                         ease: new ModAnimation.AniEaseOutFluent())
                 });
-                if (IsScaleAnimationEnabled)
+                if (canAnimateScale)
                 {
                     ani.Add(ModAnimation.AaScaleTransform(RectBack,
                         1d - ((ScaleTransform)RectBack.RenderTransform).ScaleX, (int)Math.Round(time * 1.6d),
@@ -110,7 +115,7 @@ public partial class MyListItem : IMyRadio
                 }
 
                 ani.Add(ModAnimation.AaOpacity(RectBack, -RectBack.Opacity, time));
-                if (IsScaleAnimationEnabled)
+                if (canAnimateScale)
                     ani.AddRange(new[]
                     {
                         ModAnimation.AaColor(RectBack, Border.BackgroundProperty,

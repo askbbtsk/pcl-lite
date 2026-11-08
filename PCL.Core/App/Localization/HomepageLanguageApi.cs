@@ -69,7 +69,7 @@ public static class HomepageLanguageApi
     /// <para>
     /// 命中规则：先按完整代码精确比较（<c>lang:zh-cn</c> 命中 <c>zh-CN</c>），
     /// 再按中性代码比较（<c>lang:zh</c> 命中 <c>zh-CN</c> 与 <c>zh-TW</c>，
-    /// <c>lang:en</c> 同时命中 <c>en-US</c> 与 <c>en-GB</c>）。
+/// <c>lang:en</c> 命中英文资源 <c>en-US</c>）。
     /// </para>
     /// </summary>
     public static bool IsLanguageTagMatch(object? tag, string languageCode)
@@ -154,7 +154,7 @@ public static class HomepageLanguageApi
         var expected = NormalizeCode(languageCode);
         var neutral = GetNeutralCode(expected);
 
-        // 先精确匹配完整代码，再退到中性代码，保证 en-US 与 en-GB 可以共用同一份 lang:en 分支。
+        // 先精确匹配完整代码，再退到中性代码，保证 en-US 可以使用 lang:en 分支。
         foreach (var property in languages.EnumerateObject())
         {
             if (string.Equals(NormalizeCode(property.Name), expected, StringComparison.Ordinal))

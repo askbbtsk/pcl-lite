@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -7,6 +7,8 @@ using System.Windows;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.Minecraft;
+using PCL.Core.Minecraft.Worlds;
+using PCL.Core.Minecraft.PersonalOptions;
 using PCL.Core.Minecraft.Launch.Utils;
 using PCL.Core.Utils.OS;
 using PCL.Core.Utils;
@@ -186,6 +188,9 @@ public static class ModLaunch
         ///     默认值：Nothing。使用实例设置的值。
         /// </summary>
         public string WorldName = null;
+
+        /// <summary>Optional explicit world directory when launching a selected save.</summary>
+        public string? WorldPath;
     }
 
     /// <summary>
@@ -295,7 +300,13 @@ public static class ModLaunch
         try
         {
             McLaunchPrecheck();
+            if (!ModLaunchDependencyPrecheck.Confirm(ModInstanceList.McMcInstanceSelected))
+                throw new ModBase.CancelledException();
             McLaunchLog("预检测已通过");
+        }
+        catch (ModBase.CancelledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -2584,6 +2595,48 @@ public static class ModLaunch
         var startedInstance = currentLaunchOptions?.instance ?? ModInstanceList.McMcInstanceSelected;
         var startedId = startedInstance?.PathInstance;
         var startedName = startedInstance?.Name;
+        var worldSessionHistory = new RecentWorldHistory();
+        RecentWorldEntry? recentWorldSession = null;
+        PersonalOptionsSession? personalOptionsSession = null;
+        string? worldPath = null;
+        var worldName = currentLaunchOptions?.WorldName;
+        if (startedInstance is not null && !string.IsNullOrWhiteSpace(worldName))
+        {
+            worldPath = !string.IsNullOrWhiteSpace(currentLaunchOptions?.WorldPath)
+                ? Path.GetFullPath(currentLaunchOptions.WorldPath)
+                : Path.Combine(startedInstance.PathIndie, "saves", Path.GetFileName(worldName));
+            if (Directory.Exists(worldPath) && File.Exists(Path.Combine(worldPath, "level.dat")))
+            {
+                try
+                {
+                    recentWorldSession = worldSessionHistory.StartSession(startedInstance.PathInstance,
+                        startedInstance.PathIndie, worldPath, Path.GetFileName(worldPath), startedInstance.Info.VanillaName);
+                }
+                catch (Exception ex) { ModBase.Log(ex, "记录最近世界会话失败", ModBase.LogLevel.Hint); }
+                try
+                {
+                    ModWorldBackups.CreateAutomaticBeforePlay(startedInstance.PathInstance, worldPath);
+                }
+                catch (Exception ex) { ModBase.Log(ex, "创建启动前世界备份失败；继续启动游戏", ModBase.LogLevel.Hint); }
+            }
+        }
+
+        if (startedInstance is not null && Config.Launch.PersonalOptionsSync)
+        {
+            try
+            {
+                var categories = _GetPersonalOptionCategories();
+                if (categories != PersonalOptionCategories.None)
+                {
+                    var profilePath = Path.Combine(Paths.SharedData, "Minecraft", "PersonalOptions", "profile.json");
+                    personalOptionsSession = PersonalOptionsSyncService.PrepareSession(
+                        Path.Combine(startedInstance.PathIndie, "options.txt"), profilePath, categories,
+                        startedInstance.Info.vanilla >= new Version(1, 13), startedInstance.Info.vanilla >= new Version(1, 16));
+                }
+            }
+            catch (Exception ex) { ModBase.Log(ex, "同步 Minecraft 个人设置失败；继续启动游戏", ModBase.LogLevel.Hint); }
+        }
+
         if (startedId is not null && startedName is not null)
         {
             gameProcess.EnableRaisingEvents = true;
@@ -2591,11 +2644,36 @@ public static class ModLaunch
             {
                 try { PluginRuntimeManager.Notify(new PluginGameExitedEvent(startedId, startedName, gameProcess.ExitCode)); }
                 catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", "发布游戏退出事件失败"); }
+                try
+                {
+                    if (personalOptionsSession is not null) PersonalOptionsSyncService.FinishSession(personalOptionsSession);
+                }
+                catch (Exception ex) { ModBase.Log(ex, "保存 Minecraft 个人设置失败", ModBase.LogLevel.Hint); }
+                var normalExit = gameProcess.ExitCode == 0;
+                if (recentWorldSession is not null)
+                {
+                    try { worldSessionHistory.FinishSession(recentWorldSession.SessionId, normalExit); }
+                    catch (Exception ex) { ModBase.Log(ex, "保存最近世界退出状态失败", ModBase.LogLevel.Hint); }
+                }
+                if (normalExit && worldPath is not null && startedInstance is not null)
+                {
+                    try { ModWorldBackups.CreateAutomaticAfterWorldExit(startedInstance.PathInstance, worldPath); }
+                    catch (Exception ex) { ModBase.Log(ex, "创建退出后世界备份失败", ModBase.LogLevel.Hint); }
+                }
             };
         }
 
         // 开始进程
-        gameProcess.Start();
+        try { gameProcess.Start(); }
+        catch
+        {
+            if (recentWorldSession is not null)
+            {
+                try { worldSessionHistory.FinishSession(recentWorldSession.SessionId, false); }
+                catch (Exception ex) { ModBase.Log(ex, "清理未能启动的最近世界会话失败", ModBase.LogLevel.Hint); }
+            }
+            throw;
+        }
         if (startedId is not null && startedName is not null)
             PluginRuntimeManager.Notify(new PluginGameStartedEvent(startedId, startedName, gameProcess.Id));
         McLaunchLog("已启动游戏进程：" + startInfo.FileName);
@@ -2717,6 +2795,17 @@ public static class ModLaunch
         while (watcher.State == ModWatcher.Watcher.MinecraftState.Loading)
             Thread.Sleep(100);
         if (watcher.State == ModWatcher.Watcher.MinecraftState.Crashed) throw new Exception("$$");
+    }
+
+    private static PersonalOptionCategories _GetPersonalOptionCategories()
+    {
+        var categories = PersonalOptionCategories.None;
+        if (Config.Launch.PersonalOptionsKeys) categories |= PersonalOptionCategories.KeyBindings;
+        if (Config.Launch.PersonalOptionsMouse) categories |= PersonalOptionCategories.Mouse;
+        if (Config.Launch.PersonalOptionsView) categories |= PersonalOptionCategories.View;
+        if (Config.Launch.PersonalOptionsAccessibility) categories |= PersonalOptionCategories.Accessibility;
+        if (Config.Launch.PersonalOptionsAudio) categories |= PersonalOptionCategories.Audio;
+        return categories;
     }
 
     private static void McLaunchEnd()

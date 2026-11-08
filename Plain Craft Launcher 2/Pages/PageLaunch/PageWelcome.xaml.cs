@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -7,6 +8,7 @@ using System.Windows.Threading;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.IO.Net.Consent;
+using PCL.Core.Minecraft.Worlds;
 
 namespace PCL;
 
@@ -24,6 +26,7 @@ namespace PCL;
 public partial class PageWelcome
 {
     private TextBlock? _networkStatus;
+    private MyCard? _lastPlayedWorldCard;
 
     public PageWelcome()
     {
@@ -33,9 +36,16 @@ public partial class PageWelcome
         // 注意：必须用静态方法组而不是 static lambda，否则 WeakLanguageChanged 会因
         // 委托带有 Target 而抛 ArgumentException（详见 WeakLanguageChanged.Add 的注释）。
         WeakLanguageChanged.Add(this, OnLanguageChanged);
+        Loaded += (_, _) =>
+        {
+            RecentWorldHistory.Changed -= OnRecentWorldChanged;
+            RecentWorldHistory.Changed += OnRecentWorldChanged;
+        };
+        Unloaded += (_, _) => RecentWorldHistory.Changed -= OnRecentWorldChanged;
     }
 
     private static void OnLanguageChanged(PageWelcome page) => ModBase.RunInUi(page.Build);
+    private void OnRecentWorldChanged() => ModBase.RunInUi(() => { if (_lastPlayedWorldCard is not null) _RefreshLastPlayedWorldCard(_lastPlayedWorldCard); });
 
     /// <summary>
     ///     构建（或重建）欢迎页内容并应用当前语言的分支过滤。
@@ -45,6 +55,7 @@ public partial class PageWelcome
         PanRoot.Children.Clear();
         PanRoot.Children.Add(_BuildHero());
         PanRoot.Children.Add(_BuildRecentCard());
+        PanRoot.Children.Add(_BuildLastPlayedWorldCard());
         PanRoot.Children.Add(_BuildNetworkCard());
         PanRoot.Children.Add(_BuildCommunityCard());
         // 主页语言 API：同一父容器下只保留命中当前语言的分支
@@ -324,6 +335,109 @@ public partial class PageWelcome
         card.Children.Add(panel);
         return card;
     }
+
+
+    private MyCard _BuildLastPlayedWorldCard()
+    {
+        var card = new MyCard { Margin = new Thickness(0, 15, 0, 0), Title = _RecentWorldTitle(), CanSwap = false };
+        _lastPlayedWorldCard = card;
+        _RefreshLastPlayedWorldCard(card);
+        return card;
+    }
+
+    private static string _RecentWorldTitle() => LocalizationService.CurrentLanguage.Code switch
+    {
+        "zh-CN" => "最近游玩的世界",
+        "zh-TW" => "最近遊玩的世界",
+        _ => "Recently played world",
+    };
+
+    private static string _RecentWorldEmpty() => LocalizationService.CurrentLanguage.Code switch
+    {
+        "zh-CN" => "还没有记录最近游玩的世界。启动一个单人世界后，它会显示在这里。",
+        "zh-TW" => "尚未記錄最近遊玩的世界。啟動單人世界後，它會顯示在這裡。",
+        _ => "No recently played world yet. Launch a single-player world and it will appear here.",
+    };
+
+    private static string _RecentWorldLaunch() => LocalizationService.CurrentLanguage.Code switch
+    {
+        "zh-CN" => "继续游玩",
+        "zh-TW" => "繼續遊玩",
+        _ => "Continue playing",
+    };
+
+    private void _RefreshLastPlayedWorldCard(MyCard card)
+    {
+        card.Children.Clear();
+        var panel = new StackPanel { Margin = new Thickness(25, 38, 25, 18) };
+        RecentWorldEntry? recent = null;
+        try { recent = new RecentWorldHistory().MostRecent(); }
+        catch (Exception ex) { ModBase.Log(ex, "[Welcome] 读取最近世界失败", ModBase.LogLevel.Debug); }
+        if (recent is null)
+        {
+            var empty = new TextBlock { Text = _RecentWorldEmpty(), FontSize = 13, TextWrapping = TextWrapping.Wrap };
+            empty.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray4");
+            panel.Children.Add(empty);
+            card.Children.Add(panel);
+            return;
+        }
+        var name = new TextBlock { Text = recent.WorldName, FontSize = 15, FontWeight = FontWeights.Bold };
+        name.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrush1");
+        panel.Children.Add(name);
+        var instanceName = Path.GetFileName(recent.InstancePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var version = new TextBlock { Text = string.IsNullOrWhiteSpace(recent.MinecraftVersion) ? instanceName : $"{instanceName} · {recent.MinecraftVersion}", FontSize = 12, Margin = new Thickness(0, 6, 0, 0) };
+        version.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray4");
+        panel.Children.Add(version);
+        var launch = new MyButton { Text = _RecentWorldLaunch(), ColorType = MyButton.ColorState.Highlight, Margin = new Thickness(0, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+        launch.Click += (_, _) => _LaunchRecentWorld(recent);
+        panel.Children.Add(launch);
+        card.Children.Add(panel);
+    }
+
+    private static void _LaunchRecentWorld(RecentWorldEntry recent)
+    {
+        try
+        {
+            var worldPath = Path.GetFullPath(recent.WorldPath);
+            if (!Directory.Exists(worldPath) || !File.Exists(Path.Combine(worldPath, "level.dat")))
+            {
+                HintService.Hint(_RecentWorldMissing(), HintType.Error);
+                return;
+            }
+            var instance = new McInstance(recent.InstancePath);
+            instance.Load();
+            if (instance.state == McInstanceState.Error || !(bool)new ModLaunch.LaunchArgument(instance).HasArguments("--quickPlaySingleplayer"))
+            {
+                HintService.Hint(_RecentWorldUnsupported(), HintType.Error);
+                return;
+            }
+            ModLaunch.McLaunchStart(new ModLaunch.McLaunchOptions
+            {
+                instance = instance,
+                WorldName = Path.GetFileName(worldPath),
+                WorldPath = worldPath,
+            });
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Welcome] 启动最近游玩的世界失败", ModBase.LogLevel.Hint, userSummary: _RecentWorldUnsupported());
+            HintService.Hint(_RecentWorldUnsupported(), HintType.Error);
+        }
+    }
+
+    private static string _RecentWorldMissing() => LocalizationService.CurrentLanguage.Code switch
+    {
+        "zh-CN" => "这个世界文件夹已不存在。",
+        "zh-TW" => "這個世界資料夾已不存在。",
+        _ => "The world folder is no longer available.",
+    };
+
+    private static string _RecentWorldUnsupported() => LocalizationService.CurrentLanguage.Code switch
+    {
+        "zh-CN" => "此实例无法快速进入单人世界，请从实例页面手动启动。",
+        "zh-TW" => "此實例無法快速進入單人世界，請從實例頁面手動啟動。",
+        _ => "This instance cannot quick-launch a single-player world. Launch it from the instance page.",
+    };
 
     private MyCard _BuildNetworkCard()
     {

@@ -1,4 +1,4 @@
-﻿<!-- Formatted by xaml-lang-formatter at 2026-06-28T17:16:52. -->
+<!-- Formatted by xaml-lang-formatter at 2026-06-28T17:16:52. -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -836,7 +836,7 @@
     <sys:String x:Key="Instance.Export.StartExport">Export</sys:String>
     <sys:String x:Key="Instance.Export.Task.CopyContent">Copy export contents</sys:String>
     <sys:String x:Key="Instance.Export.Task.CreateArchive">Create archive</sys:String>
-    <sys:String x:Key="Instance.Export.Task.DownloadPclRelease">Download PCL Lite release</sys:String>
+    <sys:String x:Key="Instance.Export.Task.PackagePclLite">Bundle current PCL Lite</sys:String>
     <sys:String x:Key="Instance.Export.Task.FetchFileInfo">Get file information</sys:String>
     <sys:String x:Key="Instance.Export.ZipFilter">ZIP file (*.zip)|*.zip</sys:String>
 
@@ -1017,6 +1017,45 @@
     <sys:String x:Key="Instance.Overall.Info.LoadInstanceInfoTask">Loading instance info</sys:String>
     <sys:String x:Key="Instance.Overall.Info.LoadModpackInfoTask">Loading modpack info</sys:String>
     <sys:String x:Key="Instance.Overall.Info.Loading">Loading information...</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Card.Title">Modpack updates</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Card.Description">Check for a new pack version, review author file additions, updates and removals, and keep modified personal files by default.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Card.Button">Check for updates</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Task">Update modpack</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Task.Download">Download modpack version</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">Select modpack version</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.IsolationRequired">This instance is not isolated. Updates are disabled to avoid changing other instances.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.GameRunning">Close Minecraft before updating this modpack.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.NoBaseline">No source baseline is recorded for this instance. Reinstall a supported pack version to enable differential updates.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.ProjectUnavailable">The modpack project could not be retrieved from its platform.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.NoReleases">The platform has no available modpack files.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.StageFailed">Preparing the new modpack version failed.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.BaselineMissing">The new version did not produce a verifiable source file baseline.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.SourceMismatch">The old and new modpack sources differ; the update was canceled.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Preview.Title">Review modpack update</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Preview">Install/update {0} author files, remove {1} author files, and preserve {2} locally modified files. An environment restore point will be created before applying.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Preview.Preserve">Keep personal changes</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Preview.UseAuthor">Use author files</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Hint.AlreadyCurrent">The modpack files are already up to date.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Hint.Success">Modpack update completed. A restore point was created.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Title">Instance restore points</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Description">Restore points save instance environment files. Restoring preserves saves and PCL Lite local data, and replaces the other instance files.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Create">Create restore point</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Empty">No restore points yet.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Item">{0} · {1} files · {2}</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Restore">Restore</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Confirm">Restore to {0}? Instance environment files will be replaced; saves will not change.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Created">Restore point created.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Restored">Instance restore point restored.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Failed">Restore point operation failed. Check the log.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare">Compare current environment</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Title">Restore point differences</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Empty">The current environment matches this restore point.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Summary">{0} added, {1} modified, {2} removed files.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Entry">{0}: {1}</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.More">And {0} more differences</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Added">Added</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Modified">Modified</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Removed">Removed</sys:String>
     <sys:String x:Key="Instance.Overall.Info.ModpackVersion">Modpack version</sys:String>
     <sys:String x:Key="Instance.Overall.Info.Title">Properties</sys:String>
 
@@ -1029,6 +1068,13 @@
     <sys:String x:Key="Instance.Overall.Manage.RepairFiles">Repair files</sys:String>
     <sys:String x:Key="Instance.Overall.Manage.RepairFiles.ToolTip">Check whether the dependencies of the instance are intact, and re-download the missing or corrupted index and assets files.&#xA;If you encounter missing sounds in game, try this option.</sys:String>
     <sys:String x:Key="Instance.Overall.Manage.TestGame">Test game</sys:String>
+<sys:String x:Key="Instance.Overall.Manage.TestCopy">Create test copy</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.IsolationRequired">Enable version isolation for this instance before creating a test copy.</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Name.Title">Create test copy</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Name.Message">Enter a name for the test copy. Game files and saves will be copied while the original stays unchanged; additional disk space is required.</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Confirm">This will copy the instance to “{0}” and use disk space. Continue?</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Success">Test copy “{0}” was created.</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Failed">Failed to create the test copy. Check the log.</sys:String>
     <sys:String x:Key="Instance.Overall.Manage.Title">Advanced options</sys:String>
 
     <!-- Instance.Overall.Repair -->
@@ -2310,6 +2356,13 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Minecraft.Launch.Login.Microsoft.Underage.Message">The account is underage. You need to modify the date of birth before logging in.&#xA;Is the age currently set on this account over 13?</sys:String>
     <sys:String x:Key="Minecraft.Launch.Login.Microsoft.XboxNotRegistered">You have not registered an Xbox account. Please register one first and then log in.</sys:String>
 
+    <sys:String x:Key="Minecraft.Launch.Dependency.Title">Mod dependency check</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.Message">The instance “{0}” has required mod dependencies that are not satisfied:&#xA;&#xA;{1}&#xA;&#xA;You can cancel launch or try to continue. If a matching dependency is installed but disabled, you can enable it first.</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.Entry">{0} → {1} (requires {2}; {3})</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.More">And {0} more</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.Enable">Enable dependencies</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.Continue">Launch anyway</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.EnableFailed">Could not enable: {0}</sys:String>
     <!-- Minecraft.Launch.Precheck -->
 
     <sys:String x:Key="Minecraft.Launch.Precheck.AuthServerMismatch">The third-party login server used by the current profile does not match the one required by this instance. Please use a matching profile!</sys:String>
@@ -3894,4 +3947,13 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Lunar.Ipc.AddAccountProvided">PCL handed your signed-in account to the game. Switch back to the game to continue.</sys:String>
     <sys:String x:Key="Lunar.Ipc.LaunchGame">The game asked to switch to {0}. Check the version on the launch page, then start it again.</sys:String>
     <sys:String x:Key="Lunar.Ipc.LaunchUnknown">(no version given)</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Title">Personal game settings across instances</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Enabled">Synchronize personal game settings</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Enabled.ToolTip">Apply your personal settings before launch and save changes after the game exits for use by other instances.</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Description">Only selected vanilla setting categories are synchronized. Mod and modpack-specific options.txt entries remain with each instance. Turning this off stops applying and capturing settings.</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Keys">Key bindings</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Mouse">Mouse</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.View">Field of view and visual effects</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Accessibility">Accessibility</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Audio">Audio levels</sys:String>
 </ResourceDictionary>

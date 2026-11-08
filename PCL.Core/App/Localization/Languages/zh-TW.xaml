@@ -1,4 +1,4 @@
-﻿<!-- Formatted by xaml-lang-formatter at 2026-06-28T17:16:52. -->
+<!-- Formatted by xaml-lang-formatter at 2026-06-28T17:16:52. -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -827,7 +827,7 @@
     <sys:String x:Key="Instance.Export.StartExport">開始匯出</sys:String>
     <sys:String x:Key="Instance.Export.Task.CopyContent">複製匯出內容</sys:String>
     <sys:String x:Key="Instance.Export.Task.CreateArchive">建立壓縮檔</sys:String>
-    <sys:String x:Key="Instance.Export.Task.DownloadPclRelease">下載 PCL Lite 正式版</sys:String>
+    <sys:String x:Key="Instance.Export.Task.PackagePclLite">打包目前的 PCL Lite</sys:String>
     <sys:String x:Key="Instance.Export.Task.FetchFileInfo">連線取得檔案資訊</sys:String>
     <sys:String x:Key="Instance.Export.ZipFilter">壓縮檔案(*.zip)|*.zip</sys:String>
 
@@ -1008,6 +1008,45 @@
     <sys:String x:Key="Instance.Overall.Info.LoadInstanceInfoTask">取得實例資訊</sys:String>
     <sys:String x:Key="Instance.Overall.Info.LoadModpackInfoTask">取得可能的模組包資訊</sys:String>
     <sys:String x:Key="Instance.Overall.Info.Loading">正在取得資訊</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Card.Title">模組包更新</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Card.Description">檢查模組包的新版本，預覽作者檔案的新增、更新和移除，並預設保留已修改的個人檔案。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Card.Button">檢查更新</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Task">更新模組包</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Task.Download">下載模組包版本</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">選擇模組包版本</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.IsolationRequired">此模組包未啟用實例隔離。為避免影響其他實例，目前無法安全更新。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.GameRunning">請先關閉執行中的 Minecraft，再更新模組包。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.NoBaseline">沒有此實例的模組包來源記錄。請先重新安裝支援的模組包版本，才能使用差異更新。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.ProjectUnavailable">無法從平台取得此模組包專案。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.NoReleases">平台沒有可用的模組包檔案。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.StageFailed">準備新版本模組包失敗。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.BaselineMissing">新版本未建立可驗證的來源檔案清單。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Error.SourceMismatch">新舊版本的模組包來源不一致，已取消更新。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Preview.Title">確認模組包更新</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Preview">將安裝／更新 {0} 個作者檔案、移除 {1} 個作者檔案，並保留 {2} 個已修改的個人檔案。繼續前會建立環境還原點。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Preview.Preserve">保留個人修改</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Preview.UseAuthor">使用作者版本</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Hint.AlreadyCurrent">模組包檔案已是最新，無需更新。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Hint.Success">模組包更新完成，已建立還原點。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Title">實例還原點</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Description">還原點會保存實例環境檔案；還原時保留 saves 存檔與 PCL Lite 本機資料，其餘實例檔案會依還原點取代。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Create">建立還原點</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Empty">目前沒有還原點。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Item">{0} · {1} 個檔案 · {2}</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Restore">還原</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Confirm">要還原至 {0} 嗎？實例環境檔案將被取代，存檔不會變更。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Created">已建立還原點。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Restored">已還原實例還原點。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Failed">還原點操作失敗，請查看記錄。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare">比較目前環境</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Title">還原點差異</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Empty">目前環境與此還原點沒有差異。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Summary">新增 {0}、修改 {1}、刪除 {2} 個檔案。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Entry">{0}：{1}</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.More">另有 {0} 個差異</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Added">新增</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Modified">修改</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Compare.Removed">刪除</sys:String>
     <sys:String x:Key="Instance.Overall.Info.ModpackVersion">模組包版本</sys:String>
     <sys:String x:Key="Instance.Overall.Info.Title">實例資訊</sys:String>
 
@@ -1020,6 +1059,13 @@
     <sys:String x:Key="Instance.Overall.Manage.RepairFiles">補全檔案</sys:String>
     <sys:String x:Key="Instance.Overall.Manage.RepairFiles.ToolTip">校驗實例依賴檔案是否完整，並重新下載 Assets 索引與缺失、校驗失敗的檔案。&#xA;若遊戲缺失音效，請嘗試此項。</sys:String>
     <sys:String x:Key="Instance.Overall.Manage.TestGame">測試遊戲</sys:String>
+<sys:String x:Key="Instance.Overall.Manage.TestCopy">建立測試副本</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.IsolationRequired">請先啟用此實例的版本隔離，再建立測試副本。</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Name.Title">建立測試副本</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Name.Message">輸入測試副本名稱。會複製此實例的遊戲檔案與存檔，並保留原實例不變；需要額外磁碟空間。</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Confirm">將複製至「{0}」。此操作會佔用磁碟空間，是否繼續？</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Success">測試副本「{0}」已建立。</sys:String>
+    <sys:String x:Key="Instance.Overall.Manage.TestCopy.Failed">建立測試副本失敗，請查看記錄。</sys:String>
     <sys:String x:Key="Instance.Overall.Manage.Title">進階管理</sys:String>
 
     <!-- Instance.Overall.Repair -->
@@ -2262,6 +2308,13 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Minecraft.Launch.Login.Microsoft.Underage.Message">該帳戶年齡不足，你需要先修改出生日期，然後才能登入。&#xA;該帳戶目前填寫的年齡是否在 13 歲以上？</sys:String>
     <sys:String x:Key="Minecraft.Launch.Login.Microsoft.XboxNotRegistered">你尚未註冊 Xbox 帳戶，請在註冊後再登入。</sys:String>
 
+    <sys:String x:Key="Minecraft.Launch.Dependency.Title">模組前置檢查</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.Message">實例「{0}」有尚未滿足的必要模組相依項：&#xA;&#xA;{1}&#xA;&#xA;可以取消啟動，或仍然嘗試啟動。若前置模組已安裝但遭停用，可以先啟用相符版本。</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.Entry">{0} → {1}（需要 {2}；{3}）</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.More">另有 {0} 項</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.Enable">啟用前置</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.Continue">仍然啟動</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.EnableFailed">無法啟用：{0}</sys:String>
     <!-- Minecraft.Launch.Precheck -->
 
     <sys:String x:Key="Minecraft.Launch.Precheck.AuthServerMismatch">目前檔案使用的第三方驗證伺服器與實例要求使用的不一致，請使用符合要求的檔案啟動遊戲！</sys:String>
@@ -3894,4 +3947,13 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Lunar.Ipc.AddAccountProvided">已把 PCL 目前登入的帳號交給遊戲，回到遊戲即可繼續。</sys:String>
     <sys:String x:Key="Lunar.Ipc.LaunchGame">遊戲請求切換到 {0}。請在啟動頁確認版本後重新啟動。</sys:String>
     <sys:String x:Key="Lunar.Ipc.LaunchUnknown">（未指定版本）</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Title">跨版本個人遊戲設定</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Enabled">同步個人遊戲設定</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Enabled.ToolTip">啟動前將個人設定套用至目前實例，結束遊戲後儲存變更，供其他實例使用。</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Description">只同步勾選的原版設定類別；模組和整合包自訂的 options.txt 項目會保留在各自實例。關閉後不再套用或擷取設定。</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Keys">按鍵綁定</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Mouse">滑鼠設定</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.View">視野與畫面效果</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Accessibility">輔助功能</sys:String>
+    <sys:String x:Key="Setup.Launch.PersonalOptions.Audio">音量設定</sys:String>
 </ResourceDictionary>

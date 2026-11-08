@@ -659,6 +659,28 @@ public partial class PageInstanceCompResource : IRefreshable
         ToolTipService.SetHorizontalOffset(btnCont, 2d);
         btnCont.Click += Info_Click;
         sender.MouseRightButtonUp += Info_Click;
+        MyIconButton? btnFavorite = null;
+        if (!sender.Entry.IsFolder && sender.Entry.Comp is { } favoriteProject)
+        {
+            btnFavorite = new MyIconButton
+            {
+                LogoScale = 1d,
+                SvgIcon = ModComp.CompFavorites.IsFavourite(favoriteProject.Id) ? "lucide/heart-filled" : "lucide/heart",
+                Tag = sender
+            };
+            btnFavorite.ToolTip = Lang.Text("Download.Comp.Favorites.Action.Manage");
+            ToolTipService.SetPlacement(btnFavorite, PlacementMode.Center);
+            ToolTipService.SetVerticalOffset(btnFavorite, 30d);
+            ToolTipService.SetHorizontalOffset(btnFavorite, 2d);
+            btnFavorite.Click += (_, _) => ModComp.CompFavorites.ShowMenu(favoriteProject, btnFavorite, () =>
+            {
+                if (btnFavorite is not null)
+                    btnFavorite.SvgIcon = ModComp.CompFavorites.IsFavourite(favoriteProject.Id)
+                        ? "lucide/heart-filled"
+                        : "lucide/heart";
+            });
+        }
+
         var btnDelete = new MyIconButton { LogoScale = 1d, SvgIcon = "lucide/trash-2", Tag = sender };
         btnDelete.ToolTip = Lang.Text("Common.Action.Delete");
         ToolTipService.SetPlacement(btnDelete, PlacementMode.Center);
@@ -668,7 +690,9 @@ public partial class PageInstanceCompResource : IRefreshable
         if (currentCompType != ModComp.CompType.Mod ||
             sender.Entry.State == ModLocalComp.LocalCompFile.LocalFileStatus.Unavailable)
         {
-            sender.Buttons = new[] { btnCont, btnOpen, btnDelete };
+            sender.Buttons = btnFavorite is null
+                ? new[] { btnCont, btnOpen, btnDelete }
+                : new[] { btnCont, btnOpen, btnFavorite, btnDelete };
         }
         else
         {
@@ -685,7 +709,9 @@ public partial class PageInstanceCompResource : IRefreshable
             ToolTipService.SetVerticalOffset(btnED, 30d);
             ToolTipService.SetHorizontalOffset(btnED, 2d);
             btnED.Click += (ss, ee) => ED_Click((MyIconButton)ss, ee);
-            sender.Buttons = new[] { btnCont, btnOpen, btnED, btnDelete };
+            sender.Buttons = btnFavorite is null
+                ? new[] { btnCont, btnOpen, btnED, btnDelete }
+                : new[] { btnCont, btnOpen, btnED, btnFavorite, btnDelete };
         }
     }
 

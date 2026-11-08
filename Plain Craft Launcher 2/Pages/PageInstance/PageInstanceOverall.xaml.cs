@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +10,7 @@ using PCL.Core.Minecraft.Profile;
 using PCL.Core.App.Configuration;
 using PCL.Core.App.Configuration.Storage;
 using PCL.Core.Minecraft;
+using PCL.Core.Minecraft.Instances;
 using PCL.Core.UI;
 using PCL.Core.Utils.Validate;
 using FileSystem = Microsoft.VisualBasic.FileIO.FileSystem;
@@ -44,8 +45,11 @@ public partial class PageInstanceOverall
         BtnManageCheck.Click += BtnManageCheck_Click;
         BtnManageRestore.Click += BtnManageRestore_Click;
         BtnManageTest.Click += BtnManageTest_Click;
+        BtnManageTestCopy.Click += BtnManageTestCopy_Click;
         BtnManageDelete.Click += BtnManageDelete_Click;
         BtnManagePatch.Click += BtnManagePatch_Click;
+        BtnPackUpdate.Click += BtnPackUpdate_Click;
+        BtnCreateRestorePoint.Click += BtnCreateRestorePoint_Click;
     }
 
     private void PageSetupLaunch_Loaded(object sender, RoutedEventArgs e)
@@ -76,6 +80,15 @@ public partial class PageInstanceOverall
         ComboDisplayType.SelectedIndex = States.Instance.CardType[instance.PathInstance];
         BtnDisplayStar.Text = instance.IsStar ? Lang.Text("Instance.Overall.Unfavorite") : Lang.Text("Instance.Overall.Favorite");
         BtnFolderMods.Visibility = instance.Modable ? Visibility.Visible : Visibility.Collapsed;
+        BtnManageTestCopy.Visibility = string.Equals(Path.GetFullPath(instance.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), Path.GetFullPath(instance.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.OrdinalIgnoreCase) ? Visibility.Visible : Visibility.Collapsed;
+        PanPackUpdate.Visibility = ModModpack.HasPackUpdateBaseline(instance.PathInstance)
+            ? Visibility.Visible : Visibility.Collapsed;
+        var isolatedPath = string.Equals(
+            Path.GetFullPath(instance.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+            Path.GetFullPath(instance.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+            StringComparison.OrdinalIgnoreCase);
+        PanRestorePoints.Visibility = isolatedPath ? Visibility.Visible : Visibility.Collapsed;
+        if (isolatedPath) RefreshRestorePoints(instance);
         // 刷新实例显示
         PanDisplayItem.Children.Clear();
         itemVersion = PageSelectRight.McVersionListItem(instance);
@@ -101,6 +114,154 @@ public partial class PageInstanceOverall
         ModAnimation.AniControlEnabled -= 1;
     }
 
+    public void RefreshPackDetails() => Reload();
+
+    private void BtnPackUpdate_Click(object sender, MouseButtonEventArgs e)
+    {
+        var instance = PageInstanceLeft.McInstance;
+        if (instance is null || !ModModpack.HasPackUpdateBaseline(instance.PathInstance))
+        {
+            HintService.Hint(Lang.Text("Instance.PackUpdate.Error.NoBaseline"), HintType.Error);
+            return;
+        }
+        ModModpack.UpdatePackFromOnline(instance);
+    }
+
+    private void BtnCreateRestorePoint_Click(object sender, MouseButtonEventArgs e)
+    {
+        var instance = PageInstanceLeft.McInstance;
+        if (instance is null) return;
+        var instanceDirectory = instance.PathIndie;
+        ModBase.RunInNewThread(() =>
+        {
+            try
+            {
+                ModWorldBackups.CreateRestorePoint(instanceDirectory, "Manual restore point");
+                ModBase.RunInUi(() =>
+                {
+                    HintService.Hint(Lang.Text("Instance.RestorePoint.Created"), HintType.Success);
+                    RefreshRestorePoints(PageInstanceLeft.McInstance);
+                });
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "创建实例还原点失败", ModBase.LogLevel.Hint);
+                ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.RestorePoint.Failed"), HintType.Error));
+            }
+        });
+    }
+
+    private void RefreshRestorePoints(McInstance instance)
+    {
+        PanRestorePointList.Children.Clear();
+        IReadOnlyList<PCL.Core.Minecraft.Backups.BackupSnapshot> snapshots;
+        try { snapshots = ModWorldBackups.ListRestorePoints(instance.PathIndie); }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "读取实例还原点列表失败", ModBase.LogLevel.Hint);
+            PanRestorePointList.Children.Add(new TextBlock { Text = Lang.Text("Instance.RestorePoint.Failed"), Margin = new Thickness(0, 4, 0, 0) });
+            return;
+        }
+
+        if (snapshots.Count == 0)
+        {
+            PanRestorePointList.Children.Add(new TextBlock { Text = Lang.Text("Instance.RestorePoint.Empty"), Margin = new Thickness(0, 4, 0, 0) });
+            return;
+        }
+
+        foreach (var snapshot in snapshots.OrderByDescending(static item => item.CreatedUtc))
+        {
+            var row = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var info = new TextBlock
+            {
+                Text = Lang.Text("Instance.RestorePoint.Item", Lang.Date(snapshot.CreatedUtc.LocalDateTime, "g"), snapshot.Files.Count, snapshot.Reason ?? ""),
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            row.Children.Add(info);
+            var restore = new MyButton
+            {
+                Text = Lang.Text("Instance.RestorePoint.Restore"),
+                MinWidth = 120,
+                Height = 32,
+                Padding = new Thickness(10, 0, 10, 0)
+            };
+            Grid.SetColumn(restore, 1);
+            restore.Click += (_, _) => RestorePoint(instance, snapshot);
+            var compare = new MyIconButton
+            {
+                SvgIcon = "lucide/git-compare",
+                ToolTip = Lang.Text("Instance.RestorePoint.Compare"),
+                Margin = new Thickness(6, 0, 0, 0)
+            };
+            Grid.SetColumn(compare, 2);
+            compare.Click += (_, _) => CompareRestorePoint(instance, snapshot);
+            row.Children.Add(compare);
+            row.Children.Add(restore);
+            PanRestorePointList.Children.Add(row);
+        }
+    }
+
+    private void CompareRestorePoint(McInstance instance, PCL.Core.Minecraft.Backups.BackupSnapshot snapshot)
+    {
+        var instanceDirectory = instance.PathIndie;
+        ModBase.RunInNewThread(() =>
+        {
+            try
+            {
+                var differences = ModWorldBackups.CompareRestorePoint(instanceDirectory, snapshot.Id);
+                var added = differences.Count(item => item.Kind == PCL.Core.Minecraft.Backups.BackupDifferenceKind.Added);
+                var modified = differences.Count(item => item.Kind == PCL.Core.Minecraft.Backups.BackupDifferenceKind.Modified);
+                var removed = differences.Count(item => item.Kind == PCL.Core.Minecraft.Backups.BackupDifferenceKind.Removed);
+                var details = differences.Take(20).Select(item => Lang.Text("Instance.RestorePoint.Compare.Entry",
+                    item.Kind switch
+                    {
+                        PCL.Core.Minecraft.Backups.BackupDifferenceKind.Added => Lang.Text("Instance.RestorePoint.Compare.Added"),
+                        PCL.Core.Minecraft.Backups.BackupDifferenceKind.Modified => Lang.Text("Instance.RestorePoint.Compare.Modified"),
+                        _ => Lang.Text("Instance.RestorePoint.Compare.Removed")
+                    }, item.Path));
+                var message = differences.Count == 0
+                    ? Lang.Text("Instance.RestorePoint.Compare.Empty")
+                    : Lang.Text("Instance.RestorePoint.Compare.Summary", added, modified, removed)
+                      + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, details)
+                      + (differences.Count > 20 ? Environment.NewLine + Lang.Text("Instance.RestorePoint.Compare.More", differences.Count - 20) : "");
+                ModBase.RunInUiWait(() => ModMain.MyMsgBox(message, Lang.Text("Instance.RestorePoint.Compare.Title"), Lang.Text("Common.Action.Confirm")));
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "对比实例还原点失败", ModBase.LogLevel.Hint);
+                ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.RestorePoint.Failed"), HintType.Error));
+            }
+        });
+    }
+    private void RestorePoint(McInstance instance, PCL.Core.Minecraft.Backups.BackupSnapshot snapshot)
+    {
+        if (ModMain.MyMsgBox(Lang.Text("Instance.RestorePoint.Confirm", snapshot.CreatedUtc.LocalDateTime),
+                Lang.Text("Instance.RestorePoint.Restore"), Lang.Text("Instance.RestorePoint.Restore"),
+                Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
+        var instanceDirectory = instance.PathIndie;
+        ModBase.RunInNewThread(() =>
+        {
+            try
+            {
+                ModWorldBackups.RestoreRestorePoint(instanceDirectory, snapshot.Id);
+                ModBase.RunInUi(() =>
+                {
+                    HintService.Hint(Lang.Text("Instance.RestorePoint.Restored"), HintType.Success);
+                    RefreshRestorePoints(PageInstanceLeft.McInstance);
+                });
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "恢复实例还原点失败", ModBase.LogLevel.Hint);
+                ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.RestorePoint.Failed"), HintType.Error));
+            }
+        });
+    }
     private void GetInstanceInfo()
     {
         modpackCompItem = null;
@@ -731,6 +892,56 @@ public partial class PageInstanceOverall
         }
     }
 
+    private void BtnManageTestCopy_Click(object sender, MouseButtonEventArgs e)
+    {
+        var source = PageInstanceLeft.McInstance;
+        if (source is null) return;
+        var sourcePath = Path.GetFullPath(source.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var gamePath = Path.GetFullPath(source.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!string.Equals(sourcePath, gamePath, StringComparison.OrdinalIgnoreCase))
+        {
+            HintService.Hint(Lang.Text("Instance.Overall.Manage.TestCopy.IsolationRequired"), HintType.Error);
+            return;
+        }
+        var isRunning = ModWatcher.mcWatcherList.Any(watcher =>
+            (watcher.State is ModWatcher.Watcher.MinecraftState.Loading or ModWatcher.Watcher.MinecraftState.Running)
+            && watcher.version is not null
+            && string.Equals(Path.GetFullPath(watcher.version.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                sourcePath, StringComparison.OrdinalIgnoreCase));
+        if (isRunning)
+        {
+            HintService.Hint(Lang.Text("Instance.PackUpdate.Error.GameRunning"), HintType.Error);
+            return;
+        }
+
+        var newName = ModMain.MyMsgBoxInput(Lang.Text("Instance.Overall.Manage.TestCopy.Name.Title"),
+            Lang.Text("Instance.Overall.Manage.TestCopy.Name.Message"), source.Name + " Test",
+            [new FolderNameValidator(Path.Combine(ModFolder.mcFolderSelected, "versions"), ignoreCase: true)]);
+        if (string.IsNullOrWhiteSpace(newName)) return;
+        if (ModMain.MyMsgBox(Lang.Text("Instance.Overall.Manage.TestCopy.Confirm", newName),
+                Lang.Text("Instance.Overall.Manage.TestCopy.Name.Title"), Lang.Text("Common.Action.Confirm"),
+                Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
+
+        var destination = Path.Combine(Path.GetDirectoryName(sourcePath)!, newName);
+        var sourceName = source.Name;
+        ModBase.RunInNewThread(() =>
+        {
+            try
+            {
+                InstanceTestCopyService.Create(sourcePath, destination, sourceName, newName);
+                var copied = new McInstance(newName);
+                Config.Instance.IndieV2[copied.PathInstance] = true;
+                ModLoader.LoaderFolderRun(ModInstanceList.mcInstanceListLoader, ModFolder.mcFolderSelected,
+                    ModLoader.LoaderFolderRunType.ForceRun, 1, @"versions\");
+                ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.Overall.Manage.TestCopy.Success", newName), HintType.Success));
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "创建 Minecraft 测试副本失败", ModBase.LogLevel.Hint);
+                ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.Overall.Manage.TestCopy.Failed"), HintType.Error));
+            }
+        });
+    }
     // 删除实例
     // 修改此代码时，同时修改 PageSelectRight 中的代码
     private void BtnManageDelete_Click(object sender, MouseButtonEventArgs e)

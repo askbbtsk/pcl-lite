@@ -272,46 +272,6 @@ public static class UpdateManager
         }
     }
 
-    /// <summary>
-    ///     确保 PathTemp 下的 Latest.exe 是最新正式版的 PCL，它会被用于整合包打包。
-    ///     如果不是，则下载一个。
-    /// </summary>
-    internal static void DownloadLatestPCL(ModLoader.LoaderBase loaderToSyncProgress = null)
-    {
-        // 注意：如果要自行实现这个功能，请换用另一个文件路径，以免与官方版本冲突
-        var latestPCLPath = Path.Combine(ModBase.pathTemp, "CE-Latest.exe");
-        var target = remoteServer.GetLatestVersion(UpdateChannel.stable,
-            CurrentArch);
-        if (target is null)
-            throw new Exception(Lang.Text("Update.Error.UnableToGetUpdate"));
-        if (File.Exists(latestPCLPath) && (ModBase.GetFileSHA256(latestPCLPath) ?? "") == (target.Sha256 ?? ""))
-        {
-            var cachedSignatureError = UpdateSignatureVerifier.VerifyAsync(
-                    latestPCLPath, latestPCLPath + ".sigstore.json")
-                .GetAwaiter().GetResult();
-            if (cachedSignatureError is null)
-            {
-                ModBase.Log("[System] 最新版 PCL 已存在且证书签名有效，跳过下载");
-                return;
-            }
-            ModBase.Log($"[System] 已有最新版缓存签名无效，将重新下载：{cachedSignatureError}",
-                ModBase.LogLevel.Developer);
-            File.Delete(latestPCLPath);
-            if (File.Exists(latestPCLPath + ".sigstore.json")) File.Delete(latestPCLPath + ".sigstore.json");
-        }
-
-        var loaders = remoteServer.GetDownloadLoader(UpdateChannel.stable,
-            CurrentArch, latestPCLPath);
-        var loader = new ModLoader.LoaderCombo<int>(Lang.Text("Update.Task.DownloadLatestStable"), loaders);
-        loader.Start();
-        loader.WaitForExit();
-        var signatureError = UpdateSignatureVerifier.VerifyAsync(
-                latestPCLPath, latestPCLPath + ".sigstore.json")
-            .GetAwaiter().GetResult();
-        if (signatureError is not null)
-            throw new InvalidDataException("最新版启动器证书签名校验失败：" + signatureError);
-    }
-
     public static ModLoader.LoaderTask<int, int> serverLoader =
         new(Lang.Text("Update.Service.PclCe"),
             _ => LoadOnlineInfo(),

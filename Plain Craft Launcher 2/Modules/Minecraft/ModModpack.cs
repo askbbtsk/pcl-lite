@@ -5,6 +5,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
+using PCL.Core.Minecraft.Packs;
+using PCL.Core.Minecraft.Backups;
 using PCL.Core.UI;
 using PCL.Core.Utils.Validate;
 using PCL.Network;
@@ -426,7 +428,14 @@ public static class ModModpack
         // 解压
         var installTemp = ModMain.RequestTaskTempFolder();
         var installLoaders = new List<LoaderBase>();
+        var authoredPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var authoredIdentities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var overrideHome = (string)(json["overrides"] ?? "");
+        if (!string.IsNullOrEmpty(overrideHome))
+        {
+            var overridePrefix = CombineArchivePath(archiveBaseFolder, overrideHome is "." or "./" ? "" : overrideHome);
+            CollectArchiveRelativePaths(archive, overridePrefix, authoredPaths);
+        }
         if (!string.IsNullOrEmpty(overrideHome))
             installLoaders.Add(new LoaderTask<string, int>(Lang.Text("Minecraft.Download.Modpack.Stage.ExtractModpack"),
                 task =>
@@ -549,9 +558,13 @@ public static class ModModpack
                     if (!file.Available)
                         continue;
                     // 实际的添加
-                    fileList.Add(id,
-                        file.ToNetFile($@"{ModFolder.mcFolderSelected}versions\{instanceName}\{targetFolder}\",
-                            ModComp.DownloadReason.ModPack, json["minecraft"]!["version"]!.ToString(), modLoader));
+                    var download = file.ToNetFile($@"{ModFolder.mcFolderSelected}versions\{instanceName}\{targetFolder}\",
+                        ModComp.DownloadReason.ModPack, json["minecraft"]!["version"]!.ToString(), modLoader);
+                    fileList.Add(id, download);
+                    var relativePath = Path.GetRelativePath($@"{ModFolder.mcFolderSelected}versions\{instanceName}", download.LocalPath).Replace('\\', '/');
+                    authoredPaths.Add(relativePath);
+                    if (ModJson["modId"] is JsonNode modId)
+                        authoredIdentities[relativePath] = $"curseforge:{modId}:{id}";
                     task.Progress += 1d / (1 + modList.Count);
                 }
 
@@ -619,6 +632,7 @@ public static class ModModpack
             if (json["version"] is not null) States.Instance.ModpackVersion[versionFolder] = json["version"].ToString();
             States.Instance.ModpackSource[versionFolder] = "CurseForge";
             States.Instance.ModpackId[versionFolder] = resourceId;
+            SaveInstalledPackBaseline(versionFolder, authoredPaths, "CurseForge", resourceId, (string?)json["version"], authoredIdentities);
             do
             {
                 try
@@ -655,6 +669,216 @@ public static class ModModpack
         if (!isOnlineInstall)
             ModBase.RunInUi(() => ModMain.frmMain.PageChange(FormMain.PageType.TaskManager));
         return loader;
+    }
+
+    private static string CombineArchivePath(string prefix, string relative)
+    {
+        var left = (prefix ?? "").Replace('\\', '/').Trim('/');
+        var right = (relative ?? "").Replace('\\', '/').Trim('/');
+        return left.Length == 0 ? right : right.Length == 0 ? left : left + "/" + right;
+    }
+
+    private static void CollectArchiveRelativePaths(ZipArchive archive, string prefix, ISet<string> output)
+    {
+        var normalizedPrefix = (prefix ?? "").Replace('\\', '/').Trim('/');
+        if (normalizedPrefix.Length > 0) normalizedPrefix += "/";
+        foreach (var entry in archive.Entries)
+        {
+            var fullName = entry.FullName.Replace('\\', '/');
+            if (fullName.EndsWith('/') || !fullName.StartsWith(normalizedPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+            var relative = normalizedPrefix.Length == 0 ? fullName : fullName[normalizedPrefix.Length..];
+            if (string.IsNullOrWhiteSpace(relative)) continue;
+            PackUpdatePlanner.ValidateRelativePath(relative);
+            output.Add(relative);
+        }
+    }
+
+    public static bool HasPackUpdateBaseline(string instancePath)
+    {
+        try { return new PackBaselineStore(Paths.SharedLocalData).Load(instancePath) is { ProjectId.Length: > 0 }; }
+        catch (Exception ex) { ModBase.Log(ex, "检查整合包来源记录失败"); return false; }
+    }
+
+    /// <summary>Downloads the latest compatible upstream pack archive, stages it as a temporary instance, and applies a three-way update to the selected pack.</summary>
+    public static void UpdatePackFromOnline(McInstance instance)
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+        var task = new LoaderTask<int, int>(Lang.Text("Instance.PackUpdate.Task"), loader =>
+            _UpdatePackFromOnline(instance, loader)) { block = false };
+        var root = new LoaderCombo<int>(Lang.Text("Instance.PackUpdate.Task"), [task]) { show = false };
+        root.Start(0);
+        ModLoader.LoaderTaskbarAdd(root);
+        ModMain.frmMain.BtnExtraDownload.ShowRefresh();
+        ModMain.frmMain.BtnExtraDownload.Ribble();
+    }
+
+    private static void _UpdatePackFromOnline(McInstance instance, LoaderTask<int, int> task)
+    {
+        var store = new PackBaselineStore(Paths.SharedLocalData);
+        var stageName = "PCLLiteUpdate" + Guid.NewGuid().ToString("N");
+        var stageVersionPath = Path.Combine(ModFolder.mcFolderSelected, "versions", stageName);
+        var stageRoot = Path.Combine(Path.GetDirectoryName(instance.PathInstance.TrimEnd(Path.DirectorySeparatorChar))!, $".pcllite-pack-update-{Guid.NewGuid():N}");
+        try
+        {
+            var gameRoot = Path.GetFullPath(instance.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var instanceVersionPath = Path.GetFullPath(instance.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!string.Equals(gameRoot, instanceVersionPath, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.IsolationRequired"));
+            if (ModWatcher.mcWatcherList.Any(static watcher => watcher.State is ModWatcher.Watcher.MinecraftState.Loading or ModWatcher.Watcher.MinecraftState.Running))
+                throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.GameRunning"));
+
+            var previous = store.Load(instance.PathInstance);
+            if (previous is null || string.IsNullOrWhiteSpace(previous.ProjectId))
+                throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.NoBaseline"));
+            var projects = ModComp.CompRequest.GetCompProjectsByIds([previous.ProjectId]);
+            var project = projects.FirstOrDefault()
+                ?? throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.ProjectUnavailable"));
+            var releases = ModComp.CompFilesGet(project.Id, project.FromCurseForge)
+                .Where(static file => file.Available && file.Type == ModComp.CompType.ModPack)
+                .OrderByDescending(static file => file.Status == ModComp.CompFileStatus.Release)
+                .ThenByDescending(static file => file.ReleaseDate)
+                .Take(50)
+                .ToList();
+            if (releases.Count == 0) throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.NoReleases"));
+
+            var selection = releases.Select(file => (IMyRadio)new MyRadioBox
+            {
+                Text = $"{(string.IsNullOrWhiteSpace(file.DisplayName) ? file.FileName : file.DisplayName)}  ·  {file.ReleaseDate:yyyy-MM-dd}  ·  {file.Status}",
+            }).ToList();
+            var selected = ModBase.RunInUiWait(() => ModMain.MyMsgBoxSelect(selection,
+                Lang.Text("Instance.PackUpdate.SelectVersion.Title"), Lang.Text("Common.Action.Confirm"), Lang.Text("Common.Action.Cancel")));
+            if (selected is null || selected.Value < 0 || selected.Value >= releases.Count) throw new ModBase.CancelledException();
+            var release = releases[selected.Value];
+            task.Progress = 0.05d;
+
+            Directory.CreateDirectory(stageRoot);
+            var archivePath = Path.Combine(stageRoot, "modpack" + (Path.GetExtension(release.FileName) is { Length: > 1 } extension && extension.Length <= 10 ? extension : ".zip"));
+            var packageDownload = release.ToNetFile(archivePath, ModComp.DownloadReason.ModPack,
+                instance.Info.VanillaName, _GetInstanceLoader(instance));
+            var packageLoader = new LoaderDownload(Lang.Text("Instance.PackUpdate.Task.Download"), [packageDownload]);
+            packageLoader.Start();
+            while (packageLoader.State == ModBase.LoadState.Loading)
+            {
+                if (task.IsAborted)
+                {
+                    packageLoader.Abort();
+                    throw new ModBase.CancelledException();
+                }
+                task.Progress = 0.05d + 0.1d * packageLoader.Progress;
+                Thread.Sleep(50);
+            }
+            if (packageLoader.State != ModBase.LoadState.Finished)
+                throw packageLoader.Error ?? new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.DownloadFailed"));
+            task.Progress = 0.15d;
+
+            var stagingInstall = ModpackInstall(archivePath, stageName, resourceId: previous.ProjectId, isOnlineInstall: true);
+            while (stagingInstall.State == ModBase.LoadState.Loading)
+            {
+                if (task.IsAborted)
+                {
+                    stagingInstall.Abort();
+                    throw new ModBase.CancelledException();
+                }
+                task.Progress = 0.15d + stagingInstall.Progress * 0.35d;
+                Thread.Sleep(50);
+            }
+            if (stagingInstall.State != ModBase.LoadState.Finished)
+                throw stagingInstall.Error ?? new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.StageFailed"));
+
+            var target = store.Load(stageVersionPath)
+                ?? throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.BaselineMissing"));
+            if (!string.Equals(target.Source, previous.Source, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(target.ProjectId, previous.ProjectId, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.SourceMismatch"));
+
+            var payloadPaths = target.Files.Values.ToDictionary(
+                static item => item.Path,
+                item => PackUpdatePlanner.ResolveWithin(stageVersionPath, item.Path),
+                StringComparer.OrdinalIgnoreCase);
+            var plan = PackUpdatePlanner.Build(gameRoot, previous, target, payloadPaths);
+            var authorCount = plan.Actions.Count(static item => item.Kind is PackUpdateActionKind.InstallAuthorFile or PackUpdateActionKind.RemoveAuthorFile);
+            var personalCount = plan.Actions.Count(static item => item.Kind == PackUpdateActionKind.PreservePersonalFile && item.Ownership == PackFileOwnership.PersonalModified);
+            if (authorCount == 0)
+            {
+                ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.PackUpdate.Hint.AlreadyCurrent")));
+                return;
+            }
+            var previewLines = plan.Actions
+                .Where(static item => item.Kind != PackUpdateActionKind.PreservePersonalFile || item.Ownership == PackFileOwnership.PersonalModified)
+                .Take(24)
+                .Select(static item => $"• {(item.Kind == PackUpdateActionKind.InstallAuthorFile ? "+" : item.Kind == PackUpdateActionKind.RemoveAuthorFile ? "−" : "=")} {item.DestinationPath}");
+            var hiddenLineCount = Math.Max(0, plan.Actions.Count - 24);
+            var preview = Lang.Text("Instance.PackUpdate.Preview", plan.Actions.Count(static item => item.Kind == PackUpdateActionKind.InstallAuthorFile),
+                plan.Actions.Count(static item => item.Kind == PackUpdateActionKind.RemoveAuthorFile), personalCount)
+                + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, previewLines)
+                + (hiddenLineCount > 0 ? Environment.NewLine + $"… {hiddenLineCount}" : "");
+            var decision = ModBase.RunInUiWait(() => ModMain.MyMsgBox(preview, Lang.Text("Instance.PackUpdate.Preview.Title"),
+                Lang.Text("Instance.PackUpdate.Preview.Preserve"), Lang.Text("Instance.PackUpdate.Preview.UseAuthor"),
+                Lang.Text("Common.Action.Cancel"), isWarn: true));
+            if (decision == 3 || decision == 0) throw new ModBase.CancelledException();
+            if (decision == 2)
+            {
+                var authorChoices = previous.Files.Keys.Concat(target.Files.Keys).Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(static path => path, static _ => PackFileChoice.UseAuthor, StringComparer.OrdinalIgnoreCase);
+                plan = PackUpdatePlanner.Build(gameRoot, previous, target, payloadPaths, authorChoices);
+            }
+
+            var restoreRoot = Path.Combine(Paths.SharedLocalData, "Minecraft", "PackRestorePoints");
+            EnvironmentRestorePointService.Create(gameRoot, restoreRoot, "before pack update " + (target.VersionId ?? ""));
+            EnvironmentRestorePointService.ApplyRetention(restoreRoot, gameRoot, 10);
+            task.Progress = 0.55d;
+            using var transactionCancellation = new CancellationTokenSource();
+            PackUpdateTransaction.Apply(plan, transactionCancellation.Token,
+                (completed, total) =>
+                {
+                    if (task.IsAborted) transactionCancellation.Cancel();
+                    task.Progress = total == 0 ? 0.95d : 0.55d + 0.4d * completed / total;
+                },
+                () => store.Save(instance.PathInstance, target));
+            if (!string.IsNullOrWhiteSpace(target.VersionId)) States.Instance.ModpackVersion[instance.PathInstance] = target.VersionId;
+            task.Progress = 1d;
+            ModBase.RunInUi(() =>
+            {
+                ModMain.frmInstanceOverall?.RefreshPackDetails();
+                HintService.Hint(Lang.Text("Instance.PackUpdate.Hint.Success", target.VersionId ?? ""), HintType.Success);
+            });
+        }
+        finally
+        {
+            try
+            {
+                store.Delete(stageVersionPath);
+                if (Directory.Exists(stageVersionPath)) Directory.Delete(stageVersionPath, recursive: true);
+            }
+            catch (Exception ex) { ModBase.Log(ex, "清理整合包更新暂存实例失败"); }
+            try { if (Directory.Exists(stageRoot)) Directory.Delete(stageRoot, recursive: true); }
+            catch (Exception ex) { ModBase.Log(ex, "清理整合包更新下载目录失败"); }
+        }
+    }
+
+    private static ModComp.CompLoaderType _GetInstanceLoader(McInstance instance)
+    {
+        if (instance.Info.HasNeoForge) return ModComp.CompLoaderType.NeoForge;
+        if (instance.Info.HasForge || instance.Info.HasCleanroom) return ModComp.CompLoaderType.Forge;
+        if (instance.Info.HasFabric || instance.Info.HasLegacyFabric) return ModComp.CompLoaderType.Fabric;
+        if (instance.Info.HasQuilt) return ModComp.CompLoaderType.Quilt;
+        return ModComp.CompLoaderType.Any;
+    }
+
+    private static void SaveInstalledPackBaseline(string versionFolder, IEnumerable<string> authoredPaths,
+        string source, string? projectId, string? versionId, IReadOnlyDictionary<string, string> identities)
+    {
+        try
+        {
+            var store = new PackBaselineStore(Paths.SharedLocalData);
+            var baseline = store.Capture(versionFolder, authoredPaths, source, projectId, versionId,
+                relative => identities.TryGetValue(relative, out var identity) ? identity : null);
+            store.Save(versionFolder, baseline);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "记录整合包来源文件清单失败；当前安装仍可使用，但该实例之后无法进行来源差异更新");
+        }
     }
 
     #endregion
@@ -745,6 +969,10 @@ public static class ModModpack
         // 解压
         var installTemp = ModMain.RequestTaskTempFolder();
         var installLoaders = new List<LoaderBase>();
+        var authoredPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var authoredIdentities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        CollectArchiveRelativePaths(archive, CombineArchivePath(archiveBaseFolder, "overrides"), authoredPaths);
+        CollectArchiveRelativePaths(archive, CombineArchivePath(archiveBaseFolder, "client-overrides"), authoredPaths);
         installLoaders.Add(new LoaderTask<string, int>(Lang.Text("Minecraft.Download.Modpack.Stage.ExtractModpack"),
             task =>
         {
@@ -791,9 +1019,11 @@ public static class ModModpack
                 .ToList();
             // 镜像源
             urls = urls.SelectMany(x => ModDownload.DlSourceModDownloadGet(x)).ToList();
-            var targetPath = $@"{ModFolder.mcFolderSelected}versions\{instanceName}\{File["path"]}";
-            if (!Path.GetFullPath(targetPath)
-                    .StartsWithF($@"{ModFolder.mcFolderSelected}versions\{instanceName}\", true))
+            var relativePath = ((string)File["path"]).Replace('\\', '/');
+            PackUpdatePlanner.ValidateRelativePath(relativePath);
+            var versionRoot = Path.GetFullPath(Path.Combine(ModFolder.mcFolderSelected, "versions", instanceName));
+            var targetPath = PackUpdatePlanner.ResolveWithin(versionRoot, relativePath);
+            if (!targetPath.StartsWith(versionRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             {
                 ModMain.MyMsgBox(Lang.Text("Minecraft.Download.Modpack.PathOutsideInstance.Message", targetPath),
                     Lang.Text("Minecraft.Download.Modpack.PathOutsideInstance.Title"), isWarn: true);
@@ -805,6 +1035,7 @@ public static class ModModpack
                     modLoader), targetPath,
                 new ModBase.FileChecker(actualSize: ((JsonNode)File["fileSize"]).ToObject<long>(),
                     hash: File["hashes"]["sha1"].ToString()), true));
+            authoredPaths.Add(relativePath);
         }
 
         if (fileList.Any())
@@ -861,6 +1092,7 @@ public static class ModModpack
                 States.Instance.ModpackVersion[versionFolder] = json["versionId"].ToString();
             States.Instance.ModpackSource[versionFolder] = "Modrinth";
             States.Instance.ModpackId[versionFolder] = resourceId;
+            SaveInstalledPackBaseline(versionFolder, authoredPaths, "Modrinth", resourceId, (string?)json["versionId"], authoredIdentities);
             do
             {
                 try
@@ -1152,26 +1384,21 @@ public static class ModModpack
             {
                 ExtractModpackFiles(targetFolder, fileAddress, task, 0.9d);
                 Thread.Sleep(400); // 避免文件争用
-                // 查找解压后的 exe 文件
-                string launcher = null;
-                foreach (var ExeFile in Directory.GetFiles(targetFolder, "*.exe", SearchOption.TopDirectoryOnly))
+                // PCL Lite should win over a legacy upstream PCL or any other bundled launcher.
+                var launcherCandidates = new List<LauncherBundleCandidate>();
+                foreach (var exeFile in Directory.GetFiles(targetFolder, "*.exe", SearchOption.TopDirectoryOnly))
                 {
-                    var info = FileVersionInfo.GetVersionInfo(ExeFile);
-                    ModBase.Log($"[Modpack] 文件 {ExeFile} 的产品名标识为 {info.ProductName}");
-                    if (info.ProductName == "Plain Craft Launcher")
-                    {
-                        launcher = ExeFile;
-                        ModBase.Log($"[Modpack] 发现整合包附带的 PCL 启动器：{ExeFile}");
-                    }
-                    else if ((info.ProductName.ContainsF("Launcher", true) || info.ProductName.ContainsF("启动", true)) &&
-                             !(info.ProductName == "Plain Craft Launcher Admin Manager"))
-                    {
-                        if (launcher is null)
-                        {
-                            launcher = ExeFile;
-                            ModBase.Log($"[Modpack] 发现整合包附带的疑似第三方启动器：{ExeFile}");
-                        }
-                    }
+                    var productName = FileVersionInfo.GetVersionInfo(exeFile).ProductName ?? string.Empty;
+                    ModBase.Log($"[Modpack] 文件 {exeFile} 的产品名标识为 {productName}");
+                    launcherCandidates.Add(new LauncherBundleCandidate(exeFile, productName));
+                }
+                var launcher = LauncherBundleResolver.SelectBundledLauncher(launcherCandidates);
+                if (launcher is not null)
+                {
+                    var selectedProduct = FileVersionInfo.GetVersionInfo(launcher).ProductName;
+                    ModBase.Log(selectedProduct == LauncherBundleResolver.LiteProductName
+                        ? $"[Modpack] 优先选择整合包内的 PCL Lite：{launcher}"
+                        : $"[Modpack] 选择整合包内的启动器：{launcher}");
                 }
 
                 task.Progress = 0.95d;

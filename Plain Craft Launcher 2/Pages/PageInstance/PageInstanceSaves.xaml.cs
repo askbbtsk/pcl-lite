@@ -1,11 +1,14 @@
-﻿using System.Collections.Specialized;
+using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.VisualBasic.FileIO;
+using PCL.Core.App;
+using PCL.Core.Minecraft.Backups;
 using PCL.Core.App.Localization;
 using PCL.Core.UI;
 
@@ -17,6 +20,7 @@ public partial class PageInstanceSaves : IRefreshable
     private readonly DispatcherTimer searchTimer;
     private FileSystemWatcher fileSystemWatcher;
     private bool isLoad;
+    private bool loadingBackupPreferences;
 
     private object quickPlayFeature = false;
 
@@ -33,6 +37,16 @@ public partial class PageInstanceSaves : IRefreshable
         fileSystemRefreshTimer.Tick += FileSystemRefreshTimer_Tick;
         searchTimer.Tick += SearchTimer_Tick;
         SearchBox.TextChanged += SearchRun;
+        CheckAutoWorldBackup.Text = ModWorldBackups.Text("autoSetting");
+        LabBackupRetention.Text = ModWorldBackups.Text("retention");
+        CheckAutoWorldBackup.Change += (_, user) =>
+        {
+            if (!loadingBackupPreferences && user) SaveBackupPreferences();
+        };
+        ComboBackupRetention.SelectionChanged += (_, _) =>
+        {
+            if (!loadingBackupPreferences) SaveBackupPreferences();
+        };
     }
 
     void IRefreshable.Refresh()
@@ -59,6 +73,7 @@ public partial class PageInstanceSaves : IRefreshable
         // 重复加载部分
         PanBack.ScrollToHome();
         worldPath = PageInstanceLeft.McInstance.PathIndie + @"saves\";
+        RefreshBackupSettings();
         if (!Directory.Exists(worldPath))
             Directory.CreateDirectory(worldPath);
         Reload();
@@ -148,6 +163,7 @@ public partial class PageInstanceSaves : IRefreshable
     {
         try
         {
+            CardBackupSettings.Title = ModWorldBackups.Text("settingsTitle");
             if (IsSearching)
             {
                 var resultCount = _searchResult is null ? 0 : _searchResult.Count;
@@ -171,6 +187,8 @@ public partial class PageInstanceSaves : IRefreshable
                 PanContent.UpdateLayout();
 
                 var showingSaves = (IsSearching ? _searchResult : saveFolders).ToList();
+                var selectedInstance = PageInstanceLeft.McInstance;
+                var capturedInstancePath = Path.GetFullPath(selectedInstance.PathInstance);
 
                 if (showingSaves.Any())
                 {
@@ -187,7 +205,7 @@ public partial class PageInstanceSaves : IRefreshable
                     if (!Directory.Exists(curFolder)) continue;
 
                     var saveLogo = Path.Combine(curFolder, "icon.png");
-                    var tmpCurFolder = curFolder;
+                    var tmpCurFolder = Path.GetFullPath(curFolder);
                     if (File.Exists(saveLogo))
                     {
                         var target =
@@ -283,6 +301,13 @@ public partial class PageInstanceSaves : IRefreshable
                     btnInfo.Click += (_, _) => ModMain.frmMain.PageChange(new FormMain.PageStackData
                         { page = FormMain.PageType.VersionSaves, additional = (null, null, null, ModComp.CompLoaderType.Any, ModComp.CompType.Any, tmpCurFolder) });
 
+                    var btnBackups = new MyIconButton
+                    {
+                        SvgIcon = "lucide/archive",
+                        ToolTip = ModWorldBackups.Text("button")
+                    };
+                    var backupCard = CreateBackupCard(capturedInstancePath, tmpCurFolder);
+                    btnBackups.Click += (_, _) => backupCard.IsSwapped = !backupCard.IsSwapped;
                     var btnLaunch = new MyIconButton
                     {
                         SvgIcon = "lucide/play",
@@ -294,17 +319,19 @@ public partial class PageInstanceSaves : IRefreshable
                         var launchOptions = new ModLaunch.McLaunchOptions
                         {
                             WorldName = worldName,
+                            WorldPath = tmpCurFolder,
                             instance = PageInstanceLeft.McInstance
                         };
                         ModLaunch.McLaunchStart(launchOptions);
                         ModMain.frmMain.PageChange(new FormMain.PageStackData { page = FormMain.PageType.Launch });
                     };
                     if ((bool)quickPlayFeature)
-                        worldItem.Buttons = new[] { btnOpen, btnDelete, btnCopy, btnInfo, btnLaunch };
+                        worldItem.Buttons = new[] { btnOpen, btnDelete, btnCopy, btnInfo, btnBackups, btnLaunch };
                     else
-                        worldItem.Buttons = new[] { btnOpen, btnDelete, btnCopy, btnInfo };
+                        worldItem.Buttons = new[] { btnOpen, btnDelete, btnCopy, btnInfo, btnBackups };
 
                     PanList.Children.Add(worldItem);
+                    PanList.Children.Add(backupCard);
                 }
 
                 ModAnimation.AniControlEnabled -= 1;
@@ -317,6 +344,190 @@ public partial class PageInstanceSaves : IRefreshable
                 Lang.Text("Instance.Saves.RefreshUiFailed"),
                 ModBase.LogLevel.Hint,
                 userSummary: Lang.Text("Instance.Saves.RefreshUiFailed"));
+        }
+    }
+
+
+    private MyCard CreateBackupCard(string instancePath, string worldFolder)
+    {
+        var items = new StackPanel
+        {
+            Margin = new Thickness(18, 42, 18, 0),
+            Tag = worldFolder
+        };
+        var card = new MyCard
+        {
+            Tag = worldFolder,
+            Title = ModWorldBackups.Text("card", GetFolderNameFromPath(worldFolder)),
+            Margin = new Thickness(42, 0, 0, 10),
+            CanSwap = true,
+            IsSwapped = true,
+            SwapControl = items,
+            InstallMethod = stack => FillBackupCard(stack, instancePath, worldFolder)
+        };
+        card.Children.Add(items);
+        return card;
+    }
+
+    private void FillBackupCard(StackPanel stack, string instancePath, string worldFolder)
+    {
+        stack.Children.Clear();
+        var createButton = new MyButton
+        {
+            Text = ModWorldBackups.Text("create"),
+            Height = 32,
+            MinWidth = 130,
+            Padding = new Thickness(12, 0, 12, 0),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            ColorType = MyButton.ColorState.Highlight
+        };
+        createButton.Click += (_, _) => RunBackupWork(instancePath, worldFolder, "create", () =>
+        {
+            ModWorldBackups.CreateManual(instancePath, worldFolder);
+            return ModWorldBackups.Text("created");
+        });
+        stack.Children.Add(createButton);
+
+        IReadOnlyList<BackupSnapshot> backups;
+        try
+        {
+            backups = ModWorldBackups.List(worldFolder);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "读取世界备份列表失败");
+            stack.Children.Add(_BackupHint(ModWorldBackups.Text("failed")));
+            return;
+        }
+
+        if (backups.Count == 0)
+        {
+            stack.Children.Add(_BackupHint(ModWorldBackups.Text("empty")));
+            return;
+        }
+
+        foreach (var snapshot in backups)
+        {
+            var row = new MyListItem
+            {
+                Title = snapshot.CreatedUtc.ToLocalTime().ToString("g"),
+                Info = string.IsNullOrWhiteSpace(snapshot.Reason)
+                    ? $"{snapshot.Files.Count} files · {snapshot.ArchiveLength:N0} B"
+                    : $"{snapshot.Reason} · {snapshot.Files.Count} files · {snapshot.ArchiveLength:N0} B",
+                Logo = "pack://application:,,,/images/Blocks/Chest.png"
+            };
+            var restore = new MyIconButton { SvgIcon = "lucide/rotate-ccw", ToolTip = ModWorldBackups.Text("restore") };
+            restore.Click += (_, _) =>
+            {
+                if (ModMain.MyMsgBox(ModWorldBackups.Text("confirmRestore"), ModWorldBackups.Text("restore"),
+                        ModWorldBackups.Text("restore"), Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
+                RunBackupWork(instancePath, worldFolder, "restore", () =>
+                {
+                    ModWorldBackups.Restore(instancePath, worldFolder, snapshot.Id);
+                    return ModWorldBackups.Text("restored");
+                });
+            };
+            var delete = new MyIconButton { SvgIcon = "lucide/trash-2", ToolTip = ModWorldBackups.Text("delete") };
+            delete.Click += (_, _) =>
+            {
+                if (ModMain.MyMsgBox(ModWorldBackups.Text("confirmDelete"), ModWorldBackups.Text("delete"),
+                        ModWorldBackups.Text("delete"), Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
+                RunBackupWork(instancePath, worldFolder, "delete", () =>
+                {
+                    ModWorldBackups.Delete(worldFolder, snapshot.Id);
+                    return ModWorldBackups.Text("deleted");
+                });
+            };
+            row.Buttons = [restore, delete];
+            stack.Children.Add(row);
+        }
+    }
+
+    private static TextBlock _BackupHint(string text)
+    {
+        var hint = new TextBlock
+        {
+            Text = text,
+            Margin = new Thickness(0, 12, 0, 0),
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.7d,
+        };
+        hint.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray1");
+        return hint;
+    }
+
+    private void RunBackupWork(string instancePath, string worldFolder, string operation, Func<string> work)
+    {
+        var instanceName = Path.GetFileName(Path.TrimEndingDirectorySeparator(instancePath));
+        var taskName = $"{instanceName} - {ModWorldBackups.Text("card", GetFolderNameFromPath(worldFolder))}";
+        var task = new ModLoader.LoaderTask<int, int>(taskName, loader =>
+        {
+            var token = loader.AbortedToken;
+            token.ThrowIfCancellationRequested();
+            loader.output = 0;
+            var successText = work();
+            token.ThrowIfCancellationRequested();
+            ModBase.RunInUi(() =>
+            {
+                HintService.Hint(successText, HintType.Success);
+                if (PageInstanceLeft.McInstance is { } selected
+                    && string.Equals(Path.GetFullPath(selected.PathInstance), instancePath, StringComparison.OrdinalIgnoreCase))
+                    Reload();
+            });
+        });
+        var combo = new ModLoader.LoaderCombo<int>(taskName, [task]);
+        combo.OnStateChanged = loader =>
+        {
+            if (loader.State == ModBase.LoadState.Failed)
+            {
+                var error = loader.Error;
+                ModBase.Log(error ?? new InvalidOperationException("Backup operation failed."), $"世界备份操作失败：{operation}");
+                HintService.Hint(ModWorldBackups.Text("failed"), HintType.Error);
+            }
+        };
+        combo.Start(1);
+        ModLoader.LoaderTaskbarAdd(combo);
+        ModMain.frmMain.BtnExtraDownload.ShowRefresh();
+        ModMain.frmMain.BtnExtraDownload.Ribble();
+    }
+
+    private void RefreshBackupSettings()
+    {
+        var instancePath = PageInstanceLeft.McInstance.PathInstance;
+        var preferences = ModWorldBackups.GetPreferences(instancePath, worldPath);
+        loadingBackupPreferences = true;
+        try
+        {
+            CardBackupSettings.Title = ModWorldBackups.Text("settingsTitle");
+            CheckAutoWorldBackup.Text = ModWorldBackups.Text("autoSetting");
+            LabBackupRetention.Text = ModWorldBackups.Text("retention");
+            CheckAutoWorldBackup.Checked = preferences.AutomaticEnabled;
+            foreach (var item in ComboBackupRetention.Items.OfType<MyComboBoxItem>())
+                if (Convert.ToInt32(item.Tag) == preferences.RetentionCount)
+                    ComboBackupRetention.SelectedItem = item;
+            if (ComboBackupRetention.SelectedItem is null) ComboBackupRetention.SelectedIndex = 2;
+        }
+        finally
+        {
+            loadingBackupPreferences = false;
+        }
+    }
+
+    private void SaveBackupPreferences()
+    {
+        if (!IsLoaded || PageInstanceLeft.McInstance is not { } instance) return;
+        try
+        {
+            var retention = ComboBackupRetention.SelectedItem is MyComboBoxItem item
+                ? Convert.ToInt32(item.Tag)
+                : 5;
+            ModWorldBackups.SavePreferences(instance.PathInstance, worldPath,
+                new ModWorldBackups.Preferences(CheckAutoWorldBackup.Checked == true, retention));
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "保存世界备份设置失败");
+            HintService.Hint(ModWorldBackups.Text("failed"), HintType.Error);
         }
     }
 
@@ -377,7 +588,10 @@ public partial class PageInstanceSaves : IRefreshable
     {
         if (PanList.Children.IndexOf(item) == -1)
             return;
-        PanList.Children.Remove(item);
+        var index = PanList.Children.IndexOf(item);
+        PanList.Children.RemoveAt(index);
+        if (index < PanList.Children.Count && PanList.Children[index] is MyCard { Tag: string })
+            PanList.Children.RemoveAt(index);
         RefreshUI();
     }
 

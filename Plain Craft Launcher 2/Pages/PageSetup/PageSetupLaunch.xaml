@@ -1,4 +1,4 @@
-<local:MyPageRight
+﻿<local:MyPageRight
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:PCL"
@@ -241,6 +241,34 @@
                                    TextTrimming="None" Margin="2,3,0,0" FontSize="16"
                                    Foreground="{DynamicResource ColorBrushMemory}" HorizontalAlignment="Left" />
                     </Grid>
+                </StackPanel>
+            </local:MyCard>
+            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Setup.Launch.PersonalOptions.Title}" CanSwap="True">
+                <StackPanel Margin="25,40,25,17">
+                    <local:MyCheckBox x:Name="CheckPersonalOptionsSync" Height="28"
+                                      Text="{DynamicResource Setup.Launch.PersonalOptions.Enabled}"
+                                      ToolTip="{DynamicResource Setup.Launch.PersonalOptions.Enabled.ToolTip}"
+                                      Tag="LaunchPersonalOptionsSync" Change="CheckBoxChange" />
+                    <TextBlock Text="{DynamicResource Setup.Launch.PersonalOptions.Description}"
+                               TextWrapping="Wrap" Margin="0,2,0,8"
+                               Foreground="{DynamicResource ColorBrushGray4}" />
+                    <StackPanel x:Name="PanPersonalOptionsCategories" Margin="20,0,0,0">
+                        <local:MyCheckBox x:Name="CheckPersonalOptionsKeys" Height="27"
+                                          Text="{DynamicResource Setup.Launch.PersonalOptions.Keys}"
+                                          Tag="LaunchPersonalOptionsKeys" Change="CheckBoxChange" />
+                        <local:MyCheckBox x:Name="CheckPersonalOptionsMouse" Height="27"
+                                          Text="{DynamicResource Setup.Launch.PersonalOptions.Mouse}"
+                                          Tag="LaunchPersonalOptionsMouse" Change="CheckBoxChange" />
+                        <local:MyCheckBox x:Name="CheckPersonalOptionsView" Height="27"
+                                          Text="{DynamicResource Setup.Launch.PersonalOptions.View}"
+                                          Tag="LaunchPersonalOptionsView" Change="CheckBoxChange" />
+                        <local:MyCheckBox x:Name="CheckPersonalOptionsAccessibility" Height="27"
+                                          Text="{DynamicResource Setup.Launch.PersonalOptions.Accessibility}"
+                                          Tag="LaunchPersonalOptionsAccessibility" Change="CheckBoxChange" />
+                        <local:MyCheckBox x:Name="CheckPersonalOptionsAudio" Height="27"
+                                          Text="{DynamicResource Setup.Launch.PersonalOptions.Audio}"
+                                          Tag="LaunchPersonalOptionsAudio" Change="CheckBoxChange" />
+                    </StackPanel>
                 </StackPanel>
             </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Setup.Launch.Advanced.Title}" IsSwapped="True" CanSwap="True">

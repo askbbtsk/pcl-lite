@@ -82,6 +82,13 @@ public partial class PageSetupLaunch
             CheckAdvanceDisableCrashAnalysis.Checked = Config.Launch.DisableCrashAnalysis;
             CheckAdvanceLockMemory.Checked = Config.Launch.LockMemory;
             CheckLunarVerify.Checked = Config.Preference.Lunar.VerifyFiles;
+            CheckPersonalOptionsSync.Checked = Config.Launch.PersonalOptionsSync;
+            CheckPersonalOptionsKeys.Checked = Config.Launch.PersonalOptionsKeys;
+            CheckPersonalOptionsMouse.Checked = Config.Launch.PersonalOptionsMouse;
+            CheckPersonalOptionsView.Checked = Config.Launch.PersonalOptionsView;
+            CheckPersonalOptionsAccessibility.Checked = Config.Launch.PersonalOptionsAccessibility;
+            CheckPersonalOptionsAudio.Checked = Config.Launch.PersonalOptionsAudio;
+            _RefreshPersonalOptionsCategoriesEnabled();
             if (SystemInfo.IsArm64System)
             {
                 CheckAdvanceDisableJLW.Checked = true;
@@ -184,10 +191,18 @@ public partial class PageSetupLaunch
         // 锁定内存状态变化时同步刷新初始内存滑块的可用状态
         if (ReferenceEquals(sender, CheckAdvanceLockMemory))
             RamType(Config.Launch.MemoryAllocationMode);
+        if (ReferenceEquals(sender, CheckPersonalOptionsSync))
+            _RefreshPersonalOptionsCategoriesEnabled();
     }
 
     private static void SetByTag(string tag, object value)
         => ConfigService.TrySetValue(tag, value);
+
+    private void _RefreshPersonalOptionsCategoriesEnabled()
+    {
+        PanPersonalOptionsCategories.IsEnabled = Config.Launch.PersonalOptionsSync;
+        PanPersonalOptionsCategories.Opacity = Config.Launch.PersonalOptionsSync ? 1d : 0.5d;
+    }
 
     // 切换到实例独立设置
     private void BtnSwitch_Click(object sender, MouseButtonEventArgs e)

@@ -6,6 +6,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using DotNet.Globbing;
 using PCL.Core.App;
+using PCL.Core.Minecraft.Packs;
 using PCL.Core.UI;
 using PCL.Core.App.Localization;
 using PCL.Core.Utils;
@@ -866,22 +867,15 @@ public partial class PageInstanceExport : IRefreshable
         // 构造步骤加载器
         var loaders = new List<ModLoader.LoaderBase>();
 
-        #region 准备 PCL 文件
-        
-        #if !RELEASE
+        #region 准备 PCL Lite 本体
+
         if (includePCL)
-            loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Instance.Export.Task.DownloadPclRelease"),
-                loader =>
-                {
-                    UpdateManager.DownloadLatestPCL(loader);
-                    ModBase.CopyFile(Path.Combine(ModBase.pathTemp, "CE-Latest.exe"),
-                        Path.Combine(cacheFolder, "Plain Craft Launcher.exe"));
-                })
+            loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Instance.Export.Task.PackagePclLite"),
+                _ => LauncherBundleResolver.CopyCurrentExecutable(Basics.ExecutablePath, cacheFolder))
             {
                 ProgressWeight = 0.5d,
                 block = false
             });
-        #endif
 
         #endregion
 
@@ -971,10 +965,6 @@ public partial class PageInstanceExport : IRefreshable
             loader.Progress = 0.97d;
             // 复制 PCL 实例设置
             ModBase.CopyDirectory(Path.Combine(mcInstance.PathInstance, "PCL"), Path.Combine(overridesFolder, "PCL"));
-            #if RELEASE
-                        // 复制 PCL 本体
-                        if (includePCL) ModBase.CopyFile(Basics.ExecutablePath, Path.Combine(cacheFolder, Basics.ExecutableName));
-            #endif
             // 复制 PCL 个性化内容
             if (includePCLCustom)
             {

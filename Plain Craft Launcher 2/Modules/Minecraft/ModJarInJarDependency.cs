@@ -156,6 +156,20 @@ public class ModJarInJarIndex
             .ToList();
     }
 
+    /// <summary>Returns disabled physical mod files whose versions satisfy the requested dependency.</summary>
+    public IReadOnlyList<CompFile> GetDisabledProviders(CompFile dependent, DepRow dependency)
+    {
+        if (!_providers.TryGetValue(_Norm(dependency.DepId), out var providers)) return Array.Empty<CompFile>();
+        return providers
+            .Where(provider => provider.Source != dependent &&
+                               provider.Host.State == CompFile.LocalFileStatus.Disabled &&
+                               provider.Host.path.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase) &&
+                               _VersionSatisfies(dependency, provider.Version))
+            .Select(provider => provider.Host)
+            .Distinct()
+            .ToList();
+    }
+
     /// <summary>构造某 mod 自身声明的依赖行（不含内嵌上浮），供关系页按 mod 分卡展示。</summary>
     public static List<DepRow> BuildOwnDependencies(CompFile mod, string loader) =>
         mod.DependencyDeclarations.Select(declaration => new DepRow

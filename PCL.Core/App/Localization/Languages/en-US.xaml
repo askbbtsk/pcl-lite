@@ -1710,6 +1710,9 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Welcome.Privacy.Mode.On">On</sys:String>
     <sys:String x:Key="Welcome.Privacy.Mode.Off">Off</sys:String>
     <sys:String x:Key="Welcome.Privacy.Status">Privacy mode: {0} · Telemetry: removed</sys:String>
+    <sys:String x:Key="Welcome.Recent.Title">Last played</sys:String>
+    <sys:String x:Key="Welcome.Recent.Empty">No instance selected yet — pick one on the Launch page.</sys:String>
+    <sys:String x:Key="Welcome.Recent.Launch">Launch game</sys:String>
     <sys:String x:Key="Welcome.Community.Title">Community</sys:String>
     <sys:String x:Key="Welcome.Community.Desc">Stuck on something, want to report a bug, or just curious what others are doing? Drop by the group.</sys:String>
     <sys:String x:Key="Community.Qq.Link">QQ Group: 1085542362</sys:String>

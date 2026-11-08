@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -14,6 +15,7 @@ internal static class ModWorldBackups
 {
     private const string BackupFolderName = "PCLLiteData";
     private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
+    private static readonly ConcurrentDictionary<string, string> _launchRestorePoints = new(StringComparer.OrdinalIgnoreCase);
 
     private static string _GameDataRootFromSaves(string savesPath)
     {
@@ -71,33 +73,27 @@ internal static class ModWorldBackups
         return CreateRestorePoint(instanceDirectory, "Automatic restore point before game launch");
     }
 
-    /// <summary>After a crash, offers a file-level comparison and restores the pre-launch point on explicit confirmation.</summary>
-    public static void OfferCrashRecovery(string instancePath, string instanceName, string snapshotId)
+    public static void RegisterLaunchRestorePoint(string instancePath, string snapshotId)
     {
+        if (!string.IsNullOrWhiteSpace(instancePath) && !string.IsNullOrWhiteSpace(snapshotId))
+            _launchRestorePoints[Path.GetFullPath(instancePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)] = snapshotId;
+    }
+
+    public static void CompleteNormalLaunch(string instancePath)
+    {
+        if (!string.IsNullOrWhiteSpace(instancePath))
+            _launchRestorePoints.TryRemove(Path.GetFullPath(instancePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), out _);
+    }
+
+    /// <summary>After crash analysis completes, offers a file-level comparison and restores the pre-launch point on explicit confirmation.</summary>
+    public static void OfferCrashRecovery(string instancePath, string instanceName)
+    {
+        var target = Path.GetFullPath(instancePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!_launchRestorePoints.TryRemove(target, out var snapshotId)) return;
         ModBase.RunInNewThread(() =>
         {
             try
             {
-                var target = Path.GetFullPath(instancePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                var deadline = Environment.TickCount64 + 20_000;
-                var crashed = false;
-                while (Environment.TickCount64 < deadline)
-                {
-                    var watcher = ModWatcher.mcWatcherList.FirstOrDefault(item => item.version is not null
-                        && string.Equals(Path.GetFullPath(item.version.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
-                            target, StringComparison.OrdinalIgnoreCase));
-                    if (watcher?.State == ModWatcher.Watcher.MinecraftState.Crashed)
-                    {
-                        crashed = true;
-                        break;
-                    }
-                    if (watcher?.State is ModWatcher.Watcher.MinecraftState.Ended or ModWatcher.Watcher.MinecraftState.Canceled)
-                        return;
-                    Thread.Sleep(200);
-                }
-                if (!crashed) return;
-                Thread.Sleep(2500); // Let the launcher crash analyzer collect the original environment first.
-
                 var differences = EnvironmentRestorePointService.CompareCurrent(RestorePointRoot, snapshotId, target);
                 if (differences.Count == 0) return;
                 var added = differences.Count(item => item.Kind == BackupDifferenceKind.Added);
@@ -130,7 +126,6 @@ internal static class ModWorldBackups
             }
         }, "Crash Environment Recovery");
     }
-
     public static void RestoreRestorePoint(string instanceDirectory, string snapshotId)
     {
         EnsureInstanceOffline(instanceDirectory);

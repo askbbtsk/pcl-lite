@@ -735,11 +735,15 @@ public static class ModWatcher
                             ModBase.LogLevel.Feedback,
                             userSummary: Lang.Text("Crash.Analysis.Error.Failed"));
                     }
+                    try { ModWorldBackups.OfferCrashRecovery(version.PathInstance, version.Name); }
+                    catch (Exception recoveryError) { ModBase.Log(recoveryError, "启动崩溃恢复提示失败", ModBase.LogLevel.Hint); }
                 }, "Crash Analyzer");
             }
             else
             {
                 WatcherLog(Lang.Text("Watcher.Crash.DetectedDisabled"));
+                try { ModWorldBackups.OfferCrashRecovery(version.PathInstance, version.Name); }
+                catch (Exception recoveryError) { ModBase.Log(recoveryError, "启动崩溃恢复提示失败", ModBase.LogLevel.Hint); }
             }
         }
 

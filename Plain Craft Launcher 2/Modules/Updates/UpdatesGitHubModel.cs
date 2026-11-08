@@ -381,10 +381,17 @@ public class UpdatesGitHubModel : IUpdateSource
                 // 直连能通就用直连——反代是第三方中转，没必要把发布包先过一道别人的手。
                 var urls = new List<string> { url };
                 urls.AddRange(DownloadProxies.Select(proxy => proxy + url));
-                // 签名 sidecar 只走 GitHub 官方直链，不能通过第三方反代取回。
                 load.output = [new DownloadFile(urls.Distinct(), tempPath)];
                 if (!string.IsNullOrWhiteSpace(signatureUrl))
-                    load.output.Add(new DownloadFile([signatureUrl], output + ".sigstore.json"));
+                {
+                    // The sidecar is also fetched through the configured mirrors as a fallback.
+                    // Its contents remain untrusted until UpdateSignatureVerifier validates the
+                    // Sigstore bundle against the pinned GitHub Actions identity.
+                    var signatureUrls = new List<string> { signatureUrl };
+                    signatureUrls.AddRange(DownloadProxies.Select(proxy => proxy + signatureUrl));
+                    load.output.Add(new DownloadFile(signatureUrls.Distinct(StringComparer.OrdinalIgnoreCase),
+                        output + ".sigstore.json"));
+                }
             }));
 
         loaders.Add(new LoaderDownload(Lang.Text("Update.Task.DownloadFile"), []));

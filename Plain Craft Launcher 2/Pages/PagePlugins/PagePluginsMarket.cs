@@ -88,11 +88,34 @@ public sealed class PagePluginsMarket : MyPageRight
                         row.Children.Add(CreateInstallButton(entry, Lang.Text("Plugin.Market.Install")));
                         break;
                 }
-                if (Uri.TryCreate(entry.Website, UriKind.Absolute, out var website) && website.Scheme == Uri.UriSchemeHttps)
-                    row.Children.Add(PluginPageSupport.Button(Lang.Text("Download.Version.OpenWebsite"),
-                        (_, _) => ModBase.OpenWebsite(website.AbsoluteUri)));
                 stack.Children.Add(row);
+                Grid? websiteFooter = null;
+                if (Uri.TryCreate(entry.Website, UriKind.Absolute, out var website) && website.Scheme == Uri.UriSchemeHttps)
+                {
+                    var footer = new Grid
+                    {
+                        Margin = new Thickness(0, 2, 0, 0),
+                        HorizontalAlignment = HorizontalAlignment.Left
+                    };
+                    footer.ColumnDefinitions.Add(new ColumnDefinition());
+                    footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    var websiteButton = PluginPageSupport.Button(Lang.Text("Download.Version.OpenWebsite"),
+                        (_, _) => ModBase.OpenWebsite(website.AbsoluteUri));
+                    websiteButton.Margin = new Thickness(0);
+                    websiteButton.HorizontalAlignment = HorizontalAlignment.Right;
+                    Grid.SetColumn(websiteButton, 1);
+                    footer.Children.Add(websiteButton);
+                    stack.Children.Add(footer);
+                    websiteFooter = footer;
+                }
                 var card = PluginPageSupport.CreateCard(stack, GetDisplayName(entry));
+                card.HorizontalAlignment = HorizontalAlignment.Stretch;
+                if (websiteFooter is not null)
+                {
+                    void ResizeWebsiteFooter() => websiteFooter.Width = Math.Max(0, card.ActualWidth - 40);
+                    card.Loaded += (_, _) => ResizeWebsiteFooter();
+                    card.SizeChanged += (_, _) => ResizeWebsiteFooter();
+                }
                 _content.Children.Add(card);
                 if (!string.IsNullOrWhiteSpace(entry.Icon))
                     _ = PluginPageSupport.LoadRemoteIconIntoAsync(entry.Icon, icon);

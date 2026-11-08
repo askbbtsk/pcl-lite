@@ -70,6 +70,7 @@ public partial class PageLunarLaunch
         ModLunar.LogReceived += AppendLog;
         _subscribed = true;
         SubscribeSocial();
+        _ = ConnectSocialOnPageOpenedAsync();
 
         _gameDirPreview = PreviewGameDirectory();
         ModLunar.Refresh();
@@ -80,6 +81,35 @@ public partial class PageLunarLaunch
         // 没装 Lunar 也要拉 —— 物料由 PCL 自己下，版本列表是启动前就要用的
         if (ModLunar.Versions.Count == 0)
             _ = ModLunar.RefreshVersionsAsync();
+    }
+
+    private async Task ConnectSocialOnPageOpenedAsync()
+    {
+        if (ModLunar.IsSocialConnected || _socialBusy || ModLunar.IsSocialBusy) return;
+
+        _socialBusy = true;
+        RefreshSocial();
+        try
+        {
+            // PageLunarLeft starts the token preheat on the same navigation. Wait for it so
+            // refresh-token rotation cannot race the Lunar social login.
+            await ModLunar.PrepareSessionAsync();
+            if (!IsLoaded || ModLunar.IsSocialConnected || ModLunar.IsSocialBusy) return;
+            await ModLunar.ConnectSocialAsync();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "打开 Lunar 页面时自动连接社交服务失败", ModBase.LogLevel.Debug);
+            if (IsLoaded) HintService.Hint(ex.Message, HintType.Warning);
+        }
+        finally
+        {
+            _socialBusy = false;
+            RefreshSocial();
+        }
     }
 
     private void Unsubscribe()

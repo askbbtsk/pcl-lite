@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using PCL.Core.App;
@@ -16,6 +17,8 @@ namespace PCL;
 
 internal static class Program
 {
+    private static readonly object PluginInstanceListLock = new();
+
     /// <summary>
     /// Program startup point
     /// </summary>
@@ -65,35 +68,35 @@ internal static class Program
 
     private static void _ConfigurePluginBridge()
     {
-        PluginHostBridge.GetInstancesAsync = cancellationToken =>
+        PluginHostBridge.GetInstancesAsync = async cancellationToken =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            IReadOnlyList<PluginGameInstance> instances = ModBase.RunInUiWait(() => ModInstanceList.mcInstanceList
-                .Values.SelectMany(items => items)
-                .DistinctBy(instance => instance.PathInstance, StringComparer.OrdinalIgnoreCase)
+            var nativeInstances = await Task.Run(() => _GetNativeInstances(cancellationToken), cancellationToken)
+                .ConfigureAwait(false);
+            return ModBase.RunInUiWait(() => nativeInstances
                 .Select(instance => new PluginGameInstance(instance.PathInstance, instance.Name,
-                    instance.Info?.VanillaName ?? "Unknown", instance.PathInstance,
-                    ReferenceEquals(instance, ModInstanceList.McMcInstanceSelected)))
+                    instance.Info?.VanillaName ?? "Unknown", instance.PathIndie,
+                    _SameMinecraftPath(instance.PathInstance, ModInstanceList.McMcInstanceSelected?.PathInstance)))
                 .ToArray());
-            return Task.FromResult(instances);
         };
-        PluginHostBridge.GetSelectedInstanceAsync = cancellationToken =>
+        PluginHostBridge.GetSelectedInstanceAsync = async cancellationToken =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult(ModBase.RunInUiWait(() =>
+            await Task.Run(() => _GetNativeInstances(cancellationToken), cancellationToken).ConfigureAwait(false);
+            return ModBase.RunInUiWait(() =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var instance = ModInstanceList.McMcInstanceSelected;
                 return instance is null ? null : new PluginGameInstance(instance.PathInstance, instance.Name,
-                    instance.Info?.VanillaName ?? "Unknown", instance.PathInstance, true);
-            }));
+                    instance.Info?.VanillaName ?? "Unknown", instance.PathIndie, true);
+            });
         };
-        PluginHostBridge.GetInstanceConfigurationAsync = (instanceId, cancellationToken) =>
+        PluginHostBridge.GetInstanceConfigurationAsync = async (instanceId, cancellationToken) =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult<IReadOnlyDictionary<string, string>>(ModBase.RunInUiWait(() =>
+            var nativeInstances = await Task.Run(() => _GetNativeInstances(cancellationToken), cancellationToken)
+                .ConfigureAwait(false);
+            return ModBase.RunInUiWait<IReadOnlyDictionary<string, string>>(() =>
             {
-                var instance = ModInstanceList.mcInstanceList.Values.SelectMany(items => items)
-                    .FirstOrDefault(item => string.Equals(item.PathInstance, instanceId, StringComparison.OrdinalIgnoreCase));
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = _FindNativeInstance(nativeInstances, instanceId);
                 if (instance is null) return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -102,16 +105,17 @@ internal static class Program
                     ["version"] = instance.Info?.VanillaName ?? "Unknown",
                     ["gameDirectory"] = instance.PathIndie
                 };
-            }));
+            });
         };
         PluginHostBridge.LaunchInstanceWithOptionsAsync = async (instanceId, options, cancellationToken) =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            var nativeInstances = await Task.Run(() => _GetNativeInstances(cancellationToken), cancellationToken)
+                .ConfigureAwait(false);
+            var instance = _FindNativeInstance(nativeInstances, instanceId);
+            if (instance is null) return false;
             return await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                var instance = ModInstanceList.mcInstanceList.Values.SelectMany(items => items)
-                    .FirstOrDefault(item => string.Equals(item.PathInstance, instanceId, StringComparison.OrdinalIgnoreCase));
-                if (instance is null) return false;
+                cancellationToken.ThrowIfCancellationRequested();
                 var launchOptions = new ModLaunch.McLaunchOptions
                 {
                     instance = instance,
@@ -126,12 +130,14 @@ internal static class Program
         };
         PluginHostBridge.LaunchInstanceAsync = async (instanceId, cancellationToken) =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            var nativeInstances = await Task.Run(() => _GetNativeInstances(cancellationToken), cancellationToken)
+                .ConfigureAwait(false);
+            var instance = _FindNativeInstance(nativeInstances, instanceId);
+            if (instance is null) return false;
             return await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                var instance = ModInstanceList.mcInstanceList.Values.SelectMany(items => items)
-                    .FirstOrDefault(item => string.Equals(item.PathInstance, instanceId, StringComparison.OrdinalIgnoreCase));
-                return instance is not null && ModLaunch.McLaunchStart(new ModLaunch.McLaunchOptions { instance = instance });
+                cancellationToken.ThrowIfCancellationRequested();
+                return ModLaunch.McLaunchStart(new ModLaunch.McLaunchOptions { instance = instance });
             }).Task.ConfigureAwait(false);
         };
         PluginHostBridge.CreateButton = (pluginId, text, onClick, style) =>
@@ -198,5 +204,111 @@ internal static class Program
             PluginRuntimeManager.Notify(new PluginThemeChangedEvent(theme.ToString()));
         PluginHostBridge.OpenUrl = uri => Basics.OpenPath(uri.AbsoluteUri);
         PluginHostBridge.OpenPath = path => Basics.OpenPath(path);
+    }
+
+    /// <summary>
+    /// Load and return instances using PCL's own folder selection and version-list loader.
+    /// The launch home page may have validated only the saved selection, so the list loader
+    /// can still be waiting even while McMcInstanceSelected is already available.
+    /// </summary>
+    private static IReadOnlyList<McInstance> _GetNativeInstances(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (PluginInstanceListLock)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var folder = _GetNativeSelectedFolder();
+            if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder)) return Array.Empty<McInstance>();
+
+            var loader = ModInstanceList.mcInstanceListLoader;
+            var loadedForCurrentFolder = _SameMinecraftPath(loader.input, folder);
+            if (loader.State == ModBase.LoadState.Loading && loadedForCurrentFolder)
+            {
+                // Join the native scan already in progress instead of aborting/restarting it.
+                loader.WaitForExit(loader.input);
+            }
+            else if (loader.State == ModBase.LoadState.Finished && loadedForCurrentFolder)
+            {
+                // Reuse the same timestamp-based refresh used when the native instance page is revisited.
+                ModLoader.LoaderFolderRun(loader, folder, ModLoader.LoaderFolderRunType.RunOnUpdated,
+                    1, @"versions\", waitForExit: true);
+            }
+            else
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                // This is the same folder scanner used by PCL's instance-selection page.
+                ModLoader.LoaderFolderRun(loader, folder, ModLoader.LoaderFolderRunType.ForceRun,
+                    1, @"versions\", waitForExit: true);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return ModBase.RunInUiWait(() =>
+            {
+                var instances = ModInstanceList.mcInstanceList.Values
+                    .SelectMany(items => items)
+                    .ToList();
+                var currentSelection = ModInstanceList.McMcInstanceSelected;
+                if (currentSelection is not null &&
+                    !instances.Any(item => _SameMinecraftPath(item.PathInstance, currentSelection.PathInstance)))
+                    instances.Add(currentSelection);
+                return instances.DistinctBy(instance => instance.PathInstance, StringComparer.OrdinalIgnoreCase).ToArray();
+            });
+        }
+    }
+
+    /// <summary>Resolve a plugin's opaque instance ID against PCL's loaded native instance objects.</summary>
+    private static McInstance? _FindNativeInstance(IReadOnlyList<McInstance> instances, string instanceId)
+    {
+        if (string.IsNullOrWhiteSpace(instanceId)) return null;
+        var instance = instances.FirstOrDefault(item => _SameMinecraftPath(item.PathInstance, instanceId));
+        if (instance is not null) return instance;
+
+        // The home page can hold a validated saved selection before the complete list is loaded.
+        // Keep that exact native selection usable if the scan did not include it (for example,
+        // while its folder is being refreshed); never construct an instance from arbitrary input.
+        return ModBase.RunInUiWait(() =>
+        {
+            var selected = ModInstanceList.McMcInstanceSelected;
+            return selected is not null && _SameMinecraftPath(selected.PathInstance, instanceId) ? selected : null;
+        });
+    }
+
+    /// <summary>Resolve the same selected Minecraft folder that PCL's launch home uses.</summary>
+    private static string _GetNativeSelectedFolder()
+    {
+        var current = ModBase.RunInUiWait(() => ModFolder.mcFolderSelected);
+        if (!string.IsNullOrWhiteSpace(current) && Directory.Exists(current)) return current;
+
+        // Match PageLaunchLeft_Loaded: load the native folder list, then restore the persisted
+        // folder selection, falling back to the first PCL-recognized folder if it is stale.
+        ModFolder.mcFolderListLoader.WaitForExit();
+        var selected = ModBase.RunInUiWait(() => States.Game.SelectedFolder.ToString().Replace("$", ModBase.exePath));
+        if (string.IsNullOrWhiteSpace(selected) || !Directory.Exists(selected))
+        {
+            var firstFolder = ModBase.RunInUiWait(() => ModFolder.mcFolderList.FirstOrDefault()?.Location);
+            if (string.IsNullOrWhiteSpace(firstFolder)) return string.Empty;
+            selected = firstFolder;
+            ModBase.RunInUiWait(() => States.Game.SelectedFolder = selected.Replace(ModBase.exePath, "$"));
+        }
+
+        ModBase.RunInUiWait(() => ModFolder.mcFolderSelected = selected);
+        return selected;
+    }
+
+    private static bool _SameMinecraftPath(string? left, string? right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right)) return false;
+        try
+        {
+            var normalizedLeft = Path.TrimEndingDirectorySeparator(Path.GetFullPath(left.Trim()));
+            var normalizedRight = Path.TrimEndingDirectorySeparator(Path.GetFullPath(right.Trim()));
+            return string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception)
+        {
+            return string.Equals(left.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                right.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

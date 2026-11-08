@@ -757,6 +757,7 @@
     <sys:String x:Key="Download.Version.ReleaseDate">发布于 {0}</sys:String>
     <sys:String x:Key="Download.Version.SaveAs">另存为</sys:String>
     <sys:String x:Key="Download.Version.SaveInstaller">保存安装器</sys:String>
+    <sys:String x:Key="Download.Version.LiteLoader.InstallerUnavailable">当前 LiteLoader 版本的独立安装器下载源不可用，请使用启动器内安装。</sys:String>
     <sys:String x:Key="Download.Version.SelectSaveLocation">选择保存位置</sys:String>
     <sys:String x:Key="Download.Version.VersionList">版本列表</sys:String>
     <sys:String x:Key="Download.Version.VersionListCount">版本列表（{0}）</sys:String>

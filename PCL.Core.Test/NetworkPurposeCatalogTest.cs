@@ -57,7 +57,7 @@ public class NetworkPurposeCatalogTest
 
         foreach (var host in new[]
                  {
-                     "maven.minecraftforge.net", "jenkins.liteloader.com", "releases.labymod.net",
+                     "maven.minecraftforge.net", "releases.labymod.net",
                      "files.minecraftforge.net", "meta.fabricmc.net"
                  })
             CollectionAssert.Contains(info.Hosts, host, $"加载器用途缺少域名 {host}");
@@ -67,9 +67,10 @@ public class NetworkPurposeCatalogTest
     [TestMethod]
     public void CatalogHasNoGhostHosts()
     {
-        // 这两个是上游遗留的更新源，PCL Lite 的更新链早就改成 GitHub 了
+        // 这些地址已从用途表移除：幽灵源以及无法连接的 LiteLoader Jenkins 主机
         Assert.AreEqual(0, NetworkPurposeCatalog.ByHost("s3.pysio.online").Count);
         Assert.AreEqual(0, NetworkPurposeCatalog.ByHost("staticassets.naids.com").Count);
+        Assert.AreEqual(0, NetworkPurposeCatalog.ByHost("jenkins.liteloader.com").Count);
     }
 
     /// <summary>每个用途名下的域名都能反查回它自己，否则 <c>ByHost</c> 的映射建错了。</summary>

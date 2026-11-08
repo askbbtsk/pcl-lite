@@ -9,7 +9,7 @@
   `raw.githubusercontent.com`、`cdn.jsdelivr.net`、`api.github.com` 全都没登记。
   现在按实际链路登记，反代清单仍由 `DownloadProxies` 单一持有，启动时派生注册进白名单。
 - 补上漏登的下载域名：`zkitefly.github.io`、`mirrors.cloud.tencent.com`；
-  加载器相关的 `maven.minecraftforge.net`、`jenkins.liteloader.com`、`releases.labymod.net`、`api.github.com`。
+  加载器相关的 `maven.minecraftforge.net`、`releases.labymod.net`、`api.github.com`；移除无法连接的 LiteLoader Jenkins 安装器入口和 `gitproxy.click` 下载代理。
 - 删掉两个幽灵域名（`s3.pysio.online`、`staticassets.naids.com`）和那个从未被请求过的
   `update.pcl-lite.dev` 常量——它们只会让用户为不存在的连接授权。
 - 新增 11 个用例守住这张表：内置域名必须能反查回自己的用途、不能出现幽灵域名、

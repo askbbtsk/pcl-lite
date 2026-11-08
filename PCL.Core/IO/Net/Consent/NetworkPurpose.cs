@@ -101,7 +101,7 @@ public static class NetworkPurposeCatalog
             [
                 "files.minecraftforge.net", "maven.minecraftforge.net", "maven.neoforged.net",
                 "meta.fabricmc.net", "meta.legacyfabric.net", "dl.liteloader.com",
-                "jenkins.liteloader.com", "optifine.net", "releases.r2.labymod.net",
+                "optifine.net", "releases.r2.labymod.net",
                 "releases.labymod.net", "github.com", "api.github.com", "authlib-injector.yushi.moe"
             ]
         ),

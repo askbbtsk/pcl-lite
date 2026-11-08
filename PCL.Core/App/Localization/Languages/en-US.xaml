@@ -1047,6 +1047,9 @@
     <sys:String x:Key="Instance.RestorePoint.Created">Restore point created.</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Restored">Instance restore point restored.</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Failed">Restore point operation failed. Check the log.</sys:String>
+<sys:String x:Key="Instance.RestorePoint.CrashRecovery.Title">Environment changes after crash</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.CrashRecovery.Message">Instance “{0}” exited abnormally. Compared with the pre-launch restore point: {1} environment files added, {2} modified, and {3} removed. Restoring preserves saves and PCL Lite local data, and restores the other environment files.</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.CrashRecovery.Restore">Restore pre-launch environment</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Compare">Compare current environment</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Compare.Title">Restore point differences</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Compare.Empty">The current environment matches this restore point.</sys:String>

@@ -35,6 +35,7 @@ public sealed class InstanceTestCopyServiceTests
         File.WriteAllText(Path.Combine(source, "mods.jar"), "other-file");
         Write(Path.Combine(source, "PCLLiteData", "restore.json"), "launcher-data");
         Write(Path.Combine(source, "config", "settings.json"), "settings");
+        Write(Path.Combine(source, "PCL", "Setup.ini"), "GamePath=" + source + "\r\nOther=unchanged");
 
         var clone = InstanceTestCopyService.Create(source, Path.Combine(versions, "Pack Test"), "Pack", "Pack Test");
 
@@ -44,6 +45,8 @@ public sealed class InstanceTestCopyServiceTests
         Assert.IsFalse(File.Exists(Path.Combine(clone, "Pack.json")));
         Assert.IsFalse(Directory.Exists(Path.Combine(clone, "PCLLiteData")));
         Assert.AreEqual("settings", File.ReadAllText(Path.Combine(clone, "config", "settings.json")));
+        var copiedSetup = File.ReadAllText(Path.Combine(clone, "PCL", "Setup.ini"));
+        Assert.AreEqual("GamePath=" + clone + "\r\nOther=unchanged", copiedSetup);
         Assert.AreEqual("Pack Test", JsonNode.Parse(File.ReadAllText(Path.Combine(clone, "Pack Test.json")))!["id"]!.GetValue<string>());
         Assert.AreEqual("Pack", JsonNode.Parse(File.ReadAllText(Path.Combine(source, "Pack.json")))!["id"]!.GetValue<string>());
     }

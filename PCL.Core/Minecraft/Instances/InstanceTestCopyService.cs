@@ -82,6 +82,14 @@ public static class InstanceTestCopyService
                 json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             var sourceJar = Path.Combine(source, sourceName + ".jar");
             if (File.Exists(sourceJar)) File.Copy(sourceJar, Path.Combine(stage, destinationName + ".jar"), overwrite: false);
+            var setupPath = Path.Combine(stage, "PCL", "Setup.ini");
+            if (File.Exists(setupPath))
+            {
+                var oldPath = source.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var newPath = destination.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var setup = File.ReadAllText(setupPath).Replace(oldPath, newPath, StringComparison.OrdinalIgnoreCase);
+                File.WriteAllText(setupPath, setup);
+            }
             Directory.Move(stage, destination);
             return destination;
         }

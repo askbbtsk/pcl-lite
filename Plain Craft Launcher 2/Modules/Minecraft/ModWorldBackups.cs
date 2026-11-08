@@ -57,6 +57,80 @@ internal static class ModWorldBackups
         return snapshot;
     }
 
+    /// <summary>Creates a pre-launch restore point for an isolated instance, skipping a duplicate unchanged snapshot.</summary>
+    public static BackupSnapshot? CreateAutomaticEnvironmentRestorePoint(McInstance instance)
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+        var instanceDirectory = Path.GetFullPath(instance.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var gameDirectory = Path.GetFullPath(instance.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!string.Equals(instanceDirectory, gameDirectory, StringComparison.OrdinalIgnoreCase)) return null;
+
+        var latest = ListRestorePoints(instanceDirectory).FirstOrDefault();
+        if (latest is not null && EnvironmentRestorePointService.CompareCurrent(RestorePointRoot, latest.Id, instanceDirectory).Count == 0)
+            return latest;
+        return CreateRestorePoint(instanceDirectory, "Automatic restore point before game launch");
+    }
+
+    /// <summary>After a crash, offers a file-level comparison and restores the pre-launch point on explicit confirmation.</summary>
+    public static void OfferCrashRecovery(string instancePath, string instanceName, string snapshotId)
+    {
+        ModBase.RunInNewThread(() =>
+        {
+            try
+            {
+                var target = Path.GetFullPath(instancePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var deadline = Environment.TickCount64 + 20_000;
+                var crashed = false;
+                while (Environment.TickCount64 < deadline)
+                {
+                    var watcher = ModWatcher.mcWatcherList.FirstOrDefault(item => item.version is not null
+                        && string.Equals(Path.GetFullPath(item.version.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                            target, StringComparison.OrdinalIgnoreCase));
+                    if (watcher?.State == ModWatcher.Watcher.MinecraftState.Crashed)
+                    {
+                        crashed = true;
+                        break;
+                    }
+                    if (watcher?.State is ModWatcher.Watcher.MinecraftState.Ended or ModWatcher.Watcher.MinecraftState.Canceled)
+                        return;
+                    Thread.Sleep(200);
+                }
+                if (!crashed) return;
+                Thread.Sleep(2500); // Let the launcher crash analyzer collect the original environment first.
+
+                var differences = EnvironmentRestorePointService.CompareCurrent(RestorePointRoot, snapshotId, target);
+                if (differences.Count == 0) return;
+                var added = differences.Count(item => item.Kind == BackupDifferenceKind.Added);
+                var modified = differences.Count(item => item.Kind == BackupDifferenceKind.Modified);
+                var removed = differences.Count(item => item.Kind == BackupDifferenceKind.Removed);
+                var lines = differences.Take(18).Select(item => Lang.Text("Instance.RestorePoint.Compare.Entry",
+                    item.Kind switch
+                    {
+                        BackupDifferenceKind.Added => Lang.Text("Instance.RestorePoint.Compare.Added"),
+                        BackupDifferenceKind.Modified => Lang.Text("Instance.RestorePoint.Compare.Modified"),
+                        _ => Lang.Text("Instance.RestorePoint.Compare.Removed")
+                    }, item.Path));
+                var message = Lang.Text("Instance.RestorePoint.CrashRecovery.Message", instanceName, added, modified, removed)
+                    + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, lines)
+                    + (differences.Count > 18 ? Environment.NewLine + Lang.Text("Instance.RestorePoint.Compare.More", differences.Count - 18) : "");
+                var restore = false;
+                ModBase.RunInUiWait(() => restore = ModMain.MyMsgBox(message,
+                    Lang.Text("Instance.RestorePoint.CrashRecovery.Title"),
+                    Lang.Text("Instance.RestorePoint.CrashRecovery.Restore"),
+                    Lang.Text("Common.Action.Cancel"), isWarn: true) == 1);
+                if (!restore) return;
+
+                RestoreRestorePoint(target, snapshotId);
+                ModBase.RunInUiWait(() => HintService.Hint(Lang.Text("Instance.RestorePoint.Restored"), HintType.Success));
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "崩溃后对比或恢复实例环境失败", ModBase.LogLevel.Hint);
+                ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.RestorePoint.Failed"), HintType.Error));
+            }
+        }, "Crash Environment Recovery");
+    }
+
     public static void RestoreRestorePoint(string instanceDirectory, string snapshotId)
     {
         EnsureInstanceOffline(instanceDirectory);

@@ -1038,6 +1038,9 @@
     <sys:String x:Key="Instance.RestorePoint.Created">已建立還原點。</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Restored">已還原實例還原點。</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Failed">還原點操作失敗，請查看記錄。</sys:String>
+<sys:String x:Key="Instance.RestorePoint.CrashRecovery.Title">當機後的環境變更</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.CrashRecovery.Message">實例「{0}」異常結束。與啟動前還原點相比：新增 {1}、修改 {2}、刪除 {3} 個環境檔案。還原會保留 saves 存檔和 PCL Lite 本機資料，並還原其他環境檔案。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.CrashRecovery.Restore">還原啟動前環境</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Compare">比較目前環境</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Compare.Title">還原點差異</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Compare.Empty">目前環境與此還原點沒有差異。</sys:String>

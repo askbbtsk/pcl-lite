@@ -2598,6 +2598,7 @@ public static class ModLaunch
         var worldSessionHistory = new RecentWorldHistory();
         RecentWorldEntry? recentWorldSession = null;
         PersonalOptionsSession? personalOptionsSession = null;
+        PCL.Core.Minecraft.Backups.BackupSnapshot? launchEnvironmentRestorePoint = null;
         string? worldPath = null;
         var worldName = currentLaunchOptions?.WorldName;
         if (startedInstance is not null && !string.IsNullOrWhiteSpace(worldName))
@@ -2637,6 +2638,12 @@ public static class ModLaunch
             catch (Exception ex) { ModBase.Log(ex, "同步 Minecraft 个人设置失败；继续启动游戏", ModBase.LogLevel.Hint); }
         }
 
+        if (startedInstance is not null)
+        {
+            try { launchEnvironmentRestorePoint = ModWorldBackups.CreateAutomaticEnvironmentRestorePoint(startedInstance); }
+            catch (Exception ex) { ModBase.Log(ex, "创建启动前实例还原点失败；继续启动游戏", ModBase.LogLevel.Hint); }
+        }
+
         if (startedId is not null && startedName is not null)
         {
             gameProcess.EnableRaisingEvents = true;
@@ -2650,6 +2657,10 @@ public static class ModLaunch
                 }
                 catch (Exception ex) { ModBase.Log(ex, "保存 Minecraft 个人设置失败", ModBase.LogLevel.Hint); }
                 var normalExit = gameProcess.ExitCode == 0;
+                if (!normalExit && startedInstance is not null && startedName is not null
+                    && launchEnvironmentRestorePoint is not null)
+                    ModWorldBackups.OfferCrashRecovery(startedInstance.PathInstance, startedName,
+                        launchEnvironmentRestorePoint.Id);
                 if (recentWorldSession is not null)
                 {
                     try { worldSessionHistory.FinishSession(recentWorldSession.SessionId, normalExit); }

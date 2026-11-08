@@ -66,20 +66,20 @@ public partial class PageWelcome
 
         var panel = new StackPanel { Margin = new Thickness(25, 30, 25, 22) };
 
-        var titleMain = _Text("性能状态", 28, bold: true);
+        var titleMain = _Text(Lang.Text("Welcome.Performance.Title"), 28, bold: true);
         titleMain.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrush1");
         panel.Children.Add(titleMain);
 
-        var subtitle = _Text("本机实时 · 仅本地计算", 12, false);
+        var subtitle = _Text(Lang.Text("Welcome.Performance.Subtitle"), 12, false);
         subtitle.Margin = new Thickness(0, 6, 0, 0);
         subtitle.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray4");
         panel.Children.Add(subtitle);
 
-        var cpuRow = _BuildMetricRow("CPU 使用率", out var cpuValue, out var cpuFill);
+        var cpuRow = _BuildMetricRow(Lang.Text("Welcome.Performance.Cpu"), out var cpuValue, out var cpuBar);
         cpuRow.Margin = new Thickness(0, 22, 0, 0);
         panel.Children.Add(cpuRow);
 
-        var ramRow = _BuildMetricRow("内存占用", out var ramValue, out var ramFill);
+        var ramRow = _BuildMetricRow(Lang.Text("Welcome.Performance.Memory"), out var ramValue, out var ramBar);
         ramRow.Margin = new Thickness(0, 14, 0, 0);
         panel.Children.Add(ramRow);
 
@@ -109,7 +109,7 @@ public partial class PageWelcome
                 var cpu = totalDelta > 0 ? (1d - idleDelta / (double)totalDelta) * 100d : 0d;
                 cpu = Math.Clamp(cpu, 0d, 100d);
                 cpuValue.Text = $"{cpu:0}%";
-                cpuFill.Width = 300d * cpu / 100d;
+                cpuBar.Set(cpu);
             }
 
             lastIdle = idleNow;
@@ -122,9 +122,11 @@ public partial class PageWelcome
             {
                 var ram = mem.dwMemoryLoad;
                 ramValue.Text = $"{ram}%";
-                ramFill.Width = 300d * ram / 100d;
-                detail.Text = $"已用 {FormatGb(mem.ullTotalPhys - mem.ullAvailPhys)} / " +
-                              $"{FormatGb(mem.ullTotalPhys)}  ·  可用 {FormatGb(mem.ullAvailPhys)}";
+                ramBar.Set(ram);
+                detail.Text = Lang.Text("Welcome.Performance.Detail",
+                    FormatGb(mem.ullTotalPhys - mem.ullAvailPhys),
+                    FormatGb(mem.ullTotalPhys),
+                    FormatGb(mem.ullAvailPhys));
             }
         }
 
@@ -140,7 +142,7 @@ public partial class PageWelcome
         return card;
     }
 
-    private static Grid _BuildMetricRow(string label, out TextBlock value, out System.Windows.Shapes.Rectangle fill)
+    private static Grid _BuildMetricRow(string label, out TextBlock value, out MetricBar bar)
     {
         var row = new Grid();
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -168,7 +170,7 @@ public partial class PageWelcome
         background.SetResourceReference(Border.BackgroundProperty, "ColorBrush7");
         track.Children.Add(background);
 
-        fill = new System.Windows.Shapes.Rectangle
+        var fill = new System.Windows.Shapes.Rectangle
         {
             Width = 0,
             Height = 7,
@@ -179,10 +181,42 @@ public partial class PageWelcome
         fill.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "ColorBrush3");
         track.Children.Add(fill);
 
+        bar = new MetricBar(track, fill);
+
         Grid.SetRow(track, 1);
         Grid.SetColumnSpan(track, 2);
         row.Children.Add(track);
         return row;
+    }
+
+    /// <summary>
+    ///     一条进度条的填充控制：宽度按轨道实际宽度换算，轨道尺寸变化时同步刷新。
+    /// </summary>
+    private sealed class MetricBar
+    {
+        private readonly Grid _track;
+        private readonly System.Windows.Shapes.Rectangle _fill;
+        private double _percent;
+
+        public MetricBar(Grid track, System.Windows.Shapes.Rectangle fill)
+        {
+            _track = track;
+            _fill = fill;
+            _track.SizeChanged += (_, _) => Apply();
+        }
+
+        public void Set(double percent)
+        {
+            _percent = Math.Clamp(percent, 0d, 100d);
+            Apply();
+        }
+
+        private void Apply()
+        {
+            var width = _track.ActualWidth;
+            if (width <= 0) return;
+            _fill.Width = width * _percent / 100d;
+        }
     }
 
     private static string FormatGb(ulong bytes) => $"{bytes / 1024d / 1024d / 1024d:0.0} GB";
@@ -217,8 +251,10 @@ public partial class PageWelcome
     private static extern bool GlobalMemoryStatusEx(ref MemoryStatusEx buffer);
 
     /// <summary>
-    ///     上次游玩的版本：显示实例名与游戏版本，并提供直接启动的入口。
+    ///     当前所选实例：显示已选中版本的名字与游戏版本，并提供直接启动的入口。
     ///     <para>
+    ///         这里刻意使用「当前所选」而不是「上次游玩」——启动器目前没有记录最近一次成功启动的时间戳，
+    ///         若把「刚选中但从未启动过」的版本称作上次游玩会产生误导。
     ///         没有选中实例时只显示一句提示，不隐藏卡片，避免主页高度来回跳动。
     ///     </para>
     /// </summary>

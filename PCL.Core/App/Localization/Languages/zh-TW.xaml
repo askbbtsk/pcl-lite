@@ -1661,9 +1661,14 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Welcome.Network.Manage">管理網路白名單</sys:String>
     <sys:String x:Key="Welcome.Network.Status.All">已授權全部連線（{0} 項網路用途）</sys:String>
     <sys:String x:Key="Welcome.Network.Status.Partial">已授權 {0} / {1} 個網路用途</sys:String>
-    <sys:String x:Key="Welcome.Recent.Title">上次遊玩</sys:String>
-    <sys:String x:Key="Welcome.Recent.Empty">還沒有選過實例，去「啟動」頁挑一個吧。</sys:String>
+    <sys:String x:Key="Welcome.Recent.Title">目前選擇的版本</sys:String>
+    <sys:String x:Key="Welcome.Recent.Empty">還沒有選擇版本，去「啟動」頁挑一個吧。</sys:String>
     <sys:String x:Key="Welcome.Recent.Launch">啟動遊戲</sys:String>
+    <sys:String x:Key="Welcome.Performance.Title">效能狀態</sys:String>
+    <sys:String x:Key="Welcome.Performance.Subtitle">本機即時 · 僅本機計算</sys:String>
+    <sys:String x:Key="Welcome.Performance.Cpu">CPU 使用率</sys:String>
+    <sys:String x:Key="Welcome.Performance.Memory">記憶體佔用</sys:String>
+    <sys:String x:Key="Welcome.Performance.Detail">已用 {0} / {1}  ·  可用 {2}</sys:String>
     <sys:String x:Key="Welcome.Community.Title">社群</sys:String>
     <sys:String x:Key="Welcome.Community.Desc">遇到問題、想回饋、或者只是想看看別人怎麼折騰，都可以來群裡。</sys:String>
     <sys:String x:Key="Community.Qq.Link">QQ 交流群：1085542362</sys:String>

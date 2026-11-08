@@ -137,30 +137,63 @@ Get-AuthenticodeSignature "publish-x64/Plain Craft Launcher 2.exe" | Select Stat
 
 ## 五、发版流程
 
+发版走 GitHub Actions，本地只需要推 tag 之前把版本号改对。
+
+### 版本号
+
+只改一处：`Plain Craft Launcher 2/metadata.json` 的 `version.{base,suffix,code}`。
+两个 csproj 用宏从它里面正则取 `base` / `suffix`，不写死数字（见 [README.md](README.md)「版本号在哪」）。
+
+### 触发工作流
+
+`.github/workflows/release-publish.yml` 是 `workflow_dispatch`，要手动触发，并且**必须从 `main` 派发**：
+
 ```powershell
-# 1. 改版本号（三处，见 docs/README.md「版本号在哪」）
-# 2. 构建 + 签名
-# 3. 复制成发布命名
-copy "publish-x64/Plain Craft Launcher 2.exe" "release/PCL-Lite_1.1_x64.exe"
+gh workflow run release-publish.yml `
+  --repo askbbtsk/pcl-lite --ref main `
+  -f configuration=Beta `       # 正式版填 Release；填 Beta 会发成 prerelease
+  -f version=1.7.2              # 不带前导 v
+```
 
-# 4. 算哈希
-Get-FileHash "release/PCL-Lite_1.1_x64.exe" -Algorithm SHA256
+它会 x64 / ARM64 各编一份，用 Sigstore 签名，先建 draft Release，最后一步再发布。
 
-# 5. 打 tag（必须是三段式 SemVer，v1.1 会被启动器的更新检查拒绝）
-git tag v1.1.0
-git push origin v1.1.0
+### 发布说明从哪来
 
-# 6. 发 Release
-gh release create v1.1.0 "release/PCL-Lite_1.1_x64.exe" `
-  --repo <owner>/<repo> --title "PCL Lite 1.1.0" `
-  --notes-file release/notes.md --latest
+工作流优先用仓库里手写的 `release/notes-<版本>.md`；文件不存在时用 git-cliff 从提交记录生成。
+
+```powershell
+# 想写人话就自己起一个，文件名必须和 version 完全对应
+notepad "release/notes-1.7.2.md"
+```
+
+### 手动发版（不走工作流）
+
+也可以完全本地来一遍：
+
+```powershell
+# 1. 构建 + 签名（见第三节、第四节）
+# 2. 复制成发布命名
+copy "publish-x64/Plain Craft Launcher 2.exe" "release/PCL-Lite_1.7.2_x64.exe"
+
+# 3. 算哈希（签名之后算）
+Get-FileHash "release/PCL-Lite_1.7.2_x64.exe" -Algorithm SHA256
+
+# 4. 打 tag 并推（必须是三段式 SemVer，v1.1 会被启动器的更新检查拒绝）
+git tag v1.7.2
+git push origin v1.7.2
+
+# 5. 发 Release
+gh release create v1.7.2 "release/PCL-Lite_1.7.2_x64.exe" `
+  --repo askbbtsk/pcl-lite --title "PCL Lite 1.7.2" `
+  --notes-file "release/notes-1.7.2.md" --latest
 ```
 
 ### 两个必踩的坑
 
-1. **`gh` 必须显式带 `--repo`**
-   本仓库的 `origin` 指向上游 `PCL-Community/PCL-CE`。不带 `--repo` 时 gh 会按远端推断，
-   结果是打到上游仓库（404 或"workflow scope may be required"这种误导性报错）。
+1. **`gh` 仍然建议显式带 `--repo askbbtsk/pcl-lite`**
+   本仓库的 `origin` 就是 `askbbtsk/pcl-lite`，正常不会打错地方；但如果你按
+   [CONTRIBUTE.md](CONTRIBUTE.md) 的做法加了指向上游 `PCL-Community/PCL-CE` 的 remote，
+   gh 可能按远端推断到上游，报 404 或"workflow scope may be required"。显式写死最省事。
 2. **tag 必须是三段式**
    启动器的更新检查用 `SemVer.TryParse`，`v1.0` 只有两段会解析失败，
    用户侧表现为"Release 的 tag 不是合法的 SemVer"。用 `v1.0.0`，不要用 `v1.0`。
@@ -171,6 +204,10 @@ gh release create v1.1.0 "release/PCL-Lite_1.1_x64.exe" `
 
 原因很直接：那个 exe 里带着编译期注入的 client_id，一旦入库就等于把它公开了。
 同理 `publish-upstream/`（上游源码的对照构建）也不要入库。
+
+`.gitignore` 里目前忽略的是 `publish/`、`publish-x64/`、`publish-lunar/`、
+`publish-1.7.0-snapshot/`、`publish-upstream/`、`publish-test/` 这几条。
+自建一个新的产物目录（比如 `publish-arm64/`）时，记得顺手加进去。
 
 如果发现某次构建产物已经被跟踪了：
 

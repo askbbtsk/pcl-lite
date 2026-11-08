@@ -22,15 +22,22 @@
 ## 项目速览
 
 ```
-PCL-CE/
+pcl-lite/
 ├── PCL.Core/                     核心库（无 UI 依赖的部分：配置、网络、认证、主题算法）
 │   ├── App/                      配置模型、路径、元数据
 │   ├── IO/Net/                   网络层（DNS、代理、用途白名单）
 │   ├── Link/                     联机、第三方账号
 │   ├── Minecraft/                启动、下载、档案、认证
+│   ├── Mixin/                    Mixin 运行时（供插件使用）
+│   ├── Plugins/                  插件生命周期与依赖解析
 │   └── UI/Theme/                 ★ 配色引擎（见 THEME.md）
 ├── Plain Craft Launcher 2/       WPF 前端（页面、控件、语言文件、metadata.json）
+│   ├── Modules/Updates/          更新检查、下载、替换
+│   └── Pages/PagePlugins/        插件市场与已安装插件页
+├── PCL.Plugin.SDK/               插件 SDK（进程内 API、签名与打包）
 ├── PCL.Core.SourceGenerators/    源生成器：配置项、密钥注入
+├── PCL.Core.Test/                单元测试
+├── tools/                        验证脚本（verify-channels.py 等）
 └── docs/                         就是这里
 ```
 
@@ -38,15 +45,17 @@ PCL-CE/
 
 ## 版本号在哪
 
-三个地方，改版本必须一起改，否则界面显示和文件属性会对不上：
+改版本号只需要动一处：
 
 1. `Plain Craft Launcher 2/metadata.json` → `version.{base,suffix,code}`
-   **界面显示的是这个**，不是 csproj。`suffix` 为空表示正式版，非空会拼成 `1.1.0-beta` 这样。
-2. `Plain Craft Launcher 2/Plain Craft Launcher 2.csproj` → `AssemblyVersion` / `FileVersion` / `InformationalVersion`
-3. `PCL.Core/PCL.Core.csproj` → `AssemblyVersion` / `FileVersion`
+   **界面显示的是这个**，不是 csproj。`suffix` 为空表示正式版，非空会拼成 `1.7.1-hotfix-4` 这样。
+
+两个 csproj（`Plain Craft Launcher 2/Plain Craft Launcher 2.csproj`、`PCL.Core/PCL.Core.csproj`）
+不写死版本号，而是用宏从 `metadata.json` 里正则取出 `base` 与 `suffix` 再拼成
+`AssemblyVersion` / `FileVersion` / `InformationalVersion`，所以**不用手改**。
 
 > 踩过的坑：1.0.0 那次只改了 csproj，`metadata.json` 还是 `0.1.0` + `beta`，
-> 结果文件属性写着 1.0.0、界面显示 `0.1.0-beta`。
+> 结果文件属性写着 1.0.0、界面显示 `0.1.0-beta`。现在版本号只有一个真源，别再往 csproj 里写死数字。
 
 ## 几个容易找错的地方
 
@@ -54,7 +63,7 @@ PCL-CE/
 - **密钥**（OAuth client_id 等）不在源码里，编译期由 `PCL.Core.SourceGenerators` 从环境变量注入。
   所以仓库里搜不到任何 client_id，这是设计如此，不是漏了。
 - **语言文件**在 `PCL.Core/App/Localization/Languages/*.xaml`，三种语言：zh-CN / zh-TW / en-US（English）。
-  加文案要四个一起加，缺了会回退到 zh-CN。
+  加文案要三个一起加，缺了会回退到 zh-CN。
 - **主页语言分支**不走语言文件，而是 `lang:` 标签 + 语言信封，见
   [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md)。想让主页按语言显示不同内容时用那套，不要往语言文件里塞整段 XAML。
 - **历史代码**在 `Plain Craft Launcher 2/` 与 `PCL.Core/` 里混合，改之前先用 `git log` 看这行是谁写的、

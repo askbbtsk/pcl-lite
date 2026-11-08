@@ -50,15 +50,21 @@ public sealed record NetworkPurposeInfo(
 /// <summary>
 /// 网络用途登记表。未在此登记的域名一律视为「未登记目标」，需要单独确认。
 /// </summary>
+/// <remarks>
+/// 这里的域名必须与代码里真正会发出的请求保持一致：登记多了会让用户为不存在的连接授权，
+/// 登记少了则会让守门人在运行时弹出「未登记目标」。因此新增联网点时必须同步维护本表。
+/// 少数域名（例如更新反代）的清单掌握在上层项目手里，可通过
+/// <see cref="RegisterExtraHosts"/> 在启动阶段补充，避免两处维护。
+/// </remarks>
 public static class NetworkPurposeCatalog
 {
-    /// <summary>
-    /// 自建更新服务地址。
-    /// TODO: 替换为 PCL Lite 实际的更新域名。
-    /// </summary>
-    public const string UpdateHost = "update.pcl-lite.dev";
+    private static readonly object Sync = new();
 
-    private static readonly NetworkPurposeInfo[] _all =
+    /// <summary>
+    /// 内置域名表。运行时通过 <see cref="RegisterExtraHosts"/> 追加的域名不写在这里，
+    /// 由 <see cref="_BuildSnapshot"/> 合并进对外暴露的视图。
+    /// </summary>
+    private static readonly NetworkPurposeInfo[] Defaults =
     [
         new(
             NetworkPurpose.LauncherUpdate,
@@ -67,9 +73,8 @@ public static class NetworkPurposeCatalog
             "检查新版本、获取公告与增量更新包。", "Check for new versions, announcements and delta updates.",
             "更新检查", "update checking",
             [
-                UpdateHost,
-                // 过渡期保留现有更新源，替换为自建 link 后可删除以下三项
-                "s3.pysio.online", "staticassets.naids.com", "github.com"
+                // 更新清单与更新包实际走 GitHub 的三种入口，另有反代在运行时补充
+                "raw.githubusercontent.com", "cdn.jsdelivr.net", "api.github.com", "github.com"
             ]
         ),
         new(
@@ -82,7 +87,8 @@ public static class NetworkPurposeCatalog
             [
                 "launchermeta.mojang.com", "piston-meta.mojang.com", "piston-data.mojang.com",
                 "libraries.minecraft.net", "resources.download.minecraft.net",
-                "bmclapi2.bangbang93.com", "alist.8mi.tech"
+                "bmclapi2.bangbang93.com", "alist.8mi.tech", "zkitefly.github.io",
+                "mirrors.cloud.tencent.com"
             ]
         ),
         new(
@@ -93,9 +99,10 @@ public static class NetworkPurposeCatalog
             "Query and download Forge, NeoForge, Fabric, LiteLoader, OptiFine and friends.",
             "安装模组加载器", "installing mod loaders",
             [
-                "files.minecraftforge.net", "maven.neoforged.net", "meta.fabricmc.net",
-                "meta.legacyfabric.net", "dl.liteloader.com", "optifine.net",
-                "releases.r2.labymod.net", "github.com", "authlib-injector.yushi.moe"
+                "files.minecraftforge.net", "maven.minecraftforge.net", "maven.neoforged.net",
+                "meta.fabricmc.net", "meta.legacyfabric.net", "dl.liteloader.com",
+                "jenkins.liteloader.com", "optifine.net", "releases.r2.labymod.net",
+                "releases.labymod.net", "github.com", "api.github.com", "authlib-injector.yushi.moe"
             ]
         ),
         new(
@@ -121,24 +128,51 @@ public static class NetworkPurposeCatalog
         )
     ];
 
-    private static readonly Dictionary<string, List<NetworkPurposeInfo>> _byHost = _BuildHostMap();
-    private static readonly Dictionary<NetworkPurpose, NetworkPurposeInfo> _byPurpose =
-        _all.ToDictionary(x => x.Purpose);
+    /// <summary>运行时追加的域名，按用途分组。</summary>
+    private static readonly Dictionary<NetworkPurpose, List<string>> ExtraHosts = [];
 
-    public static IReadOnlyList<NetworkPurposeInfo> All => _all;
+    private static volatile Snapshot _snapshot = _BuildSnapshot();
 
-    private static Dictionary<string, List<NetworkPurposeInfo>> _BuildHostMap()
+    /// <summary>登记表的只读视图，随 <see cref="RegisterExtraHosts"/> 整体替换。</summary>
+    public static IReadOnlyList<NetworkPurposeInfo> All => _snapshot.All;
+
+    /// <summary>
+    /// 追加若干域名到某个用途。重复登记会被忽略，可在启动阶段多次调用。
+    /// </summary>
+    public static void RegisterExtraHosts(NetworkPurpose purpose, IEnumerable<string>? hosts)
     {
-        var map = new Dictionary<string, List<NetworkPurposeInfo>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var info in _all)
-        foreach (var host in info.Hosts)
-        {
-            if (!map.TryGetValue(host, out var list))
-                map[host] = list = [];
-            if (!list.Contains(info)) list.Add(info);
-        }
+        if (hosts is null) return;
 
-        return map;
+        var added = hosts
+            .Select(host => host?.Trim().ToLowerInvariant())
+            .Where(host => !string.IsNullOrEmpty(host))
+            .Select(host => host!)
+            .ToList();
+        if (added.Count == 0) return;
+
+        lock (Sync)
+        {
+            if (!ExtraHosts.TryGetValue(purpose, out var list)) ExtraHosts[purpose] = list = [];
+
+            var changed = false;
+            foreach (var host in added)
+            {
+                if (list.Contains(host, StringComparer.OrdinalIgnoreCase)) continue;
+                list.Add(host);
+                changed = true;
+            }
+
+            if (changed) _snapshot = _BuildSnapshot();
+        }
+    }
+
+    /// <summary>
+    /// 追加若干完整 URL 的主机名到某个用途，便于把上层持有的地址清单直接接进来。
+    /// </summary>
+    public static void RegisterExtraHostsFromUrls(NetworkPurpose purpose, IEnumerable<string>? urls)
+    {
+        if (urls is null) return;
+        RegisterExtraHosts(purpose, urls.Select(_HostOfUrl).OfType<string>());
     }
 
     /// <summary>
@@ -148,16 +182,59 @@ public static class NetworkPurposeCatalog
     public static IReadOnlyList<NetworkPurposeInfo> ByHost(string? host)
     {
         if (string.IsNullOrWhiteSpace(host)) return [];
-        return _byHost.TryGetValue(host, out var list) ? list : [];
+        return _snapshot.ByHost.TryGetValue(host, out var list) ? list : [];
     }
 
     /// <summary>按枚举取用途信息。</summary>
-    public static NetworkPurposeInfo? ByPurpose(NetworkPurpose purpose) => _byPurpose.GetValueOrDefault(purpose);
+    public static NetworkPurposeInfo? ByPurpose(NetworkPurpose purpose) =>
+        _snapshot.ByPurpose.GetValueOrDefault(purpose);
 
     /// <summary>按 Id 取用途信息。</summary>
     public static NetworkPurposeInfo? ById(string? id)
     {
         if (string.IsNullOrWhiteSpace(id)) return null;
-        return _all.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase));
+        return _snapshot.All.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase));
     }
+
+    private static string? _HostOfUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        return Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri) && !string.IsNullOrEmpty(uri.Host)
+            ? uri.Host
+            : null;
+    }
+
+    private static Snapshot _BuildSnapshot()
+    {
+        var all = new NetworkPurposeInfo[Defaults.Length];
+        for (var i = 0; i < Defaults.Length; i++)
+        {
+            var info = Defaults[i];
+            if (!ExtraHosts.TryGetValue(info.Purpose, out var extra) || extra.Count == 0)
+            {
+                all[i] = info;
+                continue;
+            }
+
+            all[i] = info with
+            {
+                Hosts = info.Hosts.Concat(extra).Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
+            };
+        }
+
+        var byHost = new Dictionary<string, List<NetworkPurposeInfo>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var info in all)
+        foreach (var host in info.Hosts)
+        {
+            if (!byHost.TryGetValue(host, out var list)) byHost[host] = list = [];
+            if (!list.Contains(info)) list.Add(info);
+        }
+
+        return new Snapshot(all, byHost, all.ToDictionary(x => x.Purpose));
+    }
+
+    private sealed record Snapshot(
+        NetworkPurposeInfo[] All,
+        Dictionary<string, List<NetworkPurposeInfo>> ByHost,
+        Dictionary<NetworkPurpose, NetworkPurposeInfo> ByPurpose);
 }

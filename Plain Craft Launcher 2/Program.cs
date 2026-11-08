@@ -34,6 +34,11 @@ internal static class Program
         _ConfigurePluginBridge();
         // 网络授权弹窗：必须早于任何联网操作注册
         PCL.Network.NetworkConsentDialog.Register();
+        // 更新反代的域名清单由 UpdatesGitHubModel 持有，这里派生给授权白名单，
+        // 免得反代增删时两处对不上（未登记的域名会在关掉「全部允许」后逐个弹窗）
+        PCL.Core.IO.Net.Consent.NetworkPurposeCatalog.RegisterExtraHostsFromUrls(
+            PCL.Core.IO.Net.Consent.NetworkPurpose.LauncherUpdate,
+            UpdatesGitHubModel.DownloadProxies);
         // Preloading tasks
         ApplicationService.Loading = static () =>
         {

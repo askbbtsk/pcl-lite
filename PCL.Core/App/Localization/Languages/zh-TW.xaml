@@ -2821,6 +2821,7 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Plugin.Market.Update">更新</sys:String>
     <sys:String x:Key="Plugin.Market.Current">已是最新版本</sys:String>
     <sys:String x:Key="Plugin.Market.Downgrade">降級…</sys:String>
+    <sys:String x:Key="Plugin.Market.PendingRestart">待重新啟動生效</sys:String>
     <sys:String x:Key="Plugin.Market.Empty">目前沒有可用的外掛。</sys:String>
     <sys:String x:Key="Plugin.Market.LoadFailed">無法載入外掛市集：{0}</sys:String>
     <sys:String x:Key="Plugin.Install.Local">從本機檔案安裝</sys:String>
@@ -2884,6 +2885,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Plugin.Install.SignedNote">簽名驗證通過：只代表套件內容與簽名一致，不代表作者身分或外掛安全性。</sys:String>
     <sys:String x:Key="Plugin.Install.MixinWarning">此插件包含 {0} 個編譯 Mixin，會在主視窗建立前修改啟動器方法。插件與啟動器具有相同使用者權限；簽章不提供沙箱隔離，也不驗證作者身分。</sys:String>
     <sys:String x:Key="Plugin.Install.Done">外掛已安裝；重新啟動啟動器後生效。</sys:String>
+    <sys:String x:Key="Plugin.Install.Working">正在驗證並安裝外掛…</sys:String>
     <sys:String x:Key="Plugin.Install.Failed">外掛安裝失敗：{0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Title">已安裝的外掛</sys:String>
     <sys:String x:Key="Plugin.Installed.Empty">尚未安裝外掛。</sys:String>
@@ -2894,9 +2896,14 @@ Release 發布時間：{2}
     <sys:String x:Key="Plugin.Installed.Disabled">已停用</sys:String>
     <sys:String x:Key="Plugin.Installed.Error">啟動失敗：{0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Restart">設定已儲存；重新啟動啟動器後生效。</sys:String>
+    <sys:String x:Key="Plugin.Restart.Title">外掛變更需要重新啟動</sys:String>
+    <sys:String x:Key="Plugin.Restart.Now">立即重新啟動</sys:String>
+    <sys:String x:Key="Plugin.Restart.Later">稍後重新啟動</sys:String>
+    <sys:String x:Key="Plugin.Restart.Failed">無法自動重新啟動啟動器：{0}</sys:String>
     <sys:String x:Key="Plugin.Installed.UninstallConfirm">要解除安裝外掛「{0}」嗎？重新啟動後完成解除安裝。</sys:String>
     <sys:String x:Key="Plugin.Installed.Pages">外掛功能頁</sys:String>
     <sys:String x:Key="Plugin.Common.NoManager">外掛管理器尚未就緒，請稍後再試。</sys:String>
+    <sys:String x:Key="Plugin.Common.ButtonFailed">外掛按鈕「{0}」執行失敗：{1}</sys:String>
 
     <!-- Setup.Log -->
 

@@ -1,6 +1,12 @@
+using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
+using PCL.Core.App;
 using PCL.Core.App.Localization;
+using PCL.Core.Logging;
 using PCL.Core.Plugins;
 using PCL.Plugin.SDK;
 
@@ -8,6 +14,7 @@ namespace PCL;
 
 internal static class PluginPageSupport
 {
+    private static readonly HttpClient IconClient = new() { Timeout = TimeSpan.FromSeconds(5) };
     public static StackPanel CreateRoot(string title, out TextBlock status, out StackPanel content)
     {
         var root = new StackPanel { Margin = new Thickness(25, 10, 25, 24) };
@@ -64,6 +71,71 @@ internal static class PluginPageSupport
         block.SetResourceReference(TextBlock.ForegroundProperty, bold ? "ColorBrush1" : "ColorBrushGray2");
         return block;
     }
+
+    public static Image? PluginIcon(string? source, bool isUri)
+    {
+        if (string.IsNullOrWhiteSpace(source)) return null;
+        try
+        {
+            var uri = isUri ? new Uri(source, UriKind.Absolute) : new Uri(Path.GetFullPath(source), UriKind.Absolute);
+            if (!isUri && !File.Exists(uri.LocalPath)) return null;
+            var extension = Path.GetExtension(uri.AbsolutePath);
+            if (!new[] { ".png", ".jpg", ".jpeg", ".ico" }.Contains(extension, StringComparer.OrdinalIgnoreCase)) return null;
+            var image = new Image { Width = 42, Height = 42, Stretch = System.Windows.Media.Stretch.Uniform,
+                Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+            image.Source = new BitmapImage(uri);
+            return image;
+        }
+        catch { return null; }
+    }
+
+    public static async Task<Image?> LoadRemoteIconAsync(string? source, CancellationToken cancellationToken = default)
+    {
+        if (!Uri.TryCreate(source, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+            return null;
+        try
+        {
+            using var response = await IconClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            if (response.Content.Headers.ContentLength is > 1024 * 1024) return null;
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            if (bytes.Length > 1024 * 1024) return null;
+            using var stream = new MemoryStream(bytes, writable: false);
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = stream;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return CreateImage(bitmap);
+        }
+        catch { return null; }
+    }
+
+    public static async Task LoadRemoteIconIntoAsync(string? source, Image destination,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var loaded = await LoadRemoteIconAsync(source, cancellationToken);
+            if (loaded?.Source is null || destination.Parent is null) return;
+            var dispatcher = destination.Dispatcher;
+            if (dispatcher.CheckAccess()) destination.Source = loaded.Source;
+            else await dispatcher.InvokeAsync(() => destination.Source = loaded.Source);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", "插件市场图标加载失败"); }
+    }
+
+    private static Image CreateImage(BitmapImage source) => new()
+    {
+        Width = 42,
+        Height = 42,
+        Stretch = System.Windows.Media.Stretch.Uniform,
+        Margin = new Thickness(0, 0, 10, 0),
+        VerticalAlignment = VerticalAlignment.Center,
+        Source = source
+    };
 
     public static MyButton Button(string label, MyButton.ClickEventHandler click, bool accent = false)
     {
@@ -137,7 +209,8 @@ internal static class PluginPageSupport
                 check.SourceChanged || check.IsDowngrade || check.PackageChanged) == 1).Task;
     }
 
-    public static void ShowPluginNotice(string message, PluginNotificationKind kind = PluginNotificationKind.Info)
+    public static void ShowPluginNotice(string message, PluginNotificationKind kind = PluginNotificationKind.Info,
+        Func<Task>? onClick = null)
     {
         var hint = kind switch
         {
@@ -146,7 +219,29 @@ internal static class PluginPageSupport
             PluginNotificationKind.Error => HintType.Error,
             _ => HintType.Info
         };
-        ModBase.RunInUi(() => HintService.Hint(message, hint));
+        ModBase.RunInUi(() => HintService.Hint(message, hint, onClick: onClick));
+    }
+
+    public static void PromptRestartForPluginChanges(string message)
+    {
+        if (ModMain.MyMsgBox(message, Lang.Text("Plugin.Restart.Title"), Lang.Text("Plugin.Restart.Now"),
+                Lang.Text("Plugin.Restart.Later"), forceWait: true) != 1)
+            return;
+
+        try
+        {
+            var process = Process.Start(new ProcessStartInfo(Basics.ExecutablePath) { UseShellExecute = true });
+            if (process is null) throw new InvalidOperationException("The launcher process could not be started.");
+        }
+        catch (Exception ex)
+        {
+            LogWrapper.Error(ex, "Plugin", "无法重启启动器以应用插件更改");
+            ModMain.MyMsgBox(Lang.Text("Plugin.Restart.Failed", ex.Message), Lang.Text("Plugin.Restart.Title"),
+                Lang.Text("Common.Action.Confirm"), forceWait: true);
+            return;
+        }
+
+        FormMain.EndProgramForce();
     }
 
     private static string GetSourceName(string? sourceType) => sourceType switch

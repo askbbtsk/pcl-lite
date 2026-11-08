@@ -21,7 +21,27 @@ public sealed class ExamplePlugin : IPclPlugin
     public Task StartAsync(IPluginContext context, CancellationToken cancellationToken)
     {
         context.Logger.Info("Example started");
-        context.Ui.RegisterPage("home", "Example", () => new TextBlock { Text = "Hello" });
+        context.Ui.RegisterPage("home", "Example", () =>
+        {
+            var page = new StackPanel();
+            page.Children.Add(new TextBlock { Text = "Hello" });
+            page.Children.Add(context.Ui.CreateButton("Show greeting", () =>
+            {
+                context.Logger.Info("Greeting button clicked");
+                return Task.CompletedTask;
+            }, PluginButtonStyle.Highlight));
+            return page;
+        }, new PluginPageLifecycle(
+            OnShown: _ =>
+            {
+                context.Logger.Info("Example page shown; refresh page data here.");
+                return Task.CompletedTask;
+            },
+            OnHidden: _ =>
+            {
+                context.Logger.Info("Example page hidden; stop page polling here.");
+                return Task.CompletedTask;
+            }));
         return Task.CompletedTask;
     }
 
@@ -33,6 +53,8 @@ public sealed class ExamplePlugin : IPclPlugin
 ```
 
 `StartAsync` 保存必要的订阅句柄；`StopAsync` 取消自建工作、释放资源。事件处理可能在非 UI 线程运行，更新 WPF 控件时通过 Dispatcher 切回 UI 线程。所有异步操作都应传递宿主提供的 `CancellationToken`。
+
+标准按钮优先用 `context.Ui.CreateButton`，由宿主创建 PCL 原生主题控件，不依赖 `ColorBrush*` 字符串键。插件页视图在首次打开时创建并复用；通过 `PluginPageLifecycle` 在打开/关闭时刷新数据或停止轮询，动态页面用 `UnregisterPage` 移除。
 
 ## 清单
 

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.IO;
 using PCL.Core.App.Localization;
 using PCL.Core.Plugins;
 
@@ -11,6 +12,7 @@ public sealed class PagePluginsInstalled : MyPageRight
     private readonly StackPanel _content;
     private readonly WrapPanel _pluginPages;
     private readonly ContentControl _pluginPageContent;
+    private PluginPage? _activePluginPage;
 
     public PagePluginsInstalled()
     {
@@ -28,16 +30,24 @@ public sealed class PagePluginsInstalled : MyPageRight
         };
         Child = scroll;
         PanScroll = scroll;
-        Loaded += (_, _) => Refresh();
-        PluginPageRegistry.Changed += OnPluginPagesChanged;
-        Unloaded += (_, _) => PluginPageRegistry.Changed -= OnPluginPagesChanged;
+        Loaded += (_, _) =>
+        {
+            PluginPageRegistry.Changed += OnPluginPagesChanged;
+            Refresh();
+        };
+        Unloaded += (_, _) =>
+        {
+            PluginPageRegistry.Changed -= OnPluginPagesChanged;
+            _ = HideActivePluginPageAsync(clearContent: true);
+        };
     }
 
     public void Refresh()
     {
         _content.Children.Clear();
         _pluginPages.Children.Clear();
-        _pluginPageContent.Content = null;
+        if (_activePluginPage is not null) _ = HideActivePluginPageAsync(clearContent: true);
+        else _pluginPageContent.Content = null;
         var manager = PluginManagerService.Manager;
         if (manager is null)
         {
@@ -49,7 +59,17 @@ public sealed class PagePluginsInstalled : MyPageRight
         foreach (var plugin in plugins)
         {
             var card = new StackPanel();
-            card.Children.Add(PluginPageSupport.Text($"{plugin.Manifest.Author}  ·  {plugin.Manifest.Version}"));
+            var icon = PluginPageSupport.PluginIcon(
+                plugin.Manifest.Icon is null ? null : Path.Combine(plugin.Directory, plugin.Manifest.Icon), false);
+            if (icon is not null)
+            {
+                var header = new StackPanel { Orientation = Orientation.Horizontal };
+                header.Children.Add(icon);
+                header.Children.Add(PluginPageSupport.Text($"{GetDisplayName(plugin.Manifest)}  ·  {plugin.Manifest.Author}  ·  {plugin.Manifest.Version}", 12));
+                card.Children.Add(header);
+            }
+            else
+            card.Children.Add(PluginPageSupport.Text($"{GetDisplayName(plugin.Manifest)}  ·  {plugin.Manifest.Author}  ·  {plugin.Manifest.Version}"));
             var sourceText = plugin.InstallSourceType switch
             {
                 "market" => Lang.Text("Plugin.Installed.Source.Market"),
@@ -96,28 +116,53 @@ public sealed class PagePluginsInstalled : MyPageRight
             actions.Children.Add(PluginPageSupport.Button(Lang.Text("Plugin.Installed.Uninstall"),
                 async (_, _) => await UninstallAsync(plugin.Manifest.Id, plugin.Manifest.Name)));
             card.Children.Add(actions);
-            _content.Children.Add(PluginPageSupport.CreateCard(card, plugin.Manifest.Name));
+            _content.Children.Add(PluginPageSupport.CreateCard(card, GetDisplayName(plugin.Manifest)));
         }
         RefreshPluginPages();
     }
 
+    private static string GetDisplayName(PCL.Plugin.SDK.PluginManifest manifest) =>
+        manifest.LocalizedNames.TryGetValue(LocalizationService.CurrentLanguage.Code, out var localized) && !string.IsNullOrWhiteSpace(localized)
+            ? localized : manifest.Name;
+
     private void RefreshPluginPages()
     {
         _pluginPages.Children.Clear();
-        foreach (var page in PluginPageRegistry.GetAll())
+        var pages = PluginPageRegistry.GetAll();
+        if (_activePluginPage is not null && !pages.Contains(_activePluginPage))
+            _ = HideActivePluginPageAsync(clearContent: true);
+        foreach (var page in pages)
         {
-            var button = PluginPageSupport.Button($"{page.Title}  ·  {page.PluginId}", (_, _) =>
-            {
-                try { _pluginPageContent.Content = page.CreateView(); }
-                catch (Exception ex)
-                {
-                    PCL.Core.Logging.LogWrapper.Error(ex, "Plugin", $"无法显示插件页 {page.PluginId}/{page.PageId}");
-                    _pluginPageContent.Content = PluginPageSupport.Text(ex.Message);
-                }
-            });
+            var button = PluginPageSupport.Button($"{page.Title}  ·  {page.PluginId}",
+                async (_, _) => await ShowPluginPageAsync(page));
             button.HorizontalAlignment = HorizontalAlignment.Left;
             _pluginPages.Children.Add(button);
         }
+    }
+
+    private async Task ShowPluginPageAsync(PluginPage page)
+    {
+        if (ReferenceEquals(_activePluginPage, page)) return;
+        await HideActivePluginPageAsync(clearContent: true);
+        try
+        {
+            _pluginPageContent.Content = page.GetOrCreateView();
+            _activePluginPage = page;
+            await page.NotifyShownAsync();
+        }
+        catch (Exception ex)
+        {
+            PCL.Core.Logging.LogWrapper.Error(ex, "Plugin", $"无法显示插件页 {page.PluginId}/{page.PageId}");
+            _pluginPageContent.Content = PluginPageSupport.Text(ex.Message);
+        }
+    }
+
+    private async Task HideActivePluginPageAsync(bool clearContent)
+    {
+        var page = _activePluginPage;
+        _activePluginPage = null;
+        if (clearContent) _pluginPageContent.Content = null;
+        if (page is not null) await page.NotifyHiddenAsync();
     }
 
     private void OnPluginPagesChanged()
@@ -132,9 +177,9 @@ public sealed class PagePluginsInstalled : MyPageRight
         if (manager is null) return;
         try
         {
-            await manager.SetEnabledAsync(id, enabled);
-            PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Installed.Restart"), PCL.Plugin.SDK.PluginNotificationKind.Info);
+            await Task.Run(() => manager.SetEnabledAsync(id, enabled));
             Refresh();
+            PluginPageSupport.PromptRestartForPluginChanges(Lang.Text("Plugin.Installed.Restart"));
         }
         catch (Exception ex) { PluginPageSupport.ShowPluginNotice(ex.Message, PCL.Plugin.SDK.PluginNotificationKind.Error); }
     }
@@ -145,9 +190,9 @@ public sealed class PagePluginsInstalled : MyPageRight
         if (manager is null) return;
         try
         {
-            await manager.SetExperimentalFeatureEnabledAsync(pluginId, featureId, enabled);
-            PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Installed.Restart"), PCL.Plugin.SDK.PluginNotificationKind.Info);
+            await Task.Run(() => manager.SetExperimentalFeatureEnabledAsync(pluginId, featureId, enabled));
             Refresh();
+            PluginPageSupport.PromptRestartForPluginChanges(Lang.Text("Plugin.Installed.Restart"));
         }
         catch (Exception ex)
         {
@@ -165,9 +210,9 @@ public sealed class PagePluginsInstalled : MyPageRight
         if (manager is null) return;
         try
         {
-            await manager.UninstallAsync(id);
-            PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Installed.Restart"), PCL.Plugin.SDK.PluginNotificationKind.Info);
+            await Task.Run(() => manager.UninstallAsync(id));
             Refresh();
+            PluginPageSupport.PromptRestartForPluginChanges(Lang.Text("Plugin.Installed.Restart"));
         }
         catch (Exception ex) { PluginPageSupport.ShowPluginNotice(ex.Message, PCL.Plugin.SDK.PluginNotificationKind.Error); }
     }

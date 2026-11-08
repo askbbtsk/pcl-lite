@@ -124,6 +124,172 @@ public sealed class PluginPackageTests
     }
 
     [TestMethod]
+    public async Task StreamingInspectionAndExtractionVerifyLegacySignaturePayload()
+    {
+        using var certificate = CreateCertificate();
+        var files = CreateFiles();
+        var signedAt = DateTimeOffset.UtcNow;
+        var certificateBytes = certificate.Export(X509ContentType.Cert);
+        var hashes = CreateCanonicalFileHashes(files);
+        using var legacyPayload = new MemoryStream();
+        using (var writer = new StreamWriter(legacyPayload, new UTF8Encoding(false), leaveOpen: true))
+        {
+            writer.Write("signatureSchema\0");
+            writer.Write("1\n");
+            writer.Write("signatureAlgorithm\0RSA-SHA256-PKCS1\n");
+            writer.Write("certificateThumbprint\0");
+            writer.Write(certificate.Thumbprint);
+            writer.Write('\n');
+            writer.Write("certificateSha256\0");
+            writer.Write(Convert.ToHexString(SHA256.HashData(certificateBytes)).ToLowerInvariant());
+            writer.Write('\n');
+            writer.Flush();
+        }
+        legacyPayload.Write(PluginPackage.CreateSignaturePayload(files, signedAt));
+        var legacySignature = new PluginPackageSignature(1, "RSA-SHA256-PKCS1",
+            Convert.ToBase64String(certificateBytes),
+            Convert.ToBase64String(certificate.GetRSAPrivateKey()!.SignData(legacyPayload.ToArray(),
+                HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)),
+            certificate.Thumbprint, signedAt);
+        var legacyVerification = PluginPackage.VerifyFileHashes(hashes, legacySignature);
+        Assert.IsTrue(legacyVerification.Valid, legacyVerification.Error);
+
+        var packagePath = CreateTempPath();
+        var extractionPath = Path.Combine(Path.GetTempPath(), "pcl-plugin-extract-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            await WritePackageAsync(packagePath, files, legacySignature);
+            var inspect = await PluginPackage.InspectAsync(packagePath);
+            Assert.IsTrue(inspect.IsValid, inspect.Error);
+            Assert.IsTrue(inspect.SignatureValid);
+            Assert.AreEqual(PluginPackage.CreateFileContentHash(files), inspect.ContentHash);
+
+            var packageSha256 = await ComputeFileSha256Async(packagePath);
+            var extracted = await PluginPackage.ExtractVerifiedAsync(packagePath, extractionPath,
+                inspect.ContentHash, packageSha256);
+            Assert.IsTrue(extracted.IsValid, extracted.Error);
+            CollectionAssert.AreEqual(files["Plugin.dll"], await File.ReadAllBytesAsync(Path.Combine(extractionPath, "Plugin.dll")));
+            Assert.IsTrue(File.Exists(Path.Combine(extractionPath, PluginPackage.SignatureFileName)));
+
+            var extractedHashes = CreateCanonicalFileHashes(files);
+            Assert.IsTrue(PluginPackage.VerifyFileHashes(extractedHashes, legacySignature).Valid);
+        }
+        finally
+        {
+            DeleteIfExists(packagePath);
+            if (Directory.Exists(extractionPath)) Directory.Delete(extractionPath, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task StreamingAuthoringHandlesLargeAssetAndFailedExtractionLeavesNoDirectory()
+    {
+        using var certificate = CreateCertificate();
+        var root = Path.Combine(Path.GetTempPath(), "pcl-plugin-large-" + Guid.NewGuid().ToString("N"));
+        var source = Path.Combine(root, "source");
+        var output = Path.Combine(root, "large" + PluginPackage.Extension);
+        var extraction = Path.Combine(root, "extraction");
+        Directory.CreateDirectory(source);
+        var manifest = new PluginManifest
+        {
+            Id = "large.probe",
+            Name = "Large Probe",
+            Version = "1.0.0",
+            Author = "Runtime test",
+            EntryAssembly = "Plugin.dll"
+        };
+        await File.WriteAllBytesAsync(Path.Combine(source, PluginPackage.ManifestFileName),
+            JsonSerializer.SerializeToUtf8Bytes(manifest, PluginPackage.SerializerOptions));
+        await File.WriteAllBytesAsync(Path.Combine(source, "Plugin.dll"), [1, 2, 3]);
+        const long largeAssetLength = 40L * 1024 * 1024;
+        var buffer = new byte[64 * 1024];
+        new Random(42721).NextBytes(buffer);
+        await using (var large = new FileStream(Path.Combine(source, "large.dat"), FileMode.CreateNew,
+                         FileAccess.Write, FileShare.None, buffer.Length, FileOptions.Asynchronous | FileOptions.SequentialScan))
+        {
+            for (long written = 0; written < largeAssetLength; written += buffer.Length)
+                await large.WriteAsync(buffer);
+        }
+
+        try
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+            await PluginAuthoring.CreatePackageAsync(source, output, certificate);
+            var allocated = GC.GetTotalAllocatedBytes(precise: true) - allocatedBefore;
+            Assert.IsTrue(allocated < 16L * 1024 * 1024,
+                $"Streaming package authoring allocated {allocated:N0} bytes for a {largeAssetLength:N0}-byte asset.");
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+            var inspect = await PluginPackage.InspectAsync(output);
+            allocated = GC.GetTotalAllocatedBytes(precise: true) - allocatedBefore;
+            Assert.IsTrue(allocated < 16L * 1024 * 1024,
+                $"Streaming inspection allocated {allocated:N0} bytes for a {largeAssetLength:N0}-byte asset.");
+            Assert.IsTrue(inspect.IsValid, inspect.Error);
+            Assert.IsTrue(inspect.SignatureValid);
+            Assert.AreEqual(largeAssetLength, new FileInfo(Path.Combine(source, "large.dat")).Length);
+
+            var packageSha256 = await ComputeFileSha256Async(output);
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+            var extractedLarge = await PluginPackage.ExtractVerifiedAsync(output, extraction,
+                inspect.ContentHash, packageSha256);
+            allocated = GC.GetTotalAllocatedBytes(precise: true) - allocatedBefore;
+            Assert.IsTrue(allocated < 16L * 1024 * 1024,
+                $"Streaming extraction allocated {allocated:N0} bytes for a {largeAssetLength:N0}-byte asset.");
+            Assert.IsTrue(extractedLarge.IsValid, extractedLarge.Error);
+            Assert.AreEqual(largeAssetLength, new FileInfo(Path.Combine(extraction, "large.dat")).Length);
+            var directoryInspect = await PluginPackage.InspectDirectoryAsync(extraction);
+            Assert.IsTrue(directoryInspect.IsValid, directoryInspect.Error);
+            Assert.AreEqual(inspect.ContentHash, directoryInspect.ContentHash);
+            Directory.Delete(extraction, recursive: true);
+
+            var files = await PluginPackage.ReadPackageFilesAsync(output);
+            var payload = files.Where(item => !item.Key.Equals(PluginPackage.SignatureFileName, StringComparison.Ordinal))
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
+            var signature = JsonSerializer.Deserialize<PluginPackageSignature>(files[PluginPackage.SignatureFileName],
+                PluginPackage.SerializerOptions)!;
+            Assert.IsTrue(PluginPackage.VerifyFiles(payload, signature).Valid,
+                "A streaming-authored package must pass the legacy dictionary verifier.");
+
+            var tampered = output + ".tampered";
+            try
+            {
+                await using (var stream = File.Create(tampered))
+                using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
+                {
+                    foreach (var item in payload)
+                    {
+                        var entry = archive.CreateEntry(item.Key);
+                        await using var entryStream = entry.Open();
+                        if (item.Key == "Plugin.dll") await entryStream.WriteAsync(new byte[] { 9, 9, 9 });
+                        else await entryStream.WriteAsync(item.Value);
+                    }
+                    var signatureEntry = archive.CreateEntry(PluginPackage.SignatureFileName);
+                    await using var signatureStream = signatureEntry.Open();
+                    await JsonSerializer.SerializeAsync(signatureStream, signature, PluginPackage.SerializerOptions);
+                }
+                var tamperedHash = await ComputeFileSha256Async(tampered);
+                await Assert.ThrowsExactlyAsync<InvalidDataException>(() => PluginPackage.ExtractVerifiedAsync(
+                    tampered, extraction, inspect.ContentHash, tamperedHash));
+                Assert.IsFalse(Directory.Exists(extraction), "Failed verification must remove the partial extraction.");
+            }
+            finally { DeleteIfExists(tampered); }
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [TestMethod]
     public async Task InspectRejectsTamperingAndUnsafeArchivePaths()
     {
         using var certificate = CreateCertificate();
@@ -1112,6 +1278,28 @@ public sealed class PluginPackageTests
 
     private static Task WritePackageAsync(string path, IReadOnlyDictionary<string, byte[]> files, X509Certificate2 certificate) =>
         WritePackageAsync(path, files, PluginPackage.SignFiles(files, certificate));
+
+    private static SortedDictionary<string, string> CreateCanonicalFileHashes(IReadOnlyDictionary<string, byte[]> files)
+    {
+        var result = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        foreach (var item in files)
+        {
+            var content = item.Value;
+            if (item.Key.Equals(PluginPackage.ManifestFileName, StringComparison.Ordinal))
+            {
+                var manifest = PluginPackage.DeserializeManifest(content);
+                content = JsonSerializer.SerializeToUtf8Bytes(manifest, PluginPackage.SerializerOptions);
+            }
+            result.Add(item.Key, Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
+        }
+        return result;
+    }
+
+    private static async Task<string> ComputeFileSha256Async(string path)
+    {
+        await using var stream = File.OpenRead(path);
+        return Convert.ToHexString(await SHA256.HashDataAsync(stream));
+    }
 
     private static string CreateTempPath() => Path.Combine(Path.GetTempPath(), "pcl-plugin-test-" + Guid.NewGuid().ToString("N") + PluginPackage.Extension);
 

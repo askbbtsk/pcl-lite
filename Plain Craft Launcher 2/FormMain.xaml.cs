@@ -13,6 +13,7 @@ using PCL.Core.App.IoC;
 using PCL.Core.App.Localization;
 using PCL.Core.Logging;
 using PCL.Core.Minecraft;
+using PCL.Core.Plugins;
 using PCL.Core.UI;
 using PCL.Core.UI.Navigation;
 using PCL.Core.UI.Theme;
@@ -20,6 +21,7 @@ using PCL.Core.Utils;
 using PCL.Core.Utils.OS;
 using PCL.Core.Utils.Validate;
 using PCL.Network;
+using PCL.Plugin.SDK;
 
 namespace PCL;
 
@@ -2090,6 +2092,8 @@ public partial class FormMain
 
             pageLast = pageCurrent;
             pageCurrent = stack;
+            PluginRuntimeManager.Notify(new PluginPageNavigationEvent(
+                pageLast?.page.ToString(), pageCurrent?.page.ToString()));
             switch (stack.page)
             {
                 case PageType.Launch: // 启动

@@ -22,13 +22,23 @@ public sealed class Plugin : IPclPlugin
         return Task.CompletedTask;
     }
 
-    private FrameworkElement CreateView() => new StackPanel
+    private FrameworkElement CreateView()
     {
-        Margin = new Thickness(24),
-        Children =
+        var context = _context ?? throw new InvalidOperationException("Plugin is not started.");
+        var panel = new StackPanel
         {
-            new TextBlock { Text = "PCL Lite Plugin SDK", FontSize = 24 },
-            new TextBlock { Text = "This sample demonstrates a plugin page, logging and isolated storage.", Margin = new Thickness(0, 12, 0, 0) }
-        }
-    };
+            Margin = new Thickness(24),
+            Children =
+            {
+                new TextBlock { Text = "PCL Lite Plugin SDK", FontSize = 24 },
+                new TextBlock { Text = "This sample demonstrates a plugin page, logging and isolated storage.", Margin = new Thickness(0, 12, 0, 0) }
+            }
+        };
+        panel.Children.Add(context.Ui.CreateButton("Show sample notification", () =>
+        {
+            context.Ui.ShowNotification("Hello from the sample plugin", PluginNotificationKind.Success);
+            return Task.CompletedTask;
+        }, PluginButtonStyle.Highlight));
+        return panel;
+    }
 }

@@ -2878,6 +2878,7 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Plugin.Market.Update">更新</sys:String>
     <sys:String x:Key="Plugin.Market.Current">已是最新版本</sys:String>
     <sys:String x:Key="Plugin.Market.Downgrade">降级…</sys:String>
+    <sys:String x:Key="Plugin.Market.PendingRestart">待重启生效</sys:String>
     <sys:String x:Key="Plugin.Market.Empty">市场暂时没有可用插件。</sys:String>
     <sys:String x:Key="Plugin.Market.LoadFailed">无法加载插件市场：{0}</sys:String>
     <sys:String x:Key="Plugin.Install.Local">从本地文件安装</sys:String>
@@ -2941,6 +2942,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Plugin.Install.SignedNote">签名验证通过：只证明包内容与签名一致，不证明作者身份或插件安全。</sys:String>
     <sys:String x:Key="Plugin.Install.MixinWarning">此插件包含 {0} 个编译 Mixin，会在主窗口创建前修改启动器方法。插件与启动器具有相同用户权限；签名不提供沙箱隔离，也不验证作者身份。</sys:String>
     <sys:String x:Key="Plugin.Install.Done">插件已安装；重启启动器后生效。</sys:String>
+    <sys:String x:Key="Plugin.Install.Working">正在校验并安装插件…</sys:String>
     <sys:String x:Key="Plugin.Install.Failed">插件安装失败：{0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Title">已安装的插件</sys:String>
     <sys:String x:Key="Plugin.Installed.Empty">尚未安装插件。</sys:String>
@@ -2951,9 +2953,14 @@ Release 发布时间：{2}
     <sys:String x:Key="Plugin.Installed.Disabled">已禁用</sys:String>
     <sys:String x:Key="Plugin.Installed.Error">启动失败：{0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Restart">设置已保存；重启启动器后生效。</sys:String>
+    <sys:String x:Key="Plugin.Restart.Title">插件更改需要重启</sys:String>
+    <sys:String x:Key="Plugin.Restart.Now">立即重启</sys:String>
+    <sys:String x:Key="Plugin.Restart.Later">稍后重启</sys:String>
+    <sys:String x:Key="Plugin.Restart.Failed">无法自动重启启动器：{0}</sys:String>
     <sys:String x:Key="Plugin.Installed.UninstallConfirm">卸载插件“{0}”？重启后完成卸载。</sys:String>
     <sys:String x:Key="Plugin.Installed.Pages">插件功能页</sys:String>
     <sys:String x:Key="Plugin.Common.NoManager">插件管理器尚未就绪，请稍后重试。</sys:String>
+    <sys:String x:Key="Plugin.Common.ButtonFailed">插件按钮“{0}”执行失败：{1}</sys:String>
 
     <!-- Setup.Log -->
 

@@ -15,20 +15,31 @@
 
 - `Logger.Trace/Debug/Info/Warn/Error`：日志按插件 ID 分类。
 - `Storage.ReadTextAsync/WriteTextAsync`：读写插件数据目录下的安全相对路径。
+- `Storage.ReadBytesAsync/WriteBytesAsync`、`OpenReadAsync`、`WriteStreamAsync`：受单文件和总量配额约束的二进制/流存储。
+- `OpenReadAsync` 返回的 `Stream` 由插件负责 `Dispose`（推荐使用 `await using`）；否则 Windows 可能保留文件句柄，导致后续 `DeleteAsync` 失败。
+- `Storage.ExistsAsync`、`DeleteAsync`、`ListAsync`：检查、删除和列出插件数据目录条目。
 - `Storage.ReadJsonAsync<T>/WriteJsonAsync<T>`：JSON 文件存取。
 - `Settings.GetAsync<T>/SetAsync<T>/RemoveAsync`：以受限 ASCII key 存取设置，底层为插件独立 JSON 文件。
 
-存储写入受每插件 256 MiB 总量、单文件 64 MiB 和 10,000 文件限制；写入先进入临时文件，成功后替换目标。路径不能穿越插件数据目录，符号链接/联接点会被拒绝。
+存储读写受每插件 256 MiB 总量、单文件 64 MiB 和 10,000 文件限制；写入先进入临时文件，成功后替换目标。路径不能穿越插件数据目录，符号链接/联接点会被拒绝。
 
-这些限制约束 `Storage` / `Settings` 的宿主写入 API，不是操作系统配额；同权限的编译插件直接用 .NET 文件 API 仍可绕过。`Storage` 读写的是完整文本/JSON，不提供流式或二进制存储。`Launcher.DownloadAsync` 与 Storage 共用插件数据树配额锁：单次传输最多 64 MiB，累计不超过 256 MiB，新增文件不超过 10,000 个，并在响应声明 Content-Length 时验证实际长度。
+这些限制约束 `Storage` / `Settings` 的宿主读写 API，不是操作系统配额；同权限的编译插件直接用 .NET 文件 API 仍可绕过。`Launcher.DownloadAsync` 与 Storage 共用插件数据树配额锁：单次传输最多 64 MiB，累计不超过 256 MiB，新增文件不超过 10,000 个，并在响应声明 Content-Length 时验证实际长度。
+
+`context.Services` 提供按类型注册、获取和注销的进程内服务；服务实现由插件自行负责生命周期和线程安全，宿主不会把它当作权限边界。
 
 不要把密钥写入日志；对可变数据使用版本字段，并处理首次读取返回 `null` 的情况。
 
 ## UI
 
-- `Ui.RegisterPage(id, title, Func<FrameworkElement>)`：注册插件页。工厂在页面实际显示时调用，适合延迟创建大型视图。
-- `Ui.ShowNotification(message, kind)`：发送提示。
+- `Ui.RegisterPage(id, title, Func<FrameworkElement>)`：注册插件页。工厂在首次打开时调用，创建的视图会复用。
+- `Ui.RegisterPage(id, title, Func<FrameworkElement>, PluginPageLifecycle)`：注册带显示/隐藏异步回调的插件页，可用于刷新数据和停止轮询。
+- `Ui.UnregisterPage(id)`：移除当前插件注册的页面；若正在显示，宿主先触发隐藏回调。
+- `Ui.CreateButton(text, Func<Task>, style)`：创建宿主的 PCL 原生按钮，不暴露内部主题资源键。`PluginButtonStyle` 支持 `Normal`、`Highlight` 和 `Danger`。
+- `Ui.ShowNotification(message, kind)`：发送提示；可选点击回调会在用户点击 PCL 提示条时执行一次。
 - `Ui.ConfirmAsync(title, message, cancellationToken)`：显示确认提示并返回用户选择。
+- `Ui.ChooseAsync(title, message, options, cancellationToken)`：显示确认、取消和可选第三个动作，并返回动作索引。
+
+`PluginDialogOptions` 的确认/取消文案默认留空，宿主会按当前 UI 语言填充；只有传入非空文案时才覆盖宿主默认翻译。
 
 页面 ID 在同一插件内应稳定且唯一。后台事件处理器不能直接操作 WPF 控件；使用 `Application.Current.Dispatcher`。
 
@@ -45,10 +56,14 @@ IDisposable subscription = context.Events.Subscribe<PluginGameStartedEvent>(
 
 宿主事件：`PluginGameLaunchingEvent`、`PluginGameStartedEvent`、`PluginGameExitedEvent`。`PublishAsync<T>` 可在同一启动器进程中的同类型订阅者间发布事件。保存并释放订阅句柄；插件停止时宿主会清理 context 级订阅。单个处理器异常会记录并继续分发。
 
+另外提供 `PluginThemeChangedEvent`、`PluginInstanceListChangedEvent`、`PluginPageNavigationEvent` 和 `PluginStateChangedEvent`，用于订阅主题、实例目录、页面导航和插件状态变化。宿主在主题变更、实例列表完成刷新、主页面切换，以及插件安装/启用/禁用/卸载或实验功能变更时发布这些事件。
+
 ## 网络和下载
 
 - `Network.GetAsync`、`Network.SendAsync`：HTTP 请求，返回状态码、原始 `ContentBytes`、`ContentType`、响应头及正文 `Content`。文本正文按响应的 charset 解码；未声明或不支持的 charset 回退 UTF-8。二进制响应使用 `ContentBytes`，不要使用可能含替换字符的 `Content`。
+- `Network.GetAsync`/`SendAsync` 的重载可传递请求头和单次超时；宿主仍限制 HTTP 请求和响应正文各 16 MiB。
 - `Launcher.DownloadAsync(uri, relativePath, progress, cancellationToken)`：只允许 HTTPS，单次下载不超过 64 MiB，目标限定在插件数据目录，和 Storage 共用配额锁，写入随机临时文件，完整成功且 Content-Length 匹配后原子替换，可报告字节进度。
+- `Launcher.DownloadAsync(..., expectedSha256, ...)`：在提交目标文件前验证 SHA-256，校验失败会保留旧文件。
 
 HTTP API 可向插件配置的地址发送请求，不代表该地址可信。避免把令牌放入 URL 或日志；校验远端数据和下载内容。大文件应使用流式处理，不要额外复制整个内容到内存。
 
@@ -57,8 +72,11 @@ HTTP API 可向插件配置的地址发送请求，不代表该地址可信。�
 ## Minecraft 和启动器
 
 - `Minecraft.GetInstancesAsync`：返回 ID、名称、版本、目录和是否选中。
+- `Minecraft.GetSelectedInstanceAsync`：返回当前选中的实例。
+- `Minecraft.GetInstanceConfigurationAsync(instanceId)`：读取宿主提供的实例配置键值。
 - `Minecraft.LaunchAsync(instanceId)`：请求宿主启动对应实例；不存在的 ID 返回 `false`。
-- `Launcher.Name/Version/DataDirectory/PluginsDirectory`：宿主信息和目录路径。
+- `Minecraft.LaunchAsync(instanceId, options)`：带额外 JVM 参数、环境变量和可选世界名请求启动。
+- `Launcher.Name/Version/CoreVersion/DataDirectory/PluginsDirectory`：宿主信息、实际兼容性版本和目录路径。用 `PluginVersionRange.Satisfies(Launcher.CoreVersion, manifestRange)` 检查插件声明的兼容范围。
 - `Launcher.OpenUrl`：支持 HTTP(S)。
 - `Launcher.OpenPath`：打开当前用户有权访问的已有文件或目录；插件可传任意路径，宿主不将它限制在插件目录。
 
@@ -80,13 +98,14 @@ Mixin 是编译程序集中的方法补丁，见 [Mixin 指南](mixins.md)。与
 |---|---|---|
 | `IPclPlugin` | `PCL.Core/Plugins/PluginRuntimeManager.cs`：`_PreparePluginAsync`、`_StartPluginAsync`、`DisposeAsync` 停止路径 | `PluginApiRuntimeTests.LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions`；依赖顺序见 `PluginPackageTests.RuntimeStartsCompiledPluginsInDependencyOrder` |
 | `IPluginContext`、`IPluginMetadata` | `PluginRuntimeManager.cs`：`PluginContext`、`PluginMetadata` | `PluginApiRuntimeTests.LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions` |
+| `IPluginServices` | `PluginRuntimeManager.cs`：`PluginServices` | 同上（按类型注册、获取和注销） |
 | `IPluginLogger` | `PluginRuntimeManager.cs`：`PluginLogger` | 同上（验证五个日志等级） |
-| `IPluginStorage` | `PluginRuntimeManager.cs`：`PluginStorage` | 同上（文本/JSON、路径限制、取消、并发写入和失败清理） |
+| `IPluginStorage` | `PluginRuntimeManager.cs`：`PluginStorage` | 同上（文本/JSON/二进制/流、列出/删除、路径限制、取消、并发写入和失败清理） |
 | `IPluginSettings` | `PluginRuntimeManager.cs`：`PluginSettings` | 同上（读写、删除和取消） |
-| `IPluginUi` | `PluginRuntimeManager.cs`：`PluginUi`、`PluginPageRegistry`；生产 WPF 桥接在 `Plain Craft Launcher 2/Program.cs` 的 `_ConfigurePluginBridge`，插件视图在 `Plain Craft Launcher 2/Pages/PagePlugins/PagePluginsInstalled.cs` 创建 | 同上（UI 桥接探针）；实际视图导航仍需启动器烟测 |
+| `IPluginUi` | `PluginRuntimeManager.cs`：`PluginUi`、`PluginPageRegistry`；生产 WPF 桥接在 `Plain Craft Launcher 2/Program.cs` 的 `_ConfigurePluginBridge`，插件视图和生命周期在 `Plain Craft Launcher 2/Pages/PagePlugins/PagePluginsInstalled.cs` 管理 | 同上（UI 桥接探针）；实际按钮外观和页面导航仍需启动器烟测 |
 | `IPluginEvents` | `PluginRuntimeManager.cs`：`PluginEvents`、`PublishAsync` | 同上（订阅、分发、异常隔离、插件停止后清理） |
-| `IPluginNetwork` | `PluginRuntimeManager.cs`：`PluginNetwork` | 同上（HTTP、二进制、字符集、错误状态、响应大小上限） |
-| `IPluginMinecraft` | `PluginRuntimeManager.cs`：`PluginMinecraft`；生产实例和启动桥接在 `Plain Craft Launcher 2/Program.cs` 的 `_ConfigurePluginBridge` | 同上（使用替身桥接）；真实实例与进程仍需烟测 |
-| `IPluginLauncher` | `PluginRuntimeManager.cs`：`PluginLauncher` | 同上（信息、打开路径及 HTTPS 下载限制/原子写入） |
+| `IPluginNetwork` | `PluginRuntimeManager.cs`：`PluginNetwork` | 同上（HTTP、二进制、字符集、请求头/超时、错误状态、响应大小上限） |
+| `IPluginMinecraft` | `PluginRuntimeManager.cs`：`PluginMinecraft`；生产实例和启动桥接在 `Plain Craft Launcher 2/Program.cs` 的 `_ConfigurePluginBridge` | 同上（实例、选中项、配置和启动选项使用替身桥接）；真实实例与进程仍需烟测 |
+| `IPluginLauncher` | `PluginRuntimeManager.cs`：`PluginLauncher` | 同上（信息、打开路径及 HTTPS 下载限制/原子写入/SHA-256 校验） |
 
 运行插件探针：`dotnet test .\PCL.Core.Test\PCL.Core.Test.csproj --filter FullyQualifiedName~PluginApiRuntimeTests`。测试通过只证明测试桥接和当前适配器契约；若改动生产 WPF 桥接，还要构建启动器并验证页面线程、实例 ID 映射和启动结果。

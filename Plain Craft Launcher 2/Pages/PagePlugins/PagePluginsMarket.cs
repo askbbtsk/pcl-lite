@@ -11,6 +11,7 @@ public sealed class PagePluginsMarket : MyPageRight
 {
     private readonly TextBlock _status;
     private readonly StackPanel _content;
+    private bool _installationInProgress;
 
     public PagePluginsMarket()
     {
@@ -36,6 +37,7 @@ public sealed class PagePluginsMarket : MyPageRight
 
     public async Task RefreshAsync()
     {
+        if (_installationInProgress) return;
         _content.Children.Clear();
         var manager = PluginManagerService.Manager;
         if (manager is null)
@@ -57,8 +59,19 @@ public sealed class PagePluginsMarket : MyPageRight
             {
                 var entry = candidate.Entry;
                 var stack = new StackPanel();
-                stack.Children.Add(PluginPageSupport.Text($"{entry.Author}  ·  {entry.Version}", 12));
-                stack.Children.Add(PluginPageSupport.Text(entry.Description));
+                var icon = new Image { Width = 42, Height = 42,
+                    Stretch = System.Windows.Media.Stretch.Uniform,
+                    Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+                if (!string.IsNullOrWhiteSpace(entry.Icon))
+                {
+                    var header = new StackPanel { Orientation = Orientation.Horizontal };
+                    header.Children.Add(icon);
+                    header.Children.Add(PluginPageSupport.Text($"{GetDisplayName(entry)}  ·  {entry.Author}  ·  {entry.Version}", 12));
+                    stack.Children.Add(header);
+                }
+                else
+                stack.Children.Add(PluginPageSupport.Text($"{GetDisplayName(entry)}  ·  {entry.Author}  ·  {entry.Version}", 12));
+                stack.Children.Add(PluginPageSupport.Text(GetDescription(entry)));
                 var row = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
                 switch (candidate.Kind)
                 {
@@ -66,23 +79,23 @@ public sealed class PagePluginsMarket : MyPageRight
                         row.Children.Add(PluginPageSupport.Text(Lang.Text("Plugin.Market.Current"), 12));
                         break;
                     case PluginMarketUpdateKind.UpdateAvailable:
-                        row.Children.Add(PluginPageSupport.Button(Lang.Text("Plugin.Market.Update"),
-                            async (_, _) => await InstallMarketAsync(entry), true));
+                        row.Children.Add(CreateInstallButton(entry, Lang.Text("Plugin.Market.Update")));
                         break;
                     case PluginMarketUpdateKind.DowngradeAvailable:
-                        row.Children.Add(PluginPageSupport.Button(Lang.Text("Plugin.Market.Downgrade"),
-                            async (_, _) => await InstallMarketAsync(entry), true));
+                        row.Children.Add(CreateInstallButton(entry, Lang.Text("Plugin.Market.Downgrade")));
                         break;
                     default:
-                        row.Children.Add(PluginPageSupport.Button(Lang.Text("Plugin.Market.Install"),
-                            async (_, _) => await InstallMarketAsync(entry), true));
+                        row.Children.Add(CreateInstallButton(entry, Lang.Text("Plugin.Market.Install")));
                         break;
                 }
                 if (Uri.TryCreate(entry.Website, UriKind.Absolute, out var website) && website.Scheme == Uri.UriSchemeHttps)
                     row.Children.Add(PluginPageSupport.Button(Lang.Text("Download.Version.OpenWebsite"),
                         (_, _) => ModBase.OpenWebsite(website.AbsoluteUri)));
                 stack.Children.Add(row);
-                _content.Children.Add(PluginPageSupport.CreateCard(stack, entry.Name));
+                var card = PluginPageSupport.CreateCard(stack, GetDisplayName(entry));
+                _content.Children.Add(card);
+                if (!string.IsNullOrWhiteSpace(entry.Icon))
+                    _ = PluginPageSupport.LoadRemoteIconIntoAsync(entry.Icon, icon);
             }
             _status.Text = "";
         }
@@ -94,6 +107,7 @@ public sealed class PagePluginsMarket : MyPageRight
 
     private async Task InstallLocalAsync()
     {
+        if (_installationInProgress) return;
         var dialog = new OpenFileDialog
         {
             Filter = $"PCL plugin package (*{PCL.Plugin.SDK.PluginPackage.Extension})|*{PCL.Plugin.SDK.PluginPackage.Extension}",
@@ -103,35 +117,68 @@ public sealed class PagePluginsMarket : MyPageRight
         if (dialog.ShowDialog() != true) return;
         var manager = PluginManagerService.Manager;
         if (manager is null) { PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Common.NoManager"), PCL.Plugin.SDK.PluginNotificationKind.Warning); return; }
+        _installationInProgress = true;
+        _status.Text = Lang.Text("Plugin.Install.Working");
         try
         {
-            var check = await manager.InstallAsync(dialog.FileName, PluginPageSupport.ConfirmInstallationAsync);
+            var check = await Task.Run(() => manager.InstallAsync(dialog.FileName,
+                PluginPageSupport.ConfirmInstallationAsync));
             var note = check.IsSigned ? Lang.Text("Plugin.Install.SignedNote") + " " : "";
-            PluginPageSupport.ShowPluginNotice(note + Lang.Text("Plugin.Install.Done"), PCL.Plugin.SDK.PluginNotificationKind.Success);
-            await RefreshAsync();
+            PluginPageSupport.PromptRestartForPluginChanges(note + Lang.Text("Plugin.Install.Done"));
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
             PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Install.Failed", ex.Message), PCL.Plugin.SDK.PluginNotificationKind.Error);
+        }
+        finally
+        {
+            _installationInProgress = false;
+            _status.Text = "";
         }
     }
 
-    private async Task InstallMarketAsync(PluginMarketEntry entry)
+    private MyButton CreateInstallButton(PluginMarketEntry entry, string label)
     {
+        MyButton button = null!;
+        button = PluginPageSupport.Button(label, async (_, _) => await InstallMarketAsync(entry, button), true);
+        return button;
+    }
+
+    private static string GetDisplayName(PluginMarketEntry entry) =>
+        entry.LocalizedNames.TryGetValue(LocalizationService.CurrentLanguage.Code, out var localized) && !string.IsNullOrWhiteSpace(localized)
+            ? localized : entry.Name;
+
+    private static string GetDescription(PluginMarketEntry entry) =>
+        entry.LocalizedDescriptions.TryGetValue(LocalizationService.CurrentLanguage.Code, out var localized) && !string.IsNullOrWhiteSpace(localized)
+            ? localized : entry.Description;
+
+    private async Task InstallMarketAsync(PluginMarketEntry entry, MyButton button)
+    {
+        if (_installationInProgress) return;
         var manager = PluginManagerService.Manager;
         if (manager is null) { PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Common.NoManager"), PCL.Plugin.SDK.PluginNotificationKind.Warning); return; }
+        _installationInProgress = true;
+        button.IsEnabled = false;
+        _status.Text = Lang.Text("Plugin.Install.Working");
         try
         {
-            var check = await manager.InstallFromMarketAsync(entry, PluginPageSupport.ConfirmInstallationAsync);
-            PluginPageSupport.ShowPluginNotice((check.IsSigned ? Lang.Text("Plugin.Install.SignedNote") + " " : "") +
-                Lang.Text("Plugin.Install.Done"), PCL.Plugin.SDK.PluginNotificationKind.Success);
-            await RefreshAsync();
+            var check = await Task.Run(() => manager.InstallFromMarketAsync(entry,
+                PluginPageSupport.ConfirmInstallationAsync));
+            button.Text = Lang.Text("Plugin.Market.PendingRestart");
+            PluginPageSupport.PromptRestartForPluginChanges(
+                (check.IsSigned ? Lang.Text("Plugin.Install.SignedNote") + " " : "") + Lang.Text("Plugin.Install.Done"));
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException) { button.IsEnabled = true; }
         catch (Exception ex)
         {
+            button.IsEnabled = true;
             PluginPageSupport.ShowPluginNotice(Lang.Text("Plugin.Install.Failed", ex.Message), PCL.Plugin.SDK.PluginNotificationKind.Error);
+        }
+        finally
+        {
+            _installationInProgress = false;
+            _status.Text = "";
         }
     }
 }

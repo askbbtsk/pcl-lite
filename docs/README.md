@@ -52,7 +52,7 @@ PCL-CE/
 - **主题算法**在 `PCL.Core/UI/Theme/`，不在前端目录。前端只负责把资源应用上去。
 - **密钥**（OAuth client_id 等）不在源码里，编译期由 `PCL.Core.SourceGenerators` 从环境变量注入。
   所以仓库里搜不到任何 client_id，这是设计如此，不是漏了。
-- **语言文件**在 `PCL.Core/App/Localization/Languages/*.xaml`，四种语言：zh-CN / zh-TW / en-US / en-GB。
+- **语言文件**在 `PCL.Core/App/Localization/Languages/*.xaml`，三种语言：zh-CN / zh-TW / en-US（English）。
   加文案要四个一起加，缺了会回退到 zh-CN。
 - **主页语言分支**不走语言文件，而是 `lang:` 标签 + 语言信封，见
   [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md)。想让主页按语言显示不同内容时用那套，不要往语言文件里塞整段 XAML。

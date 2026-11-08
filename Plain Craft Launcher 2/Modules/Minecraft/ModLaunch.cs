@@ -151,6 +151,12 @@ public static class ModLaunch
         /// </summary>
         public List<string> ExtraArgs = new();
 
+        /// <summary>Additional JVM arguments inserted after the generated JVM arguments.</summary>
+        public List<string> AdditionalJvmArguments = new();
+
+        /// <summary>Additional environment variables supplied by an authorized integration.</summary>
+        public Dictionary<string, string> Environment = new(StringComparer.Ordinal);
+
         /// <summary>
         ///     强行指定启动的 MC 实例。
         ///     默认值：Nothing。使用 McInstanceCurrent。
@@ -1406,6 +1412,9 @@ public static class ModLaunch
             McLaunchLog(arguments);
         }
 
+        foreach (var arg in currentLaunchOptions.AdditionalJvmArguments)
+            arguments += " " + arg.Trim();
+
         if (!string.IsNullOrEmpty(
                 (string)ModInstanceList.McMcInstanceSelected.JsonObject["minecraftArguments"])) // 有的实例 JSON 中是空字符串
         {
@@ -2559,6 +2568,9 @@ public static class ModLaunch
         paths.Add(ModBase.ShortenPath(mcLaunchJavaSelected.Installation.JavaFolder));
         startInfo.EnvironmentVariables["Path"] = paths.Distinct().ToList().Join(";");
         startInfo.EnvironmentVariables["appdata"] = ModBase.ShortenPath(ModFolder.mcFolderSelected);
+        if (currentLaunchOptions?.Environment is not null)
+            foreach (var pair in currentLaunchOptions.Environment)
+                if (!string.IsNullOrWhiteSpace(pair.Key)) startInfo.EnvironmentVariables[pair.Key] = pair.Value ?? "";
 
         // 设置其他参数
         startInfo.WorkingDirectory = ModBase.ShortenPath(ModInstanceList.McMcInstanceSelected.PathIndie);

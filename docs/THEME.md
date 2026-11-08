@@ -199,7 +199,7 @@ UiToneProfiles:
 2. 如果要非对称标题栏，加 `TopbarHueTriple: [a,b,c]`；要固定明度加 `TopbarLightTriple`；
    要四点宽渐变加 `TopbarWide: true`。
 3. 设置页的主题列表是遍历 `PclThemePresets.Main` / `.Hidden` 生成的，不用改 XAML。
-4. 加文案：`PCL.Core/App/Localization/Languages/` 下四个语言文件都要加一条，
+4. 加文案：`PCL.Core/App/Localization/Languages/` 下三个语言文件都要加一条，
    键名形如 `Setup.Launcher.Theme.{Index}`（照着现有条目抄）。
 
 ---

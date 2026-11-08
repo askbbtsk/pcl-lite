@@ -14,9 +14,17 @@ public sealed class ExamplePlugin : IPclPlugin
     public Task StartAsync(IPluginContext context, CancellationToken cancellationToken)
     {
         context.Logger.Info("Example plugin started");
-        context.Ui.RegisterPage("home", "Example", () => new System.Windows.Controls.TextBlock
+        context.Ui.RegisterPage("home", "Example", () => new System.Windows.Controls.StackPanel
         {
-            Text = "Hello from a plugin"
+            Children =
+            {
+                new System.Windows.Controls.TextBlock { Text = "Hello from a plugin" },
+                context.Ui.CreateButton("Show message", () =>
+                {
+                    context.Ui.ShowNotification("Hello from PCL Lite");
+                    return Task.CompletedTask;
+                }, PluginButtonStyle.Highlight)
+            }
         });
         return Task.CompletedTask;
     }
@@ -25,7 +33,7 @@ public sealed class ExamplePlugin : IPclPlugin
 }
 ```
 
-`IPluginContext` provides plugin metadata, logging, plugin-specific files and settings, UI notifications and pages, typed events, HTTP, launcher information, and Minecraft instance query/launch methods. `PluginGameLaunchingEvent`, `PluginGameStartedEvent`, and `PluginGameExitedEvent` report game lifecycle changes.
+`IPluginContext` provides plugin metadata, logging, plugin-specific files and settings, UI notifications, pages, PCL-themed buttons, typed events, HTTP, launcher information, and Minecraft instance query/launch methods. `Launcher.CoreVersion` exposes the actual host compatibility version for checking a manifest's `pclCoreVersion` range at runtime. Use `Ui.CreateButton` for standard launcher buttons; it creates the actual PCL control without exposing internal resource keys. `PluginPageLifecycle` supports refresh-on-show and stop-on-hide callbacks, and `UnregisterPage` removes a page dynamically. `PluginGameLaunchingEvent`, `PluginGameStartedEvent`, and `PluginGameExitedEvent` report game lifecycle changes.
 
 ## Sign and package
 

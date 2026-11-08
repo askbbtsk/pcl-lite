@@ -8,7 +8,7 @@
     <!-- Meta -->
 
     <sys:String x:Key="Meta.Code">en-US</sys:String>
-    <sys:String x:Key="Meta.Name">English (US)</sys:String>
+    <sys:String x:Key="Meta.Name">English</sys:String>
 
     <!-- Application -->
 
@@ -2878,6 +2878,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Plugin.Market.Update">Update</sys:String>
     <sys:String x:Key="Plugin.Market.Current">Up to date</sys:String>
     <sys:String x:Key="Plugin.Market.Downgrade">Downgrade…</sys:String>
+    <sys:String x:Key="Plugin.Market.PendingRestart">Pending restart</sys:String>
     <sys:String x:Key="Plugin.Market.Empty">No plugins are currently available.</sys:String>
     <sys:String x:Key="Plugin.Market.LoadFailed">Could not load the plugin marketplace: {0}</sys:String>
     <sys:String x:Key="Plugin.Install.Local">Install from file</sys:String>
@@ -2941,6 +2942,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Plugin.Install.SignedNote">Signature verified: this confirms package integrity, not author identity or plugin safety.</sys:String>
     <sys:String x:Key="Plugin.Install.MixinWarning">This plugin includes {0} compiled Mixin patch(es) that modify launcher methods before the main window is created. It runs with the launcher's user permissions; signatures do not sandbox it or verify author identity.</sys:String>
     <sys:String x:Key="Plugin.Install.Done">Plugin installed. Restart the launcher to apply it.</sys:String>
+    <sys:String x:Key="Plugin.Install.Working">Verifying and installing plugin…</sys:String>
     <sys:String x:Key="Plugin.Install.Failed">Plugin installation failed: {0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Title">Installed plugins</sys:String>
     <sys:String x:Key="Plugin.Installed.Empty">No plugins installed.</sys:String>
@@ -2951,9 +2953,14 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Plugin.Installed.Disabled">Disabled</sys:String>
     <sys:String x:Key="Plugin.Installed.Error">Startup failed: {0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Restart">Saved. Restart the launcher to apply the change.</sys:String>
+    <sys:String x:Key="Plugin.Restart.Title">Plugin changes require a restart</sys:String>
+    <sys:String x:Key="Plugin.Restart.Now">Restart now</sys:String>
+    <sys:String x:Key="Plugin.Restart.Later">Restart later</sys:String>
+    <sys:String x:Key="Plugin.Restart.Failed">The launcher could not restart automatically: {0}</sys:String>
     <sys:String x:Key="Plugin.Installed.UninstallConfirm">Uninstall “{0}”? The removal completes after restart.</sys:String>
     <sys:String x:Key="Plugin.Installed.Pages">Plugin pages</sys:String>
     <sys:String x:Key="Plugin.Common.NoManager">Plugin manager is not ready. Try again shortly.</sys:String>
+    <sys:String x:Key="Plugin.Common.ButtonFailed">Plugin button “{0}” failed: {1}</sys:String>
 
     <!-- Setup.Log -->
 

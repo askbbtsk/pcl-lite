@@ -40,6 +40,9 @@ public sealed record PluginMarketEntry(string Id, string Name, string Version, s
 {
     [JsonIgnore]
     public string? SourceUrl { get; init; }
+    public string? Icon { get; init; }
+    public Dictionary<string, string> LocalizedNames { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> LocalizedDescriptions { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public sealed record PluginMarketIndex(int SchemaVersion, IReadOnlyList<PluginMarketEntry> Plugins);
@@ -49,7 +52,43 @@ public enum PluginMarketUpdateKind { NotInstalled, Current, UpdateAvailable, Dow
 public sealed record PluginMarketUpdateCandidate(PluginMarketEntry Entry, InstalledPlugin? Installed,
     PluginMarketUpdateKind Kind);
 
-public sealed record PluginPage(string PluginId, string PageId, string Title, Func<System.Windows.FrameworkElement> CreateView);
+public sealed class PluginPage
+{
+    private readonly Func<System.Windows.FrameworkElement> _createView;
+    private readonly PluginPageLifecycle? _lifecycle;
+    private System.Windows.FrameworkElement? _view;
+    private int _isShown;
+
+    public PluginPage(string pluginId, string pageId, string title,
+        Func<System.Windows.FrameworkElement> createView, PluginPageLifecycle? lifecycle = null)
+    {
+        PluginId = pluginId;
+        PageId = pageId;
+        Title = title;
+        _createView = createView;
+        _lifecycle = lifecycle;
+    }
+
+    public string PluginId { get; }
+    public string PageId { get; }
+    public string Title { get; }
+
+    public System.Windows.FrameworkElement GetOrCreateView() => _view ??= _createView();
+
+    public async Task NotifyShownAsync(CancellationToken cancellationToken = default)
+    {
+        if (Interlocked.Exchange(ref _isShown, 1) != 0) return;
+        try { if (_lifecycle?.OnShown is { } callback) await callback(cancellationToken); }
+        catch (Exception ex) { LogWrapper.Error(ex, "Plugin", $"插件页面显示回调失败：{PluginId}/{PageId}"); }
+    }
+
+    public async Task NotifyHiddenAsync(CancellationToken cancellationToken = default)
+    {
+        if (Interlocked.Exchange(ref _isShown, 0) == 0) return;
+        try { if (_lifecycle?.OnHidden is { } callback) await callback(cancellationToken); }
+        catch (Exception ex) { LogWrapper.Error(ex, "Plugin", $"插件页面隐藏回调失败：{PluginId}/{PageId}"); }
+    }
+}
 
 /// <summary>Plugin-owned pages exposed to the host UI.</summary>
 public static class PluginPageRegistry
@@ -62,6 +101,12 @@ public static class PluginPageRegistry
         if (!Pages.TryAdd($"{page.PluginId}/{page.PageId}", page))
             throw new InvalidOperationException($"Plugin page is already registered: {page.PluginId}/{page.PageId}");
         Changed?.Invoke();
+    }
+    public static bool Unregister(string pluginId, string pageId)
+    {
+        if (!Pages.TryRemove($"{pluginId}/{pageId}", out _)) return false;
+        Changed?.Invoke();
+        return true;
     }
     public static void RemovePlugin(string pluginId)
     {
@@ -76,8 +121,14 @@ public static class PluginHostBridge
 {
     public static Func<CancellationToken, Task<IReadOnlyList<PluginGameInstance>>>? GetInstancesAsync { get; set; }
     public static Func<string, CancellationToken, Task<bool>>? LaunchInstanceAsync { get; set; }
+    public static Func<CancellationToken, Task<PluginGameInstance?>>? GetSelectedInstanceAsync { get; set; }
+    public static Func<string, CancellationToken, Task<IReadOnlyDictionary<string, string>>>? GetInstanceConfigurationAsync { get; set; }
+    public static Func<string, PluginLaunchOptions, CancellationToken, Task<bool>>? LaunchInstanceWithOptionsAsync { get; set; }
+    public static Func<string, string, Func<Task>, PluginButtonStyle, System.Windows.FrameworkElement>? CreateButton { get; set; }
     public static Action<string, PluginNotificationKind>? ShowNotification { get; set; }
+    public static Action<string, PluginNotificationKind, Func<Task>?>? ShowNotificationWithAction { get; set; }
     public static Func<string, string, CancellationToken, Task<bool>>? ConfirmAsync { get; set; }
+    public static Func<string, string, PluginDialogOptions, CancellationToken, Task<int>>? ChooseAsync { get; set; }
     public static Action<Uri>? OpenUrl { get; set; }
     public static Action<string>? OpenPath { get; set; }
 }
@@ -101,6 +152,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private readonly List<RunningPlugin> _running = [];
     private readonly List<InstalledPlugin> _installed = [];
     private readonly ConcurrentDictionary<Type, ConcurrentDictionary<Guid, Func<object, CancellationToken, Task>>> _handlers = new();
+    private readonly ConcurrentDictionary<Type, (string PluginId, object Service)> _services = new();
     private MixinRuntime? _mixinRuntime;
     private readonly Dictionary<string, PreparedPlugin> _prepared = new(StringComparer.Ordinal);
     private readonly object _sync = new();
@@ -189,13 +241,16 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 string.IsNullOrWhiteSpace(entry.Version) || entry.Version.Length > 64 ||
                 entry.Description is null || entry.Description.Length > 4096 ||
                 string.IsNullOrWhiteSpace(entry.PackageUrl) || entry.PackageUrl.Length > 2048 ||
-                (entry.Website?.Length ?? 0) > 2048)
+                (entry.Website?.Length ?? 0) > 2048 || (entry.Icon?.Length ?? 0) > 1024)
                 throw new InvalidDataException($"Plugin market entry has invalid or oversized metadata: {entry.Id}");
             if (!Uri.TryCreate(entry.PackageUrl, UriKind.Absolute, out var packageUri) || packageUri.Scheme != Uri.UriSchemeHttps)
                 throw new InvalidDataException($"Plugin package URL must use HTTPS: {entry.Id}");
             if (entry.Website is not null &&
                 (!Uri.TryCreate(entry.Website, UriKind.Absolute, out var websiteUri) || websiteUri.Scheme != Uri.UriSchemeHttps))
                 throw new InvalidDataException($"Plugin website URL must use HTTPS: {entry.Id}");
+            if (entry.Icon is not null && (!Uri.TryCreate(entry.Icon, UriKind.Absolute, out var iconUri) ||
+                iconUri.Scheme != Uri.UriSchemeHttps))
+                throw new InvalidDataException($"Plugin market icon URL must use HTTPS: {entry.Id}");
             if (string.IsNullOrWhiteSpace(entry.Sha256) || entry.Sha256.Length != 64 || entry.Sha256.Any(c => !Uri.IsHexDigit(c)))
                 throw new InvalidDataException($"Plugin market entry must include a SHA-256 digest: {entry.Id}");
             if (!PluginVersionRange.IsValidVersion(entry.Version))
@@ -373,8 +428,6 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         if (!await confirmInstallation(check, cancellationToken).ConfigureAwait(false))
             throw new OperationCanceledException("Plugin installation was declined.", cancellationToken);
 
-        var files = (await PluginPackage.ReadPackageFilesAsync(packagePath, cancellationToken).ConfigureAwait(false))
-            .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
         Directory.CreateDirectory(Path.Combine(_pluginsDirectory, ".pending-install"));
         var pendingRoot = Path.Combine(_pluginsDirectory, ".pending-install");
         var staging = Path.Combine(pendingRoot, ".stage-" + Guid.NewGuid().ToString("N"));
@@ -401,16 +454,11 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         try
         {
             if (hadPendingState) File.Copy(pendingStatePath, pendingStateBackupPath, overwrite: true);
-            Directory.CreateDirectory(staging);
-            foreach (var (relative, contents) in files)
-            {
-                PluginPackage.ValidateRelativePath(relative);
-                var destination = Path.GetFullPath(Path.Combine(staging, relative.Replace('/', Path.DirectorySeparatorChar)));
-                if (!destination.StartsWith(staging + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidDataException($"Unsafe package path: {relative}");
-                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-                await File.WriteAllBytesAsync(destination, contents, cancellationToken).ConfigureAwait(false);
-            }
+            var extracted = await PluginPackage.ExtractVerifiedAsync(packagePath, staging,
+                check.ContentHash, check.PackageSha256!, cancellationToken).ConfigureAwait(false);
+            if (!string.Equals(extracted.Manifest.Id, check.Manifest.Id, StringComparison.Ordinal) ||
+                !string.Equals(extracted.Manifest.Version, check.Manifest.Version, StringComparison.Ordinal))
+                throw new InvalidDataException("Plugin package changed after confirmation.");
             await _WritePendingStateAsync(pendingStatePath, nextState, cancellationToken).ConfigureAwait(false);
             if (Directory.Exists(target))
             {
@@ -441,6 +489,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     ExperimentalFeatures = _BuildInstalledFeatures(check.Manifest, nextState)
                 });
             }
+            _ = PublishAsync(new PluginStateChangedEvent(check.Manifest.Id, nextState.Enabled, "install"));
             transactionCompleted = true;
             return check;
         }
@@ -505,49 +554,38 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             PluginState? pluginState = null;
             try
             {
-                var files = await ReadInstalledFilesAsync(directory, cancellationToken).ConfigureAwait(false);
-                if (!files.TryGetValue(PluginPackage.ManifestFileName, out var manifestBytes))
-                    throw new InvalidDataException("Plugin manifest is missing.");
-                manifest = PluginPackage.DeserializeManifest(manifestBytes);
+                var check = await PluginPackage.InspectDirectoryAsync(directory, cancellationToken)
+                    .ConfigureAwait(false);
+                if (check.Error is not null || !check.IsValid)
+                    throw new InvalidDataException(check.Error ?? "Installed plugin package is invalid.");
+                manifest = check.Manifest;
                 if (!string.Equals(manifest.Id, Path.GetFileName(directory), StringComparison.Ordinal))
                     throw new InvalidDataException("Plugin id does not match its installation directory.");
-                var error = PluginPackage.ValidateManifest(manifest, files.Keys);
-                if (error is not null) throw new InvalidDataException(error);
                 if (manifest.PclCoreVersion is { } coreVersionRange &&
                     !PluginVersionRange.Satisfies(Basics.VersionName, coreVersionRange))
                     throw new InvalidDataException(
                         $"Plugin supports PCL Core {coreVersionRange}; current version is {Basics.VersionName}.");
-                error = PluginPackage.ValidateMixinConfigurations(manifest, files);
-                if (error is not null) throw new InvalidDataException(error);
                 var state = await _ReadStateAsync(manifest.Id, cancellationToken).ConfigureAwait(false);
                 pluginState = state;
-                var signaturePath = Path.Combine(directory, PluginPackage.SignatureFileName);
-                if (File.Exists(signaturePath))
+                if (check.IsSigned)
                 {
-                    var signatureBytes = await _ReadBoundedFileAsync(signaturePath,
-                        PluginPackage.MaximumSignatureBytes, cancellationToken).ConfigureAwait(false);
-                    var signature = JsonSerializer.Deserialize<PluginPackageSignature>(
-                        signatureBytes,
-                        PluginPackage.SerializerOptions) ?? throw new InvalidDataException("Signature is invalid.");
-                    var result = PluginPackage.VerifyFiles(files, signature);
-                    if (!result.Valid) throw new InvalidDataException(result.Error ?? "Signature verification failed.");
-                    if (state.ExpectedSigner is null || !string.Equals(state.ExpectedSigner, result.Thumbprint,
+                    if (state.ExpectedSigner is null || !string.Equals(state.ExpectedSigner, check.SignerThumbprint,
                             StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("Plugin signing certificate changed after installation.");
-                    if (state.Signer is not null && !string.Equals(state.Signer, result.Signer, StringComparison.Ordinal))
+                    if (state.Signer is not null && !string.Equals(state.Signer, check.Signer, StringComparison.Ordinal))
                         throw new InvalidDataException("Plugin signer metadata changed after installation.");
                     if (state.SignedAtUtc is { } expectedSignedAt &&
-                        signature.SignedAtUtc.ToUniversalTime() != expectedSignedAt.ToUniversalTime())
+                        check.SignedAtUtc?.ToUniversalTime() != expectedSignedAt.ToUniversalTime())
                         throw new InvalidDataException("Plugin signing time changed after installation.");
-                    if (!string.Equals(state.ExpectedHash, PluginPackage.CreateFileContentHash(files),
+                    if (!string.Equals(state.ExpectedHash, check.ContentHash,
                             StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("Plugin contents changed after installation.");
                     if (state.Signer is null || state.SignedAtUtc is null)
                     {
                         state = state with
                         {
-                            Signer = state.Signer ?? result.Signer,
-                            SignedAtUtc = state.SignedAtUtc ?? signature.SignedAtUtc
+                            Signer = state.Signer ?? check.Signer,
+                            SignedAtUtc = state.SignedAtUtc ?? check.SignedAtUtc
                         };
                         try { await _WriteStateAsync(manifest.Id, state, cancellationToken).ConfigureAwait(false); }
                         catch (Exception ex)
@@ -560,7 +598,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 {
                     if (!state.UnsignedApproved)
                         throw new InvalidDataException("Unsigned plugin has not been approved.");
-                    if (!string.Equals(state.ExpectedHash, PluginPackage.CreateFileContentHash(files), StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(state.ExpectedHash, check.ContentHash, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("Unsigned plugin contents changed after installation.");
                 }
                 var enabled = await _IsEnabledAsync(manifest.Id, cancellationToken).ConfigureAwait(false);
@@ -683,6 +721,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             var index = _installed.FindIndex(item => item.Manifest.Id == pluginId);
             if (index >= 0) _installed[index] = _installed[index] with { Enabled = enabled, PendingRestart = true };
         }
+        _ = PublishAsync(new PluginStateChangedEvent(pluginId, enabled, enabled ? "enable" : "disable"));
     }
 
     public async Task SetExperimentalFeatureEnabledAsync(string pluginId, string featureId, bool enabled,
@@ -725,6 +764,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 };
             }
         }
+        _ = PublishAsync(new PluginStateChangedEvent(pluginId, enabled, "experimental-feature"));
     }
 
     public async Task UninstallAsync(string pluginId, CancellationToken cancellationToken = default)
@@ -738,6 +778,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             var index = _installed.FindIndex(item => item.Manifest.Id == pluginId);
             if (index >= 0) _installed[index] = _installed[index] with { Enabled = false, PendingRestart = true };
         }
+        _ = PublishAsync(new PluginStateChangedEvent(pluginId, false, "uninstall"));
         await Task.CompletedTask;
     }
 
@@ -751,6 +792,25 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             ? launcher(instanceId, cancellationToken)
             : Task.FromResult(false);
 
+    public async Task<PluginGameInstance?> GetSelectedInstanceAsync(CancellationToken cancellationToken = default)
+    {
+        if (PluginHostBridge.GetSelectedInstanceAsync is { } provider)
+            return await provider(cancellationToken).ConfigureAwait(false);
+        return (await GetInstancesAsync(cancellationToken).ConfigureAwait(false)).FirstOrDefault(item => item.IsSelected);
+    }
+
+    public Task<IReadOnlyDictionary<string, string>> GetInstanceConfigurationAsync(string instanceId,
+        CancellationToken cancellationToken = default) =>
+        PluginHostBridge.GetInstanceConfigurationAsync is { } provider
+            ? provider(instanceId, cancellationToken)
+            : Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+
+    public Task<bool> LaunchAsync(string instanceId, PluginLaunchOptions options,
+        CancellationToken cancellationToken = default) =>
+        PluginHostBridge.LaunchInstanceWithOptionsAsync is { } launcher
+            ? launcher(instanceId, options, cancellationToken)
+            : LaunchAsync(instanceId, cancellationToken);
+
     public async Task PublishAsync<TEvent>(TEvent eventData, CancellationToken cancellationToken = default)
     {
         if (eventData is null || !_handlers.TryGetValue(typeof(TEvent), out var handlers)) return;
@@ -760,6 +820,23 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
             try { await handler(eventData, cancellationToken).ConfigureAwait(false); }
             catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", $"事件处理失败：{typeof(TEvent).Name}"); }
         }
+    }
+
+    private bool _RegisterService<TService>(string pluginId, TService service) where TService : class =>
+        _services.TryAdd(typeof(TService), (pluginId, service));
+
+    private TService? _GetService<TService>() where TService : class =>
+        _services.TryGetValue(typeof(TService), out var registration) ? registration.Service as TService : null;
+
+    private bool _UnregisterService<TService>(string pluginId) where TService : class =>
+        _services.TryGetValue(typeof(TService), out var registration) && registration.PluginId == pluginId &&
+        _services.TryRemove(new KeyValuePair<Type, (string PluginId, object Service)>(typeof(TService), registration));
+
+    private void _RemovePluginServices(string pluginId)
+    {
+        foreach (var pair in _services)
+            if (string.Equals(pair.Value.PluginId, pluginId, StringComparison.Ordinal))
+                _services.TryRemove(new KeyValuePair<Type, (string PluginId, object Service)>(pair.Key, pair.Value));
     }
 
     public static void Notify<TEvent>(TEvent eventData)
@@ -1163,52 +1240,6 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private sealed record GitHubReleaseResponse(string TagName, DateTimeOffset? PublishedAt, IReadOnlyList<GitHubReleaseAssetResponse> Assets);
     private sealed record GitHubReleaseAssetResponse(string Name, string? Digest);
 
-    private static async Task<Dictionary<string, byte[]>> ReadInstalledFilesAsync(string directory,
-        CancellationToken cancellationToken)
-    {
-        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        long total = 0;
-        var rootAttributes = File.GetAttributes(directory);
-        if ((rootAttributes & FileAttributes.ReparsePoint) != 0)
-            throw new InvalidDataException("Plugin installation directory cannot be a symbolic link or junction.");
-        var pending = new Stack<string>();
-        pending.Push(directory);
-        var entryCount = 0;
-        while (pending.TryPop(out var current))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            foreach (var path in Directory.EnumerateFileSystemEntries(current))
-            {
-                if (++entryCount > PluginPackage.MaximumPackageEntries)
-                    throw new InvalidDataException("Plugin installation exceeds the package entry limit.");
-                var attributes = File.GetAttributes(path);
-                if ((attributes & FileAttributes.ReparsePoint) != 0)
-                    throw new InvalidDataException("Plugin installation cannot contain symbolic links or junctions.");
-                if ((attributes & FileAttributes.Directory) != 0)
-                {
-                    pending.Push(path);
-                    continue;
-                }
-                var relative = Path.GetRelativePath(directory, path).Replace('\\', '/');
-                if (relative.Equals(PluginPackage.SignatureFileName, StringComparison.Ordinal))
-                {
-                    if (new FileInfo(path).Length > PluginPackage.MaximumSignatureBytes)
-                        throw new InvalidDataException("Plugin signature metadata is too large.");
-                    continue;
-                }
-                PluginPackage.ValidateRelativePath(relative);
-                total = checked(total + new FileInfo(path).Length);
-                if (total > PluginPackage.MaximumExpandedBytes)
-                    throw new InvalidDataException("Plugin exceeds the expanded size limit.");
-                if (relative.Equals(PluginPackage.ManifestFileName, StringComparison.Ordinal) &&
-                    new FileInfo(path).Length > PluginPackage.MaximumManifestBytes)
-                    throw new InvalidDataException("Plugin manifest exceeds the 64 KiB limit.");
-                files.Add(relative, await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false));
-            }
-        }
-        return files;
-    }
-
     private static async Task<byte[]> _ReadBoundedFileAsync(string path, long maximumBytes,
         CancellationToken cancellationToken)
     {
@@ -1411,26 +1442,16 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         if (string.IsNullOrWhiteSpace(state.ExpectedHash)) return false;
         try
         {
-            var files = ReadInstalledFilesAsync(directory, CancellationToken.None).GetAwaiter().GetResult();
-            if (!string.Equals(state.ExpectedHash, PluginPackage.CreateFileContentHash(files),
-                    StringComparison.OrdinalIgnoreCase)) return false;
-            if (!files.TryGetValue(PluginPackage.ManifestFileName, out var manifestBytes)) return false;
-            var manifest = PluginPackage.DeserializeManifest(manifestBytes);
-            if (!string.Equals(manifest.Id, Path.GetFileName(directory), StringComparison.Ordinal) ||
-                !string.Equals(manifest.Version, state.InstalledVersion, StringComparison.Ordinal)) return false;
-            var signaturePath = Path.Combine(directory, PluginPackage.SignatureFileName);
-            if (File.Exists(signaturePath))
-            {
-                if (new FileInfo(signaturePath).Length > PluginPackage.MaximumSignatureBytes || state.ExpectedSigner is null) return false;
-                var signatureBytes = File.ReadAllBytes(signaturePath);
-                var signature = JsonSerializer.Deserialize<PluginPackageSignature>(signatureBytes,
-                    PluginPackage.SerializerOptions);
-                if (signature is null) return false;
-                var result = PluginPackage.VerifyFiles(files, signature);
-                return result.Valid && string.Equals(result.Thumbprint, state.ExpectedSigner,
-                    StringComparison.OrdinalIgnoreCase);
-            }
-            return state.UnsignedApproved && state.ExpectedSigner is null;
+            var check = PluginPackage.InspectDirectoryAsync(directory, CancellationToken.None)
+                .GetAwaiter().GetResult();
+            if (check.Error is not null || !check.IsValid ||
+                !string.Equals(state.ExpectedHash, check.ContentHash, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(check.Manifest.Id, Path.GetFileName(directory), StringComparison.Ordinal) ||
+                !string.Equals(check.Manifest.Version, state.InstalledVersion, StringComparison.Ordinal)) return false;
+            return check.IsSigned
+                ? state.ExpectedSigner is not null && string.Equals(check.SignerThumbprint, state.ExpectedSigner,
+                    StringComparison.OrdinalIgnoreCase)
+                : state.UnsignedApproved && state.ExpectedSigner is null;
         }
         catch { return false; }
     }
@@ -1488,7 +1509,12 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         public IPluginMinecraft Minecraft { get; } = new PluginMinecraft(owner);
         public IPluginLauncher Launcher { get; } = new PluginLauncher(owner._pluginsDirectory,
             Path.Combine(owner._pluginsDirectory, ".plugin-data", manifest.Id), owner._httpClient);
-        public void Dispose() => _events.Dispose();
+        public IPluginServices Services { get; } = new PluginServices(owner, manifest.Id);
+        public void Dispose()
+        {
+            _events.Dispose();
+            owner._RemovePluginServices(manifest.Id);
+        }
     }
 
     private sealed record PluginMetadata(PluginManifest Manifest) : IPluginMetadata
@@ -1504,6 +1530,17 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
         public void Info(string message) => LogWrapper.Info("Plugin/" + id, message);
         public void Warn(string message, Exception? exception = null) => LogWrapper.Warn(exception, "Plugin/" + id, message);
         public void Error(string message, Exception? exception = null) => LogWrapper.Error(exception, "Plugin/" + id, message);
+    }
+
+    private sealed class PluginServices(PluginRuntimeManager owner, string pluginId) : IPluginServices
+    {
+        public bool Register<TService>(TService service) where TService : class
+        {
+            ArgumentNullException.ThrowIfNull(service);
+            return owner._RegisterService(pluginId, service);
+        }
+        public TService? Get<TService>() where TService : class => owner._GetService<TService>();
+        public bool Unregister<TService>() where TService : class => owner._UnregisterService<TService>(pluginId);
     }
 
     private sealed class PluginStorage(string root) : IPluginStorage
@@ -1545,6 +1582,112 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 try { if (temporaryPath is not null && File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
                 gate.Release();
             }
+        }
+        public async Task<byte[]?> ReadBytesAsync(string relativePath, CancellationToken cancellationToken = default)
+        {
+            await using var input = await OpenReadAsync(relativePath, cancellationToken).ConfigureAwait(false);
+            if (input is null) return null;
+            using var output = new MemoryStream();
+            var buffer = new byte[81920];
+            int count;
+            while ((count = await input.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) != 0)
+            {
+                if (output.Length + count > MaximumPluginStoredFileBytes)
+                    throw new InvalidDataException("Plugin storage file exceeds the 64 MiB per-file limit.");
+                await output.WriteAsync(buffer.AsMemory(0, count), cancellationToken).ConfigureAwait(false);
+            }
+            return output.ToArray();
+        }
+        public async Task WriteBytesAsync(string relativePath, ReadOnlyMemory<byte> contents,
+            CancellationToken cancellationToken = default)
+        {
+            using var source = new MemoryStream(contents.ToArray(), writable: false);
+            await WriteStreamAsync(relativePath, source, contents.Length, cancellationToken).ConfigureAwait(false);
+        }
+        public Task<Stream?> OpenReadAsync(string relativePath, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var path = Resolve(relativePath);
+            if (!File.Exists(path)) return Task.FromResult<Stream?>(null);
+            if (new FileInfo(path).Length > MaximumPluginStoredFileBytes)
+                throw new InvalidDataException("Plugin storage file exceeds the 64 MiB per-file limit.");
+            Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+            return Task.FromResult<Stream?>(stream);
+        }
+        public async Task WriteStreamAsync(string relativePath, Stream source, long? expectedLength = null,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+            if (!source.CanRead) throw new ArgumentException("Source stream must be readable.", nameof(source));
+            if (expectedLength is < 0 or > MaximumPluginStoredFileBytes)
+                throw new InvalidDataException("Plugin storage file exceeds the 64 MiB per-file limit.");
+            var rootPath = Path.GetFullPath(root);
+            var gate = PluginRuntimeManager._GetPluginDataLock(rootPath);
+            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            string? temporaryPath = null;
+            try
+            {
+                var path = Resolve(relativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                temporaryPath = path + ".tmp-" + Guid.NewGuid().ToString("N");
+                var usage = PluginRuntimeManager._GetPluginDataUsage(rootPath);
+                var replacedBytes = File.Exists(path) ? new FileInfo(path).Length : 0;
+                if (!File.Exists(path) && usage.Files >= MaximumPluginDataFiles)
+                    throw new InvalidDataException("Plugin data directory exceeds the 10,000 file limit.");
+                await using (var destination = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write,
+                                 FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan))
+                {
+                    var buffer = new byte[81920];
+                    long total = 0;
+                    int count;
+                    while ((count = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) != 0)
+                    {
+                        total = checked(total + count);
+                        if (total > MaximumPluginStoredFileBytes ||
+                            checked(usage.Bytes - replacedBytes + total) > MaximumPluginDataBytes)
+                            throw new InvalidDataException("Plugin data directory exceeds its storage quota.");
+                        await destination.WriteAsync(buffer.AsMemory(0, count), cancellationToken).ConfigureAwait(false);
+                    }
+                    if (expectedLength is { } expected && total != expected)
+                        throw new InvalidDataException("Plugin storage stream length did not match the expected length.");
+                    await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
+                }
+                cancellationToken.ThrowIfCancellationRequested();
+                File.Move(temporaryPath, path, overwrite: true);
+            }
+            finally
+            {
+                try { if (temporaryPath is not null && File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+                gate.Release();
+            }
+        }
+        public Task<bool> ExistsAsync(string relativePath, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var path = Resolve(relativePath);
+            return Task.FromResult(File.Exists(path) || Directory.Exists(path));
+        }
+        public Task DeleteAsync(string relativePath, CancellationToken cancellationToken = default) =>
+            RemoveFileAsync(relativePath, cancellationToken);
+        public Task<IReadOnlyList<string>> ListAsync(string relativeDirectory = "",
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var directory = string.IsNullOrEmpty(relativeDirectory)
+                ? Path.GetFullPath(root)
+                : Resolve(relativeDirectory);
+            if (!Directory.Exists(directory)) return Task.FromResult<IReadOnlyList<string>>([]);
+            var entries = new List<string>();
+            foreach (var entry in Directory.EnumerateFileSystemEntries(directory))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0)
+                    throw new InvalidDataException("Plugin data cannot contain symbolic links or junctions.");
+                entries.Add(Path.GetFileName(entry));
+            }
+            entries.Sort(StringComparer.OrdinalIgnoreCase);
+            return Task.FromResult<IReadOnlyList<string>>(entries);
         }
         public async Task<T?> ReadJsonAsync<T>(string relativePath, CancellationToken cancellationToken = default)
         {
@@ -1622,16 +1765,47 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private sealed class PluginUi(string pluginId) : IPluginUi
     {
         public void RegisterPage(string id, string title, Func<System.Windows.FrameworkElement> createView)
+            => RegisterPage(id, title, createView, new PluginPageLifecycle());
+
+        public void RegisterPage(string id, string title, Func<System.Windows.FrameworkElement> createView,
+            PluginPageLifecycle lifecycle)
         {
             if (string.IsNullOrWhiteSpace(id) || id.Length > 64) throw new ArgumentException("Invalid page id.", nameof(id));
-            PluginPageRegistry.Register(new(pluginId, id, title, createView));
+            ArgumentException.ThrowIfNullOrWhiteSpace(title);
+            ArgumentNullException.ThrowIfNull(createView);
+            ArgumentNullException.ThrowIfNull(lifecycle);
+            PluginPageRegistry.Register(new(pluginId, id, title, createView, lifecycle));
+        }
+        public bool UnregisterPage(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id) || id.Length > 64) throw new ArgumentException("Invalid page id.", nameof(id));
+            return PluginPageRegistry.Unregister(pluginId, id);
+        }
+        public System.Windows.FrameworkElement CreateButton(string text, Func<Task> onClick,
+            PluginButtonStyle style = PluginButtonStyle.Normal)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(text);
+            ArgumentNullException.ThrowIfNull(onClick);
+            return PluginHostBridge.CreateButton?.Invoke(pluginId, text, onClick, style)
+                   ?? throw new InvalidOperationException("The PCL button factory is not available.");
         }
         public void ShowNotification(string message, PluginNotificationKind kind = PluginNotificationKind.Info) =>
             PluginHostBridge.ShowNotification?.Invoke(message, kind);
+        public void ShowNotification(string message, PluginNotificationKind kind, Func<Task>? onClick) =>
+            (PluginHostBridge.ShowNotificationWithAction ?? ((text, level, _) => PluginHostBridge.ShowNotification?.Invoke(text, level)))
+            .Invoke(message, kind, onClick);
         public Task<bool> ConfirmAsync(string title, string message, CancellationToken cancellationToken = default) =>
             PluginHostBridge.ConfirmAsync?.Invoke(title, message, cancellationToken) ??
             Task.FromResult(System.Windows.MessageBox.Show(message, title, System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes);
+        public async Task<int> ChooseAsync(string title, string message, PluginDialogOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (PluginHostBridge.ChooseAsync is { } chooser)
+                return await chooser(title, message, options, cancellationToken).ConfigureAwait(false);
+            return await ConfirmAsync(title, message, cancellationToken).ConfigureAwait(false) ? 1 : 2;
+        }
     }
 
     private sealed class PluginEvents(PluginRuntimeManager owner) : IPluginEvents, IDisposable
@@ -1663,9 +1837,17 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private sealed class PluginNetwork(HttpClient client) : IPluginNetwork
     {
         public Task<PluginHttpResponse> GetAsync(Uri uri, CancellationToken cancellationToken = default) =>
-            SendAsync(HttpMethod.Get, uri, cancellationToken: cancellationToken);
+            SendAsync(HttpMethod.Get, uri, content: null, contentType: "application/json", headers: new Dictionary<string, string>(), cancellationToken: cancellationToken);
+        public Task<PluginHttpResponse> GetAsync(Uri uri, IReadOnlyDictionary<string, string> headers,
+            TimeSpan? timeout = null, CancellationToken cancellationToken = default) =>
+            SendAsync(HttpMethod.Get, uri, content: null, contentType: "application/json", headers: headers, timeout: timeout, cancellationToken: cancellationToken);
         public async Task<PluginHttpResponse> SendAsync(HttpMethod method, Uri uri, string? content = null,
             string contentType = "application/json", CancellationToken cancellationToken = default)
+            => await SendAsync(method, uri, content, contentType, new Dictionary<string, string>(), null,
+                cancellationToken).ConfigureAwait(false);
+        public async Task<PluginHttpResponse> SendAsync(HttpMethod method, Uri uri, string? content,
+            string contentType, IReadOnlyDictionary<string, string> headers, TimeSpan? timeout = null,
+            CancellationToken cancellationToken = default)
         {
             if (method is null) throw new ArgumentNullException(nameof(method));
             if (uri is null || !uri.IsAbsoluteUri || uri.Scheme is not ("https" or "http"))
@@ -1674,18 +1856,29 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                 throw new InvalidDataException("Plugin HTTP request content exceeds the 16 MiB limit.");
             using var request = new HttpRequestMessage(method, uri);
             if (content is not null) request.Content = new StringContent(content, System.Text.Encoding.UTF8, contentType);
-            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            foreach (var header in headers ?? throw new ArgumentNullException(nameof(headers)))
+            {
+                if (request.Headers.TryAddWithoutValidation(header.Key, header.Value)) continue;
+                if (request.Content is null || !request.Content.Headers.TryAddWithoutValidation(header.Key, header.Value))
+                    throw new ArgumentException($"Invalid HTTP request header: {header.Key}", nameof(headers));
+            }
+            using var timeoutSource = timeout is { } value
+                ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
+                : null;
+            if (timeoutSource is not null) timeoutSource.CancelAfter(timeout!.Value);
+            var requestToken = timeoutSource?.Token ?? cancellationToken;
+            using var response = await client.SendAsync(request, requestToken).ConfigureAwait(false);
             if (response.Content.Headers.ContentLength is > MaximumPluginHttpBodyBytes)
                 throw new InvalidDataException("Plugin HTTP response exceeds the 16 MiB limit.");
-            await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            await using var responseStream = await response.Content.ReadAsStreamAsync(requestToken).ConfigureAwait(false);
             using var bodyStream = new MemoryStream();
             var buffer = new byte[81920];
             int count;
-            while ((count = await responseStream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+            while ((count = await responseStream.ReadAsync(buffer, requestToken).ConfigureAwait(false)) > 0)
             {
                 if (bodyStream.Length + count > MaximumPluginHttpBodyBytes)
                     throw new InvalidDataException("Plugin HTTP response exceeds the 16 MiB limit.");
-                await bodyStream.WriteAsync(buffer.AsMemory(0, count), cancellationToken).ConfigureAwait(false);
+                await bodyStream.WriteAsync(buffer.AsMemory(0, count), requestToken).ConfigureAwait(false);
             }
             var bodyBytes = bodyStream.ToArray();
             var mediaType = response.Content.Headers.ContentType;
@@ -1712,18 +1905,31 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
     private sealed class PluginMinecraft(PluginRuntimeManager owner) : IPluginMinecraft
     {
         public Task<IReadOnlyList<PluginGameInstance>> GetInstancesAsync(CancellationToken cancellationToken = default) => owner.GetInstancesAsync(cancellationToken);
+        public Task<PluginGameInstance?> GetSelectedInstanceAsync(CancellationToken cancellationToken = default) => owner.GetSelectedInstanceAsync(cancellationToken);
+        public Task<IReadOnlyDictionary<string, string>> GetInstanceConfigurationAsync(string instanceId, CancellationToken cancellationToken = default) => owner.GetInstanceConfigurationAsync(instanceId, cancellationToken);
         public Task<bool> LaunchAsync(string instanceId, CancellationToken cancellationToken = default) => owner.LaunchAsync(instanceId, cancellationToken);
+        public Task<bool> LaunchAsync(string instanceId, PluginLaunchOptions options, CancellationToken cancellationToken = default) => owner.LaunchAsync(instanceId, options, cancellationToken);
     }
 
     private sealed class PluginLauncher(string pluginsDirectory, string dataDirectory, HttpClient httpClient) : IPluginLauncher
     {
         public string Name => "PCL Lite";
         public string Version => typeof(PluginRuntimeManager).Assembly.GetName().Version?.ToString() ?? "unknown";
+        public string CoreVersion => Basics.VersionName;
         public string DataDirectory => dataDirectory;
         public string PluginsDirectory => pluginsDirectory;
         public async Task DownloadAsync(Uri uri, string relativePath, IProgress<PluginDownloadProgress>? progress = null,
             CancellationToken cancellationToken = default)
+            => await DownloadCoreAsync(uri, relativePath, null, progress, cancellationToken).ConfigureAwait(false);
+        public async Task DownloadAsync(Uri uri, string relativePath, string expectedSha256,
+            IProgress<PluginDownloadProgress>? progress = null, CancellationToken cancellationToken = default)
+            => await DownloadCoreAsync(uri, relativePath, expectedSha256, progress, cancellationToken).ConfigureAwait(false);
+        private async Task DownloadCoreAsync(Uri uri, string relativePath, string? expectedSha256,
+            IProgress<PluginDownloadProgress>? progress, CancellationToken cancellationToken)
         {
+            if (expectedSha256 is not null && (expectedSha256.Length != 64 ||
+                    expectedSha256.Any(c => !Uri.IsHexDigit(c))))
+                throw new ArgumentException("Expected SHA-256 must contain 64 hexadecimal characters.", nameof(expectedSha256));
             PluginPackage.ValidateRelativePath(relativePath);
             if (uri is null || !uri.IsAbsoluteUri || uri.Scheme != Uri.UriSchemeHttps)
                 throw new ArgumentException("Downloads must use an absolute HTTPS URI.", nameof(uri));
@@ -1753,6 +1959,7 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                     throw new InvalidDataException("Plugin data directory would exceed the 256 MiB storage quota.");
                 if (!File.Exists(target) && usage.Files >= MaximumPluginDataFiles)
                     throw new InvalidDataException("Plugin data directory exceeds the 10,000 file limit.");
+                using var hash = expectedSha256 is null ? null : IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
                 await using (var destination = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write,
                                  FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan))
                 {
@@ -1764,11 +1971,16 @@ public sealed class PluginRuntimeManager : IAsyncDisposable
                             throw new InvalidDataException("Plugin download exceeds the 64 MiB per-file limit.");
                         if (checked(usage.Bytes - replacedBytes + total) > MaximumPluginDataBytes)
                             throw new InvalidDataException("Plugin data directory would exceed the 256 MiB storage quota.");
+                        hash?.AppendData(buffer, 0, count);
                         await destination.WriteAsync(buffer.AsMemory(0, count), cancellationToken).ConfigureAwait(false);
                         progress?.Report(new(total, response.Content.Headers.ContentLength));
                     }
                     if (expectedLength is { } expected && total != expected)
                         throw new InvalidDataException("Plugin download ended before the declared content length.");
+                    if (expectedSha256 is not null && !string.Equals(
+                            Convert.ToHexString(hash!.GetHashAndReset()), expectedSha256,
+                            StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidDataException("Plugin download SHA-256 does not match the expected digest.");
                     await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
                 }
                 cancellationToken.ThrowIfCancellationRequested();

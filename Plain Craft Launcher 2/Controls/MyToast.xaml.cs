@@ -85,6 +85,9 @@ public partial class MyToast
 
     public bool IsDismissing { get; private set; }
 
+    /// <summary>Optional asynchronous action invoked when the toast is clicked.</summary>
+    public Func<Task>? OnClick { get; set; }
+
     private double _targetHeight;
 
     public void Show()
@@ -159,6 +162,7 @@ public partial class MyToast
     public void Dismiss()
     {
         if (IsDismissing) return;
+        OnClick = null;
         IsDismissing = true;
         _isDragging = false;
         _dragPending = false;
@@ -284,6 +288,12 @@ public partial class MyToast
         if (_dragPending && !_isDragging)
         {
             _dragPending = false;
+            if (OnClick is { } action)
+            {
+                _ = InvokeClickAsync(action);
+                Dismiss();
+                e.Handled = true;
+            }
             return;
         }
 
@@ -305,6 +315,13 @@ public partial class MyToast
         }
 
         ReturnFromDrag();
+    }
+
+    private static async Task InvokeClickAsync(Func<Task> action)
+    {
+        try { await action().ConfigureAwait(false); }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { ModBase.Log(ex, "执行插件提示操作失败"); }
     }
 
     private void Toast_LostMouseCapture(object sender, MouseEventArgs e)

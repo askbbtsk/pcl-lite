@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.IO;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace PCL.Core.Test.Plugins;
 [DoNotParallelize]
 public sealed class PluginApiRuntimeTests
 {
-    [TestMethod]
+    [STATestMethod]
     public async Task LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions()
     {
         using var certificate = CreateCertificate();
@@ -36,6 +37,11 @@ public sealed class PluginApiRuntimeTests
         var openedUrl = default(Uri);
         var openedPath = string.Empty;
         var launchRequest = string.Empty;
+        string? createdButtonPluginId = null;
+        string? createdButtonText = null;
+        PluginButtonStyle? createdButtonStyle = null;
+        Func<Task>? createdButtonClick = null;
+        var expectedButton = new System.Windows.FrameworkElement();
         var startedEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var exitedEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var stopCalled = false;
@@ -46,11 +52,16 @@ public sealed class PluginApiRuntimeTests
             if (module == "Plugin/runtime.api.probe") observedLogs.Add((level, message));
         }
         var previousNotice = PluginHostBridge.ShowNotification;
+        var previousNoticeAction = PluginHostBridge.ShowNotificationWithAction;
         var previousConfirm = PluginHostBridge.ConfirmAsync;
+        var previousChoose = PluginHostBridge.ChooseAsync;
         var previousGetInstances = PluginHostBridge.GetInstancesAsync;
         var previousLaunch = PluginHostBridge.LaunchInstanceAsync;
+        var previousCreateButton = PluginHostBridge.CreateButton;
         var previousOpenUrl = PluginHostBridge.OpenUrl;
         var previousOpenPath = PluginHostBridge.OpenPath;
+        Func<Task>? notificationAction = null;
+        var chosenAction = 0;
 
         try
         {
@@ -63,12 +74,19 @@ public sealed class PluginApiRuntimeTests
                 if (message.StartsWith("lifecycle-started|", StringComparison.Ordinal)) startedEvent.TrySetResult(message);
                 if (message.StartsWith("lifecycle-exited|", StringComparison.Ordinal)) exitedEvent.TrySetResult(message);
             };
+            PluginHostBridge.ShowNotificationWithAction = (message, kind, action) => notificationAction = action;
             LogWrapper.OnLog += CaptureLog;
             PluginHostBridge.ConfirmAsync = (title, message, token) =>
             {
                 token.ThrowIfCancellationRequested();
                 confirmation = title + ":" + message;
                 return Task.FromResult(true);
+            };
+            PluginHostBridge.ChooseAsync = (title, message, options, token) =>
+            {
+                token.ThrowIfCancellationRequested();
+                chosenAction = 3;
+                return Task.FromResult(chosenAction);
             };
             PluginHostBridge.GetInstancesAsync = token =>
             {
@@ -81,6 +99,14 @@ public sealed class PluginApiRuntimeTests
                 token.ThrowIfCancellationRequested();
                 launchRequest = id;
                 return Task.FromResult(id == "instance-a");
+            };
+            PluginHostBridge.CreateButton = (pluginId, text, onClick, style) =>
+            {
+                createdButtonPluginId = pluginId;
+                createdButtonText = text;
+                createdButtonStyle = style;
+                createdButtonClick = onClick;
+                return expectedButton;
             };
             PluginHostBridge.OpenUrl = uri => openedUrl = uri;
             PluginHostBridge.OpenPath = path => openedPath = path;
@@ -99,9 +125,21 @@ public sealed class PluginApiRuntimeTests
             Assert.AreEqual("probe notice", notification);
             Assert.AreEqual(PluginNotificationKind.Warning, notificationKind);
             Assert.AreEqual("Probe title:Probe message", confirmation);
+            Assert.AreEqual(3, chosenAction);
+            Assert.IsNotNull(notificationAction);
+            await notificationAction!();
+            Assert.AreEqual("clicked", await File.ReadAllTextAsync(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.api.probe", "notification-action.txt")));
             Assert.AreEqual("https://example.test/path", openedUrl?.AbsoluteUri);
             Assert.AreEqual(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.api.probe"), openedPath);
             Assert.AreEqual("instance-a", launchRequest);
+            Assert.AreEqual("runtime.api.probe", createdButtonPluginId);
+            Assert.AreEqual("PCL button probe", createdButtonText);
+            Assert.AreEqual(PluginButtonStyle.Highlight, createdButtonStyle);
+            Assert.IsNotNull(createdButtonClick);
+            Assert.AreEqual(nameof(System.Windows.FrameworkElement),
+                await File.ReadAllTextAsync(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.api.probe", "button-type.txt")));
+            await createdButtonClick!();
+            Assert.AreEqual("clicked", await File.ReadAllTextAsync(Path.Combine(pluginsDirectory, ".plugin-data", "runtime.api.probe", "button-clicked.txt")));
             PluginRuntimeManager.Notify(new PluginGameStartedEvent("instance-b", "Started probe", 12345));
             PluginRuntimeManager.Notify(new PluginGameExitedEvent("instance-b", "Exited probe", 7));
             Assert.AreEqual("lifecycle-started|instance-b|Started probe|12345",
@@ -125,9 +163,12 @@ public sealed class PluginApiRuntimeTests
         {
             LogWrapper.OnLog -= CaptureLog;
             PluginHostBridge.ShowNotification = previousNotice;
+            PluginHostBridge.ShowNotificationWithAction = previousNoticeAction;
             PluginHostBridge.ConfirmAsync = previousConfirm;
+            PluginHostBridge.ChooseAsync = previousChoose;
             PluginHostBridge.GetInstancesAsync = previousGetInstances;
             PluginHostBridge.LaunchInstanceAsync = previousLaunch;
+            PluginHostBridge.CreateButton = previousCreateButton;
             PluginHostBridge.OpenUrl = previousOpenUrl;
             PluginHostBridge.OpenPath = previousOpenPath;
             PluginPageRegistry.RemovePlugin("runtime.api.probe");
@@ -196,6 +237,7 @@ public sealed class PluginApiRuntimeTests
             cancellationToken.ThrowIfCancellationRequested();
             if (request.RequestUri?.Host != "plugin.test")
                 throw new InvalidOperationException("Unexpected network host in API probe.");
+            if (request.RequestUri.AbsolutePath == "/slow") return SlowResponseAsync(cancellationToken);
             if (request.RequestUri.AbsolutePath == "/binary")
             {
                 var content = new ByteArrayContent([0x00, 0xFF, 0x10, 0x80, 0x41]);
@@ -222,7 +264,7 @@ public sealed class PluginApiRuntimeTests
             }
             var body = request.RequestUri.AbsolutePath switch
             {
-                "/get" => "get-response",
+                "/get" => request.Headers.Contains("X-PCL-Probe") ? "header-response" : "get-response",
                 "/post" => "post-response",
                 "/not-found" => "not-found-response",
                 "/redirect" => "redirect-response",
@@ -280,6 +322,53 @@ public sealed class PluginApiRuntimeTests
                 Content = new StringContent(body, Encoding.UTF8, "text/plain")
             });
         }
+
+        private static async Task<HttpResponseMessage> SlowResponseAsync(CancellationToken cancellationToken)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("slow") };
+        }
+    }
+}
+
+[TestClass]
+[DoNotParallelize]
+public sealed class PluginPageLifecycleTests
+{
+    [STATestMethod]
+    public async Task PageFactoryIsCachedAndLifecycleCallbacksRunOncePerTransition()
+    {
+        var pluginId = "runtime.page.lifecycle." + Guid.NewGuid().ToString("N");
+        const string pageId = "probe";
+        var factoryCalls = 0;
+        var shownCalls = 0;
+        var hiddenCalls = 0;
+        var view = new System.Windows.FrameworkElement();
+        var page = new PluginPage(pluginId, pageId, "Lifecycle probe", () =>
+        {
+            factoryCalls++;
+            return view;
+        }, new PluginPageLifecycle(
+            OnShown: _ => { shownCalls++; return Task.CompletedTask; },
+            OnHidden: _ => { hiddenCalls++; return Task.CompletedTask; }));
+
+        PluginPageRegistry.Register(page);
+        try
+        {
+            Assert.AreSame(view, page.GetOrCreateView());
+            Assert.AreSame(view, page.GetOrCreateView());
+            Assert.AreEqual(1, factoryCalls);
+            await page.NotifyShownAsync();
+            await page.NotifyShownAsync();
+            Assert.AreEqual(1, shownCalls);
+            await page.NotifyHiddenAsync();
+            await page.NotifyHiddenAsync();
+            Assert.AreEqual(1, hiddenCalls);
+            Assert.IsTrue(PluginPageRegistry.Unregister(pluginId, pageId));
+            Assert.IsFalse(PluginPageRegistry.Unregister(pluginId, pageId));
+            Assert.IsFalse(PluginPageRegistry.GetAll().Any(item => item.PluginId == pluginId));
+        }
+        finally { PluginPageRegistry.RemovePlugin(pluginId); }
     }
 }
 
@@ -297,6 +386,7 @@ public sealed class ApiProbePlugin : IPclPlugin
         Require(Directory.Exists(context.DataDirectory), "data directory");
         Require(context.Launcher.Name == "PCL Lite", "launcher name");
         Require(!string.IsNullOrWhiteSpace(context.Launcher.Version), "launcher version");
+        Require(!string.IsNullOrWhiteSpace(context.Launcher.CoreVersion), "launcher core version");
         Require(Directory.Exists(context.Launcher.PluginsDirectory), "launcher plugins directory");
         Require(context.Launcher.DataDirectory == context.DataDirectory, "launcher data directory");
         context.Logger.Trace("trace");
@@ -310,6 +400,35 @@ public sealed class ApiProbePlugin : IPclPlugin
         await context.Storage.WriteJsonAsync("nested/value.json", new ApiProbeSettings("json", 3), cancellationToken);
         var stored = await context.Storage.ReadJsonAsync<ApiProbeSettings>("nested/value.json", cancellationToken);
         Require(stored == new ApiProbeSettings("json", 3), "JSON storage roundtrip");
+        await context.Storage.WriteBytesAsync("nested/binary.bin", new byte[] { 0, 1, 0xFF }, cancellationToken);
+        var binaryStorage = await context.Storage.ReadBytesAsync("nested/binary.bin", cancellationToken);
+        Require(binaryStorage is not null && binaryStorage.SequenceEqual(new byte[] { 0, 1, 0xFF }),
+            "binary storage roundtrip");
+        Require(await context.Storage.ExistsAsync("nested/binary.bin", cancellationToken), "storage exists");
+        var listedStorage = await context.Storage.ListAsync("nested", cancellationToken);
+        Require(listedStorage.Contains("value.txt") && listedStorage.Contains("binary.bin"), "storage listing");
+        await context.Storage.DeleteAsync("nested/binary.bin", cancellationToken);
+        Require(!await context.Storage.ExistsAsync("nested/binary.bin", cancellationToken), "storage delete");
+        await using (var stream = new MemoryStream(new byte[] { 3, 2, 1 }))
+            await context.Storage.WriteStreamAsync("nested/stream.bin", stream, 3, cancellationToken);
+        await using (var stream = await context.Storage.OpenReadAsync("nested/stream.bin", cancellationToken))
+        {
+            Require(stream is not null, "stream storage open");
+            var streamBytes = new byte[3];
+            await stream!.ReadExactlyAsync(streamBytes, cancellationToken);
+            Require(streamBytes.SequenceEqual(new byte[] { 3, 2, 1 }), "stream storage roundtrip");
+        }
+        await using (var badStream = new MemoryStream(new byte[] { 4, 5 }))
+            await RequireThrowsAsync<InvalidDataException>(
+                () => context.Storage.WriteStreamAsync("nested/stream.bin", badStream, 1, cancellationToken),
+                "stream expected-length validation");
+        var storedStreamBytes = await context.Storage.ReadBytesAsync("nested/stream.bin", cancellationToken);
+        Require(storedStreamBytes is not null && storedStreamBytes.SequenceEqual(new byte[] { 3, 2, 1 }),
+            "failed stream write preserves prior file");
+        Require(context.Services.Register<IFormatProvider>(CultureInfo.InvariantCulture), "service registration");
+        Require(ReferenceEquals(context.Services.Get<IFormatProvider>(), CultureInfo.InvariantCulture), "service lookup");
+        Require(!context.Services.Register<IFormatProvider>(CultureInfo.InvariantCulture), "duplicate service registration");
+        Require(context.Services.Unregister<IFormatProvider>(), "service unregister");
         await RequireThrowsAsync<ArgumentException>(() => context.Storage.WriteTextAsync("../escape", "bad", cancellationToken), "storage traversal");
         await RequireThrowsAsync<OperationCanceledException>(() => context.Storage.ReadTextAsync("nested/value.txt", new CancellationToken(true)), "storage cancellation");
 
@@ -392,6 +511,12 @@ public sealed class ApiProbePlugin : IPclPlugin
         var post = await context.Network.SendAsync(HttpMethod.Post, new Uri("https://plugin.test/post"), "request",
             "text/plain", cancellationToken);
         Require(post.StatusCode == 200 && post.Content == "post-response", "HTTP POST");
+        var withHeaders = await context.Network.GetAsync(new Uri("https://plugin.test/get"),
+            new Dictionary<string, string> { ["X-PCL-Probe"] = "present" }, TimeSpan.FromSeconds(5), cancellationToken);
+        Require(withHeaders.StatusCode == 200 && withHeaders.Content == "header-response", "HTTP request headers and timeout");
+        await RequireThrowsAsync<OperationCanceledException>(
+            () => context.Network.GetAsync(new Uri("https://plugin.test/slow"), new Dictionary<string, string>(),
+                TimeSpan.FromMilliseconds(50), cancellationToken), "HTTP timeout");
         var notFound = await context.Network.GetAsync(new Uri("https://plugin.test/not-found"), cancellationToken);
         Require(notFound.StatusCode == 404 && notFound.Content == "not-found-response",
             "HTTP non-2xx response status and body are returned to the plugin");
@@ -411,7 +536,12 @@ public sealed class ApiProbePlugin : IPclPlugin
 
         var instances = await context.Minecraft.GetInstancesAsync(cancellationToken);
         Require(instances.Count == 1 && instances[0].Id == "instance-a" && instances[0].IsSelected, "Minecraft instance query");
+        Require((await context.Minecraft.GetSelectedInstanceAsync(cancellationToken))?.Id == "instance-a", "selected Minecraft instance");
+        Require((await context.Minecraft.GetInstanceConfigurationAsync("instance-a", cancellationToken)).Count == 0,
+            "Minecraft instance configuration query");
         Require(await context.Minecraft.LaunchAsync("instance-a", cancellationToken), "Minecraft launch");
+        Require(await context.Minecraft.LaunchAsync("instance-a", new PluginLaunchOptions(WorldName: "Probe"), cancellationToken),
+            "Minecraft launch options");
         using (var canceled = new CancellationTokenSource())
         {
             canceled.Cancel();
@@ -425,6 +555,8 @@ public sealed class ApiProbePlugin : IPclPlugin
         await context.Launcher.DownloadAsync(new Uri("https://plugin.test/download"), "downloads/payload.txt", progress,
             cancellationToken);
         Require(await context.Storage.ReadTextAsync("downloads/payload.txt", cancellationToken) == "download-payload", "launcher download");
+        await context.Launcher.DownloadAsync(new Uri("https://plugin.test/download"), "downloads/hash.txt",
+            "DB4D14026AC0A25A716EDAAF4C28187D0E13941EE42E451843C0A84D749CDAE7", cancellationToken: cancellationToken);
         Require(progress.Last is { BytesReceived: > 0 }, "download progress");
         await context.Storage.WriteTextAsync("downloads/atomic.txt", "original", cancellationToken);
         await RequireThrowsAsync<IOException>(
@@ -437,6 +569,9 @@ public sealed class ApiProbePlugin : IPclPlugin
         await RequireThrowsAsync<InvalidDataException>(
             () => context.Launcher.DownloadAsync(new Uri("https://plugin.test/download-length-long"), "downloads/atomic.txt", cancellationToken: cancellationToken),
             "download shorter than declared content length");
+        await RequireThrowsAsync<InvalidDataException>(
+            () => context.Launcher.DownloadAsync(new Uri("https://plugin.test/download"), "downloads/atomic.txt",
+                new string('0', 64), cancellationToken: cancellationToken), "download SHA-256 mismatch");
         Require(await context.Storage.ReadTextAsync("downloads/atomic.txt", cancellationToken) == "original",
             "content length mismatch keeps old file");
         using (var canceled = new CancellationTokenSource())
@@ -474,8 +609,15 @@ public sealed class ApiProbePlugin : IPclPlugin
             }, "open path existence");
 
         context.Ui.RegisterPage("probe", "Probe page", () => new System.Windows.Controls.TextBlock { Text = "probe" });
+        var button = context.Ui.CreateButton("PCL button probe",
+            () => context.Storage.WriteTextAsync("button-clicked.txt", "clicked"), PluginButtonStyle.Highlight);
+        await context.Storage.WriteTextAsync("button-type.txt", button.GetType().Name, cancellationToken);
         context.Ui.ShowNotification("probe notice", PluginNotificationKind.Warning);
+        context.Ui.ShowNotification("probe action", PluginNotificationKind.Info,
+            () => context.Storage.WriteTextAsync("notification-action.txt", "clicked"));
         Require(await context.Ui.ConfirmAsync("Probe title", "Probe message", cancellationToken), "confirmation response");
+        Require(await context.Ui.ChooseAsync("Probe choice", "Choose", new PluginDialogOptions("A", "B", "C"), cancellationToken) == 3,
+            "choice response");
         using (var canceled = new CancellationTokenSource())
         {
             canceled.Cancel();

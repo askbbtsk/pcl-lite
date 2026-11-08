@@ -51,6 +51,88 @@ public sealed class PackUpdatePlannerTest
     }
 
     [TestMethod]
+    public void CompletePackUpdate_MatchesExpectedInstanceTreeAndPreservesPlayerAndLauncherFiles()
+    {
+        var game = Path.Combine(_root, "game");
+        Write(Path.Combine(game, "mods", "a.jar"), "author-a-v1");
+        Write(Path.Combine(game, "mods", "remove.jar"), "author-remove");
+        Write(Path.Combine(game, "config", "author.json"), "player-edit");
+        Write(Path.Combine(game, "config", "user.json"), "player-file");
+        Write(Path.Combine(game, "saves", "World", "level.dat"), "player-world");
+        Write(Path.Combine(game, "PCLLiteData", "WorldBackups", "snapshot.zip"), "launcher-backup");
+        Write(Path.Combine(game, "libraries", "runtime.jar"), "runtime");
+        Directory.CreateDirectory(Path.Combine(game, "mods")); // tracked disabled mod intentionally remains absent
+
+        var targetEntries = new[]
+        {
+            Entry("mods/a.jar", "author-a-v2", "cf:a"),
+            Entry("mods/disabled.jar", "author-disabled", "cf:disabled"),
+            Entry("mods/new.jar", "author-new", "cf:new"),
+            Entry("config/author.json", "author-setting-v2", "settings:author"),
+        };
+        var old = Baseline(
+            Entry("mods/a.jar", "author-a-v1", "cf:a"),
+            Entry("mods/remove.jar", "author-remove", "cf:remove"),
+            Entry("mods/disabled.jar", "author-disabled-v1", "cf:disabled"),
+            Entry("config/author.json", "author-setting-v1", "settings:author"));
+        var target = Baseline(targetEntries);
+        var payloads = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in targetEntries)
+        {
+            var payload = Path.Combine(_stage, entry.Path.Replace('/', Path.DirectorySeparatorChar));
+            Write(payload, entry.Identity switch
+            {
+                "cf:a" => "author-a-v2",
+                "cf:disabled" => "author-disabled",
+                "cf:new" => "author-new",
+                _ => "author-setting-v2",
+            });
+            payloads.Add(entry.Path, payload);
+        }
+
+        var plan = PackUpdatePlanner.Build(game, old, target, payloads);
+        PackUpdateTransaction.Apply(plan);
+
+        var expected = Path.Combine(_root, "expected");
+        Write(Path.Combine(expected, "mods", "a.jar"), "author-a-v2");
+        Write(Path.Combine(expected, "mods", "new.jar"), "author-new");
+        Write(Path.Combine(expected, "config", "author.json"), "player-edit");
+        Write(Path.Combine(expected, "config", "user.json"), "player-file");
+        Write(Path.Combine(expected, "saves", "World", "level.dat"), "player-world");
+        Write(Path.Combine(expected, "PCLLiteData", "WorldBackups", "snapshot.zip"), "launcher-backup");
+        Write(Path.Combine(expected, "libraries", "runtime.jar"), "runtime");
+
+        var differences = PackArtifactTree.Compare(PackArtifactTree.Capture(expected), PackArtifactTree.Capture(game));
+        Assert.AreEqual(0, differences.Count, string.Join(Environment.NewLine, differences));
+    }
+
+    [TestMethod]
+    public void FirstPackInstall_MatchesTargetTreeWhileRetainingExistingRuntimeFiles()
+    {
+        var game = Path.Combine(_root, "game");
+        Write(Path.Combine(game, "versions", "1.20.1", "1.20.1.json"), "vanilla-json");
+        Write(Path.Combine(game, "PCLLiteData", "settings.json"), "launcher-settings");
+        var entries = new[] { Entry("mods/a.jar", "mod-a", "cf:a"), Entry("config/pack.json", "pack-config", "mr:c") };
+        var target = Baseline(entries);
+        var payloads = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in entries)
+        {
+            var payload = Path.Combine(_stage, entry.Path.Replace('/', Path.DirectorySeparatorChar));
+            Write(payload, entry.Identity == "cf:a" ? "mod-a" : "pack-config");
+            payloads.Add(entry.Path, payload);
+        }
+
+        PackUpdateTransaction.Apply(PackUpdatePlanner.Build(game, null, target, payloads));
+
+        var expected = Path.Combine(_root, "expected-install");
+        Write(Path.Combine(expected, "versions", "1.20.1", "1.20.1.json"), "vanilla-json");
+        Write(Path.Combine(expected, "PCLLiteData", "settings.json"), "launcher-settings");
+        Write(Path.Combine(expected, "mods", "a.jar"), "mod-a");
+        Write(Path.Combine(expected, "config", "pack.json"), "pack-config");
+        var differences = PackArtifactTree.Compare(PackArtifactTree.Capture(expected), PackArtifactTree.Capture(game));
+        Assert.AreEqual(0, differences.Count, string.Join(Environment.NewLine, differences));
+    }
+    [TestMethod]
     public void ModifiedLocalFile_IsPreservedByDefault_AndAuthorRemovalDoesNotDeleteIt()
     {
         var game = Path.Combine(_root, "game");

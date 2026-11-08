@@ -8,7 +8,7 @@
     <!-- Meta -->
 
     <sys:String x:Key="Meta.Code">en-US</sys:String>
-    <sys:String x:Key="Meta.Name">English (US)</sys:String>
+    <sys:String x:Key="Meta.Name">English</sys:String>
 
     <!-- Application -->
 
@@ -757,6 +757,7 @@
     <sys:String x:Key="Download.Version.ReleaseDate">Released on {0}</sys:String>
     <sys:String x:Key="Download.Version.SaveAs">Save as</sys:String>
     <sys:String x:Key="Download.Version.SaveInstaller">Save installer</sys:String>
+    <sys:String x:Key="Download.Version.LiteLoader.InstallerUnavailable">The standalone installer source for this LiteLoader version is unavailable. Install it through the launcher instead.</sys:String>
     <sys:String x:Key="Download.Version.SelectSaveLocation">Select save location</sys:String>
     <sys:String x:Key="Download.Version.VersionList">Version list</sys:String>
     <sys:String x:Key="Download.Version.VersionListCount">Version list ({0})</sys:String>
@@ -1705,11 +1706,6 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Welcome.Network.Manage">Manage network allowlist</sys:String>
     <sys:String x:Key="Welcome.Network.Status.All">All connections allowed ({0} network purposes)</sys:String>
     <sys:String x:Key="Welcome.Network.Status.Partial">{0} of {1} network purposes allowed</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Title">Privacy and offline</sys:String>
-    <sys:String x:Key="Welcome.Privacy.OpenDownload">Open downloads</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Mode.On">On</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Mode.Off">Off</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Status">Privacy mode: {0} · Telemetry: removed</sys:String>
     <sys:String x:Key="Welcome.Recent.Title">Last played</sys:String>
     <sys:String x:Key="Welcome.Recent.Empty">No instance selected yet — pick one on the Launch page.</sys:String>
     <sys:String x:Key="Welcome.Recent.Launch">Launch game</sys:String>
@@ -1909,10 +1905,13 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Main.SpecialVersion.OpenDownloadPageAndExit">Open latest download page and exit</sys:String>
     <sys:String x:Key="Main.SpecialVersion.Title">Special build notice</sys:String>
     <sys:String x:Key="Main.Tab.Bedrock">Bedrock</sys:String>
+    <sys:String x:Key="Main.Tab.Plugins">Plugins</sys:String>
     <sys:String x:Key="Main.Tab.Download">Download</sys:String>
     <sys:String x:Key="Main.Tab.Launch">Launch</sys:String>
     <sys:String x:Key="Main.Tab.Settings">Settings</sys:String>
     <sys:String x:Key="Main.Tab.Tools">Tools</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowShow">Show more navigation</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowHide">Hide extra navigation</sys:String>
     <sys:String x:Key="Main.Title.GameLog">Launch log</sys:String>
     <sys:String x:Key="Main.Title.InstanceSelect">Selection</sys:String>
     <sys:String x:Key="Main.Title.InstanceSetup">Properties - {0}</sys:String>
@@ -2873,6 +2872,99 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Setup.Left.Item.Misc">Miscellaneous</sys:String>
     <sys:String x:Key="Setup.Left.Item.Ui">Personalization</sys:String>
     <sys:String x:Key="Setup.Left.Item.Update">Updates</sys:String>
+    <sys:String x:Key="Plugin.Left.Category">Plugins</sys:String>
+    <sys:String x:Key="Plugin.Left.Market">Marketplace</sys:String>
+    <sys:String x:Key="Plugin.Left.Installed">Installed</sys:String>
+    <sys:String x:Key="Plugin.Market.Title">Plugin marketplace</sys:String>
+    <sys:String x:Key="Plugin.Market.Description">Plugins are provided by third-party authors. Self-signing checks package integrity; it does not verify the author's identity or plugin safety.</sys:String>
+    <sys:String x:Key="Plugin.Market.Refresh">Refresh marketplace</sys:String>
+    <sys:String x:Key="Plugin.Market.Install">Install</sys:String>
+    <sys:String x:Key="Plugin.Market.Update">Update</sys:String>
+    <sys:String x:Key="Plugin.Market.Current">Up to date</sys:String>
+    <sys:String x:Key="Plugin.Market.Downgrade">Downgrade…</sys:String>
+    <sys:String x:Key="Plugin.Market.PendingRestart">Pending restart</sys:String>
+    <sys:String x:Key="Plugin.Market.Empty">No plugins are currently available.</sys:String>
+    <sys:String x:Key="Plugin.Market.LoadFailed">Could not load the plugin marketplace: {0}</sys:String>
+    <sys:String x:Key="Plugin.Install.Local">Install from file</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedTitle">Unsigned plugin</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedMessage">Signer: None
+Signing time: None
+
+This plugin is unsigned, so the launcher cannot verify whether it was modified. It runs with your user permissions.
+{0}
+{1}
+Install anyway?</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedConfirm">Install anyway</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedTitle">Plugin signer changed</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChanged">This version uses a different signing certificate from the installed version.
+Previous certificate fingerprint: {0}
+New version certificate fingerprint/status: {1}
+This may be a key rotation or a supply-chain risk. Verify the trusted release source before continuing.</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedConfirm">Update anyway</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedSigner">None (new version is unsigned)</sys:String>
+    <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">Compatibility warning: {0} can be installed, but this launcher version will not load it. Use a launcher version within the declared range.</sys:String>
+    <sys:String x:Key="Plugin.Install.SourceChanged">The installation source changed: {0} ({1}) → {2} ({3}). Verify that the new source is trusted.</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSource">Unknown source</sys:String>
+    <sys:String x:Key="Plugin.Install.DowngradeWarning">This is a downgrade: current version {0}, target version {1}. The older release may contain fixed issues.</sys:String>
+    <sys:String x:Key="Plugin.Install.PackageChanged">The package contents differ from the previously installed package with the same version. Verify the signer and release source.</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownHash">Unknown</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Market">Marketplace</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Local">Local file</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Unknown">Unknown source (legacy install)</sys:String>
+    <sys:String x:Key="Plugin.Installed.Provenance">Source: {0}　Installed: {1}　Package SHA-256: {2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.SigningInfo">Signer: {0}　Certificate fingerprint: {1}　Signed: {2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignature">Unsigned</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignatureTime">N/A</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatures">Experimental features (off by default)</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatureError">This feature failed to load and was disabled: {0}</sys:String>
+    <sys:String x:Key="Plugin.Install.SignedTitle">Confirm plugin installation</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerInfo">Signer: {0}
+Certificate fingerprint: {1}
+Signing time (local display): {2}
+
+The signer supplies this time and the signature protects it from changes; it is not a trusted timestamp. A self-signed certificate does not prove identity or plugin safety.
+{3}
+{4}
+Install anyway?</sys:String>
+    <sys:String x:Key="Plugin.Install.PluginInfo">Plugin: {0}
+Version: {1}
+Author: {2}
+ID: {3}</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubVerified">GitHub Release: {0} / {1}
+Release published: {2}
+Current asset SHA-256: {3} (matched)
+{4}
+This corroborates the current asset against the Release record; it does not verify the author or provide a trusted signing timestamp.</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubNoSignatureTime">The plugin is unsigned, so there is no signing time to compare.</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubTimeConflict">The claimed signing time is later than the Release publication time. Release time is not the asset upload or signing time, so this alone does not invalidate the signature.</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubTimeConsistent">The claimed signing time is no later than the Release publication time; the self-reported time still cannot prove when signing occurred.</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubNotVerified">GitHub provenance: not verified (no direct GitHub Release asset URL was supplied).</sys:String>
+    <sys:String x:Key="Plugin.Install.Confirm">Install</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSigner">Unknown</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownTime">Unknown</sys:String>
+    <sys:String x:Key="Plugin.Install.Cancel">Cancel</sys:String>
+    <sys:String x:Key="Plugin.Install.SignedNote">Signature verified: this confirms package integrity, not author identity or plugin safety.</sys:String>
+    <sys:String x:Key="Plugin.Install.MixinWarning">This plugin includes {0} compiled Mixin patch(es) that modify launcher methods before the main window is created. It runs with the launcher's user permissions; signatures do not sandbox it or verify author identity.</sys:String>
+    <sys:String x:Key="Plugin.Install.Done">Plugin installed. Restart the launcher to apply it.</sys:String>
+    <sys:String x:Key="Plugin.Install.Working">Verifying and installing plugin…</sys:String>
+    <sys:String x:Key="Plugin.Install.Failed">Plugin installation failed: {0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.Title">Installed plugins</sys:String>
+    <sys:String x:Key="Plugin.Installed.Empty">No plugins installed.</sys:String>
+    <sys:String x:Key="Plugin.Installed.Enable">Enable</sys:String>
+    <sys:String x:Key="Plugin.Installed.Disable">Disable</sys:String>
+    <sys:String x:Key="Plugin.Installed.Uninstall">Uninstall</sys:String>
+    <sys:String x:Key="Plugin.Installed.Running">Running</sys:String>
+    <sys:String x:Key="Plugin.Installed.Disabled">Disabled</sys:String>
+    <sys:String x:Key="Plugin.Installed.Error">Startup failed: {0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.Restart">Saved. Restart the launcher to apply the change.</sys:String>
+    <sys:String x:Key="Plugin.Restart.Title">Plugin changes require a restart</sys:String>
+    <sys:String x:Key="Plugin.Restart.Now">Restart now</sys:String>
+    <sys:String x:Key="Plugin.Restart.Later">Restart later</sys:String>
+    <sys:String x:Key="Plugin.Restart.Failed">The launcher could not restart automatically: {0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.UninstallConfirm">Uninstall “{0}”? The removal completes after restart.</sys:String>
+    <sys:String x:Key="Plugin.Installed.Pages">Plugin pages</sys:String>
+    <sys:String x:Key="Plugin.Common.NoManager">Plugin manager is not ready. Try again shortly.</sys:String>
+    <sys:String x:Key="Plugin.Common.ButtonFailed">Plugin button “{0}” failed: {1}</sys:String>
 
     <!-- Setup.Log -->
 
@@ -3051,6 +3143,8 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">Mask user folder names in the UI</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">Show the folder name after C:\Users\ as ***** so screenshots do not leak your Windows user name. Display only; no folders or files are changed.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">Basics</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">Top bar page overflow</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">When the title bar runs short of space, selected pages are folded into the right-side overflow area first. All pages remain visible when there is enough room.</sys:String>
 
     <!-- Setup.Ui.FeatureHide -->
 
@@ -3548,6 +3642,10 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Update.Error.FileNotFound">Update file not found</sys:String>
     <sys:String x:Key="Update.Error.OperationFailed">An update operation failed. See the details below.</sys:String>
     <sys:String x:Key="Update.Error.Sha256Mismatch">Update file SHA256 mismatch. Expected: {0}, actual: {1}</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Title">Update certificate verification failed</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Message">{0}&#xA;&#xA;We recommend choosing “Do not update” unless you have confirmed the release source is trusted.</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Cancel">Do not update</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Continue">Update anyway</sys:String>
     <sys:String x:Key="Update.Error.UnableToGetUpdate">Unable to get update information</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlocked">Update failed</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlockedMessage">PCL CE cannot update because it was blocked by Windows Security or does not have sufficient permissions.&#xA;Please add the PCL CE folder to the exclusion list, or manually replace the current file with {0}PCL\Plain Craft Launcher Community Edition.exe!</sys:String>
@@ -3558,6 +3656,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
 
     <sys:String x:Key="Update.Task.ApplyFile">Apply file</sys:String>
     <sys:String x:Key="Update.Task.Check">Verify update</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Task">Verify release certificate</sys:String>
     <sys:String x:Key="Update.Task.DownloadFile">Download file</sys:String>
     <sys:String x:Key="Update.Task.DownloadLatestStable">Download latest stable</sys:String>
     <sys:String x:Key="Update.Task.DownloadUpdateFile">Download update file</sys:String>

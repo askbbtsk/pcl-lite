@@ -159,8 +159,17 @@ public partial class MyIconTextButton
         }
     } // 颜色类别
 
-    public event CheckEventHandler? Check;
-    public event ChangeEventHandler? Change;
+    public event CheckEventHandler? Check
+    {
+        add { }
+        remove { }
+    }
+
+    public event ChangeEventHandler? Change
+    {
+        add { }
+        remove { }
+    }
 
     private string CheckedAnimationKey => "MyIconTextButton Checked " + Uuid;
     private string ColorAnimationKey => "MyIconTextButton Color " + Uuid;

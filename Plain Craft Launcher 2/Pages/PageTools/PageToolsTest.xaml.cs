@@ -110,7 +110,7 @@ public partial class PageToolsTest
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
         }
     }

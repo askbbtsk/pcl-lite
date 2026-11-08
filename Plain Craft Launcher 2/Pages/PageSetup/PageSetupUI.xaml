@@ -261,6 +261,26 @@
                     </StackPanel>
                 </Grid>
             </local:MyCard>
+            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Setup.Ui.TopBarCollapse.Title}">
+                <StackPanel Margin="25,40,25,15">
+                    <TextBlock Text="{DynamicResource Setup.Ui.TopBarCollapse.Description}"
+                               TextWrapping="Wrap" Opacity="0.75" Margin="0,0,0,10" />
+                    <UniformGrid Columns="3">
+                        <local:MyCheckBox x:Name="CheckTopBarCollapseDownload" Text="{DynamicResource Main.Tab.Download}"
+                                          Tag="1" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
+                        <local:MyCheckBox x:Name="CheckTopBarCollapseBedrock" Text="{DynamicResource Main.Tab.Bedrock}"
+                                          Tag="2" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
+                        <local:MyCheckBox x:Name="CheckTopBarCollapsePlugins" Text="{DynamicResource Main.Tab.Plugins}"
+                                          Tag="14" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
+                        <local:MyCheckBox x:Name="CheckTopBarCollapseLunar" Text="Lunar"
+                                          Tag="13" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
+                        <local:MyCheckBox x:Name="CheckTopBarCollapseSettings" Text="{DynamicResource Main.Tab.Settings}"
+                                          Tag="3" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
+                        <local:MyCheckBox x:Name="CheckTopBarCollapseTools" Text="{DynamicResource Main.Tab.Tools}"
+                                          Tag="4" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
+                    </UniformGrid>
+                </StackPanel>
+            </local:MyCard>
             <local:MyCard x:Name="CardFont" Margin="0,0,0,15" Title="{DynamicResource Setup.Ui.Font.Title}">
                 <Grid Margin="25,40,25,15">
                     <Grid.ColumnDefinitions>

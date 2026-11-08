@@ -395,6 +395,8 @@ public static class ModBase
         {
             return obj is MyColor other && a == other.a && r == other.r && g == other.g && b == other.b;
         }
+
+        public override int GetHashCode() => HashCode.Combine(a, r, g, b);
     }
 
     /// <summary>
@@ -494,6 +496,13 @@ public static class ModBase
                 if (!objList[i].Equals(this[i]))
                     return false;
             return true;
+        }
+
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            foreach (var item in this) hash.Add(item);
+            return hash.ToHashCode();
         }
 
         public static bool operator ==(EqualableList<T> left, EqualableList<T> right)
@@ -2620,7 +2629,7 @@ public static class ModBase
             {
                 action();
             }
-            catch (ThreadInterruptedException ex)
+            catch (ThreadInterruptedException)
             {
                 Log(name + "：线程已中止");
             }
@@ -2882,7 +2891,7 @@ public static class ModBase
                     success = true;
                     break;
                 }
-                catch (Exception ex) when (attempt < 5)
+                catch (Exception) when (attempt < 5)
                 {
                     Thread.Sleep(20);
                 }

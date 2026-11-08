@@ -4,13 +4,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
-using System.Text.Json;
 using System.Threading;
 using PCL.Core.App.IoC;
 using PCL.Core.IO;
 using PCL.Core.Logging;
 using PCL.Core.Utils.OS;
-using PCL.Core.Utils;
 
 namespace PCL.Core.App.Essentials;
 
@@ -60,25 +58,7 @@ public sealed partial class PromoteService
         return IsCurrentProcessPromoted && _OperationFunctions.TryAdd(name, operation);
     }
 
-    /// <summary>
-    /// 添加自动将参数 JSON 反序列化的提权操作，仅在提权进程中有效。
-    /// </summary>
-    /// <param name="name">操作名</param>
-    /// <param name="operation">操作实现，接收反序列化的并返回结果，返回值会被自动压缩为单行</param>
-    /// <typeparam name="TValue">反序列化的目标类型</typeparam>
-    /// <returns>是否添加成功，若在主进程中调用或已存在相同操作名，则为 <c>false</c></returns>
-    public static bool AddJsonOperationFunction<TValue>(string name, Func<TValue?, string?> operation)
-    {
-        return AddOperationFunction(name, arg =>
-        {
-            if (arg is null) return OperationErrEmpty;
-            var obj = JsonSerializer.Deserialize<TValue>(arg, JsonCompat.SerializerOptions);
-            return operation(obj);
-        });
-    }
-    
     private const string OperationErrNotFound = "ERR_OPERATION_NOT_FOUND";
-    private const string OperationErrInvalidArgument = "ERR_ILLEGAL_ARGUMENT";
     private const string OperationErrExceptionThrown = "ERR_UNHANDLED_EXCEPTION";
     private const string OperationErrEmpty = "ERR_EMPTY";
     
@@ -228,68 +208,6 @@ public sealed partial class PromoteService
         return true;
     }
 
-    private static readonly Dictionary<string, Process> _RunningProcesses = new();
-    
-    // name: kill
-    // arg: process-id [timeout]
-    // return: kill result (false over timeout)
-    [PromoteOperation("kill")]
-    public static string? KillProcess(string? arg)
-    {
-        if (arg is null) return OperationErrInvalidArgument;
-        var split = arg.Split(' ');
-        if (!_RunningProcesses.TryGetValue(split[0], out var process)) return null;
-        process.Kill();
-        if (split.Length > 1)
-        {
-            int.TryParse(split[1], out var timeout);
-            return process.WaitForExit(timeout).ToString();
-        }
-        process.WaitForExit();
-        return true.ToString();
-    }
-
-    // name: start
-    // arg: path\to\executable[.] ; arguments
-    // return: process id
-    [PromoteOperation("start")]
-    public static string? StartProcess(string? arg)
-    {
-        if (arg is null) return OperationErrInvalidArgument;
-        var split = arg.Split([" ; "], 2, StringSplitOptions.RemoveEmptyEntries);
-        var createNoWindow = false;
-        if (split[0].EndsWith('.'))
-        {
-            split[0] = split[0][..^1];
-            createNoWindow = true;
-        }
-        var psi = new ProcessStartInfo(split[0]);
-        if (createNoWindow)
-        {
-            psi.CreateNoWindow = true;
-            psi.UseShellExecute = false;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.RedirectStandardError = true;
-        }
-        if (split.Length > 1) psi.Arguments = split[1];
-        return _StartProcessWithInfo(psi);
-    }
-
-    // name: start-json
-    // arg: {...}
-    // return: process id
-    private static string? _StartProcessWithInfo(ProcessStartInfo? info)
-    {
-        if (info is null) return OperationErrInvalidArgument;
-        var process = Process.Start(info);
-        if (process is null) return null;
-        var id = process.Id.ToString();
-        process.Exited += (_, _) => _RunningProcesses.Remove(id);
-        _RunningProcesses[id] = process;
-        return id;
-    }
-
     [DependencyInjectionPoint("promote", false)]
     private static void _CollectOperationFunction(PromoteOperationFunction operation, string name)
         => AddOperationFunction(name, operation);
@@ -305,7 +223,6 @@ public sealed partial class PromoteService
             // 预定义操作
             Context.Info("正在加载提权操作");
             _CollectOperationFunction_InvokeInjection_Promote();
-            AddJsonOperationFunction<ProcessStartInfo>("start-json", _StartProcessWithInfo);
             // 结束生命周期管理，启动提权操作线程
             Lifecycle.PendingLogFileName = "LastPending_Promote.log";
             LogWrapper.OnLog += (level, msg, module, ex) => Context.CustomLog($"[{module}] {msg}", ex, level);

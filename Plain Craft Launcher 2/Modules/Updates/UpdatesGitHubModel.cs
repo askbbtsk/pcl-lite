@@ -45,7 +45,6 @@ public class UpdatesGitHubModel : IUpdateSource
     [
         "https://cors.isteed.cc/",
         "https://gh-proxy.com/",
-        "https://gitproxy.click/",
     ];
 
     private JsonArray? _releases;
@@ -275,6 +274,9 @@ public class UpdatesGitHubModel : IUpdateSource
             Changelog = release["body"]?.GetValue<string>() ?? string.Empty,
             // 有官方 digest 就带上，没有就留空（调用方会跳过校验）
             Sha256 = _TryGetSha256(release, arch),
+            SignatureUrl = release["assets"] is JsonArray assets
+                ? _TryGetSignatureUrl(assets, _PickAsset(assets, arch))
+                : string.Empty,
             Source = SourceName
         };
     }
@@ -307,6 +309,25 @@ public class UpdatesGitHubModel : IUpdateSource
         catch (Exception)
         {
             // 挑不到附件不该影响「检查更新」本身
+            return string.Empty;
+        }
+    }
+
+    internal static string _TryGetSignatureUrl(JsonArray? assets, string executableUrl)
+    {
+        if (assets is null || assets.Count == 0 ||
+            !executableUrl.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return string.Empty;
+        try
+        {
+            var signatureName = executableUrl[(executableUrl.LastIndexOf('/') + 1)..] + ".sigstore.json";
+            return assets.OfType<JsonObject>()
+                       .Select(x => x["browser_download_url"]?.GetValue<string>())
+                       .FirstOrDefault(x => string.Equals(
+                           x?[(x.LastIndexOf('/') + 1)..], signatureName, StringComparison.OrdinalIgnoreCase))
+                   ?? string.Empty;
+        }
+        catch (Exception)
+        {
             return string.Empty;
         }
     }
@@ -348,8 +369,12 @@ public class UpdatesGitHubModel : IUpdateSource
                     throw new UpdateSourceException("这个 Release 没有任何附件。");
 
                 var url = _PickAsset(assets, arch);
+                if (!url.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    throw new UpdateSourceException("更新附件不是已签名的 exe，已拒绝安装。");
                 var fileName = url[(url.LastIndexOf('/') + 1)..];
                 tempPath += fileName;
+
+                var signatureUrl = _TryGetSignatureUrl(assets, url);
 
                 // 官方直链优先、反代兜底。
                 // 顺序在 DownloadCoreAsync 里就是优先级：挨个试，前一个失败才换下一个。
@@ -357,6 +382,16 @@ public class UpdatesGitHubModel : IUpdateSource
                 var urls = new List<string> { url };
                 urls.AddRange(DownloadProxies.Select(proxy => proxy + url));
                 load.output = [new DownloadFile(urls.Distinct(), tempPath)];
+                if (!string.IsNullOrWhiteSpace(signatureUrl))
+                {
+                    // The sidecar is also fetched through the configured mirrors as a fallback.
+                    // Its contents remain untrusted until UpdateSignatureVerifier validates the
+                    // Sigstore bundle against the pinned GitHub Actions identity.
+                    var signatureUrls = new List<string> { signatureUrl };
+                    signatureUrls.AddRange(DownloadProxies.Select(proxy => proxy + signatureUrl));
+                    load.output.Add(new DownloadFile(signatureUrls.Distinct(StringComparer.OrdinalIgnoreCase),
+                        output + ".sigstore.json"));
+                }
             }));
 
         loaders.Add(new LoaderDownload(Lang.Text("Update.Task.DownloadFile"), []));

@@ -40,6 +40,9 @@ public static class ModMain
     public static PageBedrockLeft? frmBedrockLeft;
     public static PageBedrockDownload? frmBedrockDownload;
     public static PageBedrockLaunch? frmBedrockLaunch;
+    public static PagePluginsLeft? frmPluginsLeft;
+    public static PagePluginsMarket? frmPluginsMarket;
+    public static PagePluginsInstalled? frmPluginsInstalled;
     public static PageLunarLeft? frmLunarLeft;
     public static PageLunarLaunch? frmLunarLaunch;
     public static PageDownloadLeft? frmDownloadLeft;

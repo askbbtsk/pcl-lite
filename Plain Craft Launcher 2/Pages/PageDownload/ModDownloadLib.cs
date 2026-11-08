@@ -812,7 +812,7 @@ public static class ModDownloadLib
                                 task.Progress += 0.9d / 7000d;
                             }
                         }
-                        catch (ObjectDisposedException ex)
+                        catch (ObjectDisposedException)
                         {
                         }
                         catch (Exception ex)
@@ -849,7 +849,7 @@ public static class ModDownloadLib
                                 task.Progress += 0.9d / 7000d;
                             }
                         }
-                        catch (ObjectDisposedException ex)
+                        catch (ObjectDisposedException)
                         {
                         }
                         catch (Exception ex)
@@ -1366,6 +1366,12 @@ public static class ModDownloadLib
     {
         try
         {
+            if (!downloadInfo.IsLegacy)
+            {
+                HintService.Hint(Lang.Text("Download.Version.LiteLoader.InstallerUnavailable"), HintType.Error);
+                return;
+            }
+
             var id = downloadInfo.Inherit;
             var target = SystemDialogs.SelectSaveFile(Lang.Text("Download.Version.SelectSaveLocation"), downloadInfo.FileName.Replace("-SNAPSHOT", ""),
                 Lang.Text("Minecraft.Download.Stage.ForgelikeInstallerFilter", "LiteLoader", "jar"));
@@ -1385,47 +1391,29 @@ public static class ModDownloadLib
             var loaders = new List<ModLoader.LoaderBase>();
             // 下载
             var address = new List<string>();
-            if (downloadInfo.IsLegacy)
-                // 老版本
-                switch (downloadInfo.Inherit ?? "")
-                {
-                    case "1.7.10":
-                    {
-                        address.Add("https://dl.liteloader.com/redist/1.7.10/liteloader-installer-1.7.10-04.jar");
-                        break;
-                    }
-                    case "1.7.2":
-                    {
-                        address.Add("https://dl.liteloader.com/redist/1.7.2/liteloader-installer-1.7.2-04.jar");
-                        break;
-                    }
-                    case "1.6.4":
-                    {
-                        address.Add("https://dl.liteloader.com/redist/1.6.4/liteloader-installer-1.6.4-01.jar");
-                        break;
-                    }
-                    case "1.6.2":
-                    {
-                        address.Add("https://dl.liteloader.com/redist/1.6.2/liteloader-installer-1.6.2-04.jar");
-                        break;
-                    }
-                    case "1.5.2":
-                    {
-                        address.Add("https://dl.liteloader.com/redist/1.5.2/liteloader-installer-1.5.2-01.jar");
-                        break;
-                    }
-
-                    default:
-                    {
-                        throw new NotSupportedException(Lang.Text("Minecraft.Download.Error.UnknownMinecraftVersion",
-                            downloadInfo.Inherit));
-                    }
+            // 老版本安装器仍由 dl.liteloader.com 提供；新版 Jenkins 安装器已失联，
+            // 不再保留其下载地址。
+            switch (downloadInfo.Inherit ?? "")
+            {
+                case "1.7.10":
+                    address.Add("https://dl.liteloader.com/redist/1.7.10/liteloader-installer-1.7.10-04.jar");
+                    break;
+                case "1.7.2":
+                    address.Add("https://dl.liteloader.com/redist/1.7.2/liteloader-installer-1.7.2-04.jar");
+                    break;
+                case "1.6.4":
+                    address.Add("https://dl.liteloader.com/redist/1.6.4/liteloader-installer-1.6.4-01.jar");
+                    break;
+                case "1.6.2":
+                    address.Add("https://dl.liteloader.com/redist/1.6.2/liteloader-installer-1.6.2-04.jar");
+                    break;
+                case "1.5.2":
+                    address.Add("https://dl.liteloader.com/redist/1.5.2/liteloader-installer-1.5.2-01.jar");
+                    break;
+                default:
+                    throw new NotSupportedException(Lang.Text("Minecraft.Download.Error.UnknownMinecraftVersion",
+                        downloadInfo.Inherit));
                 }
-            else
-                // 官方源
-                address.Add("http://jenkins.liteloader.com/job/LiteLoaderInstaller%20" + downloadInfo.Inherit +
-                            "/lastSuccessfulBuild/artifact/" +
-                            (downloadInfo.Inherit == "1.8" ? "ant/dist/" : "build/libs/") + downloadInfo.FileName);
 
             loaders.Add(new LoaderDownload(Lang.Text("Minecraft.Download.Stage.DownloadMainFile"),
                     new List<DownloadFile> { new(address.ToArray(), target, new ModBase.FileChecker(1024 * 1024)) })
@@ -1571,51 +1559,29 @@ public static class ModDownloadLib
 
     private static void LiteLoaderSaveContMenuBuild(MyListItem sender, EventArgs e)
     {
-        if ((bool)((dynamic)sender.Tag).IsLegacy)
-        {
-            sender.Buttons = Array.Empty<MyIconButton>();
-        }
-        else
-        {
-            var btnList = new MyIconButton { SvgIcon = "lucide/list", ToolTip = Lang.Text("Download.Version.ViewAllVersions"), Tag = sender };
-            ToolTipService.SetPlacement(btnList, PlacementMode.Center);
-            ToolTipService.SetVerticalOffset(btnList, 30d);
-            ToolTipService.SetHorizontalOffset(btnList, 2d);
-            btnList.Click += (sender, e) => LiteLoaderAll_Click(sender, (RoutedEventArgs)e);
-            sender.Buttons = new[] { btnList };
-        }
+        // 非远古版本的独立安装器和版本列表仅托管在已失联的 Jenkins 上。
+        sender.Buttons = Array.Empty<MyIconButton>();
     }
 
     private static void LiteLoaderContMenuBuild(MyListItem sender, EventArgs e)
     {
-        var btnSave = new MyIconButton { SvgIcon = "lucide/save", ToolTip = Lang.Text("Download.Version.SaveInstaller"), Tag = sender };
-        ToolTipService.SetPlacement(btnSave, PlacementMode.Center);
-        ToolTipService.SetVerticalOffset(btnSave, 30d);
-        ToolTipService.SetHorizontalOffset(btnSave, 2d);
-        btnSave.Click += (sender, e) => LiteLoaderSave_Click(sender, (RoutedEventArgs)e);
         if ((bool)((dynamic)sender.Tag).IsLegacy)
         {
+            var btnSave = new MyIconButton
+            {
+                SvgIcon = "lucide/save", ToolTip = Lang.Text("Download.Version.SaveInstaller"), Tag = sender
+            };
+            ToolTipService.SetPlacement(btnSave, PlacementMode.Center);
+            ToolTipService.SetVerticalOffset(btnSave, 30d);
+            ToolTipService.SetHorizontalOffset(btnSave, 2d);
+            btnSave.Click += (sender, e) => LiteLoaderSave_Click(sender, (RoutedEventArgs)e);
             sender.Buttons = [btnSave];
         }
         else
         {
-            var btnList = new MyIconButton { SvgIcon = "lucide/list", ToolTip = Lang.Text("Download.Version.ViewAllVersions"), Tag = sender };
-            ToolTipService.SetPlacement(btnList, PlacementMode.Center);
-            ToolTipService.SetVerticalOffset(btnList, 30d);
-            ToolTipService.SetHorizontalOffset(btnList, 2d);
-            btnList.Click += (sender, e) => LiteLoaderAll_Click(sender, (RoutedEventArgs)e);
-            sender.Buttons = [btnSave, btnList];
+            // 启动器内安装仍会从可用的 Maven 源下载库文件。
+            sender.Buttons = Array.Empty<MyIconButton>();
         }
-    }
-
-    private static void LiteLoaderAll_Click(object sender, RoutedEventArgs e)
-    {
-        ModDownload.DlLiteLoaderListEntry version;
-        if (((dynamic)sender).Tag is ModDownload.DlLiteLoaderListEntry)
-            version = (ModDownload.DlLiteLoaderListEntry)((dynamic)sender).Tag;
-        else
-            version = (ModDownload.DlLiteLoaderListEntry)((dynamic)sender).Tag.Tag;
-        ModBase.OpenWebsite("https://jenkins.liteloader.com/view/" + version.Inherit);
     }
 
     public static void LiteLoaderSave_Click(object sender, RoutedEventArgs e)
@@ -1626,6 +1592,11 @@ public static class ModDownloadLib
             version = (ModDownload.DlLiteLoaderListEntry)((dynamic)sender).Tag;
         else
             version = (ModDownload.DlLiteLoaderListEntry)((dynamic)sender).Tag.Tag;
+        if (!version.IsLegacy)
+        {
+            HintService.Hint(Lang.Text("Download.Version.LiteLoader.InstallerUnavailable"), HintType.Error);
+            return;
+        }
         McDownloadLiteLoaderSave(version);
     }
 
@@ -1792,7 +1763,7 @@ public static class ModDownloadLib
                                 ForgelikeInjectorLine(e.Data, task);
                             }
                         }
-                        catch (ObjectDisposedException ex)
+                        catch (ObjectDisposedException)
                         {
                         }
                         catch (Exception ex)
@@ -1828,7 +1799,7 @@ public static class ModDownloadLib
                                 ForgelikeInjectorLine(e.Data, task);
                             }
                         }
-                        catch (ObjectDisposedException ex)
+                        catch (ObjectDisposedException)
                         {
                         }
                         catch (Exception ex)
@@ -3767,7 +3738,7 @@ public static class ModDownloadLib
             return true;
         }
 
-        catch (ModBase.CancelledException ex)
+        catch (ModBase.CancelledException)
         {
             return false;
         }

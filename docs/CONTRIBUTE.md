@@ -34,7 +34,7 @@ dotnet build "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" -c Debug
 - 分支：从 `main` 切，PR 提到 `main`
 - **`update.json` 一个字都不用改**，它是 `{"update": "self"}`，所有仓库里内容都一样（第 4 节）
 - **不要改 `metadata.json` 的版本号**，合并后统一发版（第 5 节）
-- 加文案要 zh-CN / zh-TW / en-US / en-GB **四份一起加**
+- 加文案要 zh-CN / zh-TW / en-US **三份一起加**
 - 提 PR 前跑一遍 `dotnet test PCL.Core.Test`，已知的环境性失败在第 9 节
 
 ---
@@ -43,8 +43,8 @@ dotnet build "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" -c Debug
 
 | 远端 | 地址 | 用途 |
 | --- | --- | --- |
-| 上游 | `PCL-Community/PCL-CE` | 我们的代码来源，只读，不要往这里提 |
-| 发布仓 | `askbbtsk/pcl-lite` | **你 fork 的就是它**，PR 提到这里 |
+| 上游 | `PCL-Community/PCL-CE` | 我们的代码来源，只读，不要往这里提。它不是本仓库的 `origin`，需要时自己加一个 remote 取代码 |
+| 发布仓 | `askbbtsk/pcl-lite` | **你 fork 的就是它**，PR 提到这里；本仓库的 `origin` 就指向它 |
 
 - 默认分支叫 `main`。本地开发请开新分支：`git switch -c fix/xxx`
 - 一个 PR 只做一件事。顺手重构 + 改功能 + 调格式混在一起的 PR 很难审，大概率被打回
@@ -182,17 +182,17 @@ public const string GitHubRepo = "pcl-lite";
 
 ```json
 {
-  "version": { "base": "1.6.3", "suffix": "pre", "code": 51 }
+  "version": { "base": "1.7.2", "suffix": "hotfix-2", "code": 79 }
 }
 ```
 
 规则：
 
-- **`base` 必须是三段**（`1.6.3`）。写成两段（`1.6`）会让 `SemVer.Parse` 抛异常，**整个更新检查直接炸**
-- `suffix` 为空 = 正式版；`snapshot` / `pre` / `nightly` 会拼成 `1.6.3-pre` 这样
+- **`base` 必须是三段**（`1.7.2`）。写成两段（`1.7`）会让 `SemVer.Parse` 抛异常，**整个更新检查直接炸**
+- `suffix` 为空 = 正式版；`snapshot` / `pre` / `nightly` / `hotfix-N` 会拼成 `1.7.2-hotfix-2` 这样
 - `code` 每次发版 +1，**不许回退**。客户端用它判断"同版本号的不同构建"
-- 改了 `metadata.json` 还要同步改两个 csproj 的 `AssemblyVersion` / `FileVersion` / `InformationalVersion`，
-  否则文件属性写的是一套、界面显示的是另一套
+- 两个 csproj 的 `AssemblyVersion` / `FileVersion` / `InformationalVersion` 由宏从 `metadata.json`
+  正则取出 `base` / `suffix` 再拼，**不用手改**
 
 **提 PR 时不要动版本号。** 维护者合并后统一发版，你改了会造成后面每次合并都冲突。
 真需要发版看 [BUILD.md](BUILD.md)。
@@ -202,19 +202,22 @@ public const string GitHubRepo = "pcl-lite";
 ## 6. 代码地图
 
 ```
-PCL-CE/
+pcl-lite/
 ├── PCL.Core/                    核心库（无 UI 依赖）
 │   ├── App/                     配置模型、路径、元数据、ProjectLinks（仓库地址常量）
 │   ├── App/Updates/             更新清单解析（纯函数，带单元测试）
 │   ├── App/Lunar/               Lunar 客户端协议（Social / IPC）
 │   ├── IO/Net/                  网络层（DNS、代理、用途白名单）
 │   ├── Minecraft/               启动、下载、档案、认证
+│   ├── Mixin/                   Mixin 运行时（供插件使用）
+│   ├── Plugins/                 插件生命周期与依赖解析
 │   └── UI/Theme/                ★ 配色引擎（见 THEME.md）
 ├── Plain Craft Launcher 2/      WPF 前端
 │   ├── Modules/Updates/         更新检查、下载、替换
-│   ├── Pages/                   各个页面（PageSetup / PageLunar / PageDownload ...）
+│   ├── Pages/                   各个页面（PageSetup / PageLunar / PageDownload / PagePlugins ...）
 │   ├── Controls/                自定义控件（MyListItem / MyTextBox / MyButton ...）
 │   └── metadata.json            ★ 版本号真源
+├── PCL.Plugin.SDK/              插件 SDK（进程内 API、签名与打包）
 ├── PCL.Core.SourceGenerators/   源生成器：配置项、密钥注入
 ├── PCL.Core.Test/               单元测试
 ├── docs/                        文档
@@ -273,13 +276,13 @@ python tools/audit-xaml-events.py
 
 ## 8. 加文案的规矩
 
-语言文件在 `PCL.Core/App/Localization/Languages/*.xaml`，四份：
+语言文件在 `PCL.Core/App/Localization/Languages/*.xaml`，三份：
 
 ```
-zh-CN.xaml  zh-TW.xaml  en-US.xaml  en-GB.xaml
+zh-CN.xaml  zh-TW.xaml  en-US.xaml
 ```
 
-- **四份必须同时加**，缺了会回退到 zh-CN（不是报错，是悄悄显示中文，很难发现）
+- **三份必须同时加**，缺了会回退到 zh-CN（不是报错，是悄悄显示中文，很难发现）
 - 键名要短、要有层级，比如 `Lunar.Social.Placeholder`
 - 简体中文里带 `{` `}` 的要转义
 - code-behind 里的提示文案也要走 `Lang.Text("...")`，不要硬编码中文字符串
@@ -304,7 +307,7 @@ for name, ks in keys.items():
 PY
 ```
 
-四份键数应当完全一致，缺的会回退到 zh-CN。
+三份键数应当完全一致，缺的会回退到 zh-CN。
 
 ---
 

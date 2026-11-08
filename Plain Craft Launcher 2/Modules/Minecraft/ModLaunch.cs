@@ -10,7 +10,6 @@ using PCL.Core.Minecraft;
 using PCL.Core.Minecraft.Launch.Utils;
 using PCL.Core.Utils.OS;
 using PCL.Core.Utils;
-using PCL.Core.Utils.OS;
 using PCL.Core.Utils.Secret;
 using PCL.Network;
 using PCL.Core.Minecraft.IdentityModel;
@@ -19,6 +18,8 @@ using PCL.Core.Minecraft.Profile.Authentication;
 using PCL.Core.Minecraft.Profile.Models;
 using System.Globalization;
 using PCL.Core.Logging;
+using PCL.Core.Plugins;
+using PCL.Plugin.SDK;
 
 namespace PCL;
 
@@ -150,6 +151,12 @@ public static class ModLaunch
         /// </summary>
         public List<string> ExtraArgs = new();
 
+        /// <summary>Additional JVM arguments inserted after the generated JVM arguments.</summary>
+        public List<string> AdditionalJvmArguments = new();
+
+        /// <summary>Additional environment variables supplied by an authorized integration.</summary>
+        public Dictionary<string, string> Environment = new(StringComparer.Ordinal);
+
         /// <summary>
         ///     强行指定启动的 MC 实例。
         ///     默认值：Nothing。使用 McInstanceCurrent。
@@ -221,6 +228,9 @@ public static class ModLaunch
         }
 
         ModMain.frmMain.AprilGiveup();
+        var launchEventInstance = currentLaunchOptions.instance ?? ModInstanceList.McMcInstanceSelected;
+        if (launchEventInstance is not null)
+            PluginRuntimeManager.Notify(new PluginGameLaunchingEvent(launchEventInstance.PathInstance, launchEventInstance.Name));
         // 禁止进入实例选择页面（否则就可以在启动中切换 McInstanceCurrent 了）
         ModMain.frmMain.pageStack =
             ModMain.frmMain.pageStack.Where(p => p.page != FormMain.PageType.InstanceSelect).ToList();
@@ -442,6 +452,8 @@ public static class ModLaunch
         {
             return obj is not null && obj.GetHashCode() == GetHashCode();
         }
+
+        public override int GetHashCode() => LoginType.GetHashCode();
     }
 
     #region 第三方验证类型
@@ -1399,6 +1411,9 @@ public static class ModLaunch
             McLaunchLog("旧版 JVM 参数获取成功：");
             McLaunchLog(arguments);
         }
+
+        foreach (var arg in currentLaunchOptions.AdditionalJvmArguments)
+            arguments += " " + arg.Trim();
 
         if (!string.IsNullOrEmpty(
                 (string)ModInstanceList.McMcInstanceSelected.JsonObject["minecraftArguments"])) // 有的实例 JSON 中是空字符串
@@ -2553,6 +2568,9 @@ public static class ModLaunch
         paths.Add(ModBase.ShortenPath(mcLaunchJavaSelected.Installation.JavaFolder));
         startInfo.EnvironmentVariables["Path"] = paths.Distinct().ToList().Join(";");
         startInfo.EnvironmentVariables["appdata"] = ModBase.ShortenPath(ModFolder.mcFolderSelected);
+        if (currentLaunchOptions?.Environment is not null)
+            foreach (var pair in currentLaunchOptions.Environment)
+                if (!string.IsNullOrWhiteSpace(pair.Key)) startInfo.EnvironmentVariables[pair.Key] = pair.Value ?? "";
 
         // 设置其他参数
         startInfo.WorkingDirectory = ModBase.ShortenPath(ModInstanceList.McMcInstanceSelected.PathIndie);
@@ -2563,8 +2581,23 @@ public static class ModLaunch
         startInfo.Arguments = mcLaunchArgument;
         gameProcess.StartInfo = startInfo;
 
+        var startedInstance = currentLaunchOptions?.instance ?? ModInstanceList.McMcInstanceSelected;
+        var startedId = startedInstance?.PathInstance;
+        var startedName = startedInstance?.Name;
+        if (startedId is not null && startedName is not null)
+        {
+            gameProcess.EnableRaisingEvents = true;
+            gameProcess.Exited += (_, _) =>
+            {
+                try { PluginRuntimeManager.Notify(new PluginGameExitedEvent(startedId, startedName, gameProcess.ExitCode)); }
+                catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", "发布游戏退出事件失败"); }
+            };
+        }
+
         // 开始进程
         gameProcess.Start();
+        if (startedId is not null && startedName is not null)
+            PluginRuntimeManager.Notify(new PluginGameStartedEvent(startedId, startedName, gameProcess.Id));
         McLaunchLog("已启动游戏进程：" + startInfo.FileName);
         if (loader.IsAborted)
         {

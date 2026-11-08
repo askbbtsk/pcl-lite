@@ -15,7 +15,7 @@ public partial class PageSetupAbout
     // 彩蛋
     private int clickCount;
 
-    private new bool isLoaded;
+    private bool isLoaded;
 
     public PageSetupAbout()
     {

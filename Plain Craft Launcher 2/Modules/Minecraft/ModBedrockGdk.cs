@@ -41,11 +41,12 @@ public static class ModBedrockGdk
         try
         {
             var sawAny = false;
+            Span<byte> head = stackalloc byte[2];
             foreach (var dll in Directory.EnumerateFiles(directory, "*.dll"))
             {
                 sawAny = true;
                 using var stream = File.OpenRead(dll);
-                Span<byte> head = stackalloc byte[2];
+                head.Clear();
                 if (stream.Read(head) == 2 && head[0] == (byte)'M' && head[1] == (byte)'Z') return true;
             }
 
@@ -132,6 +133,7 @@ public static class ModBedrockGdk
             return 0;
         }
 
+        Span<byte> head = stackalloc byte[2];
         foreach (var path in files)
         {
             var ext = Path.GetExtension(path);
@@ -142,7 +144,7 @@ public static class ModBedrockGdk
             try
             {
                 using var stream = File.OpenRead(path);
-                Span<byte> head = stackalloc byte[2];
+                head.Clear();
                 if (stream.Read(head) < 2 || head[0] != (byte)'M' || head[1] != (byte)'Z') broken++;
             }
             catch (Exception)

@@ -96,7 +96,6 @@ public static class McVersionComparer
             i += 1;
         }
 
-        return 0;
     }
 
     /// <summary>
@@ -104,9 +103,9 @@ public static class McVersionComparer
     /// </summary>
     public class VersionComparer : IComparer<string>
     {
-        public int Compare(string x, string y)
+        public int Compare(string? x, string? y)
         {
-            return CompareVersion(x, y);
+            return CompareVersion(x ?? string.Empty, y ?? string.Empty);
         }
     }
 }

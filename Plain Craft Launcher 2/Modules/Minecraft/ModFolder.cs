@@ -50,6 +50,8 @@ public static class ModFolder
                    type == folder.type;
         }
 
+        public override int GetHashCode() => HashCode.Combine(Name ?? "", Location ?? "", type);
+
         public override string ToString()
         {
             return Location;

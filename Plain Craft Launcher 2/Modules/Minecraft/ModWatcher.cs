@@ -666,7 +666,7 @@ public static class ModWatcher
                     if (processId != gameProcess.Id)
                         return true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return true;
                 }

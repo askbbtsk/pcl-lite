@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "pcl.sample",
+  "name": "PCL Plugin Sample",
+  "version": "1.0.0",
+  "author": "PCL Lite SDK",
+  "description": "Demonstrates the PCL Lite plugin SDK.",
+  "apiVersion": 1,
+  "entryAssembly": "PCL.Plugin.Sample.dll",
+  "entryType": "PCL.Plugin.Sample.Plugin"
+}

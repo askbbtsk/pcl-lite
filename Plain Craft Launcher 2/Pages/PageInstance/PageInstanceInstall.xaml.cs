@@ -2014,7 +2014,6 @@ public partial class PageInstanceInstall
                 i += 1;
             }
 
-            return true;
         }
         catch (Exception ex)
         {

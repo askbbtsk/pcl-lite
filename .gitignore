@@ -183,6 +183,10 @@ publish-1.7.0-snapshot/
 publish-upstream/
 publish-test/
 
+# TestAll plugin binaries/packages are locally built smoke-test artifacts.
+PCL.Plugin.TestAll/staging/*.dll
+PCL.Plugin.TestAll/dist/*.pclplugin
+
 # Publish Web Output
 *.[Pp]ublish.xml
 *.azurePubxml

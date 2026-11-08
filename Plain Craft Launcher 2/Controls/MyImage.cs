@@ -179,7 +179,7 @@ public class MyImage : Image
         set => SetValue(EnableCacheProperty, value);
     }
 
-    public new static readonly DependencyProperty EnableCacheProperty =
+    public static readonly DependencyProperty EnableCacheProperty =
         DependencyProperty.Register("EnableCache", typeof(bool), typeof(MyImage), new PropertyMetadata(true));
 
     /// <summary>

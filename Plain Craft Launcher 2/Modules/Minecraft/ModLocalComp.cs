@@ -761,7 +761,7 @@ public static class ModLocalComp
         /// <summary>
         ///     原版结构文件的游戏版本。
         /// </summary>
-        public string StructureGameVersion
+        public string? StructureGameVersion
         {
             get
             {
@@ -770,7 +770,7 @@ public static class ModLocalComp
             }
         }
 
-        private string _structureGameVersion;
+        private string? _structureGameVersion = null;
 
         /// <summary>
         ///     原版结构文件的数据版本。
@@ -1130,27 +1130,6 @@ public static class ModLocalComp
 
         private Exception _FileUnavailableReason;
 
-        // 2. 进行 .class 以外的信息获取
-        // 成功：标记 IsInfoWithoutClassAvailable。
-        // 失败：什么也不干。如果需要补充信息的话，检测到 IsInfoWithoutClassAvailable 为 False，会自动继续加载。
-        /// <summary>
-        ///     是否已在不获取 .class 文件的前提下完成了所需信息的加载。
-        /// </summary>
-        private bool isInfoWithoutClassAvailable = false;
-
-        // 3. 尝试从 .class 文件中获取信息
-        // 成功：标记 IsInfoWithClassAvailable。
-        // 失败：什么也不干。
-        /// <summary>
-        ///     是否已进行 .class 文件的信息获取。
-        /// </summary>
-        private bool isInfoWithClassLoaded;
-
-        /// <summary>
-        ///     是否已在 .class 文件中完成了所需信息的加载。
-        /// </summary>
-        private bool isInfoWithClassAvailable;
-
         #endregion
 
         #region 加载
@@ -1182,8 +1161,6 @@ public static class ModLocalComp
             DetectedLoader = null;
             isLoaded = false;
             _FileUnavailableReason = null;
-            isInfoWithClassLoaded = false;
-            isInfoWithClassAvailable = false;
         }
 
         /// <summary>
@@ -2136,7 +2113,7 @@ public static class ModLocalComp
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     ModBase.Log("获取 META-INF 中的版本信息失败（" + path + "）", ModBase.LogLevel.Developer);
                     Version = null;
@@ -2288,6 +2265,8 @@ public static class ModLocalComp
             var target = obj as LocalCompFile;
             return target is not null && (path ?? "") == (target.path ?? "");
         }
+
+        public override int GetHashCode() => (path ?? "").GetHashCode(StringComparison.Ordinal);
 
         #endregion
     }

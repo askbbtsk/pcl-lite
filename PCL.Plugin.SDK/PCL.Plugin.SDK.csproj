@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>14.0</LangVersion>
+    <AssemblyName>PCL.Plugin.SDK</AssemblyName>
+    <RootNamespace>PCL.Plugin.SDK</RootNamespace>
+    <Configurations>Debug;CI;Release;Beta</Configurations>
+    <Platforms>AnyCPU;x64;ARM64</Platforms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+</Project>

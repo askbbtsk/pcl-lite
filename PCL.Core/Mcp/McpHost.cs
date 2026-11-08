@@ -178,7 +178,8 @@ public sealed class McpHost : HttpServer
             while (read < buffer.Length && (chunk = await reader.ReadAsync(buffer, read, buffer.Length - read)) > 0)
                 read += chunk;
 
-            if (read >= buffer.Length && !reader.EndOfStream)
+            var overflowBuffer = new char[1];
+            if (read == buffer.Length && await reader.ReadAsync(overflowBuffer, 0, 1) > 0)
                 return Json(
                     new Dictionary<string, object?>
                     {

@@ -127,11 +127,11 @@ private const string TokenEndpoint  = "https://login.microsoftonline.com/consume
 
 ## 5. 把 Client ID 填进项目
 
-本项目有三种注入方式，按场景选。
+本项目有三种注入方式，按场景选。Release 发布包只接受编译期注入；运行时环境变量回退仅用于 Debug 开发构建。
 
-### 方式 A：环境变量（推荐，不用重新编译）
+### 方式 A：环境变量（仅 Debug 开发构建）
 
-项目特意允许 **Release 版也读运行时环境变量**，所以改完直接重启启动器就生效。
+Release 版不读取运行时环境变量，避免用户机器上的环境变量覆盖发布包身份。开发调试时可设置环境变量，改完直接重启启动器就生效。
 
 ```bat
 :: 当前用户永久生效
@@ -158,8 +158,8 @@ set PCL_MS_CLIENT_ID=你的-client-id
 dotnet build "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" -c Release
 ```
 
-`PCL.Core.SourceGenerators/EnvironmentInteropGenerator.cs` 会把所有 `PCL_*` 变量
-（去掉 `PCL_` 前缀）生成进 `SecretDictionary`，编进 dll 里。
+`PCL.Core.SourceGenerators/EnvironmentInteropGenerator.cs` 会把允许注入的公开值
+（微软 OAuth Client ID 和构建提交 SHA）生成进 `SecretDictionary`，编进 dll 里；服务器密钥和 API Key 不会被写入客户端。
 
 > ⚠️ 这样 client_id 会以明文躺在你的二进制里。client_id 本身不是秘密（它会在授权 URL 里公开出现），
 > 但别把 `PCL_WRITE_SECRET` 那一套用在你不想公开的东西上 —— 同一机制也会打包其他密钥。
@@ -180,7 +180,7 @@ var provider = new MicrosoftProvider("你的-client-id");
 new MicrosoftProvider("xxx")     ← 最高
   ↓ 没传
 编译期 SecretDictionary（PCL_WRITE_SECRET）
-  ↓ 没有
+  ↓ 没有（仅 Debug）
 运行时环境变量 PCL_MS_CLIENT_ID
   ↓ 没有
 抛 InvalidOperationException: "Microsoft OAuth client id is not configured."

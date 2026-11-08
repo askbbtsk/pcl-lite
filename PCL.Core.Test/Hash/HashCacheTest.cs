@@ -325,7 +325,11 @@ public class HashCacheTest
         Assert.AreEqual(file.SHA256, hash1);
 
         var modifiedFile = await CreateRandomFile(_tempDir, 512).ConfigureAwait(false);
+        // The cache invalidates on length + LastWriteTimeUtc. Force a distinct timestamp so
+        // this test is independent of the filesystem's timestamp resolution.
+        var newTimestamp = File.GetLastWriteTimeUtc(file.FilePath).AddSeconds(2);
         File.Copy(modifiedFile.FilePath, file.FilePath, true);
+        File.SetLastWriteTimeUtc(file.FilePath, newTimestamp);
 
         var tasks = new Task<string>[10];
         for (var i = 0; i < tasks.Length; i++)

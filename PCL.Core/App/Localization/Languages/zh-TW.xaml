@@ -748,6 +748,7 @@
     <sys:String x:Key="Download.Version.ReleaseDate">發布於 {0}</sys:String>
     <sys:String x:Key="Download.Version.SaveAs">另存新檔</sys:String>
     <sys:String x:Key="Download.Version.SaveInstaller">儲存安裝器</sys:String>
+    <sys:String x:Key="Download.Version.LiteLoader.InstallerUnavailable">目前 LiteLoader 版本的獨立安裝器下載來源無法使用，請改用啟動器內安裝。</sys:String>
     <sys:String x:Key="Download.Version.SelectSaveLocation">選擇儲存位置</sys:String>
     <sys:String x:Key="Download.Version.VersionList">版本清單</sys:String>
     <sys:String x:Key="Download.Version.VersionListCount">版本清單（{0}）</sys:String>
@@ -1660,11 +1661,6 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Welcome.Network.Manage">管理網路白名單</sys:String>
     <sys:String x:Key="Welcome.Network.Status.All">已授權全部連線（{0} 項網路用途）</sys:String>
     <sys:String x:Key="Welcome.Network.Status.Partial">已授權 {0} / {1} 個網路用途</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Title">隱私與離線</sys:String>
-    <sys:String x:Key="Welcome.Privacy.OpenDownload">開啟下載</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Mode.On">已開啟</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Mode.Off">未開啟</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Status">隱私模式：{0}　·　遙測：已移除</sys:String>
     <sys:String x:Key="Welcome.Recent.Title">上次遊玩</sys:String>
     <sys:String x:Key="Welcome.Recent.Empty">還沒有選過實例，去「啟動」頁挑一個吧。</sys:String>
     <sys:String x:Key="Welcome.Recent.Launch">啟動遊戲</sys:String>
@@ -1861,10 +1857,13 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Main.SpecialVersion.OpenDownloadPageAndExit">開啟最新版下載頁並退出</sys:String>
     <sys:String x:Key="Main.SpecialVersion.Title">特殊版本提示</sys:String>
     <sys:String x:Key="Main.Tab.Bedrock">基岩版</sys:String>
+    <sys:String x:Key="Main.Tab.Plugins">外掛市集</sys:String>
     <sys:String x:Key="Main.Tab.Download">下載</sys:String>
     <sys:String x:Key="Main.Tab.Launch">啟動</sys:String>
     <sys:String x:Key="Main.Tab.Settings">設定</sys:String>
     <sys:String x:Key="Main.Tab.Tools">工具</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowShow">展開更多導覽</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowHide">收起更多導覽</sys:String>
     <sys:String x:Key="Main.Title.GameLog">即時日誌</sys:String>
     <sys:String x:Key="Main.Title.InstanceSelect">實例選擇</sys:String>
     <sys:String x:Key="Main.Title.InstanceSetup">實例設定 - {0}</sys:String>
@@ -2816,6 +2815,99 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Setup.Left.Item.Misc">雜項</sys:String>
     <sys:String x:Key="Setup.Left.Item.Ui">個人化</sys:String>
     <sys:String x:Key="Setup.Left.Item.Update">軟體更新</sys:String>
+    <sys:String x:Key="Plugin.Left.Category">外掛</sys:String>
+    <sys:String x:Key="Plugin.Left.Market">外掛市集</sys:String>
+    <sys:String x:Key="Plugin.Left.Installed">已安裝</sys:String>
+    <sys:String x:Key="Plugin.Market.Title">外掛市集</sys:String>
+    <sys:String x:Key="Plugin.Market.Description">外掛由第三方作者提供。自簽名用於檢查套件內容是否遭到竄改，不代表作者身分或安全性。</sys:String>
+    <sys:String x:Key="Plugin.Market.Refresh">重新整理市集</sys:String>
+    <sys:String x:Key="Plugin.Market.Install">安裝</sys:String>
+    <sys:String x:Key="Plugin.Market.Update">更新</sys:String>
+    <sys:String x:Key="Plugin.Market.Current">已是最新版本</sys:String>
+    <sys:String x:Key="Plugin.Market.Downgrade">降級…</sys:String>
+    <sys:String x:Key="Plugin.Market.PendingRestart">待重新啟動生效</sys:String>
+    <sys:String x:Key="Plugin.Market.Empty">目前沒有可用的外掛。</sys:String>
+    <sys:String x:Key="Plugin.Market.LoadFailed">無法載入外掛市集：{0}</sys:String>
+    <sys:String x:Key="Plugin.Install.Local">從本機檔案安裝</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedTitle">外掛未簽名</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedMessage">簽名人：無
+簽名時間：無
+
+此外掛沒有簽名，啟動器無法驗證它是否遭到修改。外掛會以目前使用者權限執行。
+{0}
+{1}
+仍要安裝嗎？</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedConfirm">仍要安裝</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedTitle">外掛簽名人已變更</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChanged">此版本的簽名憑證與已安裝版本不同。
+舊憑證指紋：{0}
+新版本憑證指紋/狀態：{1}
+這可能是金鑰輪替，也可能是供應鏈風險；請先核對可信發布來源。</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedConfirm">仍要更新</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedSigner">無（新版本未簽名）</sys:String>
+    <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">相容性警告：{0} 安裝後仍會保存，但此啟動器版本不會載入它。請使用宣告相容的啟動器版本。</sys:String>
+    <sys:String x:Key="Plugin.Install.SourceChanged">安裝來源已變更：{0}（{1}）→ {2}（{3}）。請確認新來源可信。</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSource">未知來源</sys:String>
+    <sys:String x:Key="Plugin.Install.DowngradeWarning">這是降級：目前版本 {0}，目標版本 {1}。舊版可能包含已修正的問題。</sys:String>
+    <sys:String x:Key="Plugin.Install.PackageChanged">相同版本的外掛套件內容與上次安裝不同，請核對簽名者與發布來源。</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownHash">未知</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Market">外掛市集</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Local">本機檔案</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Unknown">來源未知（舊安裝記錄）</sys:String>
+    <sys:String x:Key="Plugin.Installed.Provenance">來源：{0}　安裝時間：{1}　套件 SHA-256：{2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.SigningInfo">簽名人：{0}　憑證指紋：{1}　簽名時間：{2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignature">未簽名</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignatureTime">不適用</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatures">實驗功能（預設關閉）</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatureError">此功能上次載入失敗，已自動關閉：{0}</sys:String>
+    <sys:String x:Key="Plugin.Install.SignedTitle">確認安裝外掛</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerInfo">簽名人：{0}
+憑證指紋：{1}
+簽名時間（本機顯示）：{2}
+
+此時間由簽名方寫入並受簽名保護，不是可信時間戳；自簽名不代表真實身分或外掛安全性。
+{3}
+{4}
+仍要安裝嗎？</sys:String>
+    <sys:String x:Key="Plugin.Install.PluginInfo">外掛：{0}
+版本：{1}
+作者：{2}
+ID：{3}</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubVerified">GitHub Release：{0} / {1}
+Release 發布時間：{2}
+目前資產 SHA-256：{3}（相符）
+{4}
+這只能佐證目前資產與 Release 紀錄一致；不驗證作者身分，也不提供可信簽署時間戳。</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubNoSignatureTime">外掛未簽名，沒有簽署時間可供比較。</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubTimeConflict">簽署者聲稱的簽署時間晚於 Release 發布時間。Release 時間不是資產上傳或簽署時間，不能據此判定簽章無效。</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubTimeConsistent">簽署者聲稱的時間不晚於 Release 發布時間；自述時間仍無法證明簽署時點。</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubNotVerified">GitHub 來源：未驗證（未提供 GitHub Release 資產直連）。</sys:String>
+    <sys:String x:Key="Plugin.Install.Confirm">安裝</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSigner">未知</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownTime">未知</sys:String>
+    <sys:String x:Key="Plugin.Install.Cancel">取消</sys:String>
+    <sys:String x:Key="Plugin.Install.SignedNote">簽名驗證通過：只代表套件內容與簽名一致，不代表作者身分或外掛安全性。</sys:String>
+    <sys:String x:Key="Plugin.Install.MixinWarning">此插件包含 {0} 個編譯 Mixin，會在主視窗建立前修改啟動器方法。插件與啟動器具有相同使用者權限；簽章不提供沙箱隔離，也不驗證作者身分。</sys:String>
+    <sys:String x:Key="Plugin.Install.Done">外掛已安裝；重新啟動啟動器後生效。</sys:String>
+    <sys:String x:Key="Plugin.Install.Working">正在驗證並安裝外掛…</sys:String>
+    <sys:String x:Key="Plugin.Install.Failed">外掛安裝失敗：{0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.Title">已安裝的外掛</sys:String>
+    <sys:String x:Key="Plugin.Installed.Empty">尚未安裝外掛。</sys:String>
+    <sys:String x:Key="Plugin.Installed.Enable">啟用</sys:String>
+    <sys:String x:Key="Plugin.Installed.Disable">停用</sys:String>
+    <sys:String x:Key="Plugin.Installed.Uninstall">解除安裝</sys:String>
+    <sys:String x:Key="Plugin.Installed.Running">執行中</sys:String>
+    <sys:String x:Key="Plugin.Installed.Disabled">已停用</sys:String>
+    <sys:String x:Key="Plugin.Installed.Error">啟動失敗：{0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.Restart">設定已儲存；重新啟動啟動器後生效。</sys:String>
+    <sys:String x:Key="Plugin.Restart.Title">外掛變更需要重新啟動</sys:String>
+    <sys:String x:Key="Plugin.Restart.Now">立即重新啟動</sys:String>
+    <sys:String x:Key="Plugin.Restart.Later">稍後重新啟動</sys:String>
+    <sys:String x:Key="Plugin.Restart.Failed">無法自動重新啟動啟動器：{0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.UninstallConfirm">要解除安裝外掛「{0}」嗎？重新啟動後完成解除安裝。</sys:String>
+    <sys:String x:Key="Plugin.Installed.Pages">外掛功能頁</sys:String>
+    <sys:String x:Key="Plugin.Common.NoManager">外掛管理器尚未就緒，請稍後再試。</sys:String>
+    <sys:String x:Key="Plugin.Common.ButtonFailed">外掛按鈕「{0}」執行失敗：{1}</sys:String>
 
     <!-- Setup.Log -->
 
@@ -2994,6 +3086,8 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">介面上的使用者資料夾名打碼</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">把介面上路徑裡 C:\Users\ 後面那一段統一顯示成 *****，截圖發出去不會帶出 Windows 使用者名稱。只影響顯示，不會改動任何資料夾或檔案。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">基礎</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">標題列頁面折疊</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">標題列空間不足時，優先折疊選取的頁面；空間足夠時顯示所有頁面。勾選此處的頁面會優先收進標題列右側的展開區域。</sys:String>
 
     <!-- Setup.Ui.FeatureHide -->
 
@@ -3491,6 +3585,10 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Update.Error.FileNotFound">找不到更新檔案</sys:String>
     <sys:String x:Key="Update.Error.OperationFailed">更新操作失敗。請檢視錯誤詳情。</sys:String>
     <sys:String x:Key="Update.Error.Sha256Mismatch">更新檔案 SHA256 不正確，應該為 {0}，實際為 {1}</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Title">更新憑證驗證失敗</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Message">{0}&#xA;&#xA;建議選擇「不更新」，除非你已確認發佈來源可信。</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Cancel">不更新</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Continue">仍然更新</sys:String>
     <sys:String x:Key="Update.Error.UnableToGetUpdate">無法取得更新</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlocked">更新失敗</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlockedMessage">由於被 Windows 安全中心攔截，或存在權限問題，導致 PCL CE 無法更新。&#xA;請將 PCL CE 所在資料夾加入白名單，或手動用 {0}PCL\Plain Craft Launcher Community Edition.exe 取代目前檔案！</sys:String>
@@ -3501,6 +3599,7 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
 
     <sys:String x:Key="Update.Task.ApplyFile">應用檔案</sys:String>
     <sys:String x:Key="Update.Task.Check">校驗更新</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Task">驗證發佈憑證</sys:String>
     <sys:String x:Key="Update.Task.DownloadFile">下載檔案</sys:String>
     <sys:String x:Key="Update.Task.DownloadLatestStable">下載最新穩定版</sys:String>
     <sys:String x:Key="Update.Task.DownloadUpdateFile">下載更新檔案</sys:String>

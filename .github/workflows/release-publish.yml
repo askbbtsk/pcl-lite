@@ -50,13 +50,53 @@ jobs:
         with:
           tool: git-cliff
 
+      - name: Verify metadata version
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          metadata="Plain Craft Launcher 2/metadata.json"
+          if [[ ! -f "$metadata" ]]; then
+            echo "Missing $metadata" >&2
+            exit 1
+          fi
+          # metadata.json 带 UTF-8 BOM，jq 会因此报 Invalid numeric literal，先剥掉
+          sed '1s/^\xEF\xBB\xBF//' "$metadata" > /tmp/metadata.json
+          base=$(jq -er '.version.base' /tmp/metadata.json)
+          suffix=$(jq -r '.version.suffix // ""' /tmp/metadata.json)
+          code=$(jq -er '.version.code' /tmp/metadata.json)
+          if [[ -n "$suffix" && "$suffix" != "null" ]]; then
+            declared="${base}-${suffix}"
+          else
+            declared="$base"
+          fi
+          if [[ "$declared" != "$RELEASE_VERSION" ]]; then
+            echo "metadata.json 声明的是 '${declared}'，但请求发布的是 '${RELEASE_VERSION}'。" >&2
+            echo "请先修改 Plain Craft Launcher 2/metadata.json 的 version.base / version.suffix 再发版。" >&2
+            exit 1
+          fi
+          echo "metadata.json 与发布版本一致：${declared}（code ${code}）"
+
       - name: Create local release tag
-        run: git tag -f "v${{ inputs.version }}"
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version" >&2
+            exit 1
+          fi
+          git tag -f "v$RELEASE_VERSION"
 
       - name: Generate changelog
-        run: git-cliff --latest -o CHANGELOG.md
+        run: |
+          notes_file="release/notes-${RELEASE_VERSION}.md"
+          if [[ -f "$notes_file" ]]; then
+            cp "$notes_file" CHANGELOG.md
+          else
+            git-cliff --latest -o CHANGELOG.md
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
 
       - name: Create or update release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
@@ -90,18 +130,31 @@ jobs:
           name: PCL2_CE_${{ matrix.configuration }}_${{ matrix.architecture }}
           path: ./artifact
 
-      - name: Rename binaries
+      - name: Require the protected release branch
+        env:
+          RELEASE_REF: ${{ github.ref }}
         run: |
-          mv "./artifact/Plain Craft Launcher 2.exe" "PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe"
+          if [[ "$RELEASE_REF" != "refs/heads/main" ]]; then
+            echo "Releases must be dispatched from refs/heads/main" >&2
+            exit 1
+          fi
+
+      - name: Rename binaries
+        env:
+          RELEASE_CONFIGURATION: ${{ matrix.configuration }}
+          RELEASE_ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          if [[ "$RELEASE_CONFIGURATION" != "Release" && "$RELEASE_CONFIGURATION" != "Beta" ]]; then exit 1; fi
+          if [[ "$RELEASE_ARCHITECTURE" != "x64" && "$RELEASE_ARCHITECTURE" != "ARM64" ]]; then exit 1; fi
+          mv "./artifact/Plain Craft Launcher 2.exe" "PCL-Lite_${RELEASE_CONFIGURATION}_${RELEASE_ARCHITECTURE}.exe"
 
       - name: Sign the binary
         uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
         with:
           inputs: PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe
           verify: true
-          # 这里原本写死成上游 PCL-Community/PCL-CE。fork 之后签名证书的颁发对象变成了本仓库，
-          # 写死会导致校验失败、整个 job 直接挂掉，所以改成跟着当前仓库和分支走。
-          verify-cert-identity: https://github.com/${{ github.repository }}/.github/workflows/release-publish.yml@${{ github.ref }}
+          # Must match UpdateSignatureVerifier.ExpectedWorkflowIdentity exactly.
+          verify-cert-identity: https://github.com/askbbtsk/pcl-lite/.github/workflows/release-publish.yml@refs/heads/main
           verify-oidc-issuer: https://token.actions.githubusercontent.com
 
       - name: Upload binary and signature to Release

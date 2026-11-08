@@ -34,7 +34,7 @@ public static class ModModpack
             {
                 ModpackInstall(file);
             }
-            catch (ModBase.CancelledException ex)
+            catch (ModBase.CancelledException)
             {
             }
             catch (Exception ex)

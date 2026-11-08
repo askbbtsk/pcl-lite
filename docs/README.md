@@ -13,7 +13,9 @@
 | [BUILD.md](BUILD.md) | 怎么编译、密钥怎么注入、怎么签名、怎么发 Release | 想自己构建一个能用的版本 |
 | [AZURE-LOGIN.md](AZURE-LOGIN.md) | 从零注册 Azure 应用，拿到自己的 `client_id` 走微软正版登录 | 想让正版登录用自己的应用 |
 | [MCP.md](MCP.md) | 内置 MCP 服务，让 AI 客户端直接操作启动器 | 想接 Claude / Cursor / Cherry Studio |
+| [LUNAR.md](LUNAR.md) | Lunar Client 启动链路：不启动 Lunar 启动器直接拉起游戏的完整事实、认证与账号文件 | 想排查 Lunar 启动失败、想改 Lunar 相关逻辑 |
 | [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md) | 主页语言 API：同一份主页内容按语言展示不同内容，兼容原版主页协议 | 想写多语言主页、想给页面加语言分支 |
+| [../plugin_docs.md](../plugin_docs.md) | 插件 SDK、API、签名、Mixin 与测试指南 | 开发或排查插件 |
 | [UPDATE.md](UPDATE.md) | 更新清单 `update.json`：为什么要有它、格式、发版时怎么改、换仓库怎么不翻车 | 要发版、要换仓库、更新检查出问题 |
 | [MIRROR.md](MIRROR.md) | 镜像仓库指南：怎么复制仓库、怎么搬 Release、怎么被列进更新清单、身份校验规则 | 想给更新链路做备份源、想当镜像 |
 | [CREDITS.md](CREDITS.md) | 开源项目清单：代码来源、第三方库、资源与各自的许可证 | 想知道哪段代码是谁的、想加新依赖 |
@@ -21,15 +23,22 @@
 ## 项目速览
 
 ```
-PCL-CE/
+pcl-lite/
 ├── PCL.Core/                     核心库（无 UI 依赖的部分：配置、网络、认证、主题算法）
 │   ├── App/                      配置模型、路径、元数据
 │   ├── IO/Net/                   网络层（DNS、代理、用途白名单）
 │   ├── Link/                     联机、第三方账号
 │   ├── Minecraft/                启动、下载、档案、认证
+│   ├── Mixin/                    Mixin 运行时（供插件使用）
+│   ├── Plugins/                  插件生命周期与依赖解析
 │   └── UI/Theme/                 ★ 配色引擎（见 THEME.md）
 ├── Plain Craft Launcher 2/       WPF 前端（页面、控件、语言文件、metadata.json）
+│   ├── Modules/Updates/          更新检查、下载、替换
+│   └── Pages/PagePlugins/        插件市场与已安装插件页
+├── PCL.Plugin.SDK/               插件 SDK（进程内 API、签名与打包）
 ├── PCL.Core.SourceGenerators/    源生成器：配置项、密钥注入
+├── PCL.Core.Test/                单元测试
+├── tools/                        验证脚本（verify-channels.py 等）
 └── docs/                         就是这里
 ```
 
@@ -37,23 +46,25 @@ PCL-CE/
 
 ## 版本号在哪
 
-三个地方，改版本必须一起改，否则界面显示和文件属性会对不上：
+改版本号只需要动一处：
 
 1. `Plain Craft Launcher 2/metadata.json` → `version.{base,suffix,code}`
-   **界面显示的是这个**，不是 csproj。`suffix` 为空表示正式版，非空会拼成 `1.1.0-beta` 这样。
-2. `Plain Craft Launcher 2/Plain Craft Launcher 2.csproj` → `AssemblyVersion` / `FileVersion` / `InformationalVersion`
-3. `PCL.Core/PCL.Core.csproj` → `AssemblyVersion` / `FileVersion`
+   **界面显示的是这个**，不是 csproj。`suffix` 为空表示正式版，非空会拼成 `1.7.2-hotfix-2` 这样。
+
+两个 csproj（`Plain Craft Launcher 2/Plain Craft Launcher 2.csproj`、`PCL.Core/PCL.Core.csproj`）
+不写死版本号，而是用宏从 `metadata.json` 里正则取出 `base` 与 `suffix` 再拼成
+`AssemblyVersion` / `FileVersion` / `InformationalVersion`，所以**不用手改**。
 
 > 踩过的坑：1.0.0 那次只改了 csproj，`metadata.json` 还是 `0.1.0` + `beta`，
-> 结果文件属性写着 1.0.0、界面显示 `0.1.0-beta`。
+> 结果文件属性写着 1.0.0、界面显示 `0.1.0-beta`。现在版本号只有一个真源，别再往 csproj 里写死数字。
 
 ## 几个容易找错的地方
 
 - **主题算法**在 `PCL.Core/UI/Theme/`，不在前端目录。前端只负责把资源应用上去。
 - **密钥**（OAuth client_id 等）不在源码里，编译期由 `PCL.Core.SourceGenerators` 从环境变量注入。
   所以仓库里搜不到任何 client_id，这是设计如此，不是漏了。
-- **语言文件**在 `PCL.Core/App/Localization/Languages/*.xaml`，四种语言：zh-CN / zh-TW / en-US / en-GB。
-  加文案要四个一起加，缺了会回退到 zh-CN。
+- **语言文件**在 `PCL.Core/App/Localization/Languages/*.xaml`，三种语言：zh-CN / zh-TW / en-US（English）。
+  加文案要三个一起加，缺了会回退到 zh-CN。
 - **主页语言分支**不走语言文件，而是 `lang:` 标签 + 语言信封，见
   [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md)。想让主页按语言显示不同内容时用那套，不要往语言文件里塞整段 XAML。
 - **历史代码**在 `Plain Craft Launcher 2/` 与 `PCL.Core/` 里混合，改之前先用 `git log` 看这行是谁写的、

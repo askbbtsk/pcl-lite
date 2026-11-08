@@ -36,7 +36,6 @@ public partial class MyRadioBox : IMyRadio
             if (sender is not null) ((MyRadioBox)sender).LabText.Text = (string)e.NewValue;
         }));
 
-    private bool allowMouseDown = true;
 
     // 点击事件
 

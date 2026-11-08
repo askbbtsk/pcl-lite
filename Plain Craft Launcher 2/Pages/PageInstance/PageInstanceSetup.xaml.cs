@@ -18,7 +18,7 @@ namespace PCL;
 
 public partial class PageInstanceSetup
 {
-    private new bool isLoaded;
+    private bool isLoaded;
 
     public PageInstanceSetup()
     {     

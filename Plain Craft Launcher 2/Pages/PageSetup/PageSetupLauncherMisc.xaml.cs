@@ -20,9 +20,7 @@ namespace PCL;
 
 public partial class PageSetupLauncherMisc
 {
-    private bool isFirstLoad = true;
-
-    private new bool isLoaded;
+    private bool isLoaded;
 
     public PageSetupLauncherMisc()
     {

@@ -146,7 +146,12 @@ public sealed class TcpForwardWorker : IDisposable
 
             // 等待任意一个方向的数据转发完成
             await Task.WhenAny(forwardTask1, forwardTask2).ConfigureAwait(false);
+            // CancelAsync 是 .NET 8 的 API；老框架上同步 Cancel() 才是原语义
+#if NET8_0_OR_GREATER
             await cts.CancelAsync().ConfigureAwait(false);
+#else
+            cts.Cancel();
+#endif
 
             LogWrapper.Debug(ModuleName, $"TCP 转发 {connectionId} 已结束");
         }

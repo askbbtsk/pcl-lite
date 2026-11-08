@@ -6,7 +6,7 @@ namespace PCL.Core.Test;
 [TestClass]
 public class HomepageNewsViewModelTest
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("https://www.minecraft.net/zh-hans/article/example")]
     [DataRow("http://minecraft.net/news")]
     [DataRow("https://net-secondary.web.minecraft-services.net/api/v1.0/zh-cn/search")]
@@ -16,7 +16,7 @@ public class HomepageNewsViewModelTest
         Assert.IsTrue(NewsViewModel.IsSafeNewsLink(url));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(null)]
     [DataRow("")]
     [DataRow("calc.exe")]

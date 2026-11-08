@@ -143,11 +143,12 @@ public static class BedrockService
         try
         {
             var sawAny = false;
+            Span<byte> head = stackalloc byte[2];
             foreach (var dll in Directory.EnumerateFiles(directory, "*.dll", SearchOption.TopDirectoryOnly))
             {
                 sawAny = true;
                 using var stream = File.OpenRead(dll);
-                Span<byte> head = stackalloc byte[2];
+                head.Clear();
                 if (stream.Read(head) == 2 && head[0] == (byte)'M' && head[1] == (byte)'Z') return true;
             }
 

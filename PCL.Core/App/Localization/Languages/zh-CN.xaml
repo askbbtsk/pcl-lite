@@ -757,6 +757,7 @@
     <sys:String x:Key="Download.Version.ReleaseDate">发布于 {0}</sys:String>
     <sys:String x:Key="Download.Version.SaveAs">另存为</sys:String>
     <sys:String x:Key="Download.Version.SaveInstaller">保存安装器</sys:String>
+    <sys:String x:Key="Download.Version.LiteLoader.InstallerUnavailable">当前 LiteLoader 版本的独立安装器下载源不可用，请使用启动器内安装。</sys:String>
     <sys:String x:Key="Download.Version.SelectSaveLocation">选择保存位置</sys:String>
     <sys:String x:Key="Download.Version.VersionList">版本列表</sys:String>
     <sys:String x:Key="Download.Version.VersionListCount">版本列表（{0}）</sys:String>
@@ -1705,11 +1706,6 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Welcome.Network.Manage">管理网络白名单</sys:String>
     <sys:String x:Key="Welcome.Network.Status.All">已授权全部连接（{0} 项网络用途）</sys:String>
     <sys:String x:Key="Welcome.Network.Status.Partial">已授权 {0} / {1} 个网络用途</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Title">隐私与离线</sys:String>
-    <sys:String x:Key="Welcome.Privacy.OpenDownload">打开下载</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Mode.On">已开启</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Mode.Off">未开启</sys:String>
-    <sys:String x:Key="Welcome.Privacy.Status">隐私模式：{0}　·　遥测：已移除</sys:String>
     <sys:String x:Key="Welcome.Recent.Title">上次游玩</sys:String>
     <sys:String x:Key="Welcome.Recent.Empty">还没有选过实例，去「启动」页挑一个吧。</sys:String>
     <sys:String x:Key="Welcome.Recent.Launch">启动游戏</sys:String>
@@ -1909,10 +1905,13 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Main.SpecialVersion.OpenDownloadPageAndExit">打开最新版下载页并退出</sys:String>
     <sys:String x:Key="Main.SpecialVersion.Title">特殊版本提示</sys:String>
     <sys:String x:Key="Main.Tab.Bedrock">基岩版</sys:String>
+    <sys:String x:Key="Main.Tab.Plugins">插件市场</sys:String>
     <sys:String x:Key="Main.Tab.Download">下载</sys:String>
     <sys:String x:Key="Main.Tab.Launch">启动</sys:String>
     <sys:String x:Key="Main.Tab.Settings">设置</sys:String>
     <sys:String x:Key="Main.Tab.Tools">工具</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowShow">展开更多导航</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowHide">收起更多导航</sys:String>
     <sys:String x:Key="Main.Title.GameLog">实时日志</sys:String>
     <sys:String x:Key="Main.Title.InstanceSelect">实例选择</sys:String>
     <sys:String x:Key="Main.Title.InstanceSetup">实例设置 - {0}</sys:String>
@@ -2873,6 +2872,99 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Setup.Left.Item.Misc">杂项</sys:String>
     <sys:String x:Key="Setup.Left.Item.Ui">个性化</sys:String>
     <sys:String x:Key="Setup.Left.Item.Update">软件更新</sys:String>
+    <sys:String x:Key="Plugin.Left.Category">插件</sys:String>
+    <sys:String x:Key="Plugin.Left.Market">插件市场</sys:String>
+    <sys:String x:Key="Plugin.Left.Installed">已安装</sys:String>
+    <sys:String x:Key="Plugin.Market.Title">插件市场</sys:String>
+    <sys:String x:Key="Plugin.Market.Description">插件由第三方作者提供。自签名用于检查包内容是否被改动，不代表作者身份或安全性。</sys:String>
+    <sys:String x:Key="Plugin.Market.Refresh">刷新市场</sys:String>
+    <sys:String x:Key="Plugin.Market.Install">安装</sys:String>
+    <sys:String x:Key="Plugin.Market.Update">更新</sys:String>
+    <sys:String x:Key="Plugin.Market.Current">已是最新版本</sys:String>
+    <sys:String x:Key="Plugin.Market.Downgrade">降级…</sys:String>
+    <sys:String x:Key="Plugin.Market.PendingRestart">待重启生效</sys:String>
+    <sys:String x:Key="Plugin.Market.Empty">市场暂时没有可用插件。</sys:String>
+    <sys:String x:Key="Plugin.Market.LoadFailed">无法加载插件市场：{0}</sys:String>
+    <sys:String x:Key="Plugin.Install.Local">从本地文件安装</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedTitle">插件未签名</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedMessage">签名人：无
+签名时间：无
+
+此插件没有签名，启动器无法验证它是否被修改。插件会以当前用户权限运行。
+{0}
+{1}
+仍要安装吗？</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedConfirm">仍然安装</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedTitle">插件签名人已更改</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChanged">此版本的签名证书与已安装版本不同。
+旧证书指纹：{0}
+新版本证书指纹/状态：{1}
+这可能是密钥轮换，也可能是供应链风险；请先核对可信发布来源。</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerChangedConfirm">仍要更新</sys:String>
+    <sys:String x:Key="Plugin.Install.UnsignedSigner">无（新版本未签名）</sys:String>
+    <sys:String x:Key="Plugin.Install.CoreCompatibilityWarning">兼容性警告：{0} 安装后仍会保存，但此启动器版本不会加载它。请使用声明兼容的启动器版本。</sys:String>
+    <sys:String x:Key="Plugin.Install.SourceChanged">安装来源发生变化：{0}（{1}）→ {2}（{3}）。请确认新的来源可信。</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSource">未知来源</sys:String>
+    <sys:String x:Key="Plugin.Install.DowngradeWarning">这是降级：当前版本 {0}，目标版本 {1}。旧版本可能包含已修复的问题。</sys:String>
+    <sys:String x:Key="Plugin.Install.PackageChanged">相同版本的插件包内容与上次安装不同，请核对签名人及发布来源。</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownHash">未知</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Market">插件市场</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Local">本地文件</sys:String>
+    <sys:String x:Key="Plugin.Installed.Source.Unknown">来源未知（旧安装记录）</sys:String>
+    <sys:String x:Key="Plugin.Installed.Provenance">来源：{0}　安装时间：{1}　包 SHA-256：{2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.SigningInfo">签名人：{0}　证书指纹：{1}　签名时间：{2}</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignature">未签名</sys:String>
+    <sys:String x:Key="Plugin.Installed.NoSignatureTime">不适用</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatures">实验功能（默认关闭）</sys:String>
+    <sys:String x:Key="Plugin.Installed.ExperimentalFeatureError">此功能上次加载失败，已自动关闭：{0}</sys:String>
+    <sys:String x:Key="Plugin.Install.SignedTitle">确认安装插件</sys:String>
+    <sys:String x:Key="Plugin.Install.SignerInfo">签名人：{0}
+证书指纹：{1}
+签名时间（本机显示）：{2}
+
+此时间由签名方写入并受签名保护，不是可信时间戳；自签名不代表真实身份或插件安全性。
+{3}
+{4}
+仍要安装吗？</sys:String>
+    <sys:String x:Key="Plugin.Install.PluginInfo">插件：{0}
+版本：{1}
+作者：{2}
+ID：{3}</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubVerified">GitHub Release：{0} / {1}
+Release 发布时间：{2}
+当前资产 SHA-256：{3}（匹配）
+{4}
+这只佐证当前资产与 Release 记录一致；不验证作者身份，也不提供可信签名时间戳。</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubNoSignatureTime">插件未签名，没有签名时间可供比较。</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubTimeConflict">签名方声明的签名时间晚于 Release 发布时间。Release 时间不是资产上传或签名时间，不能据此判定签名无效。</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubTimeConsistent">签名方声明的时间不晚于 Release 发布时间；自报时间仍无法证明签名时点。</sys:String>
+    <sys:String x:Key="Plugin.Install.GitHubNotVerified">GitHub 来源：未验证（没有提供 GitHub Release 资产直链）。</sys:String>
+    <sys:String x:Key="Plugin.Install.Confirm">安装</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownSigner">未知</sys:String>
+    <sys:String x:Key="Plugin.Install.UnknownTime">未知</sys:String>
+    <sys:String x:Key="Plugin.Install.Cancel">取消</sys:String>
+    <sys:String x:Key="Plugin.Install.SignedNote">签名验证通过：只证明包内容与签名一致，不证明作者身份或插件安全。</sys:String>
+    <sys:String x:Key="Plugin.Install.MixinWarning">此插件包含 {0} 个编译 Mixin，会在主窗口创建前修改启动器方法。插件与启动器具有相同用户权限；签名不提供沙箱隔离，也不验证作者身份。</sys:String>
+    <sys:String x:Key="Plugin.Install.Done">插件已安装；重启启动器后生效。</sys:String>
+    <sys:String x:Key="Plugin.Install.Working">正在校验并安装插件…</sys:String>
+    <sys:String x:Key="Plugin.Install.Failed">插件安装失败：{0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.Title">已安装的插件</sys:String>
+    <sys:String x:Key="Plugin.Installed.Empty">尚未安装插件。</sys:String>
+    <sys:String x:Key="Plugin.Installed.Enable">启用</sys:String>
+    <sys:String x:Key="Plugin.Installed.Disable">禁用</sys:String>
+    <sys:String x:Key="Plugin.Installed.Uninstall">卸载</sys:String>
+    <sys:String x:Key="Plugin.Installed.Running">运行中</sys:String>
+    <sys:String x:Key="Plugin.Installed.Disabled">已禁用</sys:String>
+    <sys:String x:Key="Plugin.Installed.Error">启动失败：{0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.Restart">设置已保存；重启启动器后生效。</sys:String>
+    <sys:String x:Key="Plugin.Restart.Title">插件更改需要重启</sys:String>
+    <sys:String x:Key="Plugin.Restart.Now">立即重启</sys:String>
+    <sys:String x:Key="Plugin.Restart.Later">稍后重启</sys:String>
+    <sys:String x:Key="Plugin.Restart.Failed">无法自动重启启动器：{0}</sys:String>
+    <sys:String x:Key="Plugin.Installed.UninstallConfirm">卸载插件“{0}”？重启后完成卸载。</sys:String>
+    <sys:String x:Key="Plugin.Installed.Pages">插件功能页</sys:String>
+    <sys:String x:Key="Plugin.Common.NoManager">插件管理器尚未就绪，请稍后重试。</sys:String>
+    <sys:String x:Key="Plugin.Common.ButtonFailed">插件按钮“{0}”执行失败：{1}</sys:String>
 
     <!-- Setup.Log -->
 
@@ -3051,6 +3143,8 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">界面上的用户文件夹名打码</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">把界面上路径里 C:\Users\ 后面那一段统一显示成 *****，截图发出去不会带出 Windows 用户名。只影响显示，不会改动任何文件夹或文件。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">基础</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">标题栏页面折叠</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">标题栏空间不足时，优先折叠选中的页面；空间足够时显示全部页面。勾选此处的页面会优先收进标题栏右侧的展开区域。</sys:String>
 
     <!-- Setup.Ui.FeatureHide -->
 
@@ -3579,6 +3673,10 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Update.Error.FileNotFound">找不到更新文件</sys:String>
     <sys:String x:Key="Update.Error.OperationFailed">更新操作失败。请查看错误详情。</sys:String>
     <sys:String x:Key="Update.Error.Sha256Mismatch">更新文件 SHA256 不正确，应该为 {0}，实际为 {1}</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Title">更新证书验证失败</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Message">{0}&#xA;&#xA;建议选择“不更新”，除非你已确认发布来源可信。</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Cancel">不更新</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Continue">仍然更新</sys:String>
     <sys:String x:Key="Update.Error.UnableToGetUpdate">无法获取更新</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlocked">更新失败</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlockedMessage">由于被 Windows 安全中心拦截，或者存在权限问题，导致 PCL CE 无法更新。&#xA;请将 PCL CE 所在文件夹加入白名单，或者手动用 {0}PCL\Plain Craft Launcher Community Edition.exe 替换当前文件！</sys:String>
@@ -3589,6 +3687,7 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
 
     <sys:String x:Key="Update.Task.ApplyFile">应用文件</sys:String>
     <sys:String x:Key="Update.Task.Check">校验更新</sys:String>
+    <sys:String x:Key="Update.Security.Signature.Task">验证发布证书</sys:String>
     <sys:String x:Key="Update.Task.DownloadFile">下载文件</sys:String>
     <sys:String x:Key="Update.Task.DownloadLatestStable">下载最新稳定版</sys:String>
     <sys:String x:Key="Update.Task.DownloadUpdateFile">下载更新文件</sys:String>

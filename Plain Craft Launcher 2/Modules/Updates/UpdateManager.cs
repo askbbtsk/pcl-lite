@@ -132,11 +132,26 @@ public static class UpdateManager
                 loaders.AddRange(remoteServer.GetDownloadLoader(
                     TargetChannel,
                     CurrentArch, dlTargetPath));
+                loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Security.Signature.Task"), _ =>
+                {
+                    var verificationError = UpdateSignatureVerifier.VerifyAsync(
+                            dlTargetPath, dlTargetPath + ".sigstore.json")
+                        .GetAwaiter().GetResult();
+                    if (verificationError is null) return;
+
+                    ModBase.Log($"[Update] 更新签名校验失败：{verificationError}", ModBase.LogLevel.Developer);
+                    var choice = ModBase.RunInUiWait(() => ModMain.MyMsgBox(
+                        Lang.Text("Update.Security.Signature.Message", verificationError),
+                        Lang.Text("Update.Security.Signature.Title"),
+                        Lang.Text("Update.Security.Signature.Cancel"),
+                        Lang.Text("Update.Security.Signature.Continue"),
+                        isWarn: true));
+                    if (choice != 2) throw new ModBase.CancelledException();
+                }));
                 loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.Check"), _ =>
                 {
                     // 更新源给不出官方哈希时 Sha256 是空串（Atom 降级通道、老接口）。
-                    // 这时候必须跳过校验：拿空串去比只会必然失败，把本来能装上的更新拦下来，
-                    // 报错还会写成「应该为 ，实际为 xxx」。
+                    // Sigstore 已在前一步验证 exe 内容和固定签发身份；无 digest 时不做重复哈希比较。
                     if (string.IsNullOrWhiteSpace(version.Sha256)) return;
                     var curHash = ModBase.GetFileSHA256(dlTargetPath);
                     if (!string.Equals(curHash, version.Sha256, StringComparison.OrdinalIgnoreCase))
@@ -184,7 +199,7 @@ public static class UpdateManager
             catch (Exception ex)
             {
                 ModBase.Log(ex, "[Update] 获取启动器更新失败");
-                if (type != UpdateEnums.UpdateType.Silent)
+                if (type != (UpdateEnums.UpdateType)0)
                     HintService.Hint(_DescribeUpdateError(ex), HintType.Error);
             }
         });
@@ -271,14 +286,18 @@ public static class UpdateManager
             throw new Exception(Lang.Text("Update.Error.UnableToGetUpdate"));
         if (File.Exists(latestPCLPath) && (ModBase.GetFileSHA256(latestPCLPath) ?? "") == (target.Sha256 ?? ""))
         {
-            ModBase.Log("[System] 最新版 PCL 已存在，跳过下载");
-            return;
-        }
-
-        if ((ModBase.GetFileSHA256(Basics.ExecutablePath) ?? "") == (target.Sha256 ?? "")) // 正在使用的版本符合要求，直接拿来用
-        {
-            ModBase.CopyFile(Basics.ExecutablePath, latestPCLPath);
-            return;
+            var cachedSignatureError = UpdateSignatureVerifier.VerifyAsync(
+                    latestPCLPath, latestPCLPath + ".sigstore.json")
+                .GetAwaiter().GetResult();
+            if (cachedSignatureError is null)
+            {
+                ModBase.Log("[System] 最新版 PCL 已存在且证书签名有效，跳过下载");
+                return;
+            }
+            ModBase.Log($"[System] 已有最新版缓存签名无效，将重新下载：{cachedSignatureError}",
+                ModBase.LogLevel.Developer);
+            File.Delete(latestPCLPath);
+            if (File.Exists(latestPCLPath + ".sigstore.json")) File.Delete(latestPCLPath + ".sigstore.json");
         }
 
         var loaders = remoteServer.GetDownloadLoader(UpdateChannel.stable,
@@ -286,6 +305,11 @@ public static class UpdateManager
         var loader = new ModLoader.LoaderCombo<int>(Lang.Text("Update.Task.DownloadLatestStable"), loaders);
         loader.Start();
         loader.WaitForExit();
+        var signatureError = UpdateSignatureVerifier.VerifyAsync(
+                latestPCLPath, latestPCLPath + ".sigstore.json")
+            .GetAwaiter().GetResult();
+        if (signatureError is not null)
+            throw new InvalidDataException("最新版启动器证书签名校验失败：" + signatureError);
     }
 
     public static ModLoader.LoaderTask<int, int> serverLoader =

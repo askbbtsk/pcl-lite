@@ -173,9 +173,58 @@ extra block; seek forwards in oldfile by z bytes".
 		});
 	}
 
+	/// <summary>
+	/// 生成可被 <see cref="ApplyAsync"/> 还原的补丁。
+	/// </summary>
+	/// <remarks>
+	/// 这里<b>不做差异搜索</b>：control 块只写一条三元组 (0, newLength, 0)，
+	/// 含义是"从 oldfile 取 0 字节、从 extra 块整段复制 newLength 字节"。
+	/// 因此产物在任何 originData 上都能还原出 newData，但体积等于整包压缩，
+	/// 拿不到增量收益。
+	/// <para>
+	/// 客户端只负责应用补丁（见 <c>UpdatesMinioModel</c>），真正的增量由发版侧生成，
+	/// 所以这里优先保证"能用且可验证"，而不是压缩率。将来需要体积优化时，
+	/// 再补上真正的匹配检索，调用方无需改动。
+	/// </para>
+	/// </remarks>
 	public Task<byte[]> MakeAsync(byte[] originData, byte[] newData)
 	{
-		throw new NotImplementedException();
+		ArgumentNullException.ThrowIfNull(originData);
+		ArgumentNullException.ThrowIfNull(newData);
+
+		return Task.Run(() =>
+		{
+			// control 块：单条三元组 (x=0, y=newLength, z=0)，小端序
+			var control = new byte[24];
+			BitConverter.TryWriteBytes(control.AsSpan(0, 8), 0L);
+			BitConverter.TryWriteBytes(control.AsSpan(8, 8), (long)newData.Length);
+			BitConverter.TryWriteBytes(control.AsSpan(16, 8), 0L);
+
+			var ctrlBlock = _BZip2Compress(control);
+			var diffBlock = _BZip2Compress([]); // 没有逐字节差值
+			var extraBlock = _BZip2Compress(newData);
+
+			using var output = new MemoryStream(HeaderSize + ctrlBlock.Length + diffBlock.Length + extraBlock.Length);
+			output.Write(BitConverter.GetBytes(HeaderVersion));
+			output.Write(BitConverter.GetBytes((long)ctrlBlock.Length));
+			output.Write(BitConverter.GetBytes((long)diffBlock.Length));
+			output.Write(BitConverter.GetBytes((long)newData.Length));
+			output.Write(ctrlBlock);
+			output.Write(diffBlock);
+			output.Write(extraBlock);
+			return output.ToArray();
+		});
+	}
+
+	private static byte[] _BZip2Compress(byte[] data)
+	{
+		using var output = new MemoryStream();
+		using (var compressor = new BZip2OutputStream(output, 9) { IsStreamOwner = false })
+		{
+			compressor.Write(data, 0, data.Length);
+		}
+
+		return output.ToArray();
 	}
 
 	internal static long ReadInt64(byte[] buffer, int offset = 0)

@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.Utils.Diff;
@@ -40,14 +39,45 @@ public class DiffTest
     }
 
     [TestMethod]
-    public async Task TestBsDiff2()
+    public async Task MakeThenApplyRoundTrips()
     {
-        const string from = @"";
-        const string diffFile = @"";
-        const string outFile = @"";
-        if (string.IsNullOrEmpty(from) || string.IsNullOrEmpty(outFile) || string.IsNullOrEmpty(diffFile))
-            return;
         var diff = new BsDiff();
-        File.WriteAllBytes(outFile, await diff.ApplyAsync(File.ReadAllBytes(from), File.ReadAllBytes(diffFile)));
+        var origin = RandomBytes(4096, seed: 1);
+        var target = RandomBytes(5000, seed: 2);
+
+        var patch = await diff.MakeAsync(origin, target);
+        var restored = await diff.ApplyAsync(origin, patch);
+
+        CollectionAssert.AreEqual(target, restored);
     }
+
+    [TestMethod]
+    public async Task MakeThenApplyRoundTripsWithoutOrigin()
+    {
+        var diff = new BsDiff();
+        var target = "I am very sure how bsdiff works"u8.ToArray();
+
+        var patch = await diff.MakeAsync([], target);
+        var restored = await diff.ApplyAsync([], patch);
+
+        CollectionAssert.AreEqual(target, restored);
+    }
+
+    [TestMethod]
+    public async Task MakeProducesBsdiff40Header()
+    {
+        var diff = new BsDiff();
+        var patch = await diff.MakeAsync([1, 2, 3], [4, 5, 6, 7]);
+
+        Assert.AreEqual("BSDIFF40", System.Text.Encoding.ASCII.GetString(patch, 0, 8));
+    }
+
+    private static byte[] RandomBytes(int length, int seed)
+    {
+        var bytes = new byte[length];
+        new Random(seed).NextBytes(bytes);
+        return bytes;
+    }
+
+    public TestContext TestContext { get; set; } = null!;
 }

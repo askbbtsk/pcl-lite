@@ -7,6 +7,7 @@ using PCL.Core.App.Essentials;
 using PCL.Core.App.IoC;
 using PCL.Core.App.Localization;
 using PCL.Core.Logging;
+using PCL.Core.Minecraft.Worlds;
 using PCL.Core.Plugins;
 using PCL.Plugin.SDK;
 using PCL.Core.Utils.OS;
@@ -57,6 +58,8 @@ internal static class Program
             // 统一重试全都生效，不再走 Core 里那份裸 HttpClient
             PCL.Core.App.Lunar.LunarClientService.DownloadDispatcher = static (urls, path, ct) =>
                 FileDownloader.DownloadAsync(urls, path, cancellationToken: ct, enableParallelChunks: true);
+            try { new RecentWorldHistory().RecoverInterruptedSessions(); }
+            catch (Exception ex) { ModBase.Log(ex, "恢复上次运行中断的最近世界记录失败", ModBase.LogLevel.Hint); }
             var form = new FormMain();
             return form;
         };

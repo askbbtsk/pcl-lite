@@ -43,6 +43,19 @@
                                                   Height="42" SnapsToDevicePixels="True" Type="None" />
                             </StackPanel>
                         </local:MyCard>
+                        <local:MyCard Title="{DynamicResource Instance.Migration.Title}" Margin="0,15,0,0" CanSwap="True">
+                            <StackPanel Margin="20,38,20,17">
+                                <TextBlock Text="{DynamicResource Instance.Migration.Description}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                <WrapPanel>
+                                    <local:MyButton x:Name="BtnMigrationPreview" Text="{DynamicResource Instance.Migration.PreviewButton}"
+                                                    Height="35" MinWidth="170" Padding="14,0" Margin="0,0,10,6"
+                                                    Click="BeginInstanceMigration_Click" />
+                                    <local:MyButton x:Name="BtnMigrationCancel" Text="{DynamicResource Common.Action.Cancel}"
+                                                    Height="35" MinWidth="90" Margin="0,0,0,6" IsEnabled="False"
+                                                    Click="CancelInstanceMigration_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </local:MyCard>
                         <local:MyCard Title="{DynamicResource Common.Installation.Minecraft}" Height="40" Margin="0,15,0,0"
                                       x:Name="CardMinecraft"
                                       PreviewSwap="CardMinecraft_PreviewSwap">

@@ -145,4 +145,10 @@
   ],
   "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
 }
+, {
+  "SourcePath": "Plain Craft Launcher 2/Modules/Network/Loaders/LoaderDownload.cs",
+  "Sha256": "9252DE65F275DAC8D617817511C6545D6A8DDA2F65E90B9090033744C417C77D",
+  "Members": ["PCL.Network.Loaders.LoaderDownload::MethodDeclaration::Start(object input = null, bool isForceRestart = false)"],
+  "Reason": "Stages D/E: expose actual worker completion after Abort so migration/import can await file-handle release before cleaning owned staging directories. Original download execution remains inside try/finally."
+}
 ]

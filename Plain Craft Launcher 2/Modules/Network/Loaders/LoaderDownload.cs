@@ -11,6 +11,9 @@ public class LoaderDownload : ModLoader.LoaderBase
     private int _fileRemain;
     private readonly object _fileRemainLock = new();
     private CancellationTokenSource? _cancellationTokenSource;
+    private Task _executionCompletion = Task.CompletedTask;
+    /// <summary>Completes only after cancelled file workers have actually released their streams.</summary>
+    public Task ExecutionCompletion => _executionCompletion;
     public int FailCount { get; set; }
 
     public override double Progress
@@ -32,22 +35,38 @@ public class LoaderDownload : ModLoader.LoaderBase
         if (input is List<PCL.Network.DownloadFile> inputFiles)
             files = new ModBase.SafeList<PCL.Network.DownloadFile>(inputFiles);
 
+        TaskCompletionSource completion;
+        CancellationToken cancellation;
         lock (lockState)
         {
             if (State == ModBase.LoadState.Loading)
                 return;
+            _cancellationTokenSource = new CancellationTokenSource();
+            cancellation = _cancellationTokenSource.Token;
+            completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _executionCompletion = completion.Task;
             State = ModBase.LoadState.Loading;
         }
 
-        _cancellationTokenSource = new CancellationTokenSource();
         lock (_fileRemainLock)
         {
             _fileRemain = files.Count;
         }
 
-        ModNet.NetManager.Start(this);
-
-        ModBase.RunInNewThread(() => Run(_cancellationTokenSource.Token), $"DL/{Uuid}");
+        try
+        {
+            ModNet.NetManager.Start(this);
+            ModBase.RunInNewThread(() =>
+            {
+                try { Run(cancellation); }
+                finally { completion.TrySetResult(); }
+            }, $"DL/{Uuid}");
+        }
+        catch (Exception error)
+        {
+            completion.TrySetException(error);
+            throw;
+        }
     }
 
     private void Run(CancellationToken cancellationToken)

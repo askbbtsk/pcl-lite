@@ -105,7 +105,19 @@ public static class InstanceModificationTransaction
 
     public static void Apply(string instanceDirectory, string gameDirectory, InstanceModificationPlan plan,
         CancellationToken token = default)
-        => DurableFileTransaction.Apply(StoragePath(instanceDirectory), Roots(instanceDirectory, gameDirectory), plan.Changes, token);
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        var roots = Roots(instanceDirectory, gameDirectory);
+        foreach (var change in plan.Changes)
+        {
+            token.ThrowIfCancellationRequested();
+            if (!roots.TryGetValue(change.RootId, out var root)) throw new InvalidDataException("Unknown modification root.");
+            var destination = PackUpdatePlanner.ResolveWithin(root, change.RelativePath);
+            if (!string.Equals(HashOrMissing(destination), change.ExpectedOldSha256, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Modification destination changed after preview: " + change.RelativePath);
+        }
+        DurableFileTransaction.Apply(StoragePath(instanceDirectory), roots, plan.Changes, token);
+    }
 
     private static IReadOnlyDictionary<string, string> Roots(string instanceDirectory, string gameDirectory)
         => new Dictionary<string, string> { ["instance"] = instanceDirectory, ["game"] = gameDirectory };

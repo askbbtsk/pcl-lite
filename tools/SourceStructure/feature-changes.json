@@ -107,7 +107,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.cs",
-  "Sha256": "58BF71B9A3356A05EE18AE1818E2B2F561902CFDF7B319E48609F4E53B508D96",
+  "Sha256": "25FC2DB5091612CDC0080110AB75D4F9CAE42ABF3FCA939E18958D6460A1BC3D",
   "Members": [
     "PCL.ModLaunch::MethodDeclaration::McLaunchPrecheck()"
   ],

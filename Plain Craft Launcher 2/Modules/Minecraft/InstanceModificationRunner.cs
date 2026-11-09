@@ -171,6 +171,9 @@ internal static class InstanceModificationRunner
                 foreach (var retired in plan.RetiredFiles) result.AppendLine().Append(retired);
                 ModBase.RunInUi(() =>
                 {
+                    source.JsonText = null;
+                    source.JsonObject = null;
+                    source.Info = null;
                     source.Load();
                     ModMain.MyMsgBox(result.ToString(), Lang.Text("Instance.Migration.Title"));
                     ModLoader.LoaderFolderRun(ModInstanceList.mcInstanceListLoader, minecraftRoot, ModLoader.LoaderFolderRunType.ForceRun, 1, "versions\\");

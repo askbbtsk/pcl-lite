@@ -255,6 +255,12 @@
                                       Text="{DynamicResource Setup.Launch.Flow.LoaderMismatch}"
                                       Tag="LaunchMarkIncompatibleMods" Change="CheckBoxChange" />
                     <TextBlock Text="{DynamicResource Setup.Launch.Flow.LoaderMismatch.Description}"
+                               TextWrapping="Wrap" Margin="0,0,0,12"
+                               Foreground="{DynamicResource ColorBrushGray4}" />
+                    <local:MyCheckBox x:Name="CheckRememberInstanceControls" MinHeight="28" Margin="0,0,0,3"
+                                      Text="{DynamicResource Setup.Launch.Flow.RememberControls}"
+                                      Tag="LaunchRememberInstanceControls" Change="CheckBoxChange" />
+                    <TextBlock Text="{DynamicResource Setup.Launch.Flow.RememberControls.Description}"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource ColorBrushGray4}" />
                 </StackPanel>

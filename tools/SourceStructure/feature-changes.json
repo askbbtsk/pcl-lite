@@ -54,7 +54,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLaunch.xaml.cs",
-  "Sha256": "C214F618E4CDA5C698BF2E766250D4B45C8E96B5E2272684FBB53C602A63A62F",
+  "Sha256": "8824389DBBCA63B61F1429976D6CD93AFDB9195BDAB3E2BDFA3E65959EAA92F4",
   "Members": [
     "PCL.PageSetupLaunch::MethodDeclaration::Reload()"
   ],
@@ -85,5 +85,64 @@
     "PCL.ModLunar::MethodDeclaration::WatchFirstWindow(Process process, string gameDirectory, DateTime startedAt, string subVersion,\n        bool vanillaReady)"
   ],
   "Reason": "Reported Lunar old-session exit/output/stop callbacks must not clear replacement process or IPC. Session-generation ownership and deferred UI delivery; regression replay tests."
+}
+,
+{
+  "SourcePath": "PCL.Core/Minecraft/Instances/InstanceTestCopyService.cs",
+  "Sha256": "72AA9BDE427877168705ED6902509C109C27A1E06854B1E869BCD8CE9D853764",
+  "Members": [
+    "PCL.Core.Minecraft.Instances.InstanceTestCopyService::MethodDeclaration::Create(string sourceInstanceDirectory, string destinationInstanceDirectory, string sourceName, string destinationName)"
+  ],
+  "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
+},
+{
+  "SourcePath": "PCL.Core/Minecraft/PersonalOptions/PersonalOptionsSyncService.cs",
+  "Sha256": "8ACBA85FCCF008EFD138851C537F6126B63629E43BBDC39E461D6DD0ABC4BFC3",
+  "Members": [
+    "PCL.Core.Minecraft.PersonalOptions.PersonalOptionsSyncService::MethodDeclaration::SaveProfile(string path, PersonalOptionsProfile profile)",
+    "PCL.Core.Minecraft.PersonalOptions.PersonalOptionsSyncService::MethodDeclaration::PrepareSession(string optionsPath, string profilePath,\n        PersonalOptionCategories categories, bool targetUsesModernKeyNames, bool fovIsDegrees = true)",
+    "PCL.Core.Minecraft.PersonalOptions.PersonalOptionsSyncService::MethodDeclaration::FinishSession(PersonalOptionsSession session)"
+  ],
+  "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.cs",
+  "Sha256": "54B422739B303BFB2BB1FE927CC911905D0D50E74F3BD7AB650DD1235DF729FE",
+  "Members": [
+    "PCL.ModLaunch::MethodDeclaration::McLaunchPrecheck()"
+  ],
+  "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.GameProcessLifecycle.McLaunchPrerun.cs",
+  "Sha256": "8BDE16B502182AE00E5E5793A6E74B96F688805BBEFB40F10F61FBB660548E7C",
+  "Members": [
+    "PCL.ModLaunch::MethodDeclaration::McLaunchRun(ModLoader.LoaderTask<int, Process> loader)"
+  ],
+  "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModModpack.UpdateCoordinator.cs",
+  "Sha256": "0E6EDD67A2F8705EF9584DE3198C92FDC2667C8A8228E124656B78BDF71BC3F8",
+  "Members": [
+    "PCL.ModModpack::MethodDeclaration::_UpdatePackFromOnline(McInstance instance, LoaderTask<int, int> task, string? localArchivePath)"
+  ],
+  "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModWatcher.cs",
+  "Sha256": "6516E5558ADD18A36E1E750695A2649BEE271464765D9379E9E16C483A46E57D",
+  "Members": [
+    "PCL.ModWatcher+Watcher::PropertyDeclaration::State"
+  ],
+  "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageDownload/ModDownloadLib.ForgeInstallerProcess.cs",
+  "Sha256": "E21964D80A482626C10A6F80808950F26D46293223E85866F841A9F27C06C268",
+  "Members": [
+    "PCL.ModDownloadLib::MethodDeclaration::ForgelikeInjector(string target, ModLoader.LoaderTask<bool, bool> task, string mcFolder,\n        bool useJavaWrapper, ModDownload.DlForgelikeEntry.ForgelikeType forgeType)"
+  ],
+  "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
 }
 ]

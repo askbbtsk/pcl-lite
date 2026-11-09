@@ -70,7 +70,14 @@ public static partial class ModModpack
                 throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.IsolationRequired"));
             if (ModWatcher.mcWatcherList.Any(static watcher => watcher.State is ModWatcher.Watcher.MinecraftState.Loading or ModWatcher.Watcher.MinecraftState.Running))
                 throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.GameRunning"));
-            PackUpdateTransaction.RecoverInterrupted(gameRoot);
+            using (PCL.Core.Minecraft.Instances.InstanceOperationCoordinator.Acquire(
+                       Path.Combine(Paths.SharedLocalData, "InstanceOperations"), ModFolder.mcFolderSelected, instance.PathIndie))
+            {
+                if (ModWatcher.mcWatcherList.Any(watcher => watcher.State is ModWatcher.Watcher.MinecraftState.Loading or ModWatcher.Watcher.MinecraftState.Running))
+                    throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.GameRunning"));
+                PackUpdateTransaction.RecoverInterrupted(gameRoot);
+                PackUpdateDurableTransaction.Recover(gameRoot, Paths.SharedLocalData);
+            }
 
             var previous = store.Load(instance.PathInstance);
             if (previous is null || localArchivePath is null && string.IsNullOrWhiteSpace(previous.ProjectId))
@@ -207,14 +214,18 @@ public static partial class ModModpack
             }
 
             task.Progress = 0.55d;
+            using var instanceOperation = PCL.Core.Minecraft.Instances.InstanceOperationCoordinator.Acquire(
+                Path.Combine(Paths.SharedLocalData, "InstanceOperations"), ModFolder.mcFolderSelected, instance.PathIndie);
+            if (ModWatcher.mcWatcherList.Any(watcher => watcher.State is ModWatcher.Watcher.MinecraftState.Loading or ModWatcher.Watcher.MinecraftState.Running))
+                throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.GameRunning"));
             using var transactionCancellation = new CancellationTokenSource();
-            PackUpdateTransaction.Apply(plan, transactionCancellation.Token,
+            if (task.IsAborted) transactionCancellation.Cancel();
+            PackUpdateDurableTransaction.Apply(plan, store, instance.PathInstance, transactionCancellation.Token,
                 (completed, total) =>
                 {
                     if (task.IsAborted) transactionCancellation.Cancel();
                     task.Progress = total == 0 ? 0.95d : 0.55d + 0.4d * completed / total;
-                },
-                () => store.Save(instance.PathInstance, target));
+                });
             if (!string.IsNullOrWhiteSpace(target.VersionId)) States.Instance.ModpackVersion[instance.PathInstance] = target.VersionId;
             task.Progress = 1d;
             ModBase.RunInUi(() =>

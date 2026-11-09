@@ -49,7 +49,18 @@ public partial class PageInstanceOverall
                 text.AppendLine(Lang.Text("Instance.Enhancement.MoreInLog"));
             if (!report.InputsStable) text.AppendLine(Lang.Text("Instance.Enhancement.InputChanged"));
             ModBase.Log("[Enhancements] " + System.Text.Json.JsonSerializer.Serialize(report), ModBase.LogLevel.Normal);
-            ModMain.MyMsgBox(text.ToString(), Lang.Text("Instance.Enhancement.HealthTitle"));
+            if (missing > 0 && report.InputsStable)
+            {
+                text.AppendLine().AppendLine(Lang.Text("Instance.Enhancement.RepairScope"));
+                if (ModMain.MyMsgBox(text.ToString(), Lang.Text("Instance.Enhancement.HealthTitle"),
+                        Lang.Text("Instance.Enhancement.FillMissing"), Lang.Text("Common.Action.Cancel")) == 1)
+                {
+                    var result = await Task.Run(() => FillMissingLibraries(instance.PathInstance, root, report, cancellation.Token), cancellation.Token);
+                    if (!cancellation.IsCancellationRequested && IsLoaded && ReferenceEquals(instance, PageInstanceLeft.McInstance))
+                        ModMain.MyMsgBox(result, Lang.Text("Instance.Enhancement.HealthTitle"));
+                }
+            }
+            else ModMain.MyMsgBox(text.ToString(), Lang.Text("Instance.Enhancement.HealthTitle"));
         }
         catch (OperationCanceledException) { }
         catch (Exception error)

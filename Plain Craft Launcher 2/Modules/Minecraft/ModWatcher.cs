@@ -313,9 +313,13 @@ public static class ModWatcher
                 if (field == value)
                     return;
                 field = value;
+                if (value == MinecraftState.Running) HasReachedRunningState = true;
                 WatcherStateChanged();
             }
         } = MinecraftState.Loading;
+
+        /// <summary>Exit code zero alone is insufficient to capture personal settings from a successful game.</summary>
+        public bool HasReachedRunningState { get; private set; }
 
         /// <summary>
         ///     是否处理实时日志。

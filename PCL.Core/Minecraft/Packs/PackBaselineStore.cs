@@ -111,6 +111,22 @@ public sealed class PackBaselineStore
         }
     }
 
+    /// <summary>Prepare a baseline write for the same durable transaction as the game files.</summary>
+    public TransactionFileChange PrepareTransaction(string instancePath, PackBaseline baseline)
+    {
+        ArgumentNullException.ThrowIfNull(baseline);
+        if (baseline.SchemaVersion != CurrentSchema) throw new InvalidDataException("Unsupported pack baseline schema.");
+        foreach (var entry in baseline.Files.Values) PackUpdatePlanner.ValidateRelativePath(entry.Path);
+        var path = GetPath(instancePath);
+        Directory.CreateDirectory(_root);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(baseline, JsonCompat.SerializerOptions));
+        return new("metadata", Path.GetRelativePath(_root, path).Replace('\\', '/'),
+            File.Exists(path) ? PackUpdatePlanner.HashFile(path) : null,
+            DurableFileTransaction.Hash(bytes), Content: bytes, IsMetadata: true);
+    }
+
+    public string TransactionMetadataRoot => _root;
+
     private string GetPath(string instancePath)
     {
         var fullInstance = Path.GetFullPath(instancePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);

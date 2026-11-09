@@ -62,6 +62,7 @@ public static class InstanceTestCopyService
                     _RejectReparsePoint(directory);
                     var relative = Path.GetRelativePath(source, directory);
                     if (string.Equals(relative, "PCLLiteData", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (PCL.Core.Minecraft.Packs.PackExportContent.IsEnhancementPath(relative)) continue;
                     Directory.CreateDirectory(Path.Combine(stage, relative));
                     pending.Push(directory);
                 }
@@ -90,6 +91,7 @@ public static class InstanceTestCopyService
                 var setup = File.ReadAllText(setupPath).Replace(oldPath, newPath, StringComparison.OrdinalIgnoreCase);
                 File.WriteAllText(setupPath, setup);
             }
+            PCL.Core.Minecraft.Enhancements.InstanceEnhancementCloner.CopyDeclaration(source, stage);
             Directory.Move(stage, destination);
             return destination;
         }

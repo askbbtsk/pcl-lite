@@ -853,6 +853,8 @@ public static partial class Config
         [ConfigItem<bool>("LaunchCheckModDependencies", true, ConfigSource.Local)] public partial bool CheckModDependencies { get; set; }
         /// <summary>Label files whose local metadata does not declare the current loader.</summary>
         [ConfigItem<bool>("LaunchMarkIncompatibleMods", true, ConfigSource.Local)] public partial bool MarkIncompatibleMods { get; set; }
+        /// <summary>Remember only this instance's vanilla key and mouse settings, separately from cross-instance sync.</summary>
+        [ConfigItem<bool>("LaunchRememberInstanceControls", true, ConfigSource.Local)] public partial bool RememberInstanceControls { get; set; }
 
         /// <summary>Synchronize selected vanilla options across instances.</summary>
         [ConfigItem<bool>("LaunchPersonalOptionsSync", false, ConfigSource.Local)] public partial bool PersonalOptionsSync { get; set; }

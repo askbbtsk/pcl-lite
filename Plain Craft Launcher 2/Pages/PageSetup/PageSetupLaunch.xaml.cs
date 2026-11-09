@@ -84,6 +84,7 @@ public partial class PageSetupLaunch
             CheckLunarVerify.Checked = Config.Preference.Lunar.VerifyFiles;
             CheckModDependencies.Checked = Config.Launch.CheckModDependencies;
             CheckMarkIncompatibleMods.Checked = Config.Launch.MarkIncompatibleMods;
+            CheckRememberInstanceControls.Checked = Config.Launch.RememberInstanceControls;
             CheckPersonalOptionsSync.Checked = Config.Launch.PersonalOptionsSync;
             CheckPersonalOptionsKeys.Checked = Config.Launch.PersonalOptionsKeys;
             CheckPersonalOptionsMouse.Checked = Config.Launch.PersonalOptionsMouse;

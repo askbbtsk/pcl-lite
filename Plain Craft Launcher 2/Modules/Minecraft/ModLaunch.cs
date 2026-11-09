@@ -61,6 +61,7 @@ public static partial class ModLaunch
             throw new Exception(Lang.Text("Minecraft.Launch.Precheck.InstanceError", ModInstanceList.McMcInstanceSelected.Desc));
         EnvironmentRestorePointService.RecoverInterruptedRestore(ModInstanceList.McMcInstanceSelected.PathIndie);
         PackUpdateTransaction.RecoverInterrupted(ModInstanceList.McMcInstanceSelected.PathIndie);
+        PackUpdateDurableTransaction.Recover(ModInstanceList.McMcInstanceSelected.PathIndie, Paths.SharedLocalData);
         var savesPath = Path.Combine(ModInstanceList.McMcInstanceSelected.PathIndie, "saves");
         if (Directory.Exists(savesPath) && (File.GetAttributes(savesPath) & FileAttributes.ReparsePoint) == 0)
             foreach (var worldPath in Directory.EnumerateDirectories(savesPath))

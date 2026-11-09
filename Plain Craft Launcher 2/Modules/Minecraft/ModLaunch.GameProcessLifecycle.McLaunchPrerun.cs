@@ -437,7 +437,7 @@ public static partial class ModLaunch
         var startedName = startedInstance?.Name;
         var worldSessionHistory = new RecentWorldHistory();
         RecentWorldEntry? recentWorldSession = null;
-        PersonalOptionsSession? personalOptionsSession = null;
+        InstancePersonalOptionsMemory.PersonalOptionsRunSession? personalOptionsSession = null;
         string? worldPath = null;
         var worldName = currentLaunchOptions?.WorldName;
         if (startedInstance is not null && !string.IsNullOrWhiteSpace(worldName))
@@ -456,21 +456,7 @@ public static partial class ModLaunch
             }
         }
 
-        if (startedInstance is not null && Config.Launch.PersonalOptionsSync)
-        {
-            try
-            {
-                var categories = _GetPersonalOptionCategories();
-                if (categories != PersonalOptionCategories.None)
-                {
-                    var profilePath = Path.Combine(Paths.SharedData, "Minecraft", "PersonalOptions", "profile.json");
-                    personalOptionsSession = PersonalOptionsSyncService.PrepareSession(
-                        Path.Combine(startedInstance.PathIndie, "options.txt"), profilePath, categories,
-                        startedInstance.Info.vanilla >= new Version(1, 13), startedInstance.Info.vanilla >= new Version(1, 16));
-                }
-            }
-            catch (Exception ex) { ModBase.Log(ex, "同步 Minecraft 个人设置失败；继续启动游戏", ModBase.LogLevel.Hint); }
-        }
+        if (startedInstance is not null) personalOptionsSession = PreparePersonalOptionsMemory(startedInstance);
 
         if (startedId is not null && startedName is not null)
         {
@@ -479,11 +465,8 @@ public static partial class ModLaunch
             {
                 try { PluginRuntimeManager.Notify(new PluginGameExitedEvent(startedId, startedName, gameProcess.ExitCode)); }
                 catch (Exception ex) { LogWrapper.Warn(ex, "Plugin", "发布游戏退出事件失败"); }
-                try
-                {
-                    if (personalOptionsSession is not null) PersonalOptionsSyncService.FinishSession(personalOptionsSession);
-                }
-                catch (Exception ex) { ModBase.Log(ex, "保存 Minecraft 个人设置失败", ModBase.LogLevel.Hint); }
+                if (startedInstance is not null)
+                    FinishPersonalOptionsMemory(personalOptionsSession, startedInstance, gameProcess, loader.IsAborted);
                 var normalExit = gameProcess.ExitCode == 0;
 
                 if (recentWorldSession is not null)
@@ -495,9 +478,15 @@ public static partial class ModLaunch
         }
 
         // 开始进程
-        try { gameProcess.Start(); }
+        try
+        {
+            gameProcess.Start();
+            try { personalOptionsSession?.MarkGameStarted(gameProcess.Id, gameProcess.StartTime.ToUniversalTime().Ticks); }
+            catch (Exception ex) { ModBase.Log(ex, "无法持久化个人设置会话的游戏身份", ModBase.LogLevel.Developer); }
+        }
         catch
         {
+            personalOptionsSession?.Dispose();
             if (recentWorldSession is not null)
             {
                 try { worldSessionHistory.FinishSession(recentWorldSession.SessionId, false); }

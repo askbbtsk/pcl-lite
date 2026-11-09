@@ -116,6 +116,8 @@ public static class PersonalOptionsSyncService
                 .ToDictionary(static pair => pair.Key, static pair => pair.Value!, StringComparer.Ordinal),
         };
         var fullPath = Path.GetFullPath(path);
+        using var profileLease = PersonalOptionsFileCoordinator.TryAcquireProfile(fullPath)
+            ?? throw new IOException("The personal options profile is in use.");
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         var tempPath = fullPath + $".{Guid.NewGuid():N}.tmp";
         try
@@ -136,6 +138,8 @@ public static class PersonalOptionsSyncService
         ArgumentException.ThrowIfNullOrWhiteSpace(optionsPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(profilePath);
         var fullOptionsPath = Path.GetFullPath(optionsPath);
+        using var optionsLease = PersonalOptionsFileCoordinator.TryAcquire(fullOptionsPath)
+            ?? throw new IOException("Personal options are owned by a running game session.");
         var fullProfilePath = Path.GetFullPath(profilePath);
         var profile = LoadProfile(fullProfilePath);
         var currentText = File.Exists(fullOptionsPath) ? ReadOptionsText(fullOptionsPath) : string.Empty;
@@ -149,6 +153,8 @@ public static class PersonalOptionsSyncService
     public static void FinishSession(PersonalOptionsSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
+        using var optionsLease = PersonalOptionsFileCoordinator.TryAcquire(session.OptionsPath)
+            ?? throw new IOException("Personal options are owned by a running game session.");
         if (!File.Exists(session.OptionsPath)) return;
         var profile = LoadProfile(session.ProfilePath);
         var captured = Capture(ReadOptionsText(session.OptionsPath), profile, session.Categories);

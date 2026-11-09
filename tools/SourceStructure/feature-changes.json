@@ -189,9 +189,10 @@
 ,
 {
   "SourcePath": "PCL.Core/Utils/Hash/HashCache.cs",
-  "Sha256": "0456F17442E45ABB2B2E7582393BACEE081FE5FB733532C0C86D1DE6DFF0B944",
+  "Sha256": "B4EDE8DDA1797EBC585FDE6A840403BF9CADEE26ED6072A8365FC0807AAE2941",
   "Members": [
     "PCL.Core.Utils.Hash.HashCache::MethodDeclaration::_GetHashAsync(string filePath, IHashProvider provider, string algoName)",
+    "PCL.Core.Utils.Hash.HashCache::MethodDeclaration::_GetHashWithPending(string filePath, IHashProvider provider, string algoName)",
     "PCL.Core.Utils.Hash.HashCache::MethodDeclaration::_ComputeHashAsync(string fullPath, IHashProvider provider)"
   ],
   "Reason": "User-reported long indexing and file-in-use: latest current-instance bounded workers, empty-tree fast path, per-instance cache locks, no-delete-blocking hash stream with fingerprint invalidation, cancellable native foreground progress instead of UI-thread recursive parsing."

@@ -93,15 +93,16 @@ public class HashCache : IDisposable
     private Task<string> _GetHashWithPending(string filePath, IHashProvider provider, string algoName)
     {
         var computeKey = $"{_dbPath}|{filePath}:{algoName}";
-        return _FileHashComputePending.GetOrAdd(computeKey, key =>
+        var computeTask = _FileHashComputePending.GetOrAdd(computeKey,
+            _ => _GetHashAsync(filePath, provider, algoName));
+        // Register only after GetOrAdd publishes the task: a synchronous missing-file failure
+        // must not remove an absent key and then leave its faulted task cached forever.
+        _ = computeTask.ContinueWith(completed =>
         {
-            var computeTask = _GetHashAsync(filePath, provider, algoName);
-            _ = computeTask.ContinueWith(t =>
-            {
-                _FileHashComputePending.TryRemove(key, out _);
-            }, TaskContinuationOptions.ExecuteSynchronously);
-            return computeTask;
-        });
+            ((System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<string, Task<string>>>)
+                _FileHashComputePending).Remove(new(computeKey, completed));
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        return computeTask;
     }
 
     private async Task<string> _GetHashAsync(string filePath, IHashProvider provider, string algoName)

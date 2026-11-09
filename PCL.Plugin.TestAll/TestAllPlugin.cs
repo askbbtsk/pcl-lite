@@ -300,6 +300,15 @@ public sealed class TestAllPlugin : IPclPlugin
         foreach (var method in new[] { "MyMsgBox", "MyMsgBoxInput", "MyMsgBoxSelect" })
             if (notice.GetMethod(method, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public) is null)
                 throw new InvalidOperationException("Missing notice method: " + method);
+        var numeric = host.GetType("PCL.NumericUtilities", true)!;
+        var byteResult = numeric.GetMethod("MathByte")!.Invoke(null, new object[] { 300d });
+        var clampResult = numeric.GetMethod("MathClamp")!.Invoke(null, new object[] { -10d, 0d, 100d });
+        if (!Equals(byteResult, (byte)255) || !Equals(clampResult, 0d))
+            throw new InvalidOperationException("Extracted numeric behavior differs from the expected bounds.");
+        var resourceType = host.GetType("PCL.ModComp+CompType", true)!;
+        var folders = host.GetType("PCL.ResourceFolderNames", true)!;
+        var folder = folders.GetMethod("GetPathNameByCompType")!.Invoke(null, new[] { Enum.Parse(resourceType, "Mod") });
+        if (!Equals(folder, "mods")) throw new InvalidOperationException("The Mod resource directory changed.");
         Log("[OK] 重构宿主模块存在，SDK 与弹窗入口可定位；未触发弹窗或游戏启动。");
         return Task.CompletedTask;
     }

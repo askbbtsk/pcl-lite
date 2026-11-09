@@ -57,8 +57,6 @@ State and field initialization remain in each original owner in the original ord
 
 Launch methods are organized into precheck/coordinator, authentication families, Java selection, JVM/game arguments, natives and process lifecycle files. Instance selection and settings separate Java configuration and presentation. The base module separates value types, numeric algorithms, filesystem/INI operations, text, search, OS interop, UI dispatch and diagnostics. Loader/animation definitions retain their original owning types and initialization order. `MessageNoticeCore` now owns dialog execution and `NumericUtilities` owns numeric algorithms; the former names forward to these implementations. TestAll 0.1.1 adds a read-only module/notice-entry probe to the UI and one-click suite.
 
-## Verification
-
 ## Batch 4: window, platform and runtime responsibilities
 
 Window input/startup, Win32 messages, navigation, drag/drop and update presentation have distinct files. Lunar configuration/accounts, social session and game-process handling are separated; backend request encoding, version negotiation and message decoding are separated, with decoding implementation owned by `LunarMessageCodec`. Plugin installation/market/lifecycle, package preparation/recovery and host services have distinct files. Mixin application/validation is separated from plan construction/rollback. Settings binding is separated from themes/homepage composition; list-item input, layout and selection animation are separated. GDK/XVC containers, decoding, keys and binary-format declarations now have separate files with unchanged names and layouts.
@@ -69,7 +67,9 @@ All 30 original large sources and every new C# source pass the 1000-line gate. M
 
 `tools/SourceStructure` compares C# syntax tokens with the fixed Git baseline. It checks existing members, attributes, bases, constraints and initializer order. Service moves must be explicitly listed in `relocations.json`: the old member must be the expected forwarding expression and the new member must preserve the original implementation. CI runs this in DEBUG, CI, RELEASE and BETA configurations, then builds the TestAll plugin and runs the existing unit tests. The existing build matrix covers x64 and ARM64.
 
-The tool emits native Codex patches for reviewed member ranges; it never rewrites source files itself. Its report lists all 30 original large files and their current sizes. The final gate will require every target and every added source to be at most 1000 lines.
+The tool emits native Codex patches for reviewed member ranges; it never rewrites source files itself. Its report lists all 30 original large files and their current sizes. CI now requires every target and every added source to be at most 1000 lines. Syntax diagnostics also reject dangling preprocessor regions; the final GDK split exposed this case and it has been corrected.
+
+TestAll's new read-only refactor probe also invokes numeric boundary cases and checks the Mod resource folder mapping. It does not display notices or start games as part of that probe.
 
 One separately authorized UI change is tracked explicitly: welcome page composition no longer adds the selected-instance card or recent-world card. Other UI behavior is unchanged.
 

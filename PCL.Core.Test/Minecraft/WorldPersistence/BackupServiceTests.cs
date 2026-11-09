@@ -90,6 +90,23 @@ public sealed class BackupServiceTests
     }
 
     [TestMethod]
+    public void AutomaticRetention_PreservesManuallyCreatedWorldSnapshots()
+    {
+        var world = Path.Combine(_root, "saves", "World");
+        var backups = Path.Combine(_root, "backups");
+        Write(Path.Combine(world, "level.dat"), "world");
+        var manual = WorldBackupService.Create(world, backups, "manual", retainFromAutomaticRetention: true);
+        _ = WorldBackupService.Create(world, backups, "automatic one");
+        _ = WorldBackupService.Create(world, backups, "automatic two");
+
+        WorldBackupService.ApplyRetention(backups, world, 0);
+
+        Assert.AreEqual(1, WorldBackupService.List(backups, world).Count);
+        Assert.AreEqual(manual.Id, WorldBackupService.List(backups, world)[0].Id);
+        Assert.IsTrue(File.Exists(Path.Combine(backups, manual.Id + ".zip")));
+    }
+
+    [TestMethod]
     public void EnvironmentRestorePoint_RestoresEnvironmentButPreservesCurrentSaves()
     {
         var instance = Path.Combine(_root, "instance");

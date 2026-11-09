@@ -32,6 +32,8 @@ public sealed record BackupSnapshot
     public required string SourceKey { get; init; }
     public required DateTimeOffset CreatedUtc { get; init; }
     public string? Reason { get; init; }
+    /// <summary>Manual snapshots survive automatic retention trimming.</summary>
+    public bool RetainFromAutomaticRetention { get; init; }
     public required string ArchiveSha256 { get; init; }
     public long ArchiveLength { get; init; }
     public IReadOnlyList<BackupFileRecord> Files { get; init; } = Array.Empty<BackupFileRecord>();
@@ -53,8 +55,9 @@ public sealed record BackupDifference(string Path, BackupDifferenceKind Kind);
 public static class WorldBackupService
 {
     public static BackupSnapshot Create(string worldDirectory, string backupRoot, string? reason = null,
-        CancellationToken cancellationToken = default)
-        => BackupArchive.Create(worldDirectory, backupRoot, BackupSnapshotKind.World, reason, excludeSaves: false, cancellationToken);
+        CancellationToken cancellationToken = default, bool retainFromAutomaticRetention = false)
+        => BackupArchive.Create(worldDirectory, backupRoot, BackupSnapshotKind.World, reason, excludeSaves: false,
+            retainFromAutomaticRetention, cancellationToken);
 
     public static IReadOnlyList<BackupSnapshot> List(string backupRoot, string worldDirectory)
         => BackupArchive.List(backupRoot, BackupSnapshotKind.World, worldDirectory);
@@ -80,8 +83,9 @@ public static class WorldBackupService
 public static class EnvironmentRestorePointService
 {
     public static BackupSnapshot Create(string instanceDirectory, string restorePointRoot, string? reason = null,
-        CancellationToken cancellationToken = default)
-        => BackupArchive.Create(instanceDirectory, restorePointRoot, BackupSnapshotKind.Environment, reason, excludeSaves: true, cancellationToken);
+        CancellationToken cancellationToken = default, bool retainFromAutomaticRetention = false)
+        => BackupArchive.Create(instanceDirectory, restorePointRoot, BackupSnapshotKind.Environment, reason, excludeSaves: true,
+            retainFromAutomaticRetention, cancellationToken);
 
     public static IReadOnlyList<BackupSnapshot> List(string restorePointRoot, string instanceDirectory)
         => BackupArchive.List(restorePointRoot, BackupSnapshotKind.Environment, instanceDirectory);
@@ -105,7 +109,7 @@ internal static class BackupArchive
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     public static BackupSnapshot Create(string sourcePath, string storePath, BackupSnapshotKind kind, string? reason,
-        bool excludeSaves, CancellationToken cancellationToken)
+        bool excludeSaves, bool retainFromAutomaticRetention, CancellationToken cancellationToken)
     {
         var source = Path.GetFullPath(sourcePath);
         if (!Directory.Exists(source)) throw new DirectoryNotFoundException(source);
@@ -160,6 +164,7 @@ internal static class BackupArchive
                 SourceKey = _SourceKey(source),
                 CreatedUtc = DateTimeOffset.UtcNow,
                 Reason = reason,
+                RetainFromAutomaticRetention = retainFromAutomaticRetention,
                 ArchiveSha256 = _HashFile(archivePath),
                 ArchiveLength = new FileInfo(archivePath).Length,
                 Files = records,
@@ -345,7 +350,7 @@ internal static class BackupArchive
     {
         if (maxSnapshots < 0) throw new ArgumentOutOfRangeException(nameof(maxSnapshots));
         var snapshots = List(storePath, kind, sourcePath);
-        foreach (var snapshot in snapshots.Skip(maxSnapshots))
+        foreach (var snapshot in snapshots.Where(static item => !item.RetainFromAutomaticRetention).Skip(maxSnapshots))
         {
             var store = Path.GetFullPath(storePath);
             foreach (var extension in new[] { ".zip", ".json" })

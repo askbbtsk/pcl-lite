@@ -54,7 +54,8 @@ internal static class ModWorldBackups
     public static BackupSnapshot CreateRestorePoint(string instanceDirectory, string reason)
     {
         EnsureInstanceOffline(instanceDirectory);
-        var snapshot = EnvironmentRestorePointService.Create(instanceDirectory, RestorePointRoot, reason);
+        var snapshot = EnvironmentRestorePointService.Create(instanceDirectory, RestorePointRoot, reason,
+            retainFromAutomaticRetention: true);
         EnvironmentRestorePointService.ApplyRetention(RestorePointRoot, instanceDirectory, 10);
         return snapshot;
     }
@@ -70,7 +71,10 @@ internal static class ModWorldBackups
         var latest = ListRestorePoints(instanceDirectory).FirstOrDefault();
         if (latest is not null && EnvironmentRestorePointService.CompareCurrent(RestorePointRoot, latest.Id, instanceDirectory).Count == 0)
             return latest;
-        return CreateRestorePoint(instanceDirectory, "Automatic restore point before game launch");
+        var snapshot = EnvironmentRestorePointService.Create(instanceDirectory, RestorePointRoot,
+            "Automatic restore point before game launch");
+        EnvironmentRestorePointService.ApplyRetention(RestorePointRoot, instanceDirectory, 10);
+        return snapshot;
     }
 
     public static void RegisterLaunchRestorePoint(string instancePath, string snapshotId)
@@ -165,6 +169,9 @@ internal static class ModWorldBackups
     private static Preferences LegacyPreferences()
         => new(Config.Launch.WorldBackupAutoEnabled, Math.Clamp(Config.Launch.WorldBackupRetention, 1, 50));
 
+    public static string PreferencesPathForInstance(string instancePath, string savesPath)
+        => _PreferencesPath(instancePath, savesPath);
+
     public static void SavePreferences(string instancePath, string savesPath, Preferences preferences)
     {
         if (preferences.RetentionCount is < 1 or > 50) throw new ArgumentOutOfRangeException(nameof(preferences));
@@ -185,8 +192,10 @@ internal static class ModWorldBackups
     public static BackupSnapshot CreateManual(string instancePath, string worldPath)
     {
         EnsureWorldOffline(instancePath);
-        var snapshot = WorldBackupService.Create(worldPath, _BackupRoot(worldPath), "Manual backup");
-        WorldBackupService.ApplyRetention(_BackupRoot(worldPath), worldPath, GetPreferences(instancePath, Path.GetDirectoryName(Path.GetFullPath(worldPath))!).RetentionCount);
+        var root = _BackupRoot(worldPath);
+        var snapshot = WorldBackupService.Create(worldPath, root, "Manual backup", retainFromAutomaticRetention: true);
+        WorldBackupService.ApplyRetention(root, worldPath,
+            GetPreferences(instancePath, Path.GetDirectoryName(Path.GetFullPath(worldPath))!).RetentionCount);
         return snapshot;
     }
 
@@ -201,7 +210,17 @@ internal static class ModWorldBackups
         {
             var root = _BackupRoot(worldPath);
             var latest = WorldBackupService.List(root, worldPath).FirstOrDefault();
-            if (latest is not null && WorldBackupService.CompareCurrent(root, latest.Id, worldPath).Count == 0) continue;
+            if (latest is not null)
+            {
+                try
+                {
+                    if (WorldBackupService.CompareCurrent(root, latest.Id, worldPath).Count == 0) continue;
+                }
+                catch (InvalidDataException ex)
+                {
+                    ModBase.Log(ex, "忽略损坏的世界备份，创建新备份", ModBase.LogLevel.Hint);
+                }
+            }
             var snapshot = WorldBackupService.Create(worldPath, root, "Automatic backup before game launch");
             WorldBackupService.ApplyRetention(root, worldPath, preferences.RetentionCount);
             snapshots.Add(snapshot);
@@ -220,7 +239,17 @@ internal static class ModWorldBackups
         {
             var root = _BackupRoot(worldPath);
             var latest = WorldBackupService.List(root, worldPath).FirstOrDefault();
-            if (latest is not null && WorldBackupService.CompareCurrent(root, latest.Id, worldPath).Count == 0) continue;
+            if (latest is not null)
+            {
+                try
+                {
+                    if (WorldBackupService.CompareCurrent(root, latest.Id, worldPath).Count == 0) continue;
+                }
+                catch (InvalidDataException ex)
+                {
+                    ModBase.Log(ex, "忽略损坏的世界备份，创建新备份", ModBase.LogLevel.Hint);
+                }
+            }
             var snapshot = WorldBackupService.Create(worldPath, root, "Automatic backup after game exit");
             WorldBackupService.ApplyRetention(root, worldPath, preferences.RetentionCount);
             snapshots.Add(snapshot);

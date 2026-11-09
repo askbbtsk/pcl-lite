@@ -14,11 +14,13 @@ Behavior baseline: `93808e4f` (the published 1.7.5-snapshot-1 source). The origi
 
 State and field initialization remain in each original owner in the original order. Partial declarations are used where UI or shared loader state requires the same owner; the service extractions above are independent of those owners' private fields. Existing members retain signatures and default values.
 
-## Verification
-
 ## Batch 2: resource catalogs and resource pages
 
 `ModComp` now separates favorites, clipboard handling, the catalog database, project queries, project metadata and resource downloads. `ModLocalComp.LocalCompFile` separates each schematic format, metadata lookup, Jar-in-Jar state and file loading without duplicating model state. Resource and datapack pages separate folder navigation, selection, sorting/filtering, presentation and file actions. `ResourceProjectRequestService` owns platform project fetches; `ResourceFolderNames` owns resource-directory naming. Resource detail page setup and result presentation are split from its original entry.
+
+## Batch 3: launch, instance state and foundation
+
+Launch methods are organized into precheck/coordinator, authentication families, Java selection, JVM/game arguments, natives and process lifecycle files. Instance selection and settings separate Java configuration and presentation. The base module separates value types, numeric algorithms, filesystem/INI operations, text, search, OS interop, UI dispatch and diagnostics. Loader/animation definitions retain their original owning types and initialization order. `MessageNoticeCore` now owns dialog execution and `NumericUtilities` owns numeric algorithms; the former names forward to these implementations. TestAll 0.1.1 adds a read-only module/notice-entry probe to the UI and one-click suite.
 
 ## Verification
 

@@ -155,6 +155,7 @@ public sealed class TestAllPlugin : IPclPlugin
             Btn("输出 5 级日志 (Logger)", TestLoggerLevels),
             Btn("读取插件元信息 (Plugin)", TestMetadata),
             Btn("读取宿主信息 (Launcher 属性)", TestLauncherInfo),
+            Btn("检查重构后的宿主模块", TestRefactoredHostStructure),
             Btn("读取数据目录 (DataDirectory)", TestDataDirectory)));
 
         // --- Storage
@@ -243,6 +244,7 @@ public sealed class TestAllPlugin : IPclPlugin
             await CheckAsync("Logger 5 级日志", TestLoggerLevels);
             await CheckAsync("Plugin 元信息", TestMetadata);
             await CheckAsync("Launcher 宿主信息", TestLauncherInfo);
+            await CheckAsync("重构宿主模块", TestRefactoredHostStructure);
             await CheckAsync("DataDirectory", TestDataDirectory);
             await CheckAsync("Storage 文本往返", TestStorageText);
             await CheckAsync("Storage JSON 往返", TestStorageJson);
@@ -287,6 +289,20 @@ public sealed class TestAllPlugin : IPclPlugin
     }
 
     // ---------------------------------------------------------------- test implementations
+
+    private Task TestRefactoredHostStructure()
+    {
+        var host = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(assembly => assembly.GetType("PCL.ModMain", false) is not null)
+            ?? throw new InvalidOperationException("PCL host assembly is unavailable.");
+        foreach (var name in new[] { "PCL.MessageNoticeCore", "PCL.ResourceRequestService", "PCL.ResourceProjectRequestService", "PCL.VersionJsonMerger", "PCL.NumericUtilities" })
+            if (host.GetType(name, false) is null) throw new InvalidOperationException("Missing host module: " + name);
+        var notice = host.GetType("PCL.MessageNoticeCore", true)!;
+        foreach (var method in new[] { "MyMsgBox", "MyMsgBoxInput", "MyMsgBoxSelect" })
+            if (notice.GetMethod(method, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public) is null)
+                throw new InvalidOperationException("Missing notice method: " + method);
+        Log("[OK] 重构宿主模块存在，SDK 与弹窗入口可定位；未触发弹窗或游戏启动。");
+        return Task.CompletedTask;
+    }
 
     private Task TestLoggerLevels()
     {

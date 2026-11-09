@@ -45,6 +45,8 @@ public sealed class BackupServiceTests
         Assert.AreEqual("regions-v1", File.ReadAllText(Path.Combine(world, "region", "r.0.0.mca")));
         Assert.IsFalse(File.Exists(Path.Combine(world, "new.dat")));
         Assert.AreEqual("other-world", File.ReadAllText(Path.Combine(otherWorld, "level.dat")));
+        Assert.IsTrue(WorldBackupService.List(backups, world).Any(item => item.RetainFromAutomaticRetention
+            && item.Reason == "Automatic backup before restore"));
     }
 
     [TestMethod]
@@ -186,6 +188,38 @@ public sealed class BackupServiceTests
 
         Assert.ThrowsExactly<InvalidDataException>(() => WorldBackupService.Restore(backups, snapshot.Id, world));
         Assert.AreEqual("current", File.ReadAllText(Path.Combine(world, "level.dat")));
+    }
+
+    [TestMethod]
+    public void InterruptedRestore_RecoversOriginalWhenDestinationWasMovedButNotReplaced()
+    {
+        var parent = Path.Combine(_root, "versions");
+        var target = Path.Combine(parent, "Pack");
+        Directory.CreateDirectory(target);
+        Write(Path.Combine(target, "mods", "original.jar"), "original");
+        var rollback = Path.Combine(parent, ".Pack.restore-rollback-" + Guid.NewGuid().ToString("N"));
+        Directory.Move(target, rollback);
+        var stage = Path.Combine(parent, ".Pack.restore-stage-" + Guid.NewGuid().ToString("N"));
+        Write(Path.Combine(stage, "mods", "candidate.jar"), "candidate");
+
+        EnvironmentRestorePointService.RecoverInterruptedRestore(target);
+
+        Assert.AreEqual("original", File.ReadAllText(Path.Combine(target, "mods", "original.jar")));
+        Assert.IsFalse(Directory.Exists(rollback));
+        Assert.IsFalse(Directory.Exists(stage));
+    }
+
+    [TestMethod]
+    public void InterruptedRestore_RejectsAmbiguousStageWithoutOriginalOrRollback()
+    {
+        var parent = Path.Combine(_root, "versions");
+        var target = Path.Combine(parent, "Pack");
+        var stage = Path.Combine(parent, ".Pack.restore-stage-" + Guid.NewGuid().ToString("N"));
+        Write(Path.Combine(stage, "mods", "candidate.jar"), "candidate");
+
+        Assert.ThrowsExactly<InvalidDataException>(() => EnvironmentRestorePointService.RecoverInterruptedRestore(target));
+        Assert.IsFalse(Directory.Exists(target));
+        Assert.IsTrue(Directory.Exists(stage));
     }
 
     private static void Write(string path, string value)

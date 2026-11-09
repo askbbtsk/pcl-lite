@@ -7,6 +7,7 @@ using System.Windows;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.Minecraft;
+using PCL.Core.Minecraft.Backups;
 using PCL.Core.Minecraft.Worlds;
 using PCL.Core.Minecraft.PersonalOptions;
 using PCL.Core.Minecraft.Launch.Utils;
@@ -58,6 +59,12 @@ public static class ModLaunch
         ModInstanceList.McMcInstanceSelected.Load();
         if (ModInstanceList.McMcInstanceSelected.state == McInstanceState.Error)
             throw new Exception(Lang.Text("Minecraft.Launch.Precheck.InstanceError", ModInstanceList.McMcInstanceSelected.Desc));
+        EnvironmentRestorePointService.RecoverInterruptedRestore(ModInstanceList.McMcInstanceSelected.PathIndie);
+        var savesPath = Path.Combine(ModInstanceList.McMcInstanceSelected.PathIndie, "saves");
+        if (Directory.Exists(savesPath) && (File.GetAttributes(savesPath) & FileAttributes.ReparsePoint) == 0)
+            foreach (var worldPath in Directory.EnumerateDirectories(savesPath))
+                if ((File.GetAttributes(worldPath) & FileAttributes.ReparsePoint) == 0)
+                    WorldBackupService.RecoverInterruptedRestore(worldPath);
         // 检查输入信息
         var checkResult = "";
         ModBase.RunInUiWait(() => checkResult = ProfileUi.IsProfileValid());

@@ -54,6 +54,8 @@ public sealed record BackupDifference(string Path, BackupDifferenceKind Kind);
 /// </summary>
 public static class WorldBackupService
 {
+    public static void RecoverInterruptedRestore(string worldDirectory)
+        => BackupArchive.RecoverInterruptedRestore(worldDirectory);
     public static BackupSnapshot Create(string worldDirectory, string backupRoot, string? reason = null,
         CancellationToken cancellationToken = default, bool retainFromAutomaticRetention = false)
         => BackupArchive.Create(worldDirectory, backupRoot, BackupSnapshotKind.World, reason, excludeSaves: false,
@@ -82,6 +84,8 @@ public static class WorldBackupService
 /// <summary>Restores launcher-managed instance files while leaving current saves untouched.</summary>
 public static class EnvironmentRestorePointService
 {
+    public static void RecoverInterruptedRestore(string instanceDirectory)
+        => BackupArchive.RecoverInterruptedRestore(instanceDirectory);
     public static BackupSnapshot Create(string instanceDirectory, string restorePointRoot, string? reason = null,
         CancellationToken cancellationToken = default, bool retainFromAutomaticRetention = false)
         => BackupArchive.Create(instanceDirectory, restorePointRoot, BackupSnapshotKind.Environment, reason, excludeSaves: true,
@@ -110,6 +114,45 @@ public static class EnvironmentRestorePointService
 internal static class BackupArchive
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private sealed record FileStamp(string Path, long Length, DateTime LastWriteTimeUtc);
+    public static void RecoverInterruptedRestore(string destinationPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
+        var destination = Path.GetFullPath(destinationPath);
+        var parent = Path.GetDirectoryName(destination.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+            ?? throw new InvalidDataException("Restore destination has no parent directory.");
+        if (!Directory.Exists(parent)) return;
+        _RejectReparsePoint(parent);
+        var leaf = Path.GetFileName(destination.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var prefix = "." + leaf + ".restore-";
+        var rollbacks = FindRestoreArtifacts(parent, prefix + "rollback-");
+        var stages = FindRestoreArtifacts(parent, prefix + "stage-");
+        if (rollbacks.Count > 1)
+            throw new InvalidDataException("Multiple interrupted restore rollbacks exist; automatic recovery is ambiguous.");
+        if (stages.Count > 1)
+            throw new InvalidDataException("Multiple interrupted restore stages exist; automatic recovery is ambiguous.");
+        if (!Directory.Exists(destination))
+        {
+            if (rollbacks.Count == 1)
+            {
+                Directory.Move(rollbacks[0], destination);
+                rollbacks.Clear();
+            }
+            else if (stages.Count > 0)
+            {
+                throw new InvalidDataException("An interrupted restore stage exists without the original destination or rollback.");
+            }
+            else return;
+        }
+        if (rollbacks.Count == 1) Directory.Delete(rollbacks[0], recursive: true);
+        if (stages.Count == 1 && Directory.Exists(stages[0])) Directory.Delete(stages[0], recursive: true);
+    }
+
+    private static List<string> FindRestoreArtifacts(string parent, string prefix)
+        => Directory.EnumerateDirectories(parent, prefix + "*", SearchOption.TopDirectoryOnly)
+            .Where(path => Guid.TryParseExact(Path.GetFileName(path)[prefix.Length..], "N", out _))
+            .Select(path => { _RejectReparsePoint(path); return path; })
+            .ToList();
 
     public static BackupSnapshot Create(string sourcePath, string storePath, BackupSnapshotKind kind, string? reason,
         bool excludeSaves, bool retainFromAutomaticRetention, CancellationToken cancellationToken)
@@ -121,6 +164,7 @@ internal static class BackupArchive
         _EnsureSeparateTrees(source, store);
         Directory.CreateDirectory(store);
         _RejectReparsePoint(store);
+        var initialFiles = _CaptureFileStamps(source, excludeSaves, cancellationToken);
         var id = Guid.NewGuid().ToString("N");
         var staging = Path.Combine(store, $".stage-{id}");
         Directory.CreateDirectory(staging);
@@ -131,11 +175,15 @@ internal static class BackupArchive
             using (var file = new FileStream(archivePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
             using (var archive = new ZipArchive(file, ZipArchiveMode.Create, leaveOpen: true))
             {
-                foreach (var sourceFile in _EnumerateFiles(source, excludeSaves))
+                foreach (var stamp in initialFiles)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var relative = _NormalizeRelative(Path.GetRelativePath(source, sourceFile));
+                    var relative = stamp.Path;
                     _ValidateRelativePath(relative);
+                    var sourceFile = _ResolveWithin(source, relative);
+                    var before = new FileInfo(sourceFile);
+                    if (!before.Exists || before.Length != stamp.Length || before.LastWriteTimeUtc != stamp.LastWriteTimeUtc)
+                        throw new IOException($"The source changed while preparing the backup: '{relative}'.");
                     var entry = archive.CreateEntry(relative, CompressionLevel.Optimal);
                     long length = 0;
                     using var input = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -150,6 +198,10 @@ internal static class BackupArchive
                         hash.AppendData(buffer, 0, read);
                         length += read;
                     }
+                    var after = new FileInfo(sourceFile);
+                    if (length != stamp.Length || !after.Exists || after.Length != stamp.Length
+                        || after.LastWriteTimeUtc != stamp.LastWriteTimeUtc)
+                        throw new IOException($"The source changed while backing it up: '{relative}'.");
                     records.Add(new BackupFileRecord
                     {
                         Path = relative,
@@ -158,6 +210,9 @@ internal static class BackupArchive
                     });
                 }
             }
+
+            if (!SameFileStamps(initialFiles, _CaptureFileStamps(source, excludeSaves, cancellationToken)))
+                throw new IOException("The source directory changed while the backup was being created.");
 
             var snapshot = new BackupSnapshot
             {
@@ -210,6 +265,7 @@ internal static class BackupArchive
         if (!Guid.TryParseExact(snapshotId, "N", out _)) throw new InvalidDataException("Invalid backup snapshot identifier.");
         var store = Path.GetFullPath(storePath);
         var destination = Path.GetFullPath(destinationPath);
+        RecoverInterruptedRestore(destination);
         if (!Directory.Exists(store)) throw new DirectoryNotFoundException(store);
         var snapshot = _ReadManifest(Path.Combine(store, snapshotId + ".json"));
         if (snapshot.Id != snapshotId || snapshot.Kind != kind || snapshot.SourceKey != _SourceKey(destination))
@@ -218,6 +274,10 @@ internal static class BackupArchive
         if (!File.Exists(archivePath) || new FileInfo(archivePath).Length != snapshot.ArchiveLength
             || !HashEquals(_HashFile(archivePath), snapshot.ArchiveSha256))
             throw new InvalidDataException("The backup archive failed its integrity check.");
+
+        // Keep a recoverable copy of the current target before applying any point.
+        Create(destination, store, kind, "Automatic backup before restore", excludeSaves: kind == BackupSnapshotKind.Environment,
+            retainFromAutomaticRetention: true, cancellationToken);
 
         var parent = Path.GetDirectoryName(destination) ?? throw new InvalidDataException("Target has no parent directory.");
         Directory.CreateDirectory(parent);
@@ -428,6 +488,24 @@ internal static class BackupArchive
             }
         }
     }
+
+    private static FileStamp[] _CaptureFileStamps(string root, bool excludeSaves, CancellationToken cancellationToken)
+    {
+        var stamps = new List<FileStamp>();
+        foreach (var file in _EnumerateFiles(root, excludeSaves))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var info = new FileInfo(file);
+            stamps.Add(new FileStamp(_NormalizeRelative(Path.GetRelativePath(root, file)), info.Length, info.LastWriteTimeUtc));
+        }
+        return stamps.OrderBy(static item => item.Path, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    private static bool SameFileStamps(IReadOnlyList<FileStamp> left, IReadOnlyList<FileStamp> right)
+        => left.Count == right.Count && left.Zip(right).All(pair =>
+            string.Equals(pair.First.Path, pair.Second.Path, StringComparison.OrdinalIgnoreCase)
+            && pair.First.Length == pair.Second.Length
+            && pair.First.LastWriteTimeUtc == pair.Second.LastWriteTimeUtc);
 
     private static void _CopyDirectoryChecked(string source, string destination, CancellationToken token)
     {

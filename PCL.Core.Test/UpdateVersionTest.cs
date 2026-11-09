@@ -223,4 +223,14 @@ public class UpdateVersionTest
         Assert.IsTrue(Newer("1.7.0-early-1", "1.6.4-hotfix-5"));
         Assert.IsTrue(UpdateVersion.IsUpToDate("1.7.0-early-1", "1.7.0-early-1"));
     }
+    [TestMethod]
+    public void SnapshotHotfixRemainsBelowStableAndNextSnapshot()
+    {
+        Assert.IsTrue(Newer("1.7.5-snapshot-3-hotfix-1", "1.7.5-snapshot-3"));
+        Assert.IsTrue(Newer("1.7.5-snapshot-3-hotfix-10", "1.7.5-snapshot-3-hotfix-2"));
+        Assert.IsTrue(Newer("1.7.5-snapshot-4", "1.7.5-snapshot-3-hotfix-10"));
+        Assert.IsTrue(Newer("1.7.5", "1.7.5-snapshot-3-hotfix-1"));
+        Assert.AreEqual(UpdateChannelLevels.Snapshot, UpdateChannelLevels.FromVersionName("1.7.5-snapshot-3-hotfix-1"));
+        Assert.AreEqual(UpdateChannelLevels.Stable, UpdateChannelLevels.FromVersionName("1.7.5-hotfix-1"));
+    }
 }

@@ -84,6 +84,20 @@ public static class ModJarInJar
         // 不在首屏同步解压嵌套 jar（冷缓存下几百个 mod 的递归解压会拖慢列表出现）
         if (deferOnMiss)
         {
+            // Most mods have metadata but no nested payload. Cache that cheap fact immediately
+            // instead of reopening every ordinary JAR in the deferred recursive scan.
+            var declared = new List<_NestedJarInfo>();
+            var known = _CollectFabricNestedJars(jar, declared);
+            known &= _CollectQuiltNestedJars(jar, declared);
+            known &= _CollectForgeNestedJars(jar, declared);
+            known &= _CollectManifestEmbeddedJars(jar, declared);
+            if (known && declared.Count == 0)
+            {
+                if (!_FingerprintMatches(new FileInfo(modFilePath), lastModified, size))
+                { complete = false; return null; }
+                ModJarInJarCache.Set(modFilePath, lastModified, size, []);
+                return [];
+            }
             complete = false;
             return null;
         }
@@ -239,7 +253,8 @@ public static class ModJarInJar
                 using (var es = entry.Open())
                 using (var fs = File.Create(tmp))
                     _CopyWithBudget(es, fs, budget);
-                using var nestedJar = ZipFile.OpenRead(tmp);
+                using var nestedJar = new ZipArchive(new FileStream(tmp, FileMode.Open, FileAccess.Read,
+                    FileShare.Read | FileShare.Write | FileShare.Delete));
                 child.JijLoader = DetectLoader(nestedJar, budget.PreferredLoader);
                 child.PreferredLoader = budget.PreferredLoader;
                 child.LookupMetadata(nestedJar, child.JijLoader);

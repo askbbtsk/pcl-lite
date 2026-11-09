@@ -43,6 +43,7 @@ public static class ModJarInJarCache
 
     private class _Store
     {
+        public readonly object SyncRoot = new();
         public string CachePath;
         public Dictionary<string, CacheEntry> Entries; // null = 未加载
         public bool Dirty;
@@ -162,7 +163,7 @@ public static class ModJarInJarCache
     {
         var store = _current;
         if (store is null) return null;
-        lock (_lock)
+        lock (store.SyncRoot)
         {
             _EnsureLoaded(store);
             if (store.Entries.TryGetValue(_NormalizeKey(path), out var e) && e.LastModified == lastModified &&
@@ -176,7 +177,7 @@ public static class ModJarInJarCache
     {
         var store = _current;
         if (store is null) return;
-        lock (_lock)
+        lock (store.SyncRoot)
         {
             _EnsureLoaded(store);
             store.Entries[_NormalizeKey(path)] =
@@ -193,7 +194,7 @@ public static class ModJarInJarCache
     {
         var store = _current;
         if (store is null) return;
-        lock (_lock)
+        lock (store.SyncRoot)
         {
             var list = keepPaths as ICollection<string> ?? keepPaths.ToList();
             _EnsureLoaded(store);
@@ -208,11 +209,17 @@ public static class ModJarInJarCache
     /// <summary>将全部实例的变更原子写入磁盘（临时文件 + 移动）。批量加载结束后调用一次即可。</summary>
     public static void Flush()
     {
-        lock (_lock)
-        {
-            foreach (var store in _stores.Values)
-                _FlushStore(store);
-        }
+        _Store[] stores;
+        lock (_lock) stores = _stores.Values.ToArray();
+        foreach (var store in stores)
+            lock (store.SyncRoot) _FlushStore(store);
+    }
+
+    /// <summary>Persist only the current instance; unrelated stores must not delay foreground indexing.</summary>
+    public static void FlushCurrent()
+    {
+        var store = _current;
+        if (store is not null) lock (store.SyncRoot) _FlushStore(store);
     }
 
     private static void _FlushStore(_Store store)

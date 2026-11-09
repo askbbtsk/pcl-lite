@@ -15,6 +15,7 @@ namespace PCL;
 
 public static partial class ModLocalComp
 {
+    private static readonly LatestBatchWorkScheduler JijWorkers = new(Math.Clamp(Environment.ProcessorCount / 2, 1, 3));
 
     /// <summary>
     ///     获取文件夹描述信息。
@@ -63,24 +64,31 @@ public static partial class ModLocalComp
         string instancePath, int loaderTaskId, int generation)
     {
         ModJarInJarCache.UseInstance(instancePath); // [ThreadStatic]：后台线程须重新注册目标实例缓存
-        JijScanContext = new ModJarInJar.ScanContext(() =>
-            compResourceListLoader.IsAbortedWithThread(loaderTaskId));
+        bool IsObsolete() => generation != Volatile.Read(ref _jijGeneration)
+            || compResourceListLoader.IsAbortedWithThread(loaderTaskId);
         var allResolved = false;
+        ModJarInJar.ScanContext? sharedScan = null;
+        var scanGate = new object();
         try
         {
-            foreach (var m in pending)
+            if (IsObsolete()) return;
+            JijWorkers.RunAsync(pending, (mod, token) =>
             {
-                // 当前运行在 RunInNewThread 创建的普通 Thread 上，Task.CurrentId 为 null；
-                // 必须使用来源加载任务的 Task Id 判断，不能调用 IsAborted。
-                if (compResourceListLoader.IsAbortedWithThread(loaderTaskId)) return;
-                m.ResolveJijNow();
-            }
+                if (IsObsolete()) return;
+                // ThreadStatic state must be bound on each worker, never inherited from the coordinator.
+                ModJarInJarCache.UseInstance(instancePath);
+                lock (scanGate)
+                    JijScanContext = sharedScan ??= new ModJarInJar.ScanContext(() => token.IsCancellationRequested || IsObsolete());
+                try { mod.ResolveJijNow(); }
+                finally { JijScanContext = null; ModJarInJarCache.UseInstance(null); }
+            }, canStart: () => !IsObsolete()).GetAwaiter().GetResult();
 
-            if (compResourceListLoader.IsAbortedWithThread(loaderTaskId)) return;
+            if (IsObsolete()) return;
             // 个别文件解析失败时保留其 pending 状态与旧缓存条目，等待下一次强制刷新重试。
             allResolved = pending.All(m => !m.JijPending);
             if (allResolved) ModJarInJarCache.Prune(allModPaths);
         }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
             ModBase.Log(ex, "Jar-in-Jar 后台补解析失败", ModBase.LogLevel.Developer);
@@ -88,14 +96,17 @@ public static partial class ModLocalComp
         finally
         {
             // 中断/失败时也保存此前已完整解析的条目；不执行 Prune，避免删掉尚未扫描的旧缓存。
-            ModJarInJarCache.Flush();
+            ModJarInJarCache.FlushCurrent();
             JijScanContext = null;
             ModJarInJarCache.UseInstance(null);
             if (generation == Volatile.Read(ref _jijGeneration))
             {
                 CompJijResolved = allResolved;
                 // 内嵌解析状态变化后，若关系页正显示则刷新；失败时仍保留“未完成”保护。
-                ModBase.RunInUi(() => ModMain.frmInstanceModJarInJar?.OnJijResolved());
+                ModBase.RunInUi(() =>
+                {
+                    if (generation == Volatile.Read(ref _jijGeneration)) ModMain.frmInstanceModJarInJar?.OnJijResolved();
+                });
             }
         }
     }
@@ -250,6 +261,7 @@ public static partial class ModLocalComp
             if (jijEnabled)
             {
                 jijGeneration = Interlocked.Increment(ref _jijGeneration);
+                JijWorkers.CancelObsolete();
                 CompJijResolved = false;
                 DeferJijOnMiss = true;
             }

@@ -50,6 +50,7 @@ public static class UpdateChannelLevels
         // 热修复（hotfix-1 / hotfix-2 …）打在**同号正式版之上**，属于正式版通道的东西。
         // 不单独判的话会掉进下面那条兜底规则变成「预览版」，稳定版通道的用户就永远收不到它——
         // 而热修复恰恰是要推给所有人的。判定必须排在兜底之前。
+        if (UpdateVersion.TryGetSnapshotHotfix(text, out _, out _)) return Snapshot;
         if (text.Contains("hotfix", StringComparison.OrdinalIgnoreCase)) return Stable;
 
         // 抢先版（early-1 / early-2 …）是「正式版提前放出来」，同样属于正式版通道：

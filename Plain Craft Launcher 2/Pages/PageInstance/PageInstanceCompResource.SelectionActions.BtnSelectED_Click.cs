@@ -90,29 +90,17 @@ public partial class PageInstanceCompResource
             Lang.Text("Common.Action.Continue"), Lang.Text("Common.Action.Cancel"), isWarn: true) != 1)
             return false;
 
-        // “继续”表示先同步补齐整份列表，再重新构建级联索引；不能在残缺 output 上直接计算 affected。
+        // Resolve on bounded foreground workers while the native dialog pumps the dispatcher.
         var output = ModLocalComp.compResourceListLoader.output;
         if (output is null) return false;
-        var completed = true;
-        try
-        {
-            ModJarInJarCache.UseInstance(PageInstanceLeft.McInstance?.PathInstance);
-            ModLocalComp.JijScanContext = new ModJarInJar.ScanContext();
-            foreach (var mod in output.Where(m => !m.IsFolder && m.JijPending))
-                completed &= mod.ResolveJijNow();
-            if (completed)
-            {
-                ModJarInJarCache.Prune(output.Where(m => !m.IsFolder).Select(m => m.path));
-                ModJarInJarCache.Flush();
-            }
-        }
-        finally
-        {
-            ModLocalComp.JijScanContext = null;
-            ModJarInJarCache.UseInstance(null);
-        }
-
-        ModLocalComp.CompJijResolved = completed;
+        var instance = PageInstanceLeft.McInstance;
+        if (instance is null) return false;
+        var generation = ModLocalComp.CurrentJijGeneration;
+        var completed = NativeWorkDialog.Run(Lang.Text("Instance.Resource.Mod.JarInJar.ParsePending.Title"),
+            Lang.Text("Instance.Resource.Mod.JarInJar.ParsePending.Message"),
+            (token, progress) => ModLocalComp.ResolveJijForCurrentOutputAsync(output, instance.PathInstance, generation, token, progress),
+            () => IsLoaded && ReferenceEquals(instance, PageInstanceLeft.McInstance)
+                && ReferenceEquals(output, ModLocalComp.compResourceListLoader.output));
         ModMain.frmInstanceModJarInJar?.OnJijResolved();
         if (!completed)
             HintService.Hint(Lang.Text("Instance.Resource.Ed.ToggleFailed"), HintType.Error);

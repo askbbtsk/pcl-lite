@@ -115,6 +115,7 @@ public static class UpdateVersion
     private static int _RankOf(string suffix)
     {
         if (suffix.Length == 0) return RankStable;
+        if (TryGetSnapshotHotfix(suffix, out _, out _)) return RankSnapshot;
         if (suffix.Contains("hotfix", StringComparison.OrdinalIgnoreCase)) return RankHotfix;
         if (suffix.Contains("nightly", StringComparison.OrdinalIgnoreCase)) return RankLatest;
         if (suffix.Contains("snapshot", StringComparison.OrdinalIgnoreCase)) return RankSnapshot;
@@ -130,6 +131,7 @@ public static class UpdateVersion
     private static int _SequenceOf(string suffix)
     {
         if (suffix.Length == 0) return 0;
+        if (TryGetSnapshotHotfix(suffix, out var snapshot, out _)) return snapshot;
 
         var parts = suffix.Split(['-', '.'], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length > 0 &&
@@ -149,6 +151,8 @@ public static class UpdateVersion
     private static string _FamilyOf(string suffix)
     {
         if (suffix.Length == 0) return string.Empty;
+        if (TryGetSnapshotHotfix(suffix, out _, out var hotfix))
+            return "snapshot-hotfix-" + hotfix.ToString("D10", CultureInfo.InvariantCulture);
 
         var parts = suffix.Split(['-', '.'], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length <= 1) return suffix;
@@ -156,6 +160,16 @@ public static class UpdateVersion
         return int.TryParse(parts[^1], NumberStyles.None, CultureInfo.InvariantCulture, out _)
             ? string.Join('-', parts[..^1])
             : suffix;
+    }
+
+    internal static bool TryGetSnapshotHotfix(string suffix, out int snapshot, out int hotfix)
+    {
+        snapshot = 0; hotfix = 0;
+        var parts = suffix.Split('-');
+        return parts.Length == 4 && parts[0].Equals("snapshot", StringComparison.OrdinalIgnoreCase)
+            && parts[2].Equals("hotfix", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out snapshot) && snapshot > 0
+            && int.TryParse(parts[3], NumberStyles.None, CultureInfo.InvariantCulture, out hotfix) && hotfix > 0;
     }
 
     /// <summary>拆分后的版本键。</summary>

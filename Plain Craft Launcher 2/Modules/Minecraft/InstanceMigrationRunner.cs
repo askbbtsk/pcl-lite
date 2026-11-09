@@ -125,8 +125,9 @@ internal static class InstanceMigrationRunner
             if (!outcome.Success) throw new IOException(Lang.Text("Instance.Migration.Failed", targetName));
         });
         loader.OnStateChanged = ModDownloadLib.LoaderStateChangedHintOnly;
-        loader.Start(targetDirectory);
-        ModLoader.LoaderTaskbarAdd(loader);
+        var taskGroup = new ModLoader.LoaderCombo<string>(loader.name, [loader]) { show = false };
+        taskGroup.Start(targetDirectory);
+        ModLoader.LoaderTaskbarAdd(taskGroup);
         ModMain.frmMain.BtnExtraDownload.ShowRefresh();
         ModMain.frmMain.BtnExtraDownload.Ribble();
     }

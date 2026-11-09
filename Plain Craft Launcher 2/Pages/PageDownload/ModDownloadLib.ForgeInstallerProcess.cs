@@ -245,12 +245,20 @@ public static partial class ModDownloadLib
                     process.BeginErrorReadLine();
                     // 等待
                     while (!process.HasExited)
+                    {
+                        if (task.State == ModBase.LoadState.Aborted)
+                        {
+                            try { process.Kill(entireProcessTree: true); }
+                            catch (InvalidOperationException) { /* The owned installer already exited. */ }
+                        }
                         Thread.Sleep(10);
+                    }
                     // 输出
                     outputWaitHandle.WaitOne(10000);
                     errorWaitHandle.WaitOne(10000);
                     var exitCode = process.ExitCode;
                     process.Dispose();
+                    if (task.State == ModBase.LoadState.Aborted) throw new ModBase.CancelledException();
                     // 检查是否安装成功：最后 5 行中是否有 true（true 可能在倒数数行，见 #832）
                     if (PCL.Core.Minecraft.Packs.InstallerCompletionPolicy.IsSuccessful(exitCode, lastResults.Reverse().Take(5)))
                         return;

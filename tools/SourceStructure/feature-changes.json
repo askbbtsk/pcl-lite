@@ -139,7 +139,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageDownload/ModDownloadLib.ForgeInstallerProcess.cs",
-  "Sha256": "E21964D80A482626C10A6F80808950F26D46293223E85866F841A9F27C06C268",
+  "Sha256": "1A5B8461D24F85526E7E7F22D54276D2ABCA2CBF1030C64E05C3B4CCF3E69746",
   "Members": [
     "PCL.ModDownloadLib::MethodDeclaration::ForgelikeInjector(string target, ModLoader.LoaderTask<bool, bool> task, string mcFolder,\n        bool useJavaWrapper, ModDownload.DlForgelikeEntry.ForgelikeType forgeType)"
   ],

@@ -315,8 +315,10 @@ internal static class ModWorldBackups
         var running = ModWatcher.mcWatcherList.Any(watcher =>
             (watcher.State is ModWatcher.Watcher.MinecraftState.Loading or ModWatcher.Watcher.MinecraftState.Running)
             && watcher.version is not null
-            && string.Equals(Path.GetFullPath(watcher.version.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
-                normalized, StringComparison.OrdinalIgnoreCase));
+            && (string.Equals(Path.GetFullPath(watcher.version.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    normalized, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Path.GetFullPath(watcher.version.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    normalized, StringComparison.OrdinalIgnoreCase)));
         if (running) throw new InvalidOperationException(Text("busy"));
     }
 

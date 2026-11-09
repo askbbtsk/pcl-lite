@@ -135,6 +135,22 @@ public sealed class BackupServiceTests
         Assert.AreEqual("keep-current", File.ReadAllText(Path.Combine(instance, "PCLLiteData", "new-setting.json")));
     }
     [TestMethod]
+    public void EnvironmentRestorePoint_DeleteRemovesOnlySelectedPoint()
+    {
+        var instance = Path.Combine(_root, "instance");
+        var restorePoints = Path.Combine(_root, "restore-points");
+        Write(Path.Combine(instance, "mods", "a.jar"), "a");
+        var first = EnvironmentRestorePointService.Create(instance, restorePoints, "first");
+        Write(Path.Combine(instance, "mods", "a.jar"), "b");
+        var second = EnvironmentRestorePointService.Create(instance, restorePoints, "second");
+
+        Assert.IsTrue(EnvironmentRestorePointService.Delete(restorePoints, first.Id, instance));
+        Assert.IsFalse(EnvironmentRestorePointService.Delete(restorePoints, first.Id, instance));
+        var remaining = EnvironmentRestorePointService.List(restorePoints, instance);
+        Assert.AreEqual(1, remaining.Count);
+        Assert.AreEqual(second.Id, remaining[0].Id);
+    }
+    [TestMethod]
     public void EnvironmentRestorePoint_CompareCurrentReportsAddedModifiedAndRemovedFilesButIgnoresSaves()
     {
         var instance = Path.Combine(_root, "instance");

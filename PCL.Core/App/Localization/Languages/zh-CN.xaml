@@ -1046,6 +1046,9 @@
     <sys:String x:Key="Instance.RestorePoint.Confirm">恢复到 {0}？实例环境文件将被替换，存档不会改变。</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Created">还原点已创建。</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Restored">实例还原点已恢复。</sys:String>
+<sys:String x:Key="Instance.RestorePoint.Delete">删除还原点</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Delete.Confirm">删除 {0} 的还原点？此操作不可撤销。</sys:String>
+    <sys:String x:Key="Instance.RestorePoint.Deleted">还原点已删除。</sys:String>
     <sys:String x:Key="Instance.RestorePoint.Failed">还原点操作失败，请查看日志。</sys:String>
 <sys:String x:Key="Instance.RestorePoint.CrashRecovery.Title">崩溃后环境变化</sys:String>
     <sys:String x:Key="Instance.RestorePoint.CrashRecovery.Message">实例“{0}”异常退出。与启动前还原点相比：新增 {1}，修改 {2}，删除 {3} 个环境文件。恢复会保留 saves 存档和 PCL Lite 本地数据，并将其他环境文件还原。</sys:String>

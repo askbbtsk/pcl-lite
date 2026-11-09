@@ -175,6 +175,7 @@ public partial class PageInstanceOverall
             row.ColumnDefinitions.Add(new ColumnDefinition());
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var info = new TextBlock
             {
                 Text = Lang.Text("Instance.RestorePoint.Item", Lang.Date(snapshot.CreatedUtc.LocalDateTime, "g"), snapshot.Files.Count, snapshot.Reason ?? ""),
@@ -199,7 +200,15 @@ public partial class PageInstanceOverall
                 Margin = new Thickness(6, 0, 0, 0)
             };
             Grid.SetColumn(compare, 2);
-            compare.Click += (_, _) => CompareRestorePoint(instance, snapshot);
+            compare.Click += (_, _) => CompareRestorePoint(instance, snapshot);            var delete = new MyIconButton
+            {
+                SvgIcon = "lucide/trash-2",
+                ToolTip = Lang.Text("Instance.RestorePoint.Delete"),
+                Margin = new Thickness(6, 0, 0, 0)
+            };
+            Grid.SetColumn(delete, 3);
+            delete.Click += (_, _) => DeleteRestorePoint(instance, snapshot);
+            row.Children.Add(delete);
             row.Children.Add(compare);
             row.Children.Add(restore);
             PanRestorePointList.Children.Add(row);
@@ -234,6 +243,30 @@ public partial class PageInstanceOverall
             catch (Exception ex)
             {
                 ModBase.Log(ex, "对比实例还原点失败", ModBase.LogLevel.Hint);
+                ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.RestorePoint.Failed"), HintType.Error));
+            }
+        });
+    }
+    private void DeleteRestorePoint(McInstance instance, PCL.Core.Minecraft.Backups.BackupSnapshot snapshot)
+    {
+        if (ModMain.MyMsgBox(Lang.Text("Instance.RestorePoint.Delete.Confirm", snapshot.CreatedUtc.LocalDateTime),
+                Lang.Text("Instance.RestorePoint.Delete"), Lang.Text("Instance.RestorePoint.Delete"),
+                Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
+        var instanceDirectory = instance.PathIndie;
+        ModBase.RunInNewThread(() =>
+        {
+            try
+            {
+                ModWorldBackups.DeleteRestorePoint(instanceDirectory, snapshot.Id);
+                ModBase.RunInUi(() =>
+                {
+                    HintService.Hint(Lang.Text("Instance.RestorePoint.Deleted"), HintType.Success);
+                    RefreshRestorePoints(PageInstanceLeft.McInstance);
+                });
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "删除实例还原点失败", ModBase.LogLevel.Hint);
                 ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.RestorePoint.Failed"), HintType.Error));
             }
         });

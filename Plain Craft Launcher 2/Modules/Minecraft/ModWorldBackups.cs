@@ -136,6 +136,12 @@ internal static class ModWorldBackups
         EnvironmentRestorePointService.Restore(RestorePointRoot, snapshotId, instanceDirectory);
     }
 
+    public static bool DeleteRestorePoint(string instanceDirectory, string snapshotId)
+    {
+        EnsureInstanceOffline(instanceDirectory);
+        return EnvironmentRestorePointService.Delete(RestorePointRoot, snapshotId, instanceDirectory);
+    }
+
     private static string _BackupRoot(string worldPath)
     {
         var world = Path.GetFullPath(worldPath);

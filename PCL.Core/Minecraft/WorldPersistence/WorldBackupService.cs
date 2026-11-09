@@ -100,6 +100,9 @@ public static class EnvironmentRestorePointService
         => BackupArchive.Restore(restorePointRoot, snapshotId, instanceDirectory, BackupSnapshotKind.Environment,
             preserveSaves: true, preserveLauncherData: true, cancellationToken);
 
+    public static bool Delete(string restorePointRoot, string snapshotId, string instanceDirectory)
+        => BackupArchive.Delete(restorePointRoot, snapshotId, instanceDirectory, BackupSnapshotKind.Environment);
+
     public static void ApplyRetention(string restorePointRoot, string instanceDirectory, int maxSnapshots)
         => BackupArchive.ApplyRetention(restorePointRoot, BackupSnapshotKind.Environment, instanceDirectory, maxSnapshots);
 }
@@ -338,11 +341,14 @@ internal static class BackupArchive
         if (!Guid.TryParseExact(snapshotId, "N", out _)) throw new InvalidDataException("Invalid backup snapshot identifier.");
         var store = Path.GetFullPath(storePath);
         if (!Directory.Exists(store)) return false;
-        var snapshot = _ReadManifest(Path.Combine(store, snapshotId + ".json"));
+        var manifestPath = Path.Combine(store, snapshotId + ".json");
+        if (!File.Exists(manifestPath)) return false;
+        var snapshot = _ReadManifest(manifestPath);
         if (snapshot.Id != snapshotId || snapshot.Kind != kind || snapshot.SourceKey != _SourceKey(Path.GetFullPath(sourcePath)))
             throw new InvalidDataException("The backup snapshot does not belong to this target.");
-        File.Delete(Path.Combine(store, snapshotId + ".zip"));
-        File.Delete(Path.Combine(store, snapshotId + ".json"));
+        var archivePath = Path.Combine(store, snapshotId + ".zip");
+        if (File.Exists(archivePath)) File.Delete(archivePath);
+        File.Delete(manifestPath);
         return true;
     }
 

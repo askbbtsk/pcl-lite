@@ -383,7 +383,7 @@ public sealed class PackUpdatePlannerTest
             ["mods/b.jar"] = payloadB,
         });
 
-        Assert.ThrowsExactly<IOException>(() => PackUpdateTransaction.Apply(plan, progress: (completed, _) =>
+        var failure = Assert.ThrowsExactly<AggregateException>(() => PackUpdateTransaction.Apply(plan, progress: (completed, _) =>
         {
             if (completed == 1)
             {
@@ -391,6 +391,7 @@ public sealed class PackUpdatePlannerTest
                 Write(Path.Combine(game, "mods", "b.jar"), "external-new-file");
             }
         }));
+        Assert.AreEqual(2, failure.InnerExceptions.Count);
 
         Assert.AreEqual("external-edit", File.ReadAllText(Path.Combine(game, "mods", "a.jar")));
         Assert.AreEqual("external-new-file", File.ReadAllText(Path.Combine(game, "mods", "b.jar")));

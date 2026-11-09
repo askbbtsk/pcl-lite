@@ -367,6 +367,37 @@ public sealed class PackUpdatePlannerTest
     }
 
     [TestMethod]
+    public void Rollback_PreservesExternalChangesMadeDuringCommit()
+    {
+        var game = Path.Combine(_root, "game");
+        Write(Path.Combine(game, "mods", "a.jar"), "old-a");
+        var payloadA = Path.Combine(_stage, "new-a.jar");
+        var payloadB = Path.Combine(_stage, "new-b.jar");
+        Write(payloadA, "new-a");
+        Write(payloadB, "new-b");
+        var old = Baseline(Entry("mods/a.jar", "old-a", "a:file"));
+        var target = Baseline(Entry("mods/a.jar", "new-a", "a:file"), Entry("mods/b.jar", "new-b", "b:file"));
+        var plan = PackUpdatePlanner.Build(game, old, target, new Dictionary<string, string>
+        {
+            ["mods/a.jar"] = payloadA,
+            ["mods/b.jar"] = payloadB,
+        });
+
+        Assert.ThrowsExactly<IOException>(() => PackUpdateTransaction.Apply(plan, progress: (completed, _) =>
+        {
+            if (completed == 1)
+            {
+                Write(Path.Combine(game, "mods", "a.jar"), "external-edit");
+                Write(Path.Combine(game, "mods", "b.jar"), "external-new-file");
+            }
+        }));
+
+        Assert.AreEqual("external-edit", File.ReadAllText(Path.Combine(game, "mods", "a.jar")));
+        Assert.AreEqual("external-new-file", File.ReadAllText(Path.Combine(game, "mods", "b.jar")));
+        Assert.AreEqual(1, Directory.GetDirectories(Path.GetDirectoryName(game)!, $".{Path.GetFileName(game)}.pcl-update-*").Length);
+    }
+
+    [TestMethod]
     public void MetadataCommitFailure_RollsBackAppliedGameFiles()
     {
         var game = Path.Combine(_root, "game");

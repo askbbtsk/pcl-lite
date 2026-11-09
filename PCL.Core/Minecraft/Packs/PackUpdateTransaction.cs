@@ -118,13 +118,23 @@ public static class PackUpdateTransaction
             var rollbackErrors = new List<Exception>();
             foreach (var created in createdFiles)
             {
-                try { if (File.Exists(created)) File.Delete(created); }
+                try
+                {
+                    if (!File.Exists(created)) continue;
+                    var current = PackUpdatePlanner.HashFile(created);
+                    if (!expectedCurrent.TryGetValue(created, out var expected) || !PackUpdatePlanner.HashEquals(current, expected))
+                        throw new IOException($"Rollback preserved an external change at '{created}'.");
+                    File.Delete(created);
+                }
                 catch (Exception ex) { rollbackErrors.Add(ex); }
             }
             foreach (var backup in backups.Reverse())
             {
                 try
                 {
+                    var current = File.Exists(backup.Key) ? PackUpdatePlanner.HashFile(backup.Key) : null;
+                    if (!expectedCurrent.TryGetValue(backup.Key, out var expected) || !PackUpdatePlanner.HashEquals(current, expected))
+                        throw new IOException($"Rollback preserved an external change at '{backup.Key}'.");
                     Directory.CreateDirectory(Path.GetDirectoryName(backup.Key)!);
                     File.Copy(backup.Value, backup.Key, overwrite: true);
                 }

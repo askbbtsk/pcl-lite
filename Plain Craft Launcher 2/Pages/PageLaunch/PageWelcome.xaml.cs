@@ -52,8 +52,6 @@ public partial class PageWelcome
     {
         PanRoot.Children.Clear();
         PanRoot.Children.Add(_BuildHero());
-        PanRoot.Children.Add(_BuildRecentCard());
-        PanRoot.Children.Add(_BuildLastPlayedWorldCard());
         PanRoot.Children.Add(_BuildNetworkCard());
         PanRoot.Children.Add(_BuildCommunityCard());
         // 主页语言 API：同一父容器下只保留命中当前语言的分支

@@ -42,6 +42,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -55,6 +57,19 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
+
+      - name: Verify source contracts and refactor size
+        shell: pwsh
+        run: |
+          foreach ($configuration in @('DEBUG', 'CI', 'RELEASE', 'BETA')) {
+            dotnet run --project tools/SourceStructure/SourceStructure.csproj -- verify $configuration
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          dotnet run --project tools/SourceStructure/SourceStructure.csproj -- report
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build TestAll plugin against current SDK
+        run: dotnet build PCL.Plugin.TestAll/PCL.Plugin.TestAll.csproj -c Debug
 
       - name: Run unit tests
         run: >

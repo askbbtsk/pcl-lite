@@ -1,0 +1,18 @@
+{
+  "PCL.ModDownload::MethodDeclaration::DlModRequest(string url)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlModRequest\u003CT\u003E(string url)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlModRequest(string url, string method, string data, string contentType,\n        bool allowMirror = false)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlModRequest\u003CT\u003E(string url, string method, string data, string contentType,\n        bool allowMirror = false)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlSourceOrder(IEnumerable\u003Cstring\u003E officialUrls, IEnumerable\u003Cstring\u003E mirrorUrls)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlVersionListOrder(IEnumerable\u003Cstring\u003E officialUrls,\n        IEnumerable\u003Cstring\u003E mirrorUrls)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlSourceAssetsGet(string original)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlSourceLibraryGet(string original)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlSourceLauncherOrMetaGet(string original)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlSourceModGet(string original)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlSourceModDownloadGet(string original)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlSourceLoader\u003CInputType, OutputType\u003E(ModLoader.LoaderTask\u003CInputType, OutputType\u003E mainLoader,\n        List\u003CKeyValuePair\u003CModLoader.LoaderTask\u003CInputType, OutputType\u003E, int\u003E\u003E loaderList, bool isForceRestart = false)": "ResourceRequestService",
+  "PCL.ModDownload::MethodDeclaration::DlSourceLoaderAbort\u003CInputType, OutputType\u003E(\n        List\u003CKeyValuePair\u003CModLoader.LoaderTask\u003CInputType, OutputType\u003E, int\u003E\u003E loaderList)": "ResourceRequestService",
+  "PCL.ModDownloadLib::MethodDeclaration::MergeJson(string outputFolder, string minecraftFolder, string optiFineFolder = null,\n        bool optiFineAsMod = false, string forgeFolder = null, string forgeVersion = null, string neoForgeFolder = null,\n        string neoForgeVersion = null, string cleanroomFolder = null, string cleanroomVersion = null,\n        string fabricFolder = null, string labyModFolder = null,\n        string labyModChannel = null, string liteLoaderFolder = null, ModModpack.MMCPackInfo mMCPackInfo = null,\n        string legacyFabricFolder = null)": "VersionJsonMerger",
+  "PCL.ModDownloadLib::MethodDeclaration::IsLwjgl3Library(JsonNode library)": "VersionJsonMerger",
+  "PCL.ModDownloadLib::MethodDeclaration::IsLwjgl2Library(JsonNode library)": "VersionJsonMerger"
+}

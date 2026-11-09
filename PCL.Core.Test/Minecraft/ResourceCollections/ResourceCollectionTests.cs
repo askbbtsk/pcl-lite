@@ -192,6 +192,6 @@ public sealed class ResourceCollectionTests
     private sealed class InlineProgress(Action<ResourceCopyItem> report) : IProgress<ResourceCopyItem>
     { public void Report(ResourceCopyItem value) => report(value); }
 
-    [DllImport("kernel32.dll", EntryPoint = "GetShortPathNameW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DllImport("kernel32.dll", EntryPoint = "GetShortPathNameW", CharSet = CharSet.Unicode)]
     private static extern uint GetShortPathName(string longPath, StringBuilder shortPath, uint bufferLength);
 }

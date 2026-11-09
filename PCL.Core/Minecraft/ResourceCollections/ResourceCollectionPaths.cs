@@ -6,7 +6,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace PCL.Core.Minecraft.ResourceCollections;
 
-internal static class ResourceCollectionPaths
+internal static partial class ResourceCollectionPaths
 {
     internal static string Normalize(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
 
@@ -37,33 +37,37 @@ internal static class ResourceCollectionPaths
         return Path.GetExtension(name).ToLowerInvariant() is ".jar" or ".zip" or ".litemod";
     }
 
-    internal static string ExpandLongName(string full, out bool unresolved)
+    internal static unsafe string ExpandLongName(string full, out bool unresolved)
     {
         unresolved = false;
         if (!OperatingSystem.IsWindows()) { unresolved = full.Contains('~'); return full; }
-        var buffer = new StringBuilder(32768);
-        var length = GetLongPathName(full, buffer, (uint)buffer.Capacity);
-        if (length == 0 || length >= buffer.Capacity) { unresolved = full.Contains('~'); return full; }
-        return Normalize(buffer.ToString());
+        var buffer = new char[32768];
+        fixed (char* input = full)
+        fixed (char* output = buffer)
+        {
+            var length = GetLongPathName(input, output, (uint)buffer.Length);
+            if (length == 0 || length >= buffer.Length) { unresolved = full.Contains('~'); return full; }
+            return Normalize(new string(output, 0, (int)length));
+        }
     }
 
-    internal static string? PhysicalIdentity(string path)
+    internal static unsafe string? PhysicalIdentity(string path)
     {
         if (!OperatingSystem.IsWindows()) return null;
         using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        return GetFileInformationByHandle(handle, out var info)
+        FileInformation info;
+        return GetFileInformationByHandle(handle.DangerousGetHandle(), &info) != 0
             ? $"{info.VolumeSerialNumber:X8}:{info.FileIndexHigh:X8}{info.FileIndexLow:X8}" : null;
     }
 
     internal static bool ExpectedFailure(Exception ex) => ex is IOException or InvalidDataException
         or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException;
 
-    [DllImport("kernel32.dll", EntryPoint = "GetLongPathNameW", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern uint GetLongPathName(string shortPath, StringBuilder longPath, uint bufferLength);
+    [LibraryImport("kernel32.dll", EntryPoint = "GetLongPathNameW", SetLastError = true)]
+    private static unsafe partial uint GetLongPathName(char* shortPath, char* longPath, uint bufferLength);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandle(SafeFileHandle handle, out FileInformation info);
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    private static unsafe partial int GetFileInformationByHandle(nint handle, FileInformation* info);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct FileInformation

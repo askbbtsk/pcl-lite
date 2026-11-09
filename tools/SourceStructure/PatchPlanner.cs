@@ -17,11 +17,16 @@ internal static partial class Program
         foreach (var type in root.DescendantNodes().OfType<TypeDeclarationSyntax>().Where(type => Lines(type.ToFullString()) > 700))
         {
             // A partial retains its own state, constructors, attributes and type identity.
-            var groups = new List<List<MemberDeclarationSyntax>>();
+            var groups = new List<(string Region, List<MemberDeclarationSyntax> Members)>();
             var current = new List<MemberDeclarationSyntax>();
             var size = 0;
+            var region = "Members";
+            var activeRegion = region;
             foreach (var member in type.Members)
             {
+                var declaredRegion = member.GetLeadingTrivia().Where(trivia => trivia.HasStructure).Select(trivia => trivia.GetStructure())
+                    .OfType<RegionDirectiveTriviaSyntax>().LastOrDefault();
+                if (declaredRegion is not null) region = RegionName(declaredRegion.ToString());
                 if (member is TypeDeclarationSyntax nested && Lines(nested.ToFullString()) > 700) continue;
                 if (member is FieldDeclarationSyntax or EventFieldDeclarationSyntax or ConstructorDeclarationSyntax
                     || member is PropertyDeclarationSyntax { Initializer: not null }) continue;
@@ -29,19 +34,23 @@ internal static partial class Program
                     .OfType<DirectiveTriviaSyntax>().Any(directive => directive is not RegionDirectiveTriviaSyntax and not EndRegionDirectiveTriviaSyntax)) continue;
                 var length = Lines(member.ToFullString());
                 if (length > 900) throw new InvalidDataException("Single member needs a manual extraction: " + TypeName(type) + "." + MemberName(member));
-                if (size + length > 700 && current.Count > 0) { groups.Add(current); current = new(); size = 0; }
+                if ((size + length > 700 || region != activeRegion) && current.Count > 0)
+                {
+                    groups.Add((activeRegion, current)); current = new(); size = 0;
+                }
+                activeRegion = region;
                 current.Add(member); size += length;
             }
-            if (current.Count > 0) groups.Add(current);
+            if (current.Count > 0) groups.Add((activeRegion, current));
             if (groups.Count == 0) continue;
             var chain = type.Ancestors().OfType<TypeDeclarationSyntax>().Reverse().Append(type).ToArray();
             foreach (var owner in chain) touched.Add(owner);
             foreach (var group in groups)
             {
-                var responsibility = Responsibility(path, type.Identifier.Text, Selector(group[0]).Split('/')[0]);
+                var responsibility = group.Region + "." + Responsibility(path, type.Identifier.Text, Selector(group.Members[0]).Split('/')[0]);
                 var content = prefix;
                 foreach (var owner in chain) content += TypeHeader(owner) + "\n{\n";
-                foreach (var member in group)
+                foreach (var member in group.Members)
                 {
                     content += WithoutRegions(member.ToFullString()) + "\n";
                     edits.Add((member.FullSpan.Start, member.FullSpan.Length, ""));
@@ -72,10 +81,56 @@ internal static partial class Program
         // These names identify original entry points rather than arbitrary numbered chunks.
         var name = new string(first.TakeWhile(character => char.IsLetterOrDigit(character) || character == '_').ToArray()).TrimStart('_');
         if (name.Length == 0) name = "Declarations";
-        return name + "Operations";
+        return name;
+    }
+
+    private static string RegionName(string text)
+    {
+        var name = text.Replace("#region", "", StringComparison.Ordinal).Trim();
+        var names = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["数学"] = "Numeric", ["文件"] = "FileSystem", ["文本"] = "Text", ["搜索"] = "Search",
+            ["系统"] = "SystemInterop", ["UI"] = "UserInterface", ["Debug"] = "Diagnostics", ["WPF"] = "Wpf",
+            ["声明"] = "Declarations", ["自定义类"] = "ValueTypes", ["预检测"] = "Precheck", ["开始"] = "LaunchCoordinator",
+            ["档案验证"] = "Authentication", ["主模块"] = "AuthenticationFlow", ["第三方验证类型"] = "ThirdPartyIdentity",
+            ["正版验证类型"] = "MicrosoftIdentity", ["离线验证类型"] = "OfflineIdentity", ["正版验证"] = "MicrosoftAuthentication",
+            ["第三方验证"] = "ThirdPartyAuthentication", ["离线验证"] = "OfflineAuthentication", ["Java 处理"] = "JavaSelection",
+            ["启动参数"] = "LaunchArguments", ["解压 Natives"] = "NativeExtraction", ["启动与前后处理"] = "GameProcessLifecycle",
+            ["初始化"] = "Initialization", ["基础"] = "Identity", ["信息项"] = "Metadata", ["加载"] = "Loading",
+            ["UI 化"] = "Presentation", ["管理"] = "Management", ["选择"] = "Selection", ["筛选"] = "Filtering",
+            ["排序"] = "Sorting", ["下边栏"] = "SelectionActions",
+            ["单个资源项"] = "ResourceActions", ["文件夹导航"] = "FolderNavigation", ["模组信息缓存"] = "FileInfoCache",
+            ["原理图文件详细信息显示"] = "SchematicDetails", ["Litematic 文件处理"] = "LitematicReader",
+            ["Schem 文件处理"] = "SchemReader", ["Schematic 文件处理"] = "SchematicReader", ["NBT 结构文件处理"] = "StructureReader",
+            ["加载步骤标记"] = "LoadState", ["快速下载（资源卡片下载按钮）"] = "ResourceDownloads",
+        };
+        if (names.TryGetValue(name, out var translated)) return translated;
+        var ascii = new string(name.TakeWhile(character => character < 128 && (char.IsLetterOrDigit(character) || character == '_')).ToArray());
+        return ascii.Length > 0 ? ascii : "ViewActions";
     }
 
     private sealed record SplitSpec(string Type, string Responsibility, string First, string Last);
+
+    private static int SeparateTypes(string path)
+    {
+        path = path.Replace('\\', '/');
+        var text = Current(path);
+        var root = Parse(text);
+        var ns = root.DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().First();
+        var declarations = ns.Members.ToArray();
+        var prefix = text[..ns.SpanStart] + "namespace " + ns.Name + ";\n\n";
+        var patches = new List<string> { "*** Begin Patch\n*** Delete File: " + path + "\n*** End Patch" };
+        AddFilePatches(patches, path, prefix + declarations[0].ToFullString());
+        foreach (var declaration in declarations.Skip(1))
+        {
+            var name = declaration is BaseTypeDeclarationSyntax type ? type.Identifier.Text : MemberName(declaration);
+            var destination = Path.GetDirectoryName(path)!.Replace('\\', '/') + "/" + name + ".cs";
+            if (File.Exists(destination)) throw new IOException("Type output already exists: " + destination);
+            AddFilePatches(patches, destination, prefix + declaration.ToFullString());
+        }
+        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(patches));
+        return 0;
+    }
 
     // This mode emits reviewable patches only. It never writes or replaces repository sources.
     private static int Plan(string[] args)

@@ -5,18 +5,22 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 internal static partial class Program
 {
-    private static int Extract(string path, string service)
+    private static int Extract(string path, string service, string[] selectors)
     {
         path = path.Replace('\\', '/');
         var original = Current(path);
         var root = Parse(original);
-        var type = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
-        var methods = type.Members.OfType<MethodDeclarationSyntax>().ToArray();
-        if (methods.Any(method => !method.Modifiers.Any(SyntaxKind.StaticKeyword) || method.Modifiers.Any(SyntaxKind.AsyncKeyword)))
-            throw new InvalidDataException("Extraction requires static synchronous methods.");
+        var type = selectors.Length == 0 ? root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single()
+            : root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single(type => type.Identifier.Text == selectors[0]);
+        var methods = type.Members.OfType<MethodDeclarationSyntax>().Where(method => selectors.Length <= 1
+            || selectors.Skip(1).Contains(method.Identifier.Text, StringComparer.Ordinal)).ToArray();
+        if (methods.Any(method => !method.Modifiers.Any(SyntaxKind.StaticKeyword)))
+            throw new InvalidDataException("Extraction requires static methods.");
         var ns = root.DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().Single();
         var imports = original[..ns.SpanStart];
-        var content = imports + "using static PCL." + type.Identifier.Text + ";\n\nnamespace " + ns.Name + ";\n\ninternal static class " + service + "\n{\n";
+        var staticImports = string.Join("\n", type.Ancestors().OfType<ClassDeclarationSyntax>().Reverse().Append(type)
+            .Select(owner => "using static " + TypeName(owner).Replace('+', '.') + ";"));
+        var content = imports + staticImports + "\n\nnamespace " + ns.Name + ";\n\ninternal static class " + service + "\n{\n";
         foreach (var method in methods) content += Implementation(method).ToFullString() + "\n";
         content += "}\n";
         var replacement = original;
@@ -50,7 +54,8 @@ internal static partial class Program
                 || token.IsKind(SyntaxKind.InKeyword)).Select(token => token.Text).Append(parameter.Identifier.Text))));
         var generic = method.TypeParameterList is null ? "" : "<" + string.Join(",", method.TypeParameterList.Parameters.Select(parameter => parameter.Identifier.Text)) + ">";
         var expression = SyntaxFactory.ParseExpression(service + "." + method.Identifier.Text + generic + "(" + arguments + ")");
-        return method.WithBody(null).WithExpressionBody(SyntaxFactory.ArrowExpressionClause(expression))
+        return method.WithModifiers(SyntaxFactory.TokenList(method.Modifiers.Where(token => !token.IsKind(SyntaxKind.AsyncKeyword))))
+            .WithBody(null).WithExpressionBody(SyntaxFactory.ArrowExpressionClause(expression))
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)).WithTrailingTrivia(SyntaxFactory.EndOfLine("\n"));
     }
 }

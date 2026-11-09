@@ -16,6 +16,12 @@ State and field initialization remain in each original owner in the original ord
 
 ## Verification
 
+## Batch 2: resource catalogs and resource pages
+
+`ModComp` now separates favorites, clipboard handling, the catalog database, project queries, project metadata and resource downloads. `ModLocalComp.LocalCompFile` separates each schematic format, metadata lookup, Jar-in-Jar state and file loading without duplicating model state. Resource and datapack pages separate folder navigation, selection, sorting/filtering, presentation and file actions. `ResourceProjectRequestService` owns platform project fetches; `ResourceFolderNames` owns resource-directory naming. Resource detail page setup and result presentation are split from its original entry.
+
+## Verification
+
 `tools/SourceStructure` compares C# syntax tokens with the fixed Git baseline. It checks existing members, attributes, bases, constraints and initializer order. Service moves must be explicitly listed in `relocations.json`: the old member must be the expected forwarding expression and the new member must preserve the original implementation. CI runs this in DEBUG, CI, RELEASE and BETA configurations, then builds the TestAll plugin and runs the existing unit tests. The existing build matrix covers x64 and ARM64.
 
 The tool emits native Codex patches for reviewed member ranges; it never rewrites source files itself. Its report lists all 30 original large files and their current sizes. The final gate will require every target and every added source to be at most 1000 lines.

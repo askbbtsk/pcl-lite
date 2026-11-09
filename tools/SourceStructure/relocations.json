@@ -14,5 +14,11 @@
   "PCL.ModDownload::MethodDeclaration::DlSourceLoaderAbort\u003CInputType, OutputType\u003E(\n        List\u003CKeyValuePair\u003CModLoader.LoaderTask\u003CInputType, OutputType\u003E, int\u003E\u003E loaderList)": "ResourceRequestService",
   "PCL.ModDownloadLib::MethodDeclaration::MergeJson(string outputFolder, string minecraftFolder, string optiFineFolder = null,\n        bool optiFineAsMod = false, string forgeFolder = null, string forgeVersion = null, string neoForgeFolder = null,\n        string neoForgeVersion = null, string cleanroomFolder = null, string cleanroomVersion = null,\n        string fabricFolder = null, string labyModFolder = null,\n        string labyModChannel = null, string liteLoaderFolder = null, ModModpack.MMCPackInfo mMCPackInfo = null,\n        string legacyFabricFolder = null)": "VersionJsonMerger",
   "PCL.ModDownloadLib::MethodDeclaration::IsLwjgl3Library(JsonNode library)": "VersionJsonMerger",
-  "PCL.ModDownloadLib::MethodDeclaration::IsLwjgl2Library(JsonNode library)": "VersionJsonMerger"
+  "PCL.ModDownloadLib::MethodDeclaration::IsLwjgl2Library(JsonNode library)": "VersionJsonMerger",
+  "PCL.ModComp\u002BCompRequest::MethodDeclaration::IsFromCurseForge(string id)": "ResourceProjectRequestService",
+  "PCL.ModComp\u002BCompRequest::MethodDeclaration::GetListByIdsFromModrinthAsync(List\u003Cstring\u003E ids)": "ResourceProjectRequestService",
+  "PCL.ModComp\u002BCompRequest::MethodDeclaration::GetListByIdsFromCurseforgeAsync(List\u003Cstring\u003E ids)": "ResourceProjectRequestService",
+  "PCL.ModComp\u002BCompRequest::MethodDeclaration::GetCompProjectsByIds(List\u003Cstring\u003E input)": "ResourceProjectRequestService",
+  "PCL.ModComp\u002BCompRequest::MethodDeclaration::GetCompProjectsByIdsAsync(List\u003Cstring\u003E input)": "ResourceProjectRequestService",
+  "PCL.ModLocalComp::MethodDeclaration::GetPathNameByCompType(CompType theType)": "ResourceFolderNames"
 }

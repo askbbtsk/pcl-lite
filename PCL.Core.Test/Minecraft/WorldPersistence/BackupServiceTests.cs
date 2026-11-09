@@ -48,6 +48,27 @@ public sealed class BackupServiceTests
     }
 
     [TestMethod]
+    public void WorldBackup_CompareCurrentDetectsWorldChangesAndIgnoresSessionLock()
+    {
+        var world = Path.Combine(_root, "saves", "World");
+        var backups = Path.Combine(_root, "backups");
+        Write(Path.Combine(world, "level.dat"), "level-v1");
+        Write(Path.Combine(world, "region", "r.0.0.mca"), "region-v1");
+        var snapshot = WorldBackupService.Create(world, backups, "before play");
+
+        Write(Path.Combine(world, "level.dat"), "level-v2");
+        Write(Path.Combine(world, "region", "new.mca"), "new-region");
+        Write(Path.Combine(world, "session.lock"), "volatile lock");
+
+        var differences = WorldBackupService.CompareCurrent(backups, snapshot.Id, world);
+
+        Assert.AreEqual(1, differences.Count(item => item.Kind == BackupDifferenceKind.Added));
+        Assert.AreEqual(1, differences.Count(item => item.Kind == BackupDifferenceKind.Modified));
+        Assert.IsFalse(differences.Any(item => item.Path == "session.lock"));
+        Assert.IsFalse(differences.Any(item => item.Kind == BackupDifferenceKind.Removed));
+    }
+
+    [TestMethod]
     public void WorldBackup_RetentionRemovesOldestSnapshotsOnlyForSelectedWorld()
     {
         var worldA = Path.Combine(_root, "saves", "A");

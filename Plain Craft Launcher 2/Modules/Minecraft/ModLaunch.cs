@@ -2614,12 +2614,17 @@ public static class ModLaunch
                         startedInstance.PathIndie, worldPath, Path.GetFileName(worldPath), startedInstance.Info.VanillaName);
                 }
                 catch (Exception ex) { ModBase.Log(ex, "记录最近世界会话失败", ModBase.LogLevel.Hint); }
-                try
-                {
-                    ModWorldBackups.CreateAutomaticBeforePlay(startedInstance.PathInstance, worldPath);
-                }
-                catch (Exception ex) { ModBase.Log(ex, "创建启动前世界备份失败；继续启动游戏", ModBase.LogLevel.Hint); }
             }
+        }
+
+        if (startedInstance is not null)
+        {
+            try
+            {
+                ModWorldBackups.CreateAutomaticBeforeAllWorlds(startedInstance.PathInstance,
+                    Path.Combine(startedInstance.PathIndie, "saves"));
+            }
+            catch (Exception ex) { ModBase.Log(ex, "创建启动前世界备份失败；继续启动游戏", ModBase.LogLevel.Hint); }
         }
 
         if (startedInstance is not null && Config.Launch.PersonalOptionsSync)
@@ -2667,11 +2672,6 @@ public static class ModLaunch
                 {
                     try { worldSessionHistory.FinishSession(recentWorldSession.SessionId, normalExit); }
                     catch (Exception ex) { ModBase.Log(ex, "保存最近世界退出状态失败", ModBase.LogLevel.Hint); }
-                }
-                if (normalExit && worldPath is not null && startedInstance is not null)
-                {
-                    try { ModWorldBackups.CreateAutomaticAfterWorldExit(startedInstance.PathInstance, worldPath); }
-                    catch (Exception ex) { ModBase.Log(ex, "创建退出后世界备份失败", ModBase.LogLevel.Hint); }
                 }
             };
         }
@@ -2809,6 +2809,15 @@ public static class ModLaunch
         while (watcher.State == ModWatcher.Watcher.MinecraftState.Loading)
             Thread.Sleep(100);
         if (watcher.State == ModWatcher.Watcher.MinecraftState.Crashed) throw new Exception("$$");
+        if (watcher.State == ModWatcher.Watcher.MinecraftState.Ended)
+        {
+            try
+            {
+                ModWorldBackups.CreateAutomaticAfterExit(watcher.version.PathInstance,
+                    Path.Combine(watcher.version.PathIndie, "saves"));
+            }
+            catch (Exception ex) { ModBase.Log(ex, "创建退出后世界备份失败", ModBase.LogLevel.Hint); }
+        }
     }
 
     private static PersonalOptionCategories _GetPersonalOptionCategories()

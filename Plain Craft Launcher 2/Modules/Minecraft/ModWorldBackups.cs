@@ -190,16 +190,23 @@ internal static class ModWorldBackups
         return snapshot;
     }
 
-    /// <summary>Creates one automatic snapshot immediately before launching the selected world, when enabled.</summary>
-    public static BackupSnapshot? CreateAutomaticBeforePlay(string instancePath, string worldPath)
+    /// <summary>Creates only missing or changed world snapshots before a normal game launch.</summary>
+    public static IReadOnlyList<BackupSnapshot> CreateAutomaticBeforeAllWorlds(string instancePath, string savesPath)
     {
-        var preferences = GetPreferences(instancePath, Path.GetDirectoryName(Path.GetFullPath(worldPath))!);
-        if (!preferences.AutomaticEnabled || !Directory.Exists(worldPath)) return null;
+        var preferences = GetPreferences(instancePath, savesPath);
+        if (!preferences.AutomaticEnabled || !Directory.Exists(savesPath)) return Array.Empty<BackupSnapshot>();
         EnsureWorldOffline(instancePath);
-        if (!File.Exists(Path.Combine(worldPath, "level.dat"))) return null;
-        var snapshot = WorldBackupService.Create(worldPath, _BackupRoot(worldPath), "Automatic backup before game launch");
-        WorldBackupService.ApplyRetention(_BackupRoot(worldPath), worldPath, preferences.RetentionCount);
-        return snapshot;
+        var snapshots = new List<BackupSnapshot>();
+        foreach (var worldPath in _EnumerateValidWorlds(savesPath))
+        {
+            var root = _BackupRoot(worldPath);
+            var latest = WorldBackupService.List(root, worldPath).FirstOrDefault();
+            if (latest is not null && WorldBackupService.CompareCurrent(root, latest.Id, worldPath).Count == 0) continue;
+            var snapshot = WorldBackupService.Create(worldPath, root, "Automatic backup before game launch");
+            WorldBackupService.ApplyRetention(root, worldPath, preferences.RetentionCount);
+            snapshots.Add(snapshot);
+        }
+        return snapshots;
     }
 
     /// <summary>Call after all game processes for this instance have exited successfully.</summary>
@@ -209,29 +216,27 @@ internal static class ModWorldBackups
         if (!preferences.AutomaticEnabled || !Directory.Exists(savesPath)) return Array.Empty<BackupSnapshot>();
         EnsureWorldOffline(instancePath);
         var snapshots = new List<BackupSnapshot>();
-        foreach (var worldPath in Directory.EnumerateDirectories(savesPath).OrderBy(static path => path, StringComparer.OrdinalIgnoreCase))
+        foreach (var worldPath in _EnumerateValidWorlds(savesPath))
         {
-            if (!Directory.Exists(worldPath) || (File.GetAttributes(worldPath) & FileAttributes.ReparsePoint) != 0
-                || !File.Exists(Path.Combine(worldPath, "level.dat"))) continue;
-            var snapshot = WorldBackupService.Create(worldPath, _BackupRoot(worldPath), "Automatic backup after game exit");
-            WorldBackupService.ApplyRetention(_BackupRoot(worldPath), worldPath, preferences.RetentionCount);
+            var root = _BackupRoot(worldPath);
+            var latest = WorldBackupService.List(root, worldPath).FirstOrDefault();
+            if (latest is not null && WorldBackupService.CompareCurrent(root, latest.Id, worldPath).Count == 0) continue;
+            var snapshot = WorldBackupService.Create(worldPath, root, "Automatic backup after game exit");
+            WorldBackupService.ApplyRetention(root, worldPath, preferences.RetentionCount);
             snapshots.Add(snapshot);
         }
         return snapshots;
     }
 
-    /// <summary>Creates a post-play snapshot for the exact world that was launched.</summary>
-    public static BackupSnapshot? CreateAutomaticAfterWorldExit(string instancePath, string worldPath)
+    private static IEnumerable<string> _EnumerateValidWorlds(string savesPath)
     {
-        var fullWorldPath = Path.GetFullPath(worldPath);
-        var savesPath = Path.GetDirectoryName(fullWorldPath)
-            ?? throw new InvalidDataException("World path has no saves directory.");
-        var preferences = GetPreferences(instancePath, savesPath);
-        if (!preferences.AutomaticEnabled || !Directory.Exists(fullWorldPath)
-            || !File.Exists(Path.Combine(fullWorldPath, "level.dat"))) return null;
-        var snapshot = WorldBackupService.Create(fullWorldPath, _BackupRoot(fullWorldPath), "Automatic backup after game exit");
-        WorldBackupService.ApplyRetention(_BackupRoot(fullWorldPath), fullWorldPath, preferences.RetentionCount);
-        return snapshot;
+        foreach (var worldPath in Directory.EnumerateDirectories(savesPath)
+                     .OrderBy(static path => path, StringComparer.OrdinalIgnoreCase))
+        {
+            if ((File.GetAttributes(worldPath) & FileAttributes.ReparsePoint) == 0
+                && File.Exists(Path.Combine(worldPath, "level.dat")))
+                yield return worldPath;
+        }
     }
 
     public static void Restore(string instancePath, string worldPath, string snapshotId)

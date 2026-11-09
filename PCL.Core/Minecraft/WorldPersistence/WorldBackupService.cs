@@ -59,6 +59,11 @@ public static class WorldBackupService
     public static IReadOnlyList<BackupSnapshot> List(string backupRoot, string worldDirectory)
         => BackupArchive.List(backupRoot, BackupSnapshotKind.World, worldDirectory);
 
+    public static IReadOnlyList<BackupDifference> CompareCurrent(string backupRoot, string snapshotId, string worldDirectory,
+        CancellationToken cancellationToken = default)
+        => BackupArchive.CompareCurrent(backupRoot, snapshotId, worldDirectory, BackupSnapshotKind.World,
+            excludeSaves: false, preserveLauncherData: false, cancellationToken);
+
     public static void Restore(string backupRoot, string snapshotId, string worldDirectory,
         CancellationToken cancellationToken = default)
         => BackupArchive.Restore(backupRoot, snapshotId, worldDirectory, BackupSnapshotKind.World,
@@ -83,7 +88,8 @@ public static class EnvironmentRestorePointService
 
     public static IReadOnlyList<BackupDifference> CompareCurrent(string restorePointRoot, string snapshotId,
         string instanceDirectory, CancellationToken cancellationToken = default)
-        => BackupArchive.CompareCurrent(restorePointRoot, snapshotId, instanceDirectory, cancellationToken);
+        => BackupArchive.CompareCurrent(restorePointRoot, snapshotId, instanceDirectory, BackupSnapshotKind.Environment,
+            excludeSaves: true, preserveLauncherData: true, cancellationToken);
 
     public static void Restore(string restorePointRoot, string snapshotId, string instanceDirectory,
         CancellationToken cancellationToken = default)
@@ -282,10 +288,11 @@ internal static class BackupArchive
     }
 
     public static IReadOnlyList<BackupDifference> CompareCurrent(string storePath, string snapshotId,
-        string sourcePath, CancellationToken cancellationToken)
+        string sourcePath, BackupSnapshotKind kind, bool excludeSaves, bool preserveLauncherData,
+        CancellationToken cancellationToken)
     {
         var source = Path.GetFullPath(sourcePath);
-        var snapshot = List(storePath, BackupSnapshotKind.Environment, source)
+        var snapshot = List(storePath, kind, source)
             .FirstOrDefault(item => string.Equals(item.Id, snapshotId, StringComparison.Ordinal));
         if (snapshot is null) throw new InvalidDataException("The restore point does not belong to this instance.");
         _RejectReparsePoint(source);
@@ -296,10 +303,11 @@ internal static class BackupArchive
 
         var expected = snapshot.Files.ToDictionary(static item => item.Path, StringComparer.OrdinalIgnoreCase);
         var current = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var file in _EnumerateFiles(source, excludeSaves: true))
+        foreach (var file in _EnumerateFiles(source, excludeSaves))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var relative = _NormalizeRelative(Path.GetRelativePath(source, file));
+            if (preserveLauncherData && relative.StartsWith("PCLLiteData/", StringComparison.OrdinalIgnoreCase)) continue;
             current[relative] = _HashFile(file);
         }
 

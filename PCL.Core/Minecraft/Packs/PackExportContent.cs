@@ -11,6 +11,7 @@ public static class PackExportContent
     public static bool IsInternalPath(string relativePath)
     {
         var parts = relativePath.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (IsEnhancementPath(relativePath)) return true;
         return parts.Any(part => new[] { "PCLLiteData", "ResourceRecycle", "WorldBackups", "PackRestorePoints", "PackBaselines", "PackUpdateBackups",
             ".git", "logs", "crash-reports", "quickPlay", "webcache", "Cache" }.Contains(part, StringComparer.OrdinalIgnoreCase)
             || part.Contains(".pcl-update-", StringComparison.OrdinalIgnoreCase)
@@ -24,6 +25,17 @@ public static class PackExportContent
             || part.Equals("CloneOrigin.json", StringComparison.OrdinalIgnoreCase)
             || part.Equals("Setup.ini", StringComparison.OrdinalIgnoreCase)
             || part.Equals("usercache.json", StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Match the reserved pair, not every user directory named Enhancements.
+    public static bool IsEnhancementPath(string path)
+    {
+        var parts = path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        for (var index = 0; index + 1 < parts.Length; index++)
+            if (parts[index].Equals("PCL", StringComparison.OrdinalIgnoreCase)
+                && parts[index + 1].Equals("Enhancements", StringComparison.OrdinalIgnoreCase))
+                return true;
+        return false;
     }
 
     public static string ResolveInstanceJava(string instanceDirectory, string relativePath)
@@ -55,6 +67,7 @@ public static class PackExportContent
     {
         if (!Directory.Exists(source)) return;
         var root = Path.GetFullPath(source);
+        if (IsEnhancementPath(root)) return;
         if (IsInternalPath(Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar)))) return;
         var targetRoot = Path.GetFullPath(destination).TrimEnd(Path.DirectorySeparatorChar);
         if (targetRoot.Equals(root.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase)
@@ -70,7 +83,7 @@ public static class PackExportContent
             foreach (var child in Directory.EnumerateFileSystemEntries(directory))
             {
                 var relative = Path.GetRelativePath(root, child);
-                if (IsInternalPath(relative)) continue;
+                if (IsInternalPath(relative) || IsEnhancementPath(child)) continue;
                 CheckAncestors(root, child);
                 var target = Path.Combine(destination, relative);
                 if (Directory.Exists(child)) pending.Push(child);

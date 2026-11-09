@@ -1,0 +1,11 @@
+[
+  {
+    "SourcePath": "PCL.Core/Minecraft/Packs/PackExportContent.cs",
+    "Sha256": "5B68E25D07575E71CB9B0A85488A13BE2C9F63C9C2587F6072A2D7C43A7E6B7C",
+    "Members": [
+      "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::IsInternalPath(string relativePath)",
+      "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::CopyTree(string source, string destination, CancellationToken token = default)"
+    ],
+    "Reason": "Stage A: exclude reserved PCL/Enhancements sidecars from whole-instance, PCL-subtree and explicitly selected directory exports. Ordinary user Enhancements directories remain eligible. Covered by EnhancementExportTests."
+  }
+]

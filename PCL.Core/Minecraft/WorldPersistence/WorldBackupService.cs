@@ -407,8 +407,34 @@ internal static class BackupArchive
         if (snapshot.Id != snapshotId || snapshot.Kind != kind || snapshot.SourceKey != _SourceKey(Path.GetFullPath(sourcePath)))
             throw new InvalidDataException("The backup snapshot does not belong to this target.");
         var archivePath = Path.Combine(store, snapshotId + ".zip");
-        if (File.Exists(archivePath)) File.Delete(archivePath);
-        File.Delete(manifestPath);
+        if (!File.Exists(archivePath)) throw new InvalidDataException("The backup archive is missing; the backup was left untouched.");
+        var deletedRoot = Path.Combine(store, "deleted");
+        Directory.CreateDirectory(deletedRoot);
+        _RejectReparsePoint(deletedRoot);
+        var deletedBatch = Path.Combine(deletedRoot, Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(deletedBatch);
+        var movedArchive = false;
+        try
+        {
+            File.Move(archivePath, Path.Combine(deletedBatch, snapshotId + ".zip"));
+            movedArchive = true;
+            File.Move(manifestPath, Path.Combine(deletedBatch, snapshotId + ".json"));
+        }
+        catch (Exception operationError)
+        {
+            if (movedArchive)
+            {
+                try { File.Move(Path.Combine(deletedBatch, snapshotId + ".zip"), archivePath); }
+                catch (Exception rollbackError)
+                {
+                    throw new AggregateException("Backup removal failed and the original archive could not be restored.",
+                        operationError, rollbackError);
+                }
+            }
+            try { if (Directory.Exists(deletedBatch)) Directory.Delete(deletedBatch, recursive: true); }
+            catch { }
+            throw;
+        }
         return true;
     }
 

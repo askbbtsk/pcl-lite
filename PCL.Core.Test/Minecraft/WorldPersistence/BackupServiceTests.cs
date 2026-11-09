@@ -148,6 +148,8 @@ public sealed class BackupServiceTests
 
         Assert.IsTrue(EnvironmentRestorePointService.Delete(restorePoints, first.Id, instance));
         Assert.IsFalse(EnvironmentRestorePointService.Delete(restorePoints, first.Id, instance));
+        var deletedCopy = Directory.GetFiles(Path.Combine(restorePoints, "deleted"), first.Id + ".zip", SearchOption.AllDirectories);
+        Assert.AreEqual(1, deletedCopy.Length);
         var remaining = EnvironmentRestorePointService.List(restorePoints, instance);
         Assert.AreEqual(1, remaining.Count);
         Assert.AreEqual(second.Id, remaining[0].Id);

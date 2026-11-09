@@ -435,7 +435,7 @@ public partial class PageInstanceSaves : IRefreshable
                 RunBackupWork(instancePath, worldFolder, "delete", () =>
                 {
                     ModWorldBackups.Delete(worldFolder, snapshot.Id);
-                    return ModWorldBackups.Text("deleted");
+                    return ModWorldBackups.Text("deleted", ModWorldBackups.DeletedBackupRoot(worldFolder));
                 });
             };
             row.Buttons = [restore, delete];

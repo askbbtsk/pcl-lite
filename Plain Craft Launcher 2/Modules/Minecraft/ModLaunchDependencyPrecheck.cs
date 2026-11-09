@@ -215,11 +215,16 @@ internal static class ModLaunchDependencyPrecheck
             sort = ModComp.CompSortType.Relevance,
         };
         loader.WaitForExit(request);
-        return storage.results
-            .Where(project => project.Type == ModComp.CompType.Mod
-                              && string.Equals(project.Slug, dependencyId, StringComparison.OrdinalIgnoreCase))
-            .GroupBy(project => (project.FromCurseForge, project.Id))
-            .Select(static group => group.First())
+        var candidates = storage.results
+            .Where(static project => project.Type == ModComp.CompType.Mod)
+            .ToList();
+        var match = DependencyProjectMatcher.FindUniqueExactSlug(candidates.Select(project =>
+            new DependencyProjectCandidate(project.Id, project.FromCurseForge ? "CurseForge" : "Modrinth", project.Slug)), dependencyId);
+        if (match is null) return new List<ModComp.CompProject>();
+        return candidates.Where(project => string.Equals(project.Id, match.Id, StringComparison.OrdinalIgnoreCase)
+                                           && string.Equals(project.FromCurseForge ? "CurseForge" : "Modrinth", match.Source,
+                                               StringComparison.OrdinalIgnoreCase))
+            .Take(1)
             .ToList();
     }
 

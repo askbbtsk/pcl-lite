@@ -229,30 +229,34 @@
                         </local:MyCheckBox>
                         <StackPanel Margin="30,0,0,0" x:Name="PanOptionsOtherFolders"
                                     Visibility="{Binding Checked, ElementName=CheckOptionsOtherFolders, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                        <local:MyCheckBox x:Name="CheckOptionsPcl">
-                            <local:MyCheckBox.Tag>
-                                <local:ExportOption
-                                    Title="{DynamicResource Instance.Export.Option.Launcher}"
-                                    Description="{DynamicResource Instance.Export.Option.Launcher.Desc}"
-                                    DefaultChecked="False" />
-                            </local:MyCheckBox.Tag>
-                        </local:MyCheckBox>
-                        <StackPanel Margin="30,0,0,0"
-                                    Visibility="{Binding Checked, ElementName=CheckOptionsPcl, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <local:MyCheckBox x:Name="CheckOptionsPclCustom">
-                                <local:MyCheckBox.Tag>
-                                    <local:ExportOption
-                                        Title="{DynamicResource Instance.Export.Option.LauncherCustom}"
-                                        Description="{DynamicResource Instance.Export.Option.LauncherCustom.Desc}"
-                                        DefaultChecked="True" />
-                                </local:MyCheckBox.Tag>
-                            </local:MyCheckBox>
-                        </StackPanel>
                     </StackPanel>
                 </local:MyCard>
                 <local:MyCard Title="{DynamicResource Instance.Export.Advanced.Title}" Margin="0,0,0,15" CanSwap="True"
                               IsSwapped="True">
                     <StackPanel Margin="25,37,23,20">
+                        <TextBlock Text="{DynamicResource Instance.Export.Bundle.Title}" Margin="0,4,0,6" />
+                        <local:MyComboBox x:Name="ComboLauncherType" SelectedIndex="0" SelectionChanged="BundleOptionsChanged" Margin="0,0,0,8">
+                            <local:MyComboBoxItem Content="{DynamicResource Instance.Export.Bundle.None}" />
+                            <local:MyComboBoxItem Content="{DynamicResource Instance.Export.Bundle.Lite}" />
+                            <local:MyComboBoxItem Content="{DynamicResource Instance.Export.Bundle.Light}" />
+                        </local:MyComboBox>
+                        <StackPanel x:Name="PanLightArchitecture" Visibility="Collapsed">
+                            <TextBlock Text="{DynamicResource Instance.Export.Bundle.LightIsolation}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                            <TextBlock Text="{DynamicResource Instance.Export.Bundle.Architecture}" Margin="0,0,0,6" />
+                            <local:MyComboBox x:Name="ComboLightArchitecture" SelectedIndex="0" Margin="0,0,0,8">
+                                <local:MyComboBoxItem Content="x64" />
+                                <local:MyComboBoxItem Content="ARM64" />
+                            </local:MyComboBox>
+                        </StackPanel>
+                        <local:MyCheckBox x:Name="CheckOptionsPclCustom" Checked="True" Visibility="Collapsed"
+                                          Text="{DynamicResource Instance.Export.Option.LauncherCustom}" />
+                        <local:MyCheckBox x:Name="CheckIncludeVersionJava" Text="{DynamicResource Instance.Export.Java.Include}" Margin="0,8,0,0" />
+                        <TextBlock x:Name="LabVersionJava" TextWrapping="Wrap" Foreground="{DynamicResource ColorBrushGray3}" Margin="0,4,0,8" />
+                        <TextBlock Text="{DynamicResource Instance.Export.Isolation.Title}" Margin="0,4,0,6" />
+                        <local:MyComboBox x:Name="ComboExportIsolation" SelectedIndex="0" Margin="0,0,0,12">
+                            <local:MyComboBoxItem Content="{DynamicResource Instance.Export.Isolation.On}" />
+                            <local:MyComboBoxItem Content="{DynamicResource Instance.Export.Isolation.Off}" />
+                        </local:MyComboBox>
                         <local:MyHint
                             Text="{DynamicResource Instance.Export.Advanced.BundleHint}"
                             Theme="Yellow" Margin="0,2,0,8"

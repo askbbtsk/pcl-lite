@@ -6,5 +6,6 @@ namespace PCL.Core.Minecraft.Java.UserPreference;
 [JsonDerivedType(typeof(ExistingJava), "exist")]
 [JsonDerivedType(typeof(UseGlobalPreference), "global")]
 [JsonDerivedType(typeof(UseRelativePath), "relative")]
+[JsonDerivedType(typeof(UseInstanceRelativePath), "instance-relative")]
 [JsonDerivedType(typeof(AutoSelect), "auto")]
 public abstract record JavaPreference;

@@ -3993,4 +3993,19 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Instance.Saves.DeletedPermanently">World permanently deleted.</sys:String>
     <sys:String x:Key="Setup.Ui.Homepage.Preset.Welcome">PCL Lite welcome page</sys:String>
     <sys:String x:Key="Setup.Ui.Homepage.Preset.Performance">PCL Lite performance status</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.Title">Bundled launcher</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.None">No launcher</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.Lite">Full PCL Lite (current executable)</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.Light">PCL Light (download when exporting)</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.Architecture">PCL Light target architecture</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.DownloadLight">Download and verify PCL Light</sys:String>
+    <sys:String x:Key="Instance.Export.Java.Include">Include Java from the instance directory</sys:String>
+    <sys:String x:Key="Instance.Export.Java.Missing">No valid Java runtime in this instance directory. System Java will not be downloaded or bundled.</sys:String>
+    <sys:String x:Key="Instance.Export.Isolation.Title">Instance isolation after installation</sys:String>
+    <sys:String x:Key="Instance.Export.Isolation.On">Enable instance isolation (recommended)</sys:String>
+    <sys:String x:Key="Instance.Export.Isolation.Off">Disable isolation (shared game directory)</sys:String>
+    <sys:String x:Key="Instance.Export.Config.ModeIgnored">Export configuration loaded. The slim modpack mode does not apply to full PCL Lite and was ignored.</sys:String>
+    <sys:String x:Key="Instance.Export.Java.InstanceRelative">Instance Java: {0}</sys:String>
+    <sys:String x:Key="Instance.Export.Java.Incompatible">The bundled Java is incompatible with the instance or selected Light architecture.</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.LightIsolation">The current PCL Light release enables instance isolation when importing. To disable isolation, choose full Lite or no bundled launcher.</sys:String>
 </ResourceDictionary>

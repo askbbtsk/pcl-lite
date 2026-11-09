@@ -3996,4 +3996,19 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Instance.Saves.DeletedPermanently">存档已永久删除。</sys:String>
     <sys:String x:Key="Setup.Ui.Homepage.Preset.Welcome">PCL Lite 欢迎页</sys:String>
     <sys:String x:Key="Setup.Ui.Homepage.Preset.Performance">PCL Lite 性能状态页</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.Title">附带启动器</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.None">不附带启动器</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.Lite">附带完整 PCL Lite（当前程序）</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.Light">附带精简 PCL Light（导出时下载）</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.Architecture">PCL Light 目标架构</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.DownloadLight">下载并校验 PCL Light</sys:String>
+    <sys:String x:Key="Instance.Export.Java.Include">打包实例目录内的 Java</sys:String>
+    <sys:String x:Key="Instance.Export.Java.Missing">实例目录内没有可打包的有效 Java；不会下载或打包系统 Java。</sys:String>
+    <sys:String x:Key="Instance.Export.Isolation.Title">安装后的版本隔离</sys:String>
+    <sys:String x:Key="Instance.Export.Isolation.On">开启版本隔离（推荐）</sys:String>
+    <sys:String x:Key="Instance.Export.Isolation.Off">关闭版本隔离（使用共享游戏目录）</sys:String>
+    <sys:String x:Key="Instance.Export.Config.ModeIgnored">已读取导出配置；精简整合包模式不适用于完整 PCL Lite，该设置未应用。</sys:String>
+    <sys:String x:Key="Instance.Export.Java.InstanceRelative">实例内 Java：{0}</sys:String>
+    <sys:String x:Key="Instance.Export.Java.Incompatible">打包的 Java 不符合当前实例要求，或与所选 Light 架构不同。</sys:String>
+    <sys:String x:Key="Instance.Export.Bundle.LightIsolation">PCL Light 当前发布版导入时会强制开启版本隔离。需要关闭隔离时，请选择完整 Lite 或不附带启动器。</sys:String>
 </ResourceDictionary>

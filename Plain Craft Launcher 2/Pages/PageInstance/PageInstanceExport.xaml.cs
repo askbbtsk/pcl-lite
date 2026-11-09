@@ -7,6 +7,7 @@ using System.Windows.Input;
 using DotNet.Globbing;
 using PCL.Core.App;
 using PCL.Core.Minecraft.Packs;
+using PCL.Core.Minecraft.Java.UserPreference;
 using PCL.Core.UI;
 using PCL.Core.App.Localization;
 using PCL.Core.Utils;
@@ -52,6 +53,16 @@ public class ExportOption : DependencyObject
 public partial class PageInstanceExport : IRefreshable
 {
     private string currentVersion = "";
+    private InstanceJavaBundle? _instanceJava;
+    private BundledLauncher SelectedLauncher => (BundledLauncher)Math.Max(0, ComboLauncherType.SelectedIndex);
+
+    private void BundleOptionsChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (PanLightArchitecture is null || CheckOptionsPclCustom is null || CheckAdvancedModrinth is null) return;
+        PanLightArchitecture.Visibility = SelectedLauncher == BundledLauncher.Light ? Visibility.Visible : Visibility.Collapsed;
+        CheckOptionsPclCustom.Visibility = SelectedLauncher == BundledLauncher.Lite ? Visibility.Visible : Visibility.Collapsed;
+        if (SelectedLauncher != BundledLauncher.None) CheckAdvancedModrinth.Checked = false;
+    }
 
     public PageInstanceExport()
     {
@@ -89,6 +100,17 @@ public partial class PageInstanceExport : IRefreshable
         TextExportName.HintText = PageInstanceLeft.McInstance.Name;
         TextExportVersion.Text = "";
         TextExportVersion.HintText = "1.0.0";
+        ComboLauncherType.SelectedIndex = 0;
+        ComboLightArchitecture.SelectedIndex = 0;
+        ComboExportIsolation.SelectedIndex = 0;
+        CheckOptionsPclCustom.Checked = true;
+        CheckIncludeVersionJava.Checked = false;
+        _instanceJava = null;
+        try { _instanceJava = ModPackExportJava.Find(PageInstanceLeft.McInstance); }
+        catch (Exception ex) { ModBase.Log(ex, "检查实例内 Java 失败", ModBase.LogLevel.Debug); }
+        CheckIncludeVersionJava.IsEnabled = _instanceJava is not null;
+        LabVersionJava.Text = _instanceJava is null ? Lang.Text("Instance.Export.Java.Missing")
+            : $"{_instanceJava.Installation.ToDetailedString()} · {_instanceJava.RelativeExePath}";
         CheckAdvancedInclude.Checked = false;
         CheckAdvancedModrinth.Checked = false;
         GetExportOption(CheckOptionsBasic).Description = PageInstanceLeft.McInstance.GetDefaultDescription();
@@ -112,8 +134,13 @@ public partial class PageInstanceExport : IRefreshable
     private void CheckAdvancedModrinth_Change(object sender, bool user)
     {
         if (CheckAdvancedModrinth.Checked == true)
-            CheckOptionsPcl.Checked = false;
-        CheckOptionsPcl.IsEnabled = (bool)!CheckAdvancedModrinth.Checked;
+        {
+            ComboLauncherType.SelectedIndex = 0;
+            CheckAdvancedInclude.Checked = false;
+            CheckIncludeVersionJava.Checked = false;
+        }
+        ComboLauncherType.IsEnabled = CheckAdvancedModrinth.Checked != true;
+        CheckIncludeVersionJava.IsEnabled = _instanceJava is not null && CheckAdvancedModrinth.Checked != true;
     }
 
     // 勾选"其他文件夹"时，同步勾选/取消所有子选项
@@ -200,6 +227,10 @@ public partial class PageInstanceExport : IRefreshable
 
         foreach (var subDir in rootDir.EnumerateDirectories())
         {
+            if (PackExportContent.IsInternalPath(subDir.Name)
+                || (_instanceJava is not null && _instanceJava.RuntimeRoot.StartsWith(subDir.FullName + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                || (_instanceJava is not null && string.Equals(_instanceJava.RuntimeRoot, subDir.FullName, StringComparison.OrdinalIgnoreCase)))
+                continue;
             if (coveredFolders.Contains(subDir.Name))
                 continue;
             if (coveredPrefixes.Any(p => subDir.Name.StartsWithF(p)))
@@ -601,7 +632,13 @@ public partial class PageInstanceExport : IRefreshable
             configLines.Add("Version:" + TextExportVersion.Text);
             configLines.Add("");
             configLines.Add("# " + Lang.Text("Instance.Export.Config.Comment.IncludeLauncher"));
-            configLines.Add("IncludeLauncher:" + CheckOptionsPcl.Checked);
+            configLines.Add("IncludeLauncher:" + (SelectedLauncher == BundledLauncher.Lite));
+            configLines.Add("LauncherType:" + SelectedLauncher);
+            configLines.Add("LightArchitecture:" + (ComboLightArchitecture.SelectedIndex == 1 ? "ARM64" : "x64"));
+            configLines.Add("IncludeVersionJava:" + CheckIncludeVersionJava.Checked);
+            configLines.Add("VersionArgumentIndie:" + (ComboExportIsolation.SelectedIndex == 0));
+            configLines.Add("IncludeJava:" + CheckIncludeVersionJava.Checked);
+            configLines.Add("VersionIsolation:" + (ComboExportIsolation.SelectedIndex == 0));
             configLines.Add("");
             configLines.Add("# " + Lang.Text("Instance.Export.Config.Comment.IncludeLauncherCustom"));
             configLines.Add("IncludeLauncherCustom:" + CheckOptionsPclCustom.Checked);
@@ -679,8 +716,14 @@ public partial class PageInstanceExport : IRefreshable
             // 赋值到界面控件
             TextExportName.Text = ini.GetOrDefault("Name", "");
             TextExportVersion.Text = ini.GetOrDefault("Version", "");
-            CheckOptionsPcl.Checked =
-                Convert.ToBoolean(ini.GetOrDefault("IncludeLauncher", false.ToString()));
+            var options = PackExportOptions.Parse(ini);
+            ComboLauncherType.SelectedIndex = (int)options.Launcher;
+            ComboLightArchitecture.SelectedIndex = options.LightArchitecture == "ARM64" ? 1 : 0;
+            ComboExportIsolation.SelectedIndex = options.VersionArgumentIndie ? 0 : 1;
+            if (options.IncludeVersionJava && _instanceJava is null)
+                throw new InvalidDataException(Lang.Text("Instance.Export.Java.Missing"));
+            CheckIncludeVersionJava.Checked = options.IncludeVersionJava;
+            if (options.IgnoredModpackMode) HintService.Hint(Lang.Text("Instance.Export.Config.ModeIgnored"));
             CheckOptionsPclCustom.Checked =
                 Convert.ToBoolean(ini.GetOrDefault("IncludeLauncherCustom", true.ToString()));
             CheckAdvancedModrinth.Checked =
@@ -690,6 +733,7 @@ public partial class PageInstanceExport : IRefreshable
             configPackPath = ini.GetOrDefault("PackPath");
 
             // === 解析导出内容段 ===
+            if (segments.Length < 2) throw new InvalidDataException(Lang.Text("Instance.Export.Config.Invalid"));
             RulesOverrides = segments[1].Replace("\r", "\n")
                 .Replace("\n" + "\n", "\n").Split("\n").ToList();
 
@@ -840,7 +884,7 @@ public partial class PageInstanceExport : IRefreshable
             var extensions = new List<string>();
             if (CheckAdvancedModrinth.Checked == false)
                 extensions.Add(Lang.Text("Instance.Export.ZipFilter"));
-            if (CheckOptionsPcl.Checked == false)
+            if (SelectedLauncher == BundledLauncher.None)
                 extensions.Add(Lang.Text("Instance.Export.MrpackFilter"));
             packPath = SystemDialogs.SelectSaveFile(Lang.Text("Instance.Export.SelectSaveLocation"),
                 packName + (string.IsNullOrEmpty(TextExportVersion.Text) ? "" : " " + TextExportVersion.Text),
@@ -858,8 +902,29 @@ public partial class PageInstanceExport : IRefreshable
         var pathIndie = mcInstance.PathIndie;
         var checkHostedAssets = (bool)!CheckAdvancedInclude.Checked;
         var modrinthUploadMode = (bool)CheckAdvancedModrinth.Checked;
-        var includePCL = (bool)CheckOptionsPcl.Checked;
-        var includePCLCustom = (bool)(includePCL ? CheckOptionsPclCustom.Checked : (bool?)false);
+        var launcherType = SelectedLauncher;
+        var includePCL = launcherType != BundledLauncher.None;
+        var lightArchitecture = ComboLightArchitecture.SelectedIndex == 1 ? "ARM64" : "x64";
+        var includeJava = CheckIncludeVersionJava.Checked == true;
+        var instanceJava = _instanceJava;
+        var isolated = ComboExportIsolation.SelectedIndex == 0;
+        if (launcherType == BundledLauncher.Light && !isolated)
+        {
+            HintService.Hint(Lang.Text("Instance.Export.Bundle.LightIsolation"), HintType.Error);
+            return;
+        }
+        if (includeJava && instanceJava is null)
+        {
+            HintService.Hint(Lang.Text("Instance.Export.Java.Missing"), HintType.Error);
+            return;
+        }
+        if (includeJava && instanceJava is not null && launcherType == BundledLauncher.Light
+            && instanceJava.Installation.Architecture != (lightArchitecture == "ARM64" ? MachineType.ARM64 : MachineType.AMD64))
+        {
+            HintService.Hint(Lang.Text("Instance.Export.Java.Incompatible"), HintType.Error);
+            return;
+        }
+        var includePCLCustom = launcherType == BundledLauncher.Lite && CheckOptionsPclCustom.Checked == true;
         var allRules = StandardizeLines(GetAllRules(), true).ToList();
         var allExtraFiles = StandardizeLines(GetExtraFileLines(), false).ToList();
         ModBase.Log($"[Export] 准备导出整合包，共有 {allRules.Count} 条规则，{allExtraFiles.Count} 条追加内容行");
@@ -869,13 +934,17 @@ public partial class PageInstanceExport : IRefreshable
 
         #region 准备 PCL Lite 本体
 
-        if (includePCL)
+        if (launcherType == BundledLauncher.Lite)
             loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Instance.Export.Task.PackagePclLite"),
                 _ => LauncherBundleResolver.CopyCurrentExecutable(Basics.ExecutablePath, cacheFolder))
             {
                 ProgressWeight = 0.5d,
                 block = false
             });
+
+        if (launcherType == BundledLauncher.Light)
+            loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Instance.Export.Bundle.DownloadLight"),
+                task => ModLightBundle.Download(task, lightArchitecture, cacheFolder)) { ProgressWeight = 2d });
 
         #endregion
 
@@ -893,6 +962,10 @@ public partial class PageInstanceExport : IRefreshable
                 // 文件夹：进一步搜索
                 foreach (var SubFolder in folder.EnumerateDirectories("*", SearchOption.TopDirectoryOnly))
                 {
+                    loader.AbortedToken.ThrowIfCancellationRequested();
+                    if (PackExportContent.IsInternalPath(Path.GetRelativePath(pathIndie, SubFolder.FullName))) continue;
+                    if (File.Exists(Path.Combine(SubFolder.FullName, "bin", "java.exe"))) continue;
+                    PackExportContent.CheckAncestors(pathIndie, SubFolder.FullName);
                     // 跳过部分又没用文件又多的文件夹，加快搜索
                     if ((folder.FullName ?? "") == (pathIndie ?? "") &&
                         new[] { "assets", "versions", "libraries" }.Contains(SubFolder.Name))
@@ -906,7 +979,10 @@ public partial class PageInstanceExport : IRefreshable
                 // 文件：检查规则并复制
                 foreach (var Entry in folder.EnumerateFiles("*", SearchOption.TopDirectoryOnly))
                 {
-                    var relativePath = Entry.FullName.AfterFirst(pathIndie);
+                    loader.AbortedToken.ThrowIfCancellationRequested();
+                    var relativePath = Path.GetRelativePath(pathIndie, Entry.FullName);
+                    if (PackExportContent.IsInternalPath(relativePath)) continue;
+                    PackExportContent.CheckAncestors(pathIndie, Entry.FullName);
                     // 检查规则
                     var shouldKeep = false;
                     foreach (var Rule in allRules)
@@ -949,12 +1025,13 @@ public partial class PageInstanceExport : IRefreshable
                 if (Line.EndsWithF(@"\") || Line.EndsWithF("/"))
                 {
                     if (Directory.Exists(Line))
-                        ModBase.CopyDirectory(Line, Path.Combine(baseFolder, ModBase.GetFolderNameFromPath(Line)) + @"\");
+                        PackExportContent.CopyTree(Line, Path.Combine(baseFolder, ModBase.GetFolderNameFromPath(Line)), loader.AbortedToken);
                     else
                         HintService.Hint(Lang.Text("Instance.Export.Config.FolderNotFound", Line), HintType.Error);
                 }
                 else if (File.Exists(Line))
                 {
+                    if (PackExportContent.IsInternalPath(Line)) continue;
                     ModBase.CopyFile(Line, Path.Combine(baseFolder, ModBase.GetFileNameFromPath(Line)));
                 }
                 else
@@ -964,18 +1041,32 @@ public partial class PageInstanceExport : IRefreshable
 
             loader.Progress = 0.97d;
             // 复制 PCL 实例设置
-            ModBase.CopyDirectory(Path.Combine(mcInstance.PathInstance, "PCL"), Path.Combine(overridesFolder, "PCL"));
+            PackExportContent.CopyTree(Path.Combine(mcInstance.PathInstance, "PCL"), Path.Combine(overridesFolder, "PCL"), loader.AbortedToken);
+            var exportedIni = Path.Combine(overridesFolder, "PCL", "Setup.ini");
+            ModBase.WriteIni(exportedIni, "VersionArgumentIndie", isolated ? "1" : "2");
+            ModBase.WriteIni(exportedIni, "VersionArgumentIndieV2", isolated.ToString());
+            if (includeJava && instanceJava is not null)
+            {
+                var runtimeDestination = launcherType == BundledLauncher.Light
+                    ? Path.Combine(cacheFolder, "PCL", "runtime", "java") : Path.Combine(overridesFolder, "runtime", "java");
+                InstanceJavaBundler.Copy(instanceJava, mcInstance.PathInstance, runtimeDestination, loader.AbortedToken);
+                JavaPreference preference = launcherType == BundledLauncher.Light
+                    ? new UseRelativePath(@"PCL\runtime\java\bin\java.exe")
+                    : new UseInstanceRelativePath(@"runtime\java\bin\java.exe");
+                ModBase.WriteIni(exportedIni, "VersionArgumentJavaSelect", JsonSerializer.Serialize(preference, JsonCompat.SerializerOptions));
+            }
+            else
+                ModBase.WriteIni(exportedIni, "VersionArgumentJavaSelect", JsonSerializer.Serialize<JavaPreference>(new AutoSelect(), JsonCompat.SerializerOptions));
             // 复制 PCL 个性化内容
             if (includePCLCustom)
             {
                 if (Directory.Exists(Path.Combine(ModBase.exePath, "PCL", "Pictures")))
-                    ModBase.CopyDirectory(Path.Combine(ModBase.exePath, "PCL", "Pictures"), Path.Combine(cacheFolder, "PCL", "Pictures"));
+                    PackExportContent.CopyTree(Path.Combine(ModBase.exePath, "PCL", "Pictures"), Path.Combine(cacheFolder, "PCL", "Pictures"), loader.AbortedToken);
                 if (Directory.Exists(Path.Combine(ModBase.exePath, "PCL", "Musics")))
-                    ModBase.CopyDirectory(Path.Combine(ModBase.exePath, "PCL", "Musics"), Path.Combine(cacheFolder, "PCL", "Musics"));
+                    PackExportContent.CopyTree(Path.Combine(ModBase.exePath, "PCL", "Musics"), Path.Combine(cacheFolder, "PCL", "Musics"), loader.AbortedToken);
                 if (File.Exists(Path.Combine(ModBase.exePath, "PCL", "Custom.xaml")))
                     ModBase.CopyFile(Path.Combine(ModBase.exePath, "PCL", "Custom.xaml"), Path.Combine(cacheFolder, "PCL", "Custom.xaml"));
-                if (File.Exists(Path.Combine(ModBase.exePath, "PCL", "Setup.ini")))
-                    ModBase.CopyFile(Path.Combine(ModBase.exePath, "PCL", "Setup.ini"), Path.Combine(cacheFolder, "PCL", "Setup.ini"));
+                // Global Setup.ini may contain local paths, commands or credentials; do not distribute it.
                 if (File.Exists(Path.Combine(ModBase.exePath, "PCL", "hints.txt")))
                     ModBase.CopyFile(Path.Combine(ModBase.exePath, "PCL", "hints.txt"), Path.Combine(cacheFolder, "PCL", "hints.txt"));
                 if (File.Exists(Path.Combine(ModBase.exePath, "PCL", "Logo.png")))
@@ -1011,6 +1102,8 @@ public partial class PageInstanceExport : IRefreshable
                     // 分平台获取下载地址
                     var endedThreadCount = 0;
                     var failedExceptions = new List<Exception>();
+                    var lookupLock = new object();
+                    var lookupToken = loader.AbortedToken;
 
                     // 从 Modrinth 获取信息
                     // 查找对应的文件
@@ -1029,7 +1122,8 @@ public partial class PageInstanceExport : IRefreshable
                                 if (!modrinthRaw.ContainsKey(ModFile.ModrinthHash)) continue;
                                 if ((string)modrinthRaw[ModFile.ModrinthHash]?["files"]?[0]["hashes"]?["sha1"] !=
                                     ModFile.ModrinthHash) continue;
-                                loader.output.AddToList(ModFile,
+                                if (lookupToken.IsCancellationRequested) return;
+                                lock (lookupLock) loader.output.AddToList(ModFile,
                                     (string)modrinthRaw[ModFile.ModrinthHash]["files"][0]["url"]);
                             }
 
@@ -1038,12 +1132,11 @@ public partial class PageInstanceExport : IRefreshable
                         catch (Exception ex)
                         {
                             ModBase.Log(ex, "从 Modrinth 获取本地 Mod 信息失败");
-                            failedExceptions.Add(ex);
+                            lock (lookupLock) failedExceptions.Add(ex);
                         }
                         finally
                         {
-                            endedThreadCount += 1;
-                            loader.Progress += 0.45d;
+                            Interlocked.Increment(ref endedThreadCount);
                         }
                     }, "Modrinth - " + loaderName);
 
@@ -1069,7 +1162,8 @@ public partial class PageInstanceExport : IRefreshable
                                 var modFile = loader.input.FirstOrDefault(m =>
                                     m.CurseForgeHash == file["fileFingerprint"].ToObject<uint>());
                                 if (modFile is null) continue;
-                                loader.output.AddToList(modFile,
+                                if (lookupToken.IsCancellationRequested) return;
+                                lock (lookupLock) loader.output.AddToList(modFile,
                                     ModComp.CompFile.HandleCurseForgeDownloadUrls(file["downloadUrl"].ToString()));
                             }
 
@@ -1078,20 +1172,18 @@ public partial class PageInstanceExport : IRefreshable
                         catch (Exception ex)
                         {
                             ModBase.Log(ex, "从 CurseForge 获取本地 Mod 信息失败");
-                            failedExceptions.Add(ex);
+                            lock (lookupLock) failedExceptions.Add(ex);
                         }
                         finally
                         {
-                            endedThreadCount += 1;
-                            loader.Progress += 0.45d;
+                            Interlocked.Increment(ref endedThreadCount);
                         }
                     }, "CurseForge - " + loaderName); // Modrinth 上传模式下，不能从 CurseForge 获取信息
 
                     // 等待线程结束
-                    while (endedThreadCount != 2)
+                    while (Volatile.Read(ref endedThreadCount) != 2)
                     {
-                        if (loader.IsAborted)
-                            return;
+                        lookupToken.ThrowIfCancellationRequested();
                         Thread.Sleep(10);
                     }
 
@@ -1130,6 +1222,7 @@ public partial class PageInstanceExport : IRefreshable
                 var files = new JsonArray();
                 foreach (var Pair in loader.input)
                 {
+                    loader.AbortedToken.ThrowIfCancellationRequested();
                     var modFile = Pair.Key;
                     files.Add(new JsonObject
                     {
@@ -1165,27 +1258,26 @@ public partial class PageInstanceExport : IRefreshable
                     resultJson.ToJsonString(new JsonSerializerOptions(JsonCompat.SerializerOptions) { WriteIndented = true }));
                 // 打包
                 Directory.CreateDirectory(ModBase.GetPathFromFullPath(packPath));
-                if (File.Exists(packPath))
-                    File.Delete(packPath);
                 if (includePCL)
                 {
                     // 首次压缩整合包
-                    ZipFile.CreateFromDirectory(Path.Combine(cacheFolder, "modpack"), Path.Combine(cacheFolder, "modpack.mrpack"));
+                    PackExportArchive.Create(Path.Combine(cacheFolder, "modpack"), Path.Combine(cacheFolder, "modpack.mrpack"), loader.AbortedToken);
                     loader.Progress = 0.5d;
                     Directory.Delete(Path.Combine(cacheFolder, "modpack"), true);
                     loader.Progress = 0.6d;
                     // 二次压缩整合包
-                    ZipFile.CreateFromDirectory(cacheFolder, packPath);
+                    PackExportArchive.Create(cacheFolder, packPath, loader.AbortedToken);
                     loader.Progress = 0.9d;
                 }
                 else
                 {
                     // 直接压缩整合包
-                    ZipFile.CreateFromDirectory(Path.Combine(cacheFolder, "modpack"), packPath);
+                    PackExportArchive.Create(Path.Combine(cacheFolder, "modpack"), packPath, loader.AbortedToken);
                     loader.Progress = 0.8d;
                 }
 
-                Directory.Delete(cacheFolder, true);
+                try { Directory.Delete(cacheFolder, true); }
+                catch (Exception ex) { ModBase.Log(ex, "导出成功，但临时目录清理失败", ModBase.LogLevel.Debug); }
                 ModBase.OpenExplorer(packPath);
             })
         {
@@ -1195,8 +1287,14 @@ public partial class PageInstanceExport : IRefreshable
         #endregion
 
         // 启动
-        var mainLoader = new ModLoader.LoaderCombo<string>(loaderName, loaders)
-            { OnStateChanged = ModDownloadLib.LoaderStateChangedHintOnly };
+        var mainLoader = new ModLoader.LoaderCombo<string>(loaderName, loaders);
+        mainLoader.OnStateChanged = task =>
+        {
+            ModDownloadLib.LoaderStateChangedHintOnly(task);
+            // An aborted child may still be unwinding. Wait for every task before touching its staging files.
+            if (task.State is ModBase.LoadState.Failed or ModBase.LoadState.Aborted)
+                ModBase.Log("[Export] 导出未完成；保留任务临时目录供任务系统清理：" + cacheFolder, ModBase.LogLevel.Debug);
+        };
         mainLoader.Start();
         ModLoader.LoaderTaskbarAdd(mainLoader);
         ModMain.frmMain.BtnExtraDownload.ShowRefresh();

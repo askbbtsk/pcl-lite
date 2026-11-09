@@ -852,6 +852,16 @@ public partial class PageInstanceSetup
         {
             selectedItem = ComboArgumentJava.Items[2] as MyComboBoxItem;
         }
+        else if (preference is UseInstanceRelativePath portable)
+        {
+            selectedItem = new MyComboBoxItem
+            {
+                Content = Lang.Text("Instance.Export.Java.InstanceRelative", portable.RelativePath),
+                ToolTip = portable.RelativePath,
+                Tag = portable,
+            };
+            ComboArgumentJava.Items.Add(selectedItem);
+        }
         else if (preference is ExistingJava)
         {
             var existPref = (ExistingJava)preference;
@@ -940,6 +950,11 @@ public partial class PageInstanceSetup
         {
             preference = new UseGlobalPreference();
             logMessage = "[Java] 修改实例 Java 选择设置：跟随全局设置";
+        }
+        else if (selectedItem.Tag is UseInstanceRelativePath portable)
+        {
+            preference = portable;
+            logMessage = "[Java] 使用实例内 Java：" + portable.RelativePath;
         }
         else if (selectedItem.Tag is UseRelativePath)
         {

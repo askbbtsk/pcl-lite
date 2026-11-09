@@ -39,7 +39,9 @@ public static class LauncherBundleResolver
     {
         ArgumentNullException.ThrowIfNull(candidates);
         var materialized = candidates.Where(static item => !string.IsNullOrWhiteSpace(item.Path)).ToArray();
+        var light = materialized.FirstOrDefault(static item => string.Equals(item.ProductName?.Trim(), "PCL Light", StringComparison.OrdinalIgnoreCase));
         return materialized.FirstOrDefault(static item => string.Equals(item.ProductName?.Trim(), LiteProductName, StringComparison.OrdinalIgnoreCase))?.Path
+            ?? light?.Path
             ?? materialized.FirstOrDefault(static item => string.Equals(item.ProductName?.Trim(), LegacyPclProductName, StringComparison.OrdinalIgnoreCase))?.Path
             ?? materialized.FirstOrDefault(static item =>
                 (item.ProductName.Contains("Launcher", StringComparison.OrdinalIgnoreCase)

@@ -75,6 +75,19 @@ public static class ModJava
                 if (preference is not null)
                     switch (true)
                     {
+                        case object _ when preference is UseInstanceRelativePath portable:
+                        {
+                            var path = PCL.Core.Minecraft.Packs.PackExportContent.ResolveInstanceJava(relatedInstance.PathInstance, portable.RelativePath);
+                            var candidate = Javas.AddOrGet(path);
+                            if (candidate is not null && candidate.IsEnabled)
+                            {
+                                if (!IsVersionSuitable(candidate.Installation.Version) || !IsAllowedMajor(candidate))
+                                    throw new InvalidOperationException(_GetJavaRangeWarning(
+                                        "Minecraft.Launch.Java.Compatibility.InstanceSelectedOutOfRange", candidate.Installation.Version, minVersion, maxVersion));
+                                return candidate;
+                            }
+                            throw new InvalidOperationException("The instance Java runtime is unavailable: " + path);
+                        }
                         case object _ when preference is ExistingJava: // "exist"
                         {
                             var existPref = (ExistingJava)preference;
@@ -309,6 +322,11 @@ public static class ModJava
                     case object _ when instancePreference is AutoSelect:
                     {
                         return Javas.Existing64BitJava();
+                    }
+                    case object _ when instancePreference is UseInstanceRelativePath portable:
+                    {
+                        var path = PCL.Core.Minecraft.Packs.PackExportContent.ResolveInstanceJava(relatedVersion.PathInstance, portable.RelativePath);
+                        return Javas.AddOrGet(path)?.Installation.Is64Bit == true;
                     }
                     case object _ when instancePreference is ExistingJava:
                     {

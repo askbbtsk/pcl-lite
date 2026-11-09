@@ -55,7 +55,7 @@ public static class ModModpack
     /// </summary>
     /// <exception cref="ModBase.CancelledException" />
     public static LoaderCombo<string> ModpackInstall(string file, string instanceName = null, string logo = null,
-        string resourceId = null, bool isOnlineInstall = false)
+        string resourceId = null, bool isOnlineInstall = false, bool forceIsolated = false)
     {
         RestrictedFeaturePolicy.ThrowIfRestricted("modpack-install");
         ModBase.Log("[ModPack] 整合包安装请求：" + (file ?? "null"));
@@ -210,7 +210,7 @@ public static class ModModpack
                 {
                     ModBase.Log("[ModPack] 整合包种类：CurseForge");
                     return InstallPackCurseForge(file, archive, archiveBaseFolder, instanceName, logo, resourceId,
-                        isOnlineInstall);
+                        isOnlineInstall, forceIsolated);
                 }
                 case 1:
                 {
@@ -231,7 +231,7 @@ public static class ModModpack
                 {
                     ModBase.Log("[ModPack] 整合包种类：Modrinth");
                     return InstallPackModrinth(file, archive, archiveBaseFolder, instanceName, logo, resourceId,
-                        isOnlineInstall);
+                        isOnlineInstall, forceIsolated);
                 }
                 case 9:
                 {
@@ -331,14 +331,20 @@ public static class ModModpack
         var versionIni = $@"{versionFolder}PCL\Setup.ini";
         if (File.Exists(overridesIni))
         {
-            ModBase.WriteIni(overridesIni, "VersionArgumentIndie", 1.ToString()); // 开启版本隔离
-            ModBase.WriteIni(overridesIni, "VersionArgumentIndieV2", true.ToString());
-            ModBase.CopyFile(overridesIni, versionIni); // 覆写已有的 ini
+            var declared = ModBase.ReadIni(overridesIni, "VersionArgumentIndieV2", "");
+            var legacy = ModBase.ReadIni(overridesIni, "VersionArgumentIndie", "");
+            var isolated = PackExportContent.ReadIsolation(declared, legacy);
+            ModBase.CopyFile(overridesIni, versionIni);
+            ModBase.WriteIni(versionIni, "VersionArgumentIndie", isolated ? "1" : "2");
+            ModBase.WriteIni(versionIni, "VersionArgumentIndieV2", isolated.ToString());
         }
         else
         {
-            ModBase.WriteIni(versionIni, "VersionArgumentIndie", 1.ToString()); // 开启版本隔离
-            ModBase.WriteIni(versionIni, "VersionArgumentIndieV2", true.ToString());
+            // A second, empty client-overrides pass must not erase an explicit choice from overrides.
+            var isolated = PackExportContent.ReadIsolation(ModBase.ReadIni(versionIni, "VersionArgumentIndieV2", ""),
+                ModBase.ReadIni(versionIni, "VersionArgumentIndie", ""));
+            ModBase.WriteIni(versionIni, "VersionArgumentIndie", isolated ? "1" : "2");
+            ModBase.WriteIni(versionIni, "VersionArgumentIndieV2", isolated.ToString());
         }
 
         ModBase.IniClearCache(versionIni); // 重置缓存，避免被安装过程中写入的 ini 覆盖
@@ -348,7 +354,7 @@ public static class ModModpack
 
     private static LoaderCombo<string> InstallPackCurseForge(string fileAddress, ZipArchive archive,
         string archiveBaseFolder, string instanceName = null, string logo = null, string resourceId = null,
-        bool isOnlineInstall = false)
+        bool isOnlineInstall = false, bool forceIsolated = false)
     {
         // 读取 Json 文件
         JsonObject json;
@@ -632,6 +638,7 @@ public static class ModModpack
             States.Instance.ModpackSource[versionFolder] = "CurseForge";
             States.Instance.ModpackId[versionFolder] = resourceId;
             SaveInstalledPackBaseline(versionFolder, authoredPaths, "CurseForge", resourceId, (string?)json["version"], authoredIdentities);
+            ApplyPackIsolationLayout(versionFolder, authoredPaths, forceIsolated);
             do
             {
                 try
@@ -800,7 +807,7 @@ public static class ModModpack
                 task.Progress = 0.05d;
             }
 
-            var stagingInstall = ModpackInstall(archivePath, stageName, resourceId: previous.ProjectId, isOnlineInstall: true);
+            var stagingInstall = ModpackInstall(archivePath, stageName, resourceId: previous.ProjectId, isOnlineInstall: true, forceIsolated: true);
             while (stagingInstall.State == ModBase.LoadState.Loading)
             {
                 if (task.IsAborted)
@@ -915,6 +922,21 @@ public static class ModModpack
         return ModComp.CompLoaderType.Any;
     }
 
+    private static void ApplyPackIsolationLayout(string versionFolder, IEnumerable<string> authoredPaths, bool forceIsolated)
+    {
+        var ini = Path.Combine(versionFolder, "PCL", "Setup.ini");
+        var isolated = forceIsolated || PackExportContent.ReadIsolation(ModBase.ReadIni(ini, "VersionArgumentIndieV2", ""),
+            ModBase.ReadIni(ini, "VersionArgumentIndie", ""));
+        if (forceIsolated)
+        {
+            ModBase.WriteIni(ini, "VersionArgumentIndie", "1");
+            ModBase.WriteIni(ini, "VersionArgumentIndieV2", "True");
+        }
+        PackInstallationLayout.Apply(versionFolder, ModFolder.mcFolderSelected, authoredPaths, isolated);
+        ((PCL.Core.App.Configuration.Storage.DynamicCacheConfigStorage)PCL.Core.App.Configuration.ConfigService
+            .GetProvider(PCL.Core.App.Configuration.ConfigSource.GameInstance)).InvalidateCache(versionFolder);
+    }
+
     private static void SaveInstalledPackBaseline(string versionFolder, IEnumerable<string> authoredPaths,
         string source, string? projectId, string? versionId, IReadOnlyDictionary<string, string> identities)
     {
@@ -937,7 +959,7 @@ public static class ModModpack
 
     private static LoaderCombo<string> InstallPackModrinth(string fileAddress, ZipArchive archive,
         string archiveBaseFolder, string instanceName = null, string logo = null, string resourceId = null,
-        bool isOnlineInstall = false)
+        bool isOnlineInstall = false, bool forceIsolated = false)
     {
         // 读取 Json 文件
         JsonObject json;
@@ -1143,6 +1165,7 @@ public static class ModModpack
             States.Instance.ModpackSource[versionFolder] = "Modrinth";
             States.Instance.ModpackId[versionFolder] = resourceId;
             SaveInstalledPackBaseline(versionFolder, authoredPaths, "Modrinth", resourceId, (string?)json["versionId"], authoredIdentities);
+            ApplyPackIsolationLayout(versionFolder, authoredPaths, forceIsolated);
             do
             {
                 try

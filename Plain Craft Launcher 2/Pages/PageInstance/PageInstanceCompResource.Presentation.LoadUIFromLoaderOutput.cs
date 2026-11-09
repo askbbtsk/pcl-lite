@@ -86,6 +86,7 @@ public partial class PageInstanceCompResource
                 return;
             }
 
+            CaptureLoaderCompatibilityContext();
             // 修改缓存
             modItems.Clear();
             var rootPath = PageInstanceLeft.McInstance.PathIndie +
@@ -135,6 +136,7 @@ public partial class PageInstanceCompResource
             {
                 SnapsToDevicePixels = true,
                 Entry = entry,
+                LoaderCompatibilityContext = _loaderCompatibilityContext,
                 buttonHandler = BuildLocalCompItemBtnHandler,
                 Checked = selectedMods.Contains(entry.RawPath)
             };

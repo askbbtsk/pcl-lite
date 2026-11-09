@@ -144,6 +144,10 @@
                                         Margin="0,7,20,0"
                                         ToolTip="{DynamicResource Instance.Overall.Manage.RepairFiles.ToolTip}"
                                         Height="35" />
+                        <local:MyButton x:Name="BtnEnhancementHealth" Text="{DynamicResource Instance.Enhancement.HealthCheck}"
+                                        MinWidth="140" Padding="13,0" Margin="0,7,20,0" Height="35"
+                                        ToolTip="{DynamicResource Instance.Enhancement.HealthNote}"
+                                        Click="BtnEnhancementHealth_Click" />
                         <local:MyButton x:Name="BtnManageRestore" Text="{DynamicResource Common.Action.Reset}" MinWidth="140" Padding="13,0"
                                         Margin="0,7,20,0"
                                         ToolTip="{DynamicResource Instance.Overall.Manage.Reinstall.ToolTip}"

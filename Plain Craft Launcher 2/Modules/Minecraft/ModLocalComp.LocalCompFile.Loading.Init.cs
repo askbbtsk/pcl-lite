@@ -45,6 +45,7 @@ public partial class LocalCompFile
             JijVersionRange = null;
             JijArtifactVersion = null;
             DetectedLoader = null;
+            DeclaredLoaders = Array.Empty<string>();
             isLoaded = false;
             _FileUnavailableReason = null;
         }
@@ -222,6 +223,7 @@ public partial class LocalCompFile
                 jar = new ZipArchive(new FileStream(path, FileMode.Open, FileAccess.Read,
                     FileShare.Read | FileShare.Write | FileShare.Delete));
                 DetectedLoader = ModJarInJar.DetectLoader(jar, PreferredLoader);
+                DeclaredLoaders = ReadDeclaredLoaders(jar);
                 // 信息获取
                 LookupMetadata(jar, DetectedLoader);
                 // 列表批量加载（Phase 1）期间：缓存未命中的内嵌解析延后，返回 null 则标记待后台补解析

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.Minecraft.ResourceProject;
 using PCL.Core.Utils.OS;
@@ -19,8 +20,17 @@ internal static class ModLaunchDependencyPrecheck
 
     public static bool Confirm(McInstance instance, bool isScriptExport)
     {
-        // Exporting a launch script must remain side-effect free; the regular LF launch precheck also skips it.
+        // Script exports and this optional review must never install or enable mods.
         if (isScriptExport) return true;
+        try
+        {
+            if (!Config.Launch.CheckModDependencies) return true;
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "读取可选模组依赖检查设置失败，继续原有启动流程", ModBase.LogLevel.Developer);
+            return true;
+        }
         if (instance?.Info is null || !(instance.Info.HasForge || instance.Info.HasNeoForge ||
                                         instance.Info.HasFabric || instance.Info.HasQuilt || instance.Info.HasLabyMod))
             return true;
@@ -30,49 +40,37 @@ internal static class ModLaunchDependencyPrecheck
             : Path.Combine(instance.PathIndie, "mods");
         if (!Directory.Exists(modsPath)) return true;
 
-        var issues = Scan(instance, modsPath);
+        List<Issue> issues;
+        try
+        {
+            issues = Scan(instance, modsPath);
+        }
+        catch (ModBase.CancelledException) { throw; }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "可选模组依赖检查未完成，继续原有启动流程", ModBase.LogLevel.Developer);
+            ModBase.RunInUi(() => HintService.Hint(Lang.Text("Minecraft.Launch.Dependency.CheckUnavailable"), HintType.Info));
+            return true;
+        }
+        if (ModLaunch.mcLaunchLoader.State != ModBase.LoadState.Loading)
+            throw new ModBase.CancelledException();
         if (issues.Count == 0) return true;
 
-        var enableCandidates = issues
-            .Where(issue => issue.Status == JijDepStatus.Disabled && issue.DisabledProviders.Count == 1)
-            .Select(issue => issue.DisabledProviders[0])
-            .Distinct()
-            .ToList();
-
-        if (enableCandidates.Count > 0)
+        var choice = 0;
+        ModBase.RunInUiWait(() =>
         {
-            var choice = ShowPrompt(instance, issues, canEnable: true);
-            if (choice == 0) return false;
-            if (choice == 2) return true;
-            if (choice != 1) return false;
-
-            var failedEnables = new List<string>();
-            foreach (var provider in enableCandidates)
+            choice = ModMain.MyMsgBox(
+                Lang.Text("Minecraft.Launch.Dependency.Message", instance.Name, BuildDetails(issues)),
+                Lang.Text("Minecraft.Launch.Dependency.Title"),
+                Lang.Text("Minecraft.Launch.Dependency.Manage"),
+                Lang.Text("Minecraft.Launch.Dependency.Continue"), Lang.Text("Common.Action.Cancel"));
+            if (choice == 1)
             {
-                try
-                {
-                    var destination = provider.RawPath;
-                    if (File.Exists(destination) || Directory.Exists(destination))
-                    {
-                        failedEnables.Add(provider.FileName);
-                        continue;
-                    }
-                    File.Move(provider.path, destination);
-                }
-                catch (Exception ex)
-                {
-                    ModBase.Log(ex, "启动前启用模组前置失败：" + provider.path, ModBase.LogLevel.Hint);
-                    failedEnables.Add(provider.FileName);
-                }
+                PageInstanceLeft.McInstance = instance;
+                ModMain.frmMain.PageChange(FormMain.PageType.InstanceSetup, FormMain.PageSubType.VersionMod);
             }
-
-            issues = Scan(instance, modsPath);
-            if (issues.Count == 0) return true;
-            if (failedEnables.Count > 0)
-                ModBase.Log(Lang.Text("Minecraft.Launch.Dependency.EnableFailed", string.Join(", ", failedEnables)), ModBase.LogLevel.Hint);
-        }
-
-        return ResolveAndInstall(instance, modsPath, issues);
+        });
+        return choice == 2;
     }
 
     private static bool ResolveAndInstall(McInstance instance, string modsPath, List<Issue> issues)
@@ -259,6 +257,8 @@ internal static class ModLaunchDependencyPrecheck
             foreach (var path in Directory.EnumerateFiles(modsPath)
                          .Where(CompFile.IsModFile))
             {
+                if (ModLaunch.mcLaunchLoader.State != ModBase.LoadState.Loading)
+                    throw new ModBase.CancelledException();
                 var mod = new CompFile(path);
                 mod.Load();
                 if (mod.State == CompFile.LocalFileStatus.Unavailable) continue;
@@ -315,7 +315,7 @@ internal static class ModLaunchDependencyPrecheck
             var status = Lang.Text(issue.Status switch
             {
                 JijDepStatus.Disabled => "Instance.Resource.Mod.JarInJar.Dep.Disabled",
-                JijDepStatus.VersionMismatch => "Instance.Resource.Mod.JarInJar.Dep.VersionMismatch",
+                JijDepStatus.VersionMismatch => "Minecraft.Launch.Dependency.VersionReview",
                 _ => "Instance.Resource.Mod.JarInJar.Dep.Missing"
             });
             return Lang.Text("Minecraft.Launch.Dependency.Entry", owner, issue.Dependency.DepId,

@@ -849,6 +849,11 @@ public static partial class Config
         /// </summary>
         [ConfigItem<int>("LaunchArgumentWindowWidth", 854, ConfigSource.Local)] public partial int GameWindowWidth { get; set; }
 
+        /// <summary>Offer a read-only review of required mod dependencies before launching.</summary>
+        [ConfigItem<bool>("LaunchCheckModDependencies", true, ConfigSource.Local)] public partial bool CheckModDependencies { get; set; }
+        /// <summary>Label files whose local metadata does not declare the current loader.</summary>
+        [ConfigItem<bool>("LaunchMarkIncompatibleMods", true, ConfigSource.Local)] public partial bool MarkIncompatibleMods { get; set; }
+
         /// <summary>Synchronize selected vanilla options across instances.</summary>
         [ConfigItem<bool>("LaunchPersonalOptionsSync", false, ConfigSource.Local)] public partial bool PersonalOptionsSync { get; set; }
         [ConfigItem<bool>("LaunchPersonalOptionsKeys", true, ConfigSource.Local)] public partial bool PersonalOptionsKeys { get; set; }

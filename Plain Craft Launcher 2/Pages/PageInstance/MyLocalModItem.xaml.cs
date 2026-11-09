@@ -193,6 +193,7 @@ public partial class MyLocalCompItem
                 // 为文件夹添加标签
                 Tags = new List<string> { Lang.Text("Instance.Resource.Item.FolderTag") };
             else if (Entry.Comp is not null) Tags = Entry.Comp.Tags;
+            RefreshLoaderCompatibility();
         }));
     }
 

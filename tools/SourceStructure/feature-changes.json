@@ -7,5 +7,57 @@
       "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::CopyTree(string source, string destination, CancellationToken token = default)"
     ],
     "Reason": "Stage A: exclude reserved PCL/Enhancements sidecars from whole-instance, PCL-subtree and explicitly selected directory exports. Ordinary user Enhancements directories remain eligible. Covered by EnhancementExportTests."
-  }
+  },
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunchDependencyPrecheck.cs",
+  "Sha256": "3902845F8B67B9AE5C94418A10F32E2B3E76B4035CE052FAE7EA651279BB5914",
+  "Members": [
+    "PCL.ModLaunchDependencyPrecheck::MethodDeclaration::Confirm(McInstance instance, bool isScriptExport)",
+    "PCL.ModLaunchDependencyPrecheck::MethodDeclaration::Scan(McInstance instance, string modsPath)",
+    "PCL.ModLaunchDependencyPrecheck::MethodDeclaration::BuildDetails(List<Issue> issues)"
+  ],
+  "Reason": "Plan stage A: optional dependency review, independently switched evidence-based loader annotations and native launch settings; dedicated compatibility tests. Exact source reviewed against snapshot-2."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLocalComp.LocalCompFile.Loading.Init.cs",
+  "Sha256": "96B846E6DF641FC53A5C38CD32264DFB072BC56AB89F2F7551EFA091F1ABEE5D",
+  "Members": [
+    "PCL.ModLocalComp+LocalCompFile::MethodDeclaration::Init()",
+    "PCL.ModLocalComp+LocalCompFile::MethodDeclaration::LoadCore()"
+  ],
+  "Reason": "Plan stage A: optional dependency review, independently switched evidence-based loader annotations and native launch settings; dedicated compatibility tests. Exact source reviewed against snapshot-2."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLocalComp.LocalCompFile.LoadState.MarkLoaded.cs",
+  "Sha256": "96FE716E69584768D5096F1DADDD26351B86D9A939E65B39A1EEFE8BC46C1831",
+  "Members": [
+    "PCL.ModLocalComp+LocalCompFile::MethodDeclaration::CopyLoadedStateFrom(LocalCompFile other)"
+  ],
+  "Reason": "Plan stage A: optional dependency review, independently switched evidence-based loader annotations and native launch settings; dedicated compatibility tests. Exact source reviewed against snapshot-2."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/MyLocalModItem.xaml.cs",
+  "Sha256": "75BF3074800C552591160DED3C1A6D12A858847B47F960B60CC1CD7CF445C137",
+  "Members": [
+    "PCL.MyLocalCompItem::MethodDeclaration::Refresh()"
+  ],
+  "Reason": "Plan stage A: optional dependency review, independently switched evidence-based loader annotations and native launch settings; dedicated compatibility tests. Exact source reviewed against snapshot-2."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceCompResource.Presentation.LoadUIFromLoaderOutput.cs",
+  "Sha256": "A151D4DFF6A4E9101CEA81E1995B4D94546496FCD52A52D03E5FB077EF74CF50",
+  "Members": [
+    "PCL.PageInstanceCompResource::MethodDeclaration::LoadUIFromLoaderOutput()",
+    "PCL.PageInstanceCompResource::MethodDeclaration::BuildLocalCompItem(ModLocalComp.LocalCompFile entry)"
+  ],
+  "Reason": "Plan stage A: optional dependency review, independently switched evidence-based loader annotations and native launch settings; dedicated compatibility tests. Exact source reviewed against snapshot-2."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLaunch.xaml.cs",
+  "Sha256": "C214F618E4CDA5C698BF2E766250D4B45C8E96B5E2272684FBB53C602A63A62F",
+  "Members": [
+    "PCL.PageSetupLaunch::MethodDeclaration::Reload()"
+  ],
+  "Reason": "Plan stage A: optional dependency review, independently switched evidence-based loader annotations and native launch settings; dedicated compatibility tests. Exact source reviewed against snapshot-2."
+}
 ]

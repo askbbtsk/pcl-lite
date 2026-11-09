@@ -82,6 +82,8 @@ public partial class PageSetupLaunch
             CheckAdvanceDisableCrashAnalysis.Checked = Config.Launch.DisableCrashAnalysis;
             CheckAdvanceLockMemory.Checked = Config.Launch.LockMemory;
             CheckLunarVerify.Checked = Config.Preference.Lunar.VerifyFiles;
+            CheckModDependencies.Checked = Config.Launch.CheckModDependencies;
+            CheckMarkIncompatibleMods.Checked = Config.Launch.MarkIncompatibleMods;
             CheckPersonalOptionsSync.Checked = Config.Launch.PersonalOptionsSync;
             CheckPersonalOptionsKeys.Checked = Config.Launch.PersonalOptionsKeys;
             CheckPersonalOptionsMouse.Checked = Config.Launch.PersonalOptionsMouse;

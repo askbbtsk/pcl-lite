@@ -104,6 +104,7 @@ public partial class LocalCompFile
                 JijVersionRange = other.JijVersionRange;
                 JijArtifactVersion = other.JijArtifactVersion;
                 DetectedLoader = other.DetectedLoader;
+                DeclaredLoaders = other.DeclaredLoaders;
                 Logo = other.Logo;
                 Url = other.Url;
                 Authors = other.Authors;

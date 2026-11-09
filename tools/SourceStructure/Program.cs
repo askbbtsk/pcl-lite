@@ -133,6 +133,9 @@ internal static partial class Program
         foreach (var (path, text) in sources)
         {
             var root = Parse(text);
+            var syntaxErrors = root.GetDiagnostics().Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
+            if (syntaxErrors.Length > 0)
+                throw new InvalidDataException("Invalid C# syntax in " + path + ": " + string.Join("; ", syntaxErrors.Select(error => error.ToString())));
             foreach (var type in root.DescendantNodes().OfType<BaseTypeDeclarationSyntax>())
             {
                 var name = TypeName(type);

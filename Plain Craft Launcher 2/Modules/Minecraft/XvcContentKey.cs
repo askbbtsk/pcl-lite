@@ -12,7 +12,6 @@ using PCL.Core.App.Localization;
 namespace PCL;
 
 
-#region XVC 容器解析（移植自 BedrockLauncher.Core.GdkDecode）
 
 internal sealed class XvcContentKey
 {

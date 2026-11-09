@@ -120,13 +120,13 @@ internal static partial class Program
         var declarations = ns.Members.ToArray();
         var prefix = text[..ns.SpanStart] + "namespace " + ns.Name + ";\n\n";
         var patches = new List<string> { "*** Begin Patch\n*** Delete File: " + path + "\n*** End Patch" };
-        AddFilePatches(patches, path, prefix + declarations[0].ToFullString());
+        AddFilePatches(patches, path, WithoutRegions(prefix + declarations[0].ToFullString()));
         foreach (var declaration in declarations.Skip(1))
         {
             var name = declaration is BaseTypeDeclarationSyntax type ? type.Identifier.Text : MemberName(declaration);
             var destination = Path.GetDirectoryName(path)!.Replace('\\', '/') + "/" + name + ".cs";
             if (File.Exists(destination)) throw new IOException("Type output already exists: " + destination);
-            AddFilePatches(patches, destination, prefix + declaration.ToFullString());
+            AddFilePatches(patches, destination, WithoutRegions(prefix + declaration.ToFullString()));
         }
         Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(patches));
         return 0;

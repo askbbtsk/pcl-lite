@@ -12,7 +12,6 @@ using PCL.Core.App.Localization;
 namespace PCL;
 
 
-#region XVC 结构定义
 
 [Flags]
 internal enum XvdVolumeAttributes : uint

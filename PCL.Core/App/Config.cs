@@ -855,11 +855,11 @@ public static partial class Config
         [ConfigItem<bool>("LaunchPersonalOptionsMouse", true, ConfigSource.Local)] public partial bool PersonalOptionsMouse { get; set; }
         [ConfigItem<bool>("LaunchPersonalOptionsView", true, ConfigSource.Local)] public partial bool PersonalOptionsView { get; set; }
         [ConfigItem<bool>("LaunchPersonalOptionsAccessibility", true, ConfigSource.Local)] public partial bool PersonalOptionsAccessibility { get; set; }
-        [ConfigItem<bool>("LaunchPersonalOptionsAudio", true, ConfigSource.Local)] public partial bool PersonalOptionsAudio { get; set; }
+        [ConfigItem<bool>("LaunchPersonalOptionsAudio", false, ConfigSource.Local)] public partial bool PersonalOptionsAudio { get; set; }
 
         /// <summary>Automatically back up a quick-play world around game sessions.</summary>
         [ConfigItem<bool>("LaunchWorldBackupAutoEnabled", true, ConfigSource.Local)] public partial bool WorldBackupAutoEnabled { get; set; }
-        [ConfigItem<int>("LaunchWorldBackupRetention", 3, ConfigSource.Local)] public partial int WorldBackupRetention { get; set; }
+        [ConfigItem<int>("LaunchWorldBackupRetention", 5, ConfigSource.Local)] public partial int WorldBackupRetention { get; set; }
 
         /// <summary>
         /// 游戏窗口高度。

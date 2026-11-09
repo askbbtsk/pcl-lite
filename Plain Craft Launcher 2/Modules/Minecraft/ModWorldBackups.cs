@@ -68,7 +68,7 @@ internal static class ModWorldBackups
         var gameDirectory = Path.GetFullPath(instance.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (!string.Equals(instanceDirectory, gameDirectory, StringComparison.OrdinalIgnoreCase)) return null;
 
-        var latest = ListRestorePoints(instanceDirectory).FirstOrDefault();
+        var latest = ListRestorePoints(instanceDirectory).FirstOrDefault(static item => !item.RetainFromAutomaticRetention);
         if (latest is not null && EnvironmentRestorePointService.CompareCurrent(RestorePointRoot, latest.Id, instanceDirectory).Count == 0)
             return latest;
         var snapshot = EnvironmentRestorePointService.Create(instanceDirectory, RestorePointRoot,

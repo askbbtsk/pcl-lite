@@ -17,6 +17,8 @@ public sealed class EnhancementExportTests
         Assert.IsFalse(PackExportContent.IsInternalPath("mods/Enhancements/config.json"));
         Assert.IsFalse(PackExportContent.IsInternalPath("PCL/Enhancements-user/config.json"));
         Assert.IsFalse(PackExportContent.IsInternalPath("PCL/Logo.png"));
+        Assert.IsTrue(PackExportContent.IsInternalPath("PCL/ResourceCollections/abc.json"));
+        Assert.IsFalse(PackExportContent.IsInternalPath("mods/ResourceCollections/user.json"));
     }
 
     [TestMethod]

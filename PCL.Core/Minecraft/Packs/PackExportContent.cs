@@ -11,7 +11,7 @@ public static class PackExportContent
     public static bool IsInternalPath(string relativePath)
     {
         var parts = relativePath.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (IsEnhancementPath(relativePath)) return true;
+        if (IsEnhancementPath(relativePath) || IsLocalCollectionPath(relativePath)) return true;
         return parts.Any(part => new[] { "PCLLiteData", "ResourceRecycle", "WorldBackups", "PackRestorePoints", "PackBaselines", "PackUpdateBackups",
             ".git", "logs", "crash-reports", "quickPlay", "webcache", "Cache" }.Contains(part, StringComparer.OrdinalIgnoreCase)
             || part.Contains(".pcl-update-", StringComparison.OrdinalIgnoreCase)
@@ -35,6 +35,15 @@ public static class PackExportContent
             if (parts[index].Equals("PCL", StringComparison.OrdinalIgnoreCase)
                 && parts[index + 1].Equals("Enhancements", StringComparison.OrdinalIgnoreCase))
                 return true;
+        return false;
+    }
+
+    private static bool IsLocalCollectionPath(string path)
+    {
+        var parts = path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        for (var index = 0; index + 1 < parts.Length; index++)
+            if (parts[index].Equals("PCL", StringComparison.OrdinalIgnoreCase)
+                && parts[index + 1].Equals("ResourceCollections", StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     }
 
@@ -67,7 +76,7 @@ public static class PackExportContent
     {
         if (!Directory.Exists(source)) return;
         var root = Path.GetFullPath(source);
-        if (IsEnhancementPath(root)) return;
+        if (IsEnhancementPath(root) || IsLocalCollectionPath(root)) return;
         if (IsInternalPath(Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar)))) return;
         var targetRoot = Path.GetFullPath(destination).TrimEnd(Path.DirectorySeparatorChar);
         if (targetRoot.Equals(root.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase)
@@ -83,7 +92,7 @@ public static class PackExportContent
             foreach (var child in Directory.EnumerateFileSystemEntries(directory))
             {
                 var relative = Path.GetRelativePath(root, child);
-                if (IsInternalPath(relative) || IsEnhancementPath(child)) continue;
+                if (IsInternalPath(relative) || IsEnhancementPath(child) || IsLocalCollectionPath(child)) continue;
                 CheckAncestors(root, child);
                 var target = Path.Combine(destination, relative);
                 if (Directory.Exists(child)) pending.Push(child);

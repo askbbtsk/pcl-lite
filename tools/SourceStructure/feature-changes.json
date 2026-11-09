@@ -1,7 +1,7 @@
 [
   {
     "SourcePath": "PCL.Core/Minecraft/Packs/PackExportContent.cs",
-    "Sha256": "5B68E25D07575E71CB9B0A85488A13BE2C9F63C9C2587F6072A2D7C43A7E6B7C",
+    "Sha256": "CCEB232ABF917DA1DA73D2968E7DAC846390B31D6B9208C38229C96661E8DE7A",
     "Members": [
       "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::IsInternalPath(string relativePath)",
       "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::CopyTree(string source, string destination, CancellationToken token = default)"
@@ -59,5 +59,11 @@
     "PCL.PageSetupLaunch::MethodDeclaration::Reload()"
   ],
   "Reason": "Plan stage A: optional dependency review, independently switched evidence-based loader annotations and native launch settings; dedicated compatibility tests. Exact source reviewed against snapshot-2."
+}
+, {
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.LaunchCoordinator.McLaunchOptions.cs",
+  "Sha256": "21B9893197640818EA18F426951615D4BF1493045A16344C8D35F14F49463576",
+  "Members": ["PCL.ModLaunch::MethodDeclaration::McLaunchStart(ModLoader.LoaderTask<McLaunchOptions, object> loader)"],
+  "Reason": "Stage B: coordinate launch and explicit copies using a shared nonblocking process-safe file lease; non-sharing storage failures retain ordinary launch behavior."
 }
 ]

@@ -24,6 +24,10 @@
                                             Margin="0,7,15,0" HorizontalAlignment="Left" />
                             <local:MyButton x:Name="BtnManageSelectAll" MinWidth="110" Text="{DynamicResource Instance.Resource.SelectAll}" Padding="13,7"
                                             Margin="0,7,15,0" HorizontalAlignment="Left" />
+                            <local:MyButton Text="{DynamicResource Instance.Collections.Save}" MinWidth="110" Padding="13,7"
+                                            Margin="0,7,15,0" HorizontalAlignment="Left" Loaded="CollectionButton_Loaded" Click="SaveResourceCollection_Click" />
+                            <local:MyButton Text="{DynamicResource Instance.Collections.Browse}" MinWidth="110" Padding="13,7"
+                                            Margin="0,7,15,0" HorizontalAlignment="Left" Loaded="CollectionButton_Loaded" Click="BrowseResourceCollections_Click" />
                             <local:MyButton x:Name="BtnManageInfoExport" MinWidth="110" Text="{DynamicResource Instance.Resource.ExportInfo}" Padding="13,7"
                                             Margin="0,7,15,0" HorizontalAlignment="Left" ToolTip="{DynamicResource Instance.Resource.ExportInfo.ToolTip}" />
                             <local:MyButton x:Name="BtnManageJarInJar" MinWidth="110" Text="{DynamicResource Instance.Resource.Mod.JarInJar.Entry}" Padding="13,7"

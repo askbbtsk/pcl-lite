@@ -169,6 +169,7 @@ public static partial class ModLaunch
     // 实际的启动方法
     private static void McLaunchStart(ModLoader.LoaderTask<McLaunchOptions, object> loader)
     {
+        using var instanceOperation = AcquireLaunchOperation();
         // 开始动画
         ModBase.RunInUiWait(ModMain.frmLaunchLeft.PageChangeToLaunching);
         // 预检测（预检测的错误将直接抛出）

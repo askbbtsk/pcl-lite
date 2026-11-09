@@ -8,10 +8,10 @@
   },
   "licenses": [
     {
-      "name": "PCL-Symbio-Edition",
-      "info": "Copyright © Hydrogen-Peroxide\n基岩版下载、安装与启动逻辑移植自此项目，Licensed under the Apache-2.0 License.",
-      "website": "https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition",
-      "license": "https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition/blob/main/LICENSE"
+      "name": "JetBrains",
+      "info": "JetBrains 开发工具\nRider · ReSharper",
+      "website": "https://www.jetbrains.com/",
+      "license": null
     },
     {
       "name": "LegacyFix",

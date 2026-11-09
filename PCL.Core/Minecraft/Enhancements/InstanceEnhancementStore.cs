@@ -27,9 +27,55 @@ public sealed class InstanceEnhancementStore
         => Read<InstanceEnhancementDocument>(DeclarationPath, value => value.Components is not null
             && value.Components.TrueForAll(component => component is not null && !string.IsNullOrWhiteSpace(component.Id)));
 
-    public EnhancementReadResult<InstanceResolvedReport> ReadResolved()
+    private EnhancementReadResult<InstanceResolvedReport> ReadResolvedDocument()
         => Read<InstanceResolvedReport>(ResolvedPath, value => !string.IsNullOrWhiteSpace(value.Fingerprint)
             && value.Components is not null && value.Libraries is not null && value.Warnings is not null);
+
+    public EnhancementReadResult<InstanceResolvedReport> ReadResolved()
+    {
+        try
+        {
+            using var readGate = AcquireReadGate();
+            return ReadResolvedDocument();
+        }
+        catch (Exception error) when (EnhancementPaths.IsExpectedFailure(error))
+        { return new(EnhancementReadStatus.Unavailable, null, Error: error.Message); }
+    }
+
+    /// <summary>Explicitly deletes only this supported derived report after rechecking the preview hash.</summary>
+    public bool ClearResolved(string expectedContentSha256, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedContentSha256);
+        cancellationToken.ThrowIfCancellationRequested();
+        EnhancementPaths.RejectLinks(DirectoryPath);
+        if (!Directory.Exists(DirectoryPath)) return false;
+        var gatePath = Path.Combine(DirectoryPath, ".write.lock");
+        EnhancementPaths.RejectLinks(gatePath);
+        using var gate = new FileStream(gatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        EnhancementPaths.RejectLinks(ResolvedPath);
+        var current = ReadResolvedDocument();
+        if (current.Status == EnhancementReadStatus.Missing) return false;
+        if (current.Status != EnhancementReadStatus.Valid)
+            throw new IOException("Invalid, unreadable or newer report was preserved; only supported derived caches can be cleared.");
+        if (!string.Equals(current.ContentSha256, expectedContentSha256, StringComparison.OrdinalIgnoreCase))
+            throw new IOException("Resolved report changed after the preview; reload before clearing it.");
+        cancellationToken.ThrowIfCancellationRequested();
+        EnhancementPaths.RejectLinks(ResolvedPath);
+        if (!string.Equals(ReadBytesHash(ResolvedPath), expectedContentSha256, StringComparison.OrdinalIgnoreCase))
+            throw new IOException("Resolved report changed before cache cleanup.");
+        File.Delete(ResolvedPath);
+        return true;
+    }
+
+    private FileStream? AcquireReadGate()
+    {
+        EnhancementPaths.RejectLinks(DirectoryPath);
+        var gatePath = Path.Combine(DirectoryPath, ".write.lock");
+        EnhancementPaths.RejectLinks(gatePath);
+        try { return new FileStream(gatePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None); }
+        catch (FileNotFoundException) { return null; }
+        catch (DirectoryNotFoundException) { return null; }
+    }
 
     /// <summary>Explicit edit only. Pass the hash returned by ReadDeclaration for an existing document.</summary>
     public void SaveDeclaration(InstanceEnhancementDocument document, string? expectedContentSha256 = null,
@@ -108,7 +154,7 @@ public sealed class InstanceEnhancementStore
         var before = ReadBytesHash(path);
         if (!replaceDerived && !string.Equals(before, expectedContentSha256, StringComparison.OrdinalIgnoreCase))
             throw new IOException("Enhancement declaration changed; reload before applying the edit.");
-        if (replaceDerived && ReadResolved().Status == EnhancementReadStatus.UnsupportedSchema)
+        if (replaceDerived && ReadResolvedDocument().Status == EnhancementReadStatus.UnsupportedSchema)
             throw new IOException("A newer resolved report was preserved; use the in-memory analysis.");
         if (!replaceDerived && before is not null && ReadDeclaration().Status != EnhancementReadStatus.Valid)
             throw new IOException("An invalid or unsupported declaration must be preserved.");

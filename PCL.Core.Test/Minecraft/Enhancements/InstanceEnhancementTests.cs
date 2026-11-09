@@ -177,6 +177,74 @@ public sealed class InstanceEnhancementTests
         Assert.IsFalse(Directory.Exists(store.DirectoryPath));
     }
 
+    [TestMethod]
+    public void ReportContainsOrderedSourceAndRuntimeEvidenceWithoutRawSecretsOrExternalPaths()
+    {
+        var first = Path.Combine(_instance, "base.json");
+        var second = Path.Combine(_instance, "PCL", "patch.json");
+        var external = Path.Combine(_root, "external-user", "shared.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(second)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(external)!);
+        File.WriteAllText(first, "base metadata"); File.WriteAllText(second, "patch metadata"); File.WriteAllText(external, "external metadata");
+        var javaPath = Path.Combine(_root, "private-runtime", "bin", "java.exe");
+        const string effective = "{\"id\":\"test\",\"arguments\":{\"game\":[\"--accessToken\",\"private-token-value\"]}}";
+        var input = Input() with
+        {
+            EffectiveVersionJson = effective, SourceFiles = [second, first, external],
+            Platform = "windows", Architecture = "ARM64", AdapterVersion = "adapter-3",
+            Java = new(21, "ARM64", javaPath, "21.0.7"), SourceMetadataSha256 = Hash("upstream metadata"),
+        };
+        var report = InstanceEnhancementAnalyzer.Analyze(input);
+        Assert.AreEqual(InstanceEnhancementAnalyzer.CalculateFingerprint(input), report.Fingerprint);
+        Assert.AreEqual(Hash(effective), report.EffectiveVersionSha256);
+        Assert.AreEqual(input.MinecraftVersion, report.MinecraftVersion);
+        Assert.AreEqual("windows", report.Platform); Assert.AreEqual("ARM64", report.Architecture);
+        Assert.AreEqual("adapter-3", report.AdapterVersion); Assert.AreEqual(input.SourceMetadataSha256, report.SourceMetadataSha256);
+        Assert.AreEqual(21, report.Java!.MajorVersion); Assert.AreEqual("ARM64", report.Java.Architecture);
+        Assert.AreEqual("21.0.7", report.Java.FullVersion); Assert.AreEqual(Hash(javaPath), report.Java.RuntimeIdentitySha256);
+        Assert.AreEqual("PCL/patch.json", report.SourceEvidence[0].RelativePath);
+        Assert.AreEqual(Hash("patch metadata"), report.SourceEvidence[0].ContentSha256);
+        Assert.AreEqual("base.json", report.SourceEvidence[1].RelativePath);
+        Assert.IsFalse(report.SourceEvidence[1].IsExternal);
+        Assert.IsTrue(report.SourceEvidence[2].IsExternal); Assert.IsNull(report.SourceEvidence[2].RelativePath);
+        Assert.AreEqual("shared.json", report.SourceEvidence[2].FileName);
+        Assert.AreEqual(Hash(Path.TrimEndingDirectorySeparator(Path.GetFullPath(external)).ToUpperInvariant()),
+            report.SourceEvidence[2].PathIdentitySha256);
+        var serialized = System.Text.Json.JsonSerializer.Serialize(report);
+        Assert.IsFalse(serialized.Contains("private-token-value", StringComparison.Ordinal));
+        Assert.IsFalse(serialized.Contains("private-runtime", StringComparison.Ordinal));
+        Assert.IsFalse(serialized.Contains("external-user", StringComparison.Ordinal));
+        var reversed = InstanceEnhancementAnalyzer.Analyze(input with { SourceFiles = [first, second, external] });
+        Assert.AreNotEqual(report.Fingerprint, reversed.Fingerprint);
+        Assert.AreEqual("base.json", reversed.SourceEvidence[0].RelativePath);
+        File.WriteAllText(first, "user edited base");
+        var changed = InstanceEnhancementAnalyzer.Analyze(input);
+        Assert.AreNotEqual(report.Fingerprint, changed.Fingerprint);
+        Assert.AreEqual(Hash("user edited base"), changed.SourceEvidence[1].ContentSha256);
+    }
+
+    [TestMethod]
+    public void LibraryReportPreservesDeclaredChecksAndLocalAuthoritySeparatelyFromObservedBytes()
+    {
+        var file = Path.Combine(_instance, "observed.jar");
+        File.WriteAllText(file, "observed bytes");
+        var declaredSha1 = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes("expected bytes")));
+        var declaredSha256 = Hash("expected bytes");
+        var input = Input() with { Libraries = [new(file, "test:library:1", declaredSha1, 14, declaredSha256, IsLocal: true)] };
+        var report = InstanceEnhancementAnalyzer.Analyze(input);
+        Assert.AreEqual(declaredSha1, report.Libraries[0].DeclaredSha1);
+        Assert.AreEqual(declaredSha256, report.Libraries[0].DeclaredSha256);
+        Assert.AreEqual(14L, report.Libraries[0].DeclaredSize);
+        Assert.IsTrue(report.Libraries[0].IsLocal);
+        Assert.AreEqual(Hash("observed bytes"), report.Libraries[0].ActualSha256);
+        Assert.AreEqual(LibraryHealthStatus.Damaged, report.Libraries[0].Status);
+        var missing = InstanceEnhancementAnalyzer.Analyze(input with
+        { Libraries = [new(Path.Combine(_instance, "missing.jar"), Sha256: declaredSha256, Size: 14)] });
+        Assert.AreEqual(declaredSha256, missing.Libraries[0].DeclaredSha256);
+        Assert.AreEqual(LibraryHealthStatus.Missing, missing.Libraries[0].Status);
+        Assert.IsNull(missing.Libraries[0].ActualSha256);
+    }
+
     private EnhancementAnalysisInput Input() => new()
     {
         InstanceDirectory = _instance, MinecraftVersion = "1.21.1", EffectiveVersionJson = "{\"id\":\"test\",\"libraries\":[]}",

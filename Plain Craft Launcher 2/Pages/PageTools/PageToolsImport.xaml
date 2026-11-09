@@ -27,6 +27,18 @@
                 </StackPanel>
             </local:MyCard>
 
+            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Instance.Prism.Title}">
+                <StackPanel Margin="25,40,25,20">
+                    <TextBlock Text="{DynamicResource Instance.Prism.Description}" TextWrapping="Wrap" />
+                    <WrapPanel Margin="0,14,0,0">
+                        <local:MyButton x:Name="BtnPrismImport" Height="35" MinWidth="150" Margin="0,0,10,6"
+                                        Text="{DynamicResource Instance.Prism.ChooseFolder}" Click="PrismImport_Click" />
+                        <local:MyButton x:Name="BtnPrismCancel" Height="35" MinWidth="90" Margin="0,0,0,6" IsEnabled="False"
+                                        Text="{DynamicResource Common.Action.Cancel}" Click="PrismCancel_Click" />
+                    </WrapPanel>
+                </StackPanel>
+            </local:MyCard>
+
             <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Tools.Import.Found}">
                 <StackPanel Margin="20,40,20,16">
                     <StackPanel x:Name="PanResults" />

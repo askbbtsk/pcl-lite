@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using PCL.Core.Minecraft.ResourceCollections;
 
 namespace PCL.Core.Minecraft.Instances;
 
@@ -15,7 +16,7 @@ public static class InstanceOperationCoordinator
         ArgumentException.ThrowIfNullOrWhiteSpace(coordinationDirectory);
         ArgumentNullException.ThrowIfNull(roots);
         if (roots.Length == 0) throw new ArgumentException("At least one operation root is required.", nameof(roots));
-        var identities = roots.Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
+        var identities = roots.Select(NormalizeRoot)
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
         var directory = Path.GetFullPath(coordinationDirectory);
         RejectLinks(directory);
@@ -39,6 +40,28 @@ public static class InstanceOperationCoordinator
             foreach (var handle in handles) handle.Dispose();
             throw;
         }
+    }
+
+    private static string NormalizeRoot(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        var full = Path.TrimEndingDirectorySeparator(new DirectoryInfo(Path.GetFullPath(path)).FullName);
+        RejectLinks(full);
+        // Expand the existing ancestor too: a not-yet-created child under PROGRA~1 must share
+        // the same operation gate as that child under its long-name spelling.
+        var suffix = new Stack<string>();
+        var ancestor = full;
+        while (!Directory.Exists(ancestor))
+        {
+            var parent = Path.GetDirectoryName(ancestor);
+            if (parent is null) return full;
+            suffix.Push(Path.GetFileName(ancestor));
+            ancestor = parent;
+        }
+        ancestor = ResourceCollectionPaths.ExpandLongName(ancestor, out var unresolved);
+        if (unresolved) throw new IOException("Unable to resolve a short-name operation root safely.");
+        while (suffix.Count > 0) ancestor = Path.Combine(ancestor, suffix.Pop());
+        return Path.TrimEndingDirectorySeparator(ancestor);
     }
 
     private static void RejectLinks(string path)

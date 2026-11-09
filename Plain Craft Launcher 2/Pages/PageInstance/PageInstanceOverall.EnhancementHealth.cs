@@ -48,6 +48,7 @@ public partial class PageInstanceOverall
             if (report.Libraries.Count(entry => entry.Status != LibraryHealthStatus.Valid) > 35)
                 text.AppendLine(Lang.Text("Instance.Enhancement.MoreInLog"));
             if (!report.InputsStable) text.AppendLine(Lang.Text("Instance.Enhancement.InputChanged"));
+            foreach (var warning in report.Warnings.Take(20)) text.AppendLine(warning);
             ModBase.Log("[Enhancements] " + System.Text.Json.JsonSerializer.Serialize(report), ModBase.LogLevel.Normal);
             if (missing > 0 && report.InputsStable)
             {
@@ -80,9 +81,11 @@ public partial class PageInstanceOverall
     private static InstanceResolvedReport AnalyzeInstance(string directory, string gameRoot, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+        EnsureHealthRoot(gameRoot);
         var current = new McInstance(directory);
         var effective = current.JsonObject.ToJsonString();
         var libraries = ModLibrary.McLibListGet(current, true);
+        EnsureHealthRoot(gameRoot);
         var store = new InstanceEnhancementStore(directory);
         var declaration = store.ReadDeclaration();
         var sourceFiles = new List<string>();
@@ -115,12 +118,27 @@ public partial class PageInstanceOverall
             Architecture = RuntimeInformation.ProcessArchitecture.ToString(),
         };
         var report = InstanceEnhancementAnalyzer.Analyze(input, token);
+        EnsureHealthRoot(gameRoot);
+        var identities = InstanceIdentityInspector.InspectSiblings(directory, token);
+        if (identities.DuplicateInstances.Count > 0)
+            report.Warnings.Add(Lang.Text("Instance.Enhancement.IdentityDuplicate", identities.InstanceId,
+                string.Join("、", identities.DuplicateInstances.Select(path => Path.GetFileName(Path.TrimEndingDirectorySeparator(path))))));
+        if (identities.Issues.Count > 0)
+            report.Warnings.Add(Lang.Text("Instance.Enhancement.IdentityIncomplete", identities.Issues.Count));
         // The host resolver owns inheritance/patch rules. Re-read it rather than trusting an
         // McInstance object's earlier in-memory JsonObject when external edits are possible.
         if (new McInstance(directory).JsonObject.ToJsonString() != effective)
             report = report with { InputsStable = false };
+        EnsureHealthRoot(gameRoot);
         if (!store.TrySaveResolved(report, out var cacheError, token))
             ModBase.Log("[Enhancements] Cache was not saved: " + cacheError, ModBase.LogLevel.Normal);
         return report;
+    }
+
+    private static void EnsureHealthRoot(string capturedRoot)
+    {
+        if (!string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(capturedRoot)),
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(ModFolder.mcFolderSelected)), StringComparison.OrdinalIgnoreCase))
+            throw new OperationCanceledException("The selected Minecraft root changed during analysis; the result was discarded.");
     }
 }

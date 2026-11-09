@@ -148,6 +148,10 @@
                                         MinWidth="140" Padding="13,0" Margin="0,7,20,0" Height="35"
                                         ToolTip="{DynamicResource Instance.Enhancement.HealthNote}"
                                         Click="BtnEnhancementHealth_Click" />
+                        <local:MyButton Text="{DynamicResource Instance.Enhancement.Compare}" MinWidth="140" Padding="13,0"
+                                        Margin="0,7,20,0" Height="35" Click="CompareInstances_Click" />
+                        <local:MyButton Text="{DynamicResource Instance.Enhancement.ClearCache.Title}" MinWidth="140" Padding="13,0"
+                                        Margin="0,7,20,0" Height="35" Click="BtnEnhancementClearCache_Click" />
                         <local:MyButton x:Name="BtnManageRestore" Text="{DynamicResource Common.Action.Reset}" MinWidth="140" Padding="13,0"
                                         Margin="0,7,20,0"
                                         ToolTip="{DynamicResource Instance.Overall.Manage.Reinstall.ToolTip}"

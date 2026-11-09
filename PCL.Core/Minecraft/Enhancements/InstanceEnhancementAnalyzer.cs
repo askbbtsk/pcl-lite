@@ -15,7 +15,8 @@ namespace PCL.Core.Minecraft.Enhancements;
 /// </summary>
 public static class InstanceEnhancementAnalyzer
 {
-    public const string ParserVersion = "1";
+    public const string ParserVersion = "2";
+    private sealed record CapturedSource(string FullPath, string Sha256);
 
     /// <summary>Run blocking file hashing outside the WPF dispatcher.</summary>
     public static Task<InstanceResolvedReport> AnalyzeAsync(EnhancementAnalysisInput input,
@@ -41,11 +42,20 @@ public static class InstanceEnhancementAnalyzer
             entries.Add(CheckLibrary(input, library, token));
         }
         var after = CaptureSources(input, token);
-        var stable = before.SequenceEqual(after, StringComparer.Ordinal);
+        var stable = before.SequenceEqual(after);
         if (!stable) warnings.Add("Source inputs changed during analysis; repeat the check before using this report.");
         return new InstanceResolvedReport
         {
             Fingerprint = Fingerprint(input, before),
+            EffectiveVersionSha256 = TextHash(input.EffectiveVersionJson),
+            MinecraftVersion = input.MinecraftVersion,
+            Platform = input.Platform,
+            Architecture = input.Architecture,
+            AdapterVersion = input.AdapterVersion,
+            SourceMetadataSha256 = input.SourceMetadataSha256,
+            Java = input.Java is null ? null : new ResolutionJavaEvidence(input.Java.MajorVersion,
+                input.Java.Architecture, input.Java.FullVersion, TextHash(input.Java.RuntimePath)),
+            SourceEvidence = before.Select(source => ToEvidence(input.InstanceDirectory, source)).ToList(),
             Components = IdentifyComponents(input, warnings),
             Libraries = entries,
             Warnings = warnings,
@@ -57,7 +67,7 @@ public static class InstanceEnhancementAnalyzer
     public static string CalculateFingerprint(EnhancementAnalysisInput input, CancellationToken token = default)
         => Fingerprint(input, CaptureSources(input, token));
 
-    private static string Fingerprint(EnhancementAnalysisInput input, IReadOnlyList<string> sources)
+    private static string Fingerprint(EnhancementAnalysisInput input, IReadOnlyList<CapturedSource> sources)
     {
         var bytes = JsonSerializer.SerializeToUtf8Bytes(new
         {
@@ -69,9 +79,9 @@ public static class InstanceEnhancementAnalyzer
         return Convert.ToHexString(SHA256.HashData(bytes));
     }
 
-    private static List<string> CaptureSources(EnhancementAnalysisInput input, CancellationToken token)
+    private static List<CapturedSource> CaptureSources(EnhancementAnalysisInput input, CancellationToken token)
     {
-        var result = new List<string>();
+        var result = new List<CapturedSource>();
         foreach (var path in input.SourceFiles)
         {
             token.ThrowIfCancellationRequested();
@@ -79,15 +89,27 @@ public static class InstanceEnhancementAnalyzer
             EnhancementPaths.RejectLinks(full);
             using var stream = new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (stream.Length > 16 * 1024 * 1024) throw new InvalidDataException("Resolution source is too large: " + full);
-            result.Add(full + "\n" + ReadHashes(stream, token).Sha256);
+            result.Add(new(full, ReadHashes(stream, token).Sha256));
         }
         return result;
+    }
+
+    private static string TextHash(string value)
+        => Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)));
+
+    private static ResolutionSourceEvidence ToEvidence(string instanceDirectory, CapturedSource source)
+    {
+        var local = EnhancementPaths.IsWithin(instanceDirectory, source.FullPath);
+        var relative = local ? Path.GetRelativePath(instanceDirectory, source.FullPath).Replace('\\', '/') : null;
+        return new(relative, Path.GetFileName(source.FullPath), !local,
+            TextHash(EnhancementPaths.Normalize(source.FullPath).ToUpperInvariant()), source.Sha256);
     }
 
     private static LibraryHealthEntry CheckLibrary(EnhancementAnalysisInput input, EnhancementLibrary library,
         CancellationToken token)
     {
-        var entry = new LibraryHealthEntry { Path = library.Path, Name = library.Name };
+        var entry = new LibraryHealthEntry { Path = library.Path, Name = library.Name,
+            DeclaredSha1 = library.Sha1, DeclaredSha256 = library.Sha256, DeclaredSize = library.Size, IsLocal = library.IsLocal };
         try
         {
             var full = Path.GetFullPath(library.Path);

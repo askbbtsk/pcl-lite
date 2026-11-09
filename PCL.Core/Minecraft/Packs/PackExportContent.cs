@@ -18,6 +18,8 @@ public static class PackExportContent
             || part.Contains(".restore-stage-", StringComparison.OrdinalIgnoreCase)
             || part.Contains(".restore-rollback-", StringComparison.OrdinalIgnoreCase)
             || part.StartsWith(".pcl-import-", StringComparison.OrdinalIgnoreCase)
+            || part.StartsWith(".pcl-prism-import-", StringComparison.OrdinalIgnoreCase)
+            || part.StartsWith(".pcl-migration-", StringComparison.OrdinalIgnoreCase)
             || part.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
             || part.Equals("accounts.json", StringComparison.OrdinalIgnoreCase)
             || part.Equals("launcher_accounts.json", StringComparison.OrdinalIgnoreCase)

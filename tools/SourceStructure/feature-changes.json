@@ -1,7 +1,7 @@
 [
   {
     "SourcePath": "PCL.Core/Minecraft/Packs/PackExportContent.cs",
-    "Sha256": "CCEB232ABF917DA1DA73D2968E7DAC846390B31D6B9208C38229C96661E8DE7A",
+    "Sha256": "E17E7EDE2CDC6B6959A26AF026B0EDB52FCDF8C790A7102F4A690FBB665B41B1",
     "Members": [
       "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::IsInternalPath(string relativePath)",
       "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::CopyTree(string source, string destination, CancellationToken token = default)"

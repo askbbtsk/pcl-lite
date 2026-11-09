@@ -35,6 +35,14 @@ public sealed record EnhancementReadResult<T>(EnhancementReadStatus Status, T? V
 public sealed record ResolutionJavaIdentity(int MajorVersion, string Architecture, string RuntimePath,
     string? FullVersion = null);
 
+/// <summary>Selected Java facts only; machine-specific runtime paths are represented by a digest.</summary>
+public sealed record ResolutionJavaEvidence(int MajorVersion, string Architecture, string? FullVersion,
+    string RuntimeIdentitySha256);
+
+/// <summary>Ordered metadata input evidence. External sources expose only a filename and path digest.</summary>
+public sealed record ResolutionSourceEvidence(string? RelativePath, string FileName, bool IsExternal,
+    string PathIdentitySha256, string ContentSha256);
+
 /// <summary>Already resolved by the existing host library resolver, including native/platform rules.</summary>
 public sealed record EnhancementLibrary(string Path, string? Name = null, string? Sha1 = null,
     long? Size = null, string? Sha256 = null, bool IsLocal = false);
@@ -64,6 +72,10 @@ public sealed record LibraryHealthEntry
     public LibraryHealthStatus Status { get; init; }
     public long? ActualLength { get; init; }
     public string? ActualSha256 { get; init; }
+    public string? DeclaredSha1 { get; init; }
+    public string? DeclaredSha256 { get; init; }
+    public long? DeclaredSize { get; init; }
+    public bool IsLocal { get; init; }
     public string? Error { get; init; }
 }
 
@@ -73,6 +85,14 @@ public sealed record InstanceResolvedReport
     public int SchemaVersion { get; init; } = 1;
     public string ParserVersion { get; init; } = InstanceEnhancementAnalyzer.ParserVersion;
     public required string Fingerprint { get; init; }
+    public string? EffectiveVersionSha256 { get; init; }
+    public string? MinecraftVersion { get; init; }
+    public string? Platform { get; init; }
+    public string? Architecture { get; init; }
+    public string? AdapterVersion { get; init; }
+    public string? SourceMetadataSha256 { get; init; }
+    public ResolutionJavaEvidence? Java { get; init; }
+    public List<ResolutionSourceEvidence> SourceEvidence { get; init; } = [];
     public DateTimeOffset GeneratedAtUtc { get; init; } = DateTimeOffset.UtcNow;
     public List<ComponentDescriptor> Components { get; init; } = [];
     public List<LibraryHealthEntry> Libraries { get; init; } = [];

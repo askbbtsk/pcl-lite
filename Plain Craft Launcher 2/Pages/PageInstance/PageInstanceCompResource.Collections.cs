@@ -37,6 +37,7 @@ public partial class PageInstanceCompResource
         var name = ModMain.MyMsgBoxInput(Lang.Text("Instance.Collections.Save"), Lang.Text("Instance.Collections.Name"),
             PageInstanceLeft.McInstance.Name + " Mods");
         if (string.IsNullOrWhiteSpace(name)) return;
+        var owner = PageInstanceLeft.McInstance;
         _collectionOperation = true;
         try
         {
@@ -46,6 +47,7 @@ public partial class PageInstanceCompResource
                 new ResourceCollectionStore(Paths.Data).Save(value);
                 return value;
             });
+            if (!IsLoaded || !ReferenceEquals(owner, PageInstanceLeft.McInstance)) return;
             ModMain.MyMsgBox(Lang.Text("Instance.Collections.Saved", document.Name, document.Entries.Count)
                 + FormatCollectionEntries(document), Lang.Text("Instance.Collections.Title"));
         }

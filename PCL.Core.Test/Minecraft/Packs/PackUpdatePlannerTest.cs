@@ -197,6 +197,119 @@ public sealed class PackUpdatePlannerTest
     }
 
     [TestMethod]
+    public void NewAuthorFileDoesNotOverwriteUntrackedPlayerFileByDefault()
+    {
+        var game = Path.Combine(_root, "game");
+        var destination = Path.Combine(game, "mods", "player.jar");
+        Write(destination, "player-owned-bytes");
+        var payload = Path.Combine(_stage, "author.jar");
+        Write(payload, "author-bytes");
+        var target = Baseline(Entry("mods/player.jar", "author-bytes", "cf:new-mod"));
+
+        var plan = PackUpdatePlanner.Build(game, Baseline(), target,
+            new Dictionary<string, string> { ["mods/player.jar"] = payload });
+
+        Assert.AreEqual(PackUpdateActionKind.PreservePersonalFile, plan.Actions.Single().Kind);
+        Assert.AreEqual(PackFileOwnership.PersonalAdded, plan.Actions.Single().Ownership);
+        PackUpdateTransaction.Apply(plan);
+        Assert.AreEqual("player-owned-bytes", File.ReadAllText(destination));
+    }
+
+    [TestMethod]
+    public void AuthorRenameDoesNotOverwriteFileAtNewPathByDefault()
+    {
+        var game = Path.Combine(_root, "game");
+        var oldPath = Path.Combine(game, "mods", "old.jar");
+        var newPath = Path.Combine(game, "mods", "new.jar");
+        Write(oldPath, "author-v1");
+        Write(newPath, "player-file");
+        var payload = Path.Combine(_stage, "new-author.jar");
+        Write(payload, "author-v2");
+        var old = Baseline(Entry("mods/old.jar", "author-v1", "project:mod"));
+        var target = Baseline(Entry("mods/new.jar", "author-v2", "project:mod"));
+
+        var plan = PackUpdatePlanner.Build(game, old, target,
+            new Dictionary<string, string> { ["mods/new.jar"] = payload });
+
+        Assert.IsTrue(plan.Actions.All(static action => action.Kind == PackUpdateActionKind.PreservePersonalFile));
+        PackUpdateTransaction.Apply(plan);
+        Assert.AreEqual("author-v1", File.ReadAllText(oldPath));
+        Assert.AreEqual("player-file", File.ReadAllText(newPath));
+    }
+
+    [TestMethod]
+    public void MidTransactionDestinationChangeRollsBackPriorUpdates()
+    {
+        var game = Path.Combine(_root, "game");
+        var a = Path.Combine(game, "mods", "a.jar");
+        var b = Path.Combine(game, "mods", "b.jar");
+        Write(a, "old-a");
+        Write(b, "old-b");
+        var payloadA = Path.Combine(_stage, "new-a.jar");
+        var payloadB = Path.Combine(_stage, "new-b.jar");
+        Write(payloadA, "new-a");
+        Write(payloadB, "new-b");
+        var old = Baseline(Entry("mods/a.jar", "old-a", "a:file"), Entry("mods/b.jar", "old-b", "b:file"));
+        var target = Baseline(Entry("mods/a.jar", "new-a", "a:file"), Entry("mods/b.jar", "new-b", "b:file"));
+        var plan = PackUpdatePlanner.Build(game, old, target, new Dictionary<string, string>
+        {
+            ["mods/a.jar"] = payloadA,
+            ["mods/b.jar"] = payloadB,
+        });
+
+        Assert.ThrowsExactly<IOException>(() => PackUpdateTransaction.Apply(plan, progress: (completed, _) =>
+        {
+            if (completed == 1) Write(b, "external-edit");
+        }));
+        Assert.AreEqual("old-a", File.ReadAllText(a));
+        Assert.AreEqual("external-edit", File.ReadAllText(b));
+    }
+
+    [TestMethod]
+    public void NewAuthorFileCanReplaceOccupiedPathAfterExplicitAuthorChoice()
+    {
+        var game = Path.Combine(_root, "game");
+        var destination = Path.Combine(game, "mods", "player.jar");
+        Write(destination, "player-owned-bytes");
+        var payload = Path.Combine(_stage, "author.jar");
+        Write(payload, "author-bytes");
+        var target = Baseline(Entry("mods/player.jar", "author-bytes", "cf:new-mod"));
+
+        var plan = PackUpdatePlanner.Build(game, Baseline(), target,
+            new Dictionary<string, string> { ["mods/player.jar"] = payload },
+            new Dictionary<string, PackFileChoice> { ["mods/player.jar"] = PackFileChoice.UseAuthor });
+
+        PackUpdateTransaction.Apply(plan);
+        Assert.AreEqual("author-bytes", File.ReadAllText(destination));
+    }
+
+    [TestMethod]
+    public void StalePreviewSnapshotRejectsBeforeChangingAnyDestination()
+    {
+        var game = Path.Combine(_root, "game");
+        var a = Path.Combine(game, "mods", "a.jar");
+        var b = Path.Combine(game, "mods", "b.jar");
+        Write(a, "old-a");
+        Write(b, "old-b");
+        var payloadA = Path.Combine(_stage, "new-a.jar");
+        var payloadB = Path.Combine(_stage, "new-b.jar");
+        Write(payloadA, "new-a");
+        Write(payloadB, "new-b");
+        var old = Baseline(Entry("mods/a.jar", "old-a", "a:file"), Entry("mods/b.jar", "old-b", "b:file"));
+        var target = Baseline(Entry("mods/a.jar", "new-a", "a:file"), Entry("mods/b.jar", "new-b", "b:file"));
+        var plan = PackUpdatePlanner.Build(game, old, target, new Dictionary<string, string>
+        {
+            ["mods/a.jar"] = payloadA,
+            ["mods/b.jar"] = payloadB,
+        });
+        Write(b, "player-edited-after-preview");
+
+        Assert.ThrowsExactly<IOException>(() => PackUpdateTransaction.Apply(plan));
+        Assert.AreEqual("old-a", File.ReadAllText(a));
+        Assert.AreEqual("player-edited-after-preview", File.ReadAllText(b));
+    }
+
+    [TestMethod]
     public void InvalidPayloadHash_FailsBeforeMutatingTheInstance()
     {
         var game = Path.Combine(_root, "game");

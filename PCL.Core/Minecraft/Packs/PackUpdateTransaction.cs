@@ -23,6 +23,7 @@ public static class PackUpdateTransaction
         var createdFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var createdDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var actions = plan.Actions.Where(static action => action.Kind != PackUpdateActionKind.PreservePersonalFile).ToArray();
+        var expectedCurrent = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         var succeeded = false;
         var rollbackComplete = true;
 
@@ -46,6 +47,25 @@ public static class PackUpdateTransaction
                         throw new InvalidDataException($"Staged pack payload hash mismatch for '{action.DestinationPath}'.");
                 }
                 EnsureNoReparsePointEscape(root, destination);
+                if (expectedCurrent.TryGetValue(destination, out var existingExpected))
+                {
+                    if (!PackUpdatePlanner.HashEquals(existingExpected, action.ExpectedCurrentSha256))
+                        throw new InvalidDataException($"Conflicting preview snapshots for '{action.DestinationPath}'.");
+                }
+                else
+                {
+                    expectedCurrent.Add(destination, action.ExpectedCurrentSha256);
+                }
+            }
+
+            // Another process may change a destination while the preview is open.
+            // Refuse before the first live write if the preview snapshot is stale.
+            foreach (var pair in expectedCurrent)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var current = File.Exists(pair.Key) ? PackUpdatePlanner.HashFile(pair.Key) : null;
+                if (!PackUpdatePlanner.HashEquals(current, pair.Value))
+                    throw new IOException($"Pack destination changed after preview: '{Path.GetRelativePath(root, pair.Key)}'. Rebuild the update plan before applying it.");
             }
 
             var index = 0;
@@ -53,6 +73,9 @@ public static class PackUpdateTransaction
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var destination = PackUpdatePlanner.ResolveWithin(root, action.DestinationPath);
+                var current = File.Exists(destination) ? PackUpdatePlanner.HashFile(destination) : null;
+                if (!expectedCurrent.TryGetValue(destination, out var expected) || !PackUpdatePlanner.HashEquals(current, expected))
+                    throw new IOException($"Pack destination changed during update: '{action.DestinationPath}'.");
                 _EnsureParentDirectory(root, Path.GetDirectoryName(destination)!, createdDirectories);
                 if (File.Exists(destination))
                 {
@@ -64,6 +87,7 @@ public static class PackUpdateTransaction
                 if (action.Kind == PackUpdateActionKind.RemoveAuthorFile)
                 {
                     if (File.Exists(destination)) File.Delete(destination);
+                    expectedCurrent[destination] = null;
                 }
                 else
                 {
@@ -76,6 +100,7 @@ public static class PackUpdateTransaction
                             throw new InvalidDataException($"Pack payload changed while applying '{action.DestinationPath}'.");
                         File.Move(temp, destination, overwrite: true);
                         if (!backups.ContainsKey(destination)) createdFiles.Add(destination);
+                        expectedCurrent[destination] = action.ExpectedSha256;
                     }
                     finally
                     {

@@ -164,10 +164,7 @@ public partial class PageInstanceOverall
         }
 
         if (snapshots.Count == 0)
-        {
             PanRestorePointList.Children.Add(new TextBlock { Text = Lang.Text("Instance.RestorePoint.Empty"), Margin = new Thickness(0, 4, 0, 0) });
-            return;
-        }
 
         foreach (var snapshot in snapshots.OrderByDescending(static item => item.CreatedUtc))
         {
@@ -213,7 +210,70 @@ public partial class PageInstanceOverall
             row.Children.Add(restore);
             PanRestorePointList.Children.Add(row);
         }
+
+        var deletedSnapshots = ModWorldBackups.ListDeletedRestorePoints(instance.PathIndie);
+        if (deletedSnapshots.Count > 0)
+        {
+            var showDeleted = new MyButton
+            {
+                Text = _DeletedRestorePointsLabel(), Height = 30, MinWidth = 170,
+                Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(0, 10, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            var deletedList = new StackPanel { Visibility = Visibility.Collapsed, Margin = new Thickness(0, 6, 0, 0) };
+            showDeleted.Click += (_, _) => deletedList.Visibility = deletedList.Visibility == Visibility.Visible
+                ? Visibility.Collapsed : Visibility.Visible;
+            foreach (var deleted in deletedSnapshots.OrderByDescending(static item => item.CreatedUtc))
+            {
+                var deletedRow = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+                deletedRow.ColumnDefinitions.Add(new ColumnDefinition());
+                deletedRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                deletedRow.Children.Add(new TextBlock
+                {
+                    Text = Lang.Text("Instance.RestorePoint.Item", Lang.Date(deleted.CreatedUtc.LocalDateTime, "g"), deleted.Files.Count, deleted.Reason ?? ""),
+                    TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 12, 0)
+                });
+                var restoreDeleted = new MyIconButton { SvgIcon = "lucide/rotate-ccw", ToolTip = Lang.Text("Instance.RestorePoint.Restore") };
+                Grid.SetColumn(restoreDeleted, 1);
+                restoreDeleted.Click += (_, _) =>
+                {
+                    try
+                    {
+                        if (ModWorldBackups.RestoreDeletedRestorePoint(instance.PathIndie, deleted.Id))
+                        {
+                            HintService.Hint(_DeletedRestorePointRestoredLabel(), HintType.Success);
+                            RefreshRestorePoints(instance);
+                        }
+                        else HintService.Hint(Lang.Text("Instance.RestorePoint.Failed"), HintType.Error);
+                    }
+                    catch (Exception ex)
+                    {
+                        ModBase.Log(ex, "恢复已删除的实例还原点失败", ModBase.LogLevel.Hint);
+                        HintService.Hint(Lang.Text("Instance.RestorePoint.Failed"), HintType.Error);
+                    }
+                };
+                deletedRow.Children.Add(restoreDeleted);
+                deletedList.Children.Add(deletedRow);
+            }
+            PanRestorePointList.Children.Add(showDeleted);
+            PanRestorePointList.Children.Add(deletedList);
+        }
     }
+
+    private static string _DeletedRestorePointsLabel() => LocalizationService.CurrentLanguage.Code switch
+    {
+        "en-US" => "Deleted restore points",
+        "zh-TW" => "已刪除的還原點",
+        _ => "已删除的还原点",
+    };
+
+    private static string _DeletedRestorePointRestoredLabel() => LocalizationService.CurrentLanguage.Code switch
+    {
+        "en-US" => "Restore point recovered.",
+        "zh-TW" => "還原點已復原。",
+        _ => "还原点已恢复。",
+    };
 
     private void CompareRestorePoint(McInstance instance, PCL.Core.Minecraft.Backups.BackupSnapshot snapshot)
     {

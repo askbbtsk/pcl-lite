@@ -798,20 +798,25 @@ public static class ModModpack
             var plan = PackUpdatePlanner.Build(gameRoot, previous, target, payloadPaths);
             var authorCount = plan.Actions.Count(static item => item.Kind is PackUpdateActionKind.InstallAuthorFile or PackUpdateActionKind.RemoveAuthorFile);
             var personalCount = plan.Actions.Count(static item => item.Kind == PackUpdateActionKind.PreservePersonalFile && item.Ownership == PackFileOwnership.PersonalModified);
-            if (authorCount == 0)
+            if (authorCount == 0 && plan.Warnings.Count == 0)
             {
                 ModBase.RunInUi(() => HintService.Hint(Lang.Text("Instance.PackUpdate.Hint.AlreadyCurrent")));
                 return;
             }
-            var previewLines = plan.Actions
-                .Where(static item => item.Kind != PackUpdateActionKind.PreservePersonalFile || item.Ownership == PackFileOwnership.PersonalModified)
+            var previewActions = plan.Actions
+                .Where(static item => item.Kind != PackUpdateActionKind.PreservePersonalFile
+                    || item.Ownership is PackFileOwnership.PersonalModified or PackFileOwnership.PersonalAdded)
+                .ToList();
+            var previewLines = previewActions
                 .Take(24)
-                .Select(static item => $"• {(item.Kind == PackUpdateActionKind.InstallAuthorFile ? "+" : item.Kind == PackUpdateActionKind.RemoveAuthorFile ? "−" : "=")} {item.DestinationPath}");
-            var hiddenLineCount = Math.Max(0, plan.Actions.Count - 24);
+                .Select(item => $"• {(item.Kind == PackUpdateActionKind.InstallAuthorFile ? "+" : item.Kind == PackUpdateActionKind.RemoveAuthorFile ? "−" : "=")} {item.DestinationPath}"
+                    + (item.Kind == PackUpdateActionKind.PreservePersonalFile ? $" ({Lang.Text("Instance.PackUpdate.Preview.Preserve")})" : ""));
+            var hiddenLineCount = Math.Max(0, previewActions.Count - 24);
             var preview = Lang.Text("Instance.PackUpdate.Preview", plan.Actions.Count(static item => item.Kind == PackUpdateActionKind.InstallAuthorFile),
                 plan.Actions.Count(static item => item.Kind == PackUpdateActionKind.RemoveAuthorFile), personalCount)
                 + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, previewLines)
-                + (hiddenLineCount > 0 ? Environment.NewLine + $"… {hiddenLineCount}" : "");
+                + (hiddenLineCount > 0 ? Environment.NewLine + $"… {hiddenLineCount}" : "")
+                + (plan.Warnings.Count > 0 ? Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, plan.Warnings) : "");
             var decision = ModBase.RunInUiWait(() => ModMain.MyMsgBox(preview, Lang.Text("Instance.PackUpdate.Preview.Title"),
                 Lang.Text("Instance.PackUpdate.Preview.Preserve"), Lang.Text("Instance.PackUpdate.Preview.UseAuthor"),
                 Lang.Text("Common.Action.Cancel"), isWarn: true));

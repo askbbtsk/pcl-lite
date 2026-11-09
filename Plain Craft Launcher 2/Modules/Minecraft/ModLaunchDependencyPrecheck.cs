@@ -17,8 +17,10 @@ internal static class ModLaunchDependencyPrecheck
     private sealed record Issue(CompFile Owner, ModJarInJarIndex.DepRow Dependency, JijDepStatus Status,
         IReadOnlyList<CompFile> DisabledProviders);
 
-    public static bool Confirm(McInstance instance)
+    public static bool Confirm(McInstance instance, bool isScriptExport)
     {
+        // Exporting a launch script must remain side-effect free; the regular LF launch precheck also skips it.
+        if (isScriptExport) return true;
         if (instance?.Info is null || !(instance.Info.HasForge || instance.Info.HasNeoForge ||
                                         instance.Info.HasFabric || instance.Info.HasQuilt || instance.Info.HasLabyMod))
             return true;

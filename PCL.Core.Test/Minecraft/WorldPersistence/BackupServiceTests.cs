@@ -155,6 +155,40 @@ public sealed class BackupServiceTests
         Assert.AreEqual(second.Id, remaining[0].Id);
     }
     [TestMethod]
+    public void WorldBackup_DeletedBackupCanBeListedAndRestoredOnlyToItsOriginalWorld()
+    {
+        var world = Path.Combine(_root, "game", "saves", "World");
+        var otherWorld = Path.Combine(_root, "game", "saves", "Other");
+        var backups = Path.Combine(_root, "backups");
+        Write(Path.Combine(world, "level.dat"), "level");
+        var snapshot = WorldBackupService.Create(world, backups, "before delete");
+
+        Assert.IsTrue(WorldBackupService.Delete(backups, snapshot.Id, world));
+        Assert.AreEqual(snapshot.Id, WorldBackupService.ListDeleted(backups, world).Single().Id);
+        Assert.AreEqual(0, WorldBackupService.ListDeleted(backups, otherWorld).Count);
+
+        Assert.IsTrue(WorldBackupService.RestoreDeleted(backups, snapshot.Id, world));
+        Assert.AreEqual(snapshot.Id, WorldBackupService.List(backups, world).Single().Id);
+        Assert.AreEqual(0, WorldBackupService.ListDeleted(backups, world).Count);
+        Assert.IsFalse(WorldBackupService.RestoreDeleted(backups, snapshot.Id, world));
+    }
+
+    [TestMethod]
+    public void EnvironmentRestorePoint_DeletedPointCanBeListedAndRestored()
+    {
+        var instance = Path.Combine(_root, "instance");
+        var restorePoints = Path.Combine(_root, "restore-points");
+        Write(Path.Combine(instance, "mods", "a.jar"), "mod");
+        var point = EnvironmentRestorePointService.Create(instance, restorePoints, "before delete");
+
+        Assert.IsTrue(EnvironmentRestorePointService.Delete(restorePoints, point.Id, instance));
+        Assert.AreEqual(point.Id, EnvironmentRestorePointService.ListDeleted(restorePoints, instance).Single().Id);
+        Assert.IsTrue(EnvironmentRestorePointService.RestoreDeleted(restorePoints, point.Id, instance));
+        Assert.AreEqual(point.Id, EnvironmentRestorePointService.List(restorePoints, instance).Single().Id);
+        Assert.AreEqual(0, EnvironmentRestorePointService.ListDeleted(restorePoints, instance).Count);
+    }
+
+    [TestMethod]
     public void EnvironmentRestorePoint_CompareCurrentReportsAddedModifiedAndRemovedFilesButIgnoresSaves()
     {
         var instance = Path.Combine(_root, "instance");

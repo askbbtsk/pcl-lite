@@ -57,6 +57,8 @@ public sealed record PackUpdateAction
     public string? PreviousPath { get; init; }
     public string? PayloadPath { get; init; }
     public string? ExpectedSha256 { get; init; }
+    /// <summary>Hash of the destination as observed when the preview plan was built; null means it was absent.</summary>
+    public string? ExpectedCurrentSha256 { get; init; }
     public string? Reason { get; init; }
 }
 
@@ -147,7 +149,36 @@ public static class PackUpdatePlanner
 
                 var targetPayload = GetPayload(payloadPaths, next.Path);
                 actions.Add(Install(next, targetPayload, rename ? PackFileOwnership.AuthorRenamed : PackFileOwnership.Deleted,
-                    rename ? old.Path : null, "The user chose to restore the tracked author file."));
+                    rename ? old.Path : null, "The user chose to restore the tracked author file.",
+                    HashFileIfExists(ResolveWithin(root, next.Path))));
+                continue;
+            }
+
+            // A path rename must never consume an unrelated player file which
+            // happens to occupy the new author destination. The global "use
+            // author" choice is explicit authorization to replace it.
+            var nextLocalPath = ResolveWithin(root, next.Path);
+            var nextExists = File.Exists(nextLocalPath);
+            var nextHash = nextExists ? HashFile(nextLocalPath) : null;
+            if (rename && nextExists && selectedChoice != PackFileChoice.UseAuthor)
+            {
+                actions.Add(new PackUpdateAction
+                {
+                    Kind = PackUpdateActionKind.PreservePersonalFile,
+                    Ownership = localMatchesBaseline ? PackFileOwnership.AuthorUnchanged : PackFileOwnership.PersonalModified,
+                    DestinationPath = old.Path,
+                    PreviousPath = old.Path,
+                    Reason = "The renamed author file destination is occupied; preserve the current author file until the conflict is explicitly resolved.",
+                });
+                actions.Add(new PackUpdateAction
+                {
+                    Kind = PackUpdateActionKind.PreservePersonalFile,
+                    Ownership = PackFileOwnership.PersonalAdded,
+                    DestinationPath = next.Path,
+                    PreviousPath = next.Path,
+                    Reason = "A player file occupies the new author file path and was preserved.",
+                });
+                warnings.Add($"Author file '{next.Path}' was not installed because a local file already occupies that path.");
                 continue;
             }
 
@@ -163,7 +194,7 @@ public static class PackUpdatePlanner
                 });
                 if (rename)
                     actions.Add(Install(next, GetPayload(payloadPaths, next.Path), PackFileOwnership.AuthorRenamed, old.Path,
-                        "A modified personal file is retained at its previous path while the renamed author file is installed."));
+                        "A modified personal file is retained at its previous path while the renamed author file is installed.", nextHash));
                 else if (!HashEquals(old.Sha256, next.Sha256))
                     warnings.Add($"Author update for '{next.Path}' was not applied because the local file was modified.");
                 continue;
@@ -177,13 +208,15 @@ public static class PackUpdatePlanner
                     Ownership = PackFileOwnership.AuthorRenamed,
                     DestinationPath = old.Path,
                     PreviousPath = old.Path,
+                    ExpectedCurrentSha256 = localHash,
                     Reason = "The unchanged author file moved to a new path.",
                 });
-                actions.Add(Install(next, GetPayload(payloadPaths, next.Path), PackFileOwnership.AuthorRenamed, old.Path, "Install the author file at its new path."));
+                actions.Add(Install(next, GetPayload(payloadPaths, next.Path), PackFileOwnership.AuthorRenamed, old.Path, "Install the author file at its new path.", nextHash));
             }
-            else if (!HashEquals(old.Sha256, next.Sha256))
+            else if (!HashEquals(old.Sha256, next.Sha256) || !localMatchesBaseline && selectedChoice == PackFileChoice.UseAuthor)
             {
-                actions.Add(Install(next, GetPayload(payloadPaths, next.Path), PackFileOwnership.AuthorChanged, old.Path, "Replace the unchanged author file with the target version."));
+                actions.Add(Install(next, GetPayload(payloadPaths, next.Path), PackFileOwnership.AuthorChanged, old.Path,
+                    "Replace the local file with the selected author version.", localHash));
             }
             else
             {
@@ -212,6 +245,7 @@ public static class PackUpdatePlanner
                     Ownership = PackFileOwnership.Deleted,
                     DestinationPath = old.Path,
                     PreviousPath = old.Path,
+                    ExpectedCurrentSha256 = localHash,
                     Reason = "The unchanged author file was removed from the target package.",
                 });
             }
@@ -223,6 +257,7 @@ public static class PackUpdatePlanner
                     Ownership = PackFileOwnership.Deleted,
                     DestinationPath = old.Path,
                     PreviousPath = old.Path,
+                    ExpectedCurrentSha256 = localHash,
                     Reason = "The author removed this file and the user chose to accept the author package.",
                 });
             }
@@ -242,7 +277,28 @@ public static class PackUpdatePlanner
         foreach (var next in targetFiles.Values.OrderBy(static f => f.Path, StringComparer.OrdinalIgnoreCase))
         {
             if (targetMatched.Contains(next.Path)) continue;
-            actions.Add(Install(next, GetPayload(payloadPaths, next.Path), PackFileOwnership.PersonalAdded, null, "New author file."));
+            var destination = ResolveWithin(root, next.Path);
+            var exists = File.Exists(destination);
+            var localHash = exists ? HashFile(destination) : null;
+            var replacedTrackedAuthor = exists
+                && oldFiles.TryGetValue(next.Path.Replace('\\', '/'), out var oldAtDestination)
+                && !oldMatched.Contains(oldAtDestination.Path)
+                && HashEquals(localHash, oldAtDestination.Sha256);
+            if (exists && !replacedTrackedAuthor && GetChoice(choices, next.Path, next.Path) != PackFileChoice.UseAuthor)
+            {
+                actions.Add(new PackUpdateAction
+                {
+                    Kind = PackUpdateActionKind.PreservePersonalFile,
+                    Ownership = PackFileOwnership.PersonalAdded,
+                    DestinationPath = next.Path,
+                    PreviousPath = next.Path,
+                    Reason = "A player file occupies the new author file path and was preserved.",
+                });
+                warnings.Add($"Author file '{next.Path}' was not installed because a local file already occupies that path.");
+                continue;
+            }
+            actions.Add(Install(next, GetPayload(payloadPaths, next.Path), PackFileOwnership.PersonalAdded, null,
+                "New author file.", localHash));
         }
 
         return new PackUpdatePlan
@@ -283,7 +339,8 @@ public static class PackUpdatePlanner
         return groups.Where(static g => g.Count() == 1).ToDictionary(static g => g.Key, static g => g.Single(), StringComparer.OrdinalIgnoreCase);
     }
 
-    private static PackUpdateAction Install(PackFileEntry next, string payload, PackFileOwnership ownership, string? previousPath, string reason)
+    private static PackUpdateAction Install(PackFileEntry next, string payload, PackFileOwnership ownership, string? previousPath, string reason,
+        string? expectedCurrentSha256 = null)
         => new()
         {
             Kind = PackUpdateActionKind.InstallAuthorFile,
@@ -292,8 +349,11 @@ public static class PackUpdatePlanner
             PreviousPath = previousPath,
             PayloadPath = payload,
             ExpectedSha256 = next.Sha256,
+            ExpectedCurrentSha256 = expectedCurrentSha256,
             Reason = reason,
         };
+
+    private static string? HashFileIfExists(string path) => File.Exists(path) ? HashFile(path) : null;
 
     private static string GetPayload(IReadOnlyDictionary<string, string> payloadPaths, string relativePath)
         => payloadPaths.TryGetValue(relativePath, out var payload) && !string.IsNullOrWhiteSpace(payload)

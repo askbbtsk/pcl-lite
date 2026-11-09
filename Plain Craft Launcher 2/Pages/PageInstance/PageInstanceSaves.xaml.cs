@@ -401,10 +401,7 @@ public partial class PageInstanceSaves : IRefreshable
         }
 
         if (backups.Count == 0)
-        {
             stack.Children.Add(_BackupHint(ModWorldBackups.Text("empty")));
-            return;
-        }
 
         foreach (var snapshot in backups)
         {
@@ -441,7 +438,84 @@ public partial class PageInstanceSaves : IRefreshable
             row.Buttons = [restore, delete];
             stack.Children.Add(row);
         }
+
+        var showDeleted = new MyButton
+        {
+            Text = _DeletedBackupLabel(), Height = 30, MinWidth = 150,
+            Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(0, 10, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        var deletedItems = new StackPanel { Visibility = Visibility.Collapsed };
+        showDeleted.Click += (_, _) =>
+        {
+            if (deletedItems.Visibility == Visibility.Visible)
+            {
+                deletedItems.Visibility = Visibility.Collapsed;
+                return;
+            }
+            deletedItems.Children.Clear();
+            try
+            {
+                var deletedBackups = ModWorldBackups.ListDeleted(worldFolder);
+                if (deletedBackups.Count == 0)
+                    deletedItems.Children.Add(_BackupHint(_DeletedBackupEmptyLabel()));
+                foreach (var deletedSnapshot in deletedBackups)
+                {
+                    var deletedRow = new MyListItem
+                    {
+                        Title = deletedSnapshot.CreatedUtc.ToLocalTime().ToString("g"),
+                        Info = string.IsNullOrWhiteSpace(deletedSnapshot.Reason)
+                            ? $"{deletedSnapshot.Files.Count} files · {deletedSnapshot.ArchiveLength:N0} B"
+                            : $"{deletedSnapshot.Reason} · {deletedSnapshot.Files.Count} files · {deletedSnapshot.ArchiveLength:N0} B",
+                        Logo = "pack://application:,,,/images/Blocks/Chest.png"
+                    };
+                    var restoreDeleted = new MyIconButton { SvgIcon = "lucide/rotate-ccw", ToolTip = ModWorldBackups.Text("restore") };
+                    restoreDeleted.Click += (_, _) =>
+                    {
+                        if (ModMain.MyMsgBox(_ConfirmDeletedBackupLabel(), ModWorldBackups.Text("restore"),
+                                ModWorldBackups.Text("restore"), Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
+                        RunBackupWork(instancePath, worldFolder, "restore deleted", () =>
+                        {
+                            if (!ModWorldBackups.RestoreDeleted(worldFolder, deletedSnapshot.Id))
+                                throw new FileNotFoundException("Deleted backup is no longer available.");
+                            return ModWorldBackups.Text("restored");
+                        });
+                    };
+                    deletedRow.Buttons = [restoreDeleted];
+                    deletedItems.Children.Add(deletedRow);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "读取已删除的世界备份失败");
+                deletedItems.Children.Add(_BackupHint(ModWorldBackups.Text("failed")));
+            }
+            deletedItems.Visibility = Visibility.Visible;
+        };
+        stack.Children.Add(showDeleted);
+        stack.Children.Add(deletedItems);
     }
+
+    private static string _DeletedBackupLabel() => PCL.Core.App.Localization.LocalizationService.CurrentLanguage.Code switch
+    {
+        "en-US" => "Deleted backups",
+        "zh-TW" => "已刪除的備份",
+        _ => "已删除的备份",
+    };
+
+    private static string _DeletedBackupEmptyLabel() => PCL.Core.App.Localization.LocalizationService.CurrentLanguage.Code switch
+    {
+        "en-US" => "No deleted backups.",
+        "zh-TW" => "沒有已刪除的備份。",
+        _ => "没有已删除的备份。",
+    };
+
+    private static string _ConfirmDeletedBackupLabel() => PCL.Core.App.Localization.LocalizationService.CurrentLanguage.Code switch
+    {
+        "en-US" => "Restore this deleted backup?",
+        "zh-TW" => "要復原這份已刪除的備份嗎？",
+        _ => "恢复这份已删除的备份？",
+    };
 
     private static TextBlock _BackupHint(string text)
     {

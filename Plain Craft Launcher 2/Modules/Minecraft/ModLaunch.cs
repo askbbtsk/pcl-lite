@@ -307,7 +307,7 @@ public static class ModLaunch
         try
         {
             McLaunchPrecheck();
-            if (!ModLaunchDependencyPrecheck.Confirm(ModInstanceList.McMcInstanceSelected))
+            if (!ModLaunchDependencyPrecheck.Confirm(ModInstanceList.McMcInstanceSelected, currentLaunchOptions?.SaveBatch is not null))
                 throw new ModBase.CancelledException();
             McLaunchLog("预检测已通过");
         }

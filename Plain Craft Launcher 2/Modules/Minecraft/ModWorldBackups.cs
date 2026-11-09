@@ -45,6 +45,9 @@ internal static class ModWorldBackups
     public static IReadOnlyList<BackupSnapshot> ListRestorePoints(string instanceDirectory)
         => EnvironmentRestorePointService.List(RestorePointRoot, instanceDirectory);
 
+    public static IReadOnlyList<BackupSnapshot> ListDeletedRestorePoints(string instanceDirectory)
+        => EnvironmentRestorePointService.ListDeleted(RestorePointRoot, instanceDirectory);
+
     public static IReadOnlyList<BackupDifference> CompareRestorePoint(string instanceDirectory, string snapshotId)
     {
         EnsureInstanceOffline(instanceDirectory);
@@ -142,6 +145,12 @@ internal static class ModWorldBackups
         return EnvironmentRestorePointService.Delete(RestorePointRoot, snapshotId, instanceDirectory);
     }
 
+    public static bool RestoreDeletedRestorePoint(string instanceDirectory, string snapshotId)
+    {
+        EnsureInstanceOffline(instanceDirectory);
+        return EnvironmentRestorePointService.RestoreDeleted(RestorePointRoot, snapshotId, instanceDirectory);
+    }
+
     public static string DeletedBackupRoot(string worldPath)
         => Path.Combine(_BackupRoot(worldPath), "deleted");
 
@@ -157,6 +166,9 @@ internal static class ModWorldBackups
 
     public static IReadOnlyList<BackupSnapshot> List(string worldPath)
         => WorldBackupService.List(_BackupRoot(worldPath), worldPath);
+
+    public static IReadOnlyList<BackupSnapshot> ListDeleted(string worldPath)
+        => WorldBackupService.ListDeleted(_BackupRoot(worldPath), worldPath);
 
     public static Preferences GetPreferences(string instancePath, string savesPath)
     {
@@ -285,6 +297,9 @@ internal static class ModWorldBackups
 
     public static bool Delete(string worldPath, string snapshotId)
         => WorldBackupService.Delete(_BackupRoot(worldPath), snapshotId, worldPath);
+
+    public static bool RestoreDeleted(string worldPath, string snapshotId)
+        => WorldBackupService.RestoreDeleted(_BackupRoot(worldPath), snapshotId, worldPath);
 
     private static string _PreferencesPath(string instancePath, string savesPath)
     {

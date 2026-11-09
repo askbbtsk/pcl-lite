@@ -65,7 +65,7 @@ jobs:
             dotnet run --project tools/SourceStructure/SourceStructure.csproj -- verify $configuration
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
-          dotnet run --project tools/SourceStructure/SourceStructure.csproj -- report
+          dotnet run --project tools/SourceStructure/SourceStructure.csproj -- report --complete
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build TestAll plugin against current SDK

@@ -186,8 +186,8 @@ internal static partial class Program
             else if (pair.Value != value && !IsApprovedChange(pair.Key, pair.Value, value))
             {
                 if (!relocations.TryGetValue(pair.Key, out var service) || !old.Methods.TryGetValue(pair.Key, out var method)
-                    || Tokens(Forward(method, service)) != value
-                    || !current.Methods.TryGetValue("PCL." + service + pair.Key[pair.Key.IndexOf("::", StringComparison.Ordinal)..], out var implementation)
+                    || Tokens(Forward(method, service.Split('.').Last())) != value
+                    || !current.Methods.TryGetValue((service.Contains('.') ? service : "PCL." + service) + pair.Key[pair.Key.IndexOf("::", StringComparison.Ordinal)..], out var implementation)
                     || Tokens(Implementation(method)) != Tokens(implementation))
                     errors.Add("Changed member: " + pair.Key);
             }

@@ -30,7 +30,7 @@ internal static partial class Program
         if (File.Exists(destination)) throw new IOException("Service exists: " + destination);
         var mappingPath = "tools/SourceStructure/relocations.json";
         var mapping = File.Exists(mappingPath) ? JsonSerializer.Deserialize<Dictionary<string, string>>(Current(mappingPath))! : new();
-        foreach (var method in methods) mapping[TypeName(type) + "::" + method.Kind() + "::" + MemberName(method)] = service;
+        foreach (var method in methods) mapping[TypeName(type) + "::" + method.Kind() + "::" + MemberName(method)] = ns.Name + "." + service;
         var patches = new List<string> { "*** Begin Patch\n*** Delete File: " + path + "\n*** End Patch" };
         AddFilePatches(patches, path, replacement);
         AddFilePatches(patches, destination, content);

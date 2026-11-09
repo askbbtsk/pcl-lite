@@ -39,5 +39,12 @@
   "PCL.ModBase::MethodDeclaration::MathPercent(double valueA, double valueB, double percent)": "NumericUtilities",
   "PCL.ModBase::MethodDeclaration::MathPercent(MyColor valueA, MyColor valueB, double percent)": "NumericUtilities",
   "PCL.ModBase::MethodDeclaration::MathClamp(double value, double min, double max)": "NumericUtilities",
-  "PCL.ModBase::MethodDeclaration::MathSgn(double value)": "NumericUtilities"
+  "PCL.ModBase::MethodDeclaration::MathSgn(double value)": "NumericUtilities",
+  "PCL.Core.App.Lunar.Social.LunarSocialProtocol::MethodDeclaration::DecodeConversation(ReadOnlySpan\u003Cbyte\u003E payload, string selfUuid)": "PCL.Core.App.Lunar.Social.LunarMessageCodec",
+  "PCL.Core.App.Lunar.Social.LunarSocialProtocol::MethodDeclaration::DecodeParticipant(ReadOnlySpan\u003Cbyte\u003E payload)": "PCL.Core.App.Lunar.Social.LunarMessageCodec",
+  "PCL.Core.App.Lunar.Social.LunarSocialProtocol::MethodDeclaration::DecodeMessage(ReadOnlySpan\u003Cbyte\u003E payload, string selfUuid)": "PCL.Core.App.Lunar.Social.LunarMessageCodec",
+  "PCL.Core.App.Lunar.Social.LunarSocialProtocol::MethodDeclaration::WriteUuid(ProtoWriter writer, int field, LunarUuid uuid)": "PCL.Core.App.Lunar.Social.LunarMessageCodec",
+  "PCL.Core.App.Lunar.Social.LunarSocialProtocol::MethodDeclaration::DecodeUuid(ReadOnlySpan\u003Cbyte\u003E payload)": "PCL.Core.App.Lunar.Social.LunarMessageCodec",
+  "PCL.Core.App.Lunar.Social.LunarSocialProtocol::MethodDeclaration::DecodeTimestamp(ReadOnlySpan\u003Cbyte\u003E payload)": "PCL.Core.App.Lunar.Social.LunarMessageCodec",
+  "PCL.Core.App.Lunar.Social.LunarSocialProtocol::MethodDeclaration::ComputeServerHash(byte[] sharedSecret, byte[] publicKey)": "PCL.Core.App.Lunar.Social.LunarMessageCodec"
 }

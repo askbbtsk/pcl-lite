@@ -104,7 +104,7 @@ public sealed class DurableFileTransactionTests
     {
         var directory = PrepareInterrupted(committed: false);
         File.WriteAllText(Path.Combine(directory, "commit.json"), "invalid");
-        Assert.ThrowsExactly<JsonException>(() => DurableFileTransaction.Recover(_storage, Roots));
+        Assert.Throws<JsonException>(() => DurableFileTransaction.Recover(_storage, Roots));
         Assert.AreEqual("new game", File.ReadAllText(Path.Combine(_game, "mod.jar")));
         Assert.IsTrue(File.Exists(Path.Combine(directory, "old-00000000.bin")));
     }

@@ -1280,7 +1280,7 @@ public partial class PageInstanceSavesDatapack : IRefreshable
                         foreach (var Entry in updateEntryList)
                             if (File.Exists(Entry.path))
                                 Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(Entry.path, UIOption.AllDialogs,
-                                    RecycleOption.SendToRecycleBin);
+                                    Config.Launch.DeleteToRecycleBin ? RecycleOption.SendToRecycleBin : RecycleOption.DeletePermanently);
                             else
                                 ModBase.Log($"[DatapackUpdate] 未找到更新前的数据包文件，跳过对它的删除：{Entry.path}",
                                     ModBase.LogLevel.Debug);
@@ -1290,8 +1290,8 @@ public partial class PageInstanceSavesDatapack : IRefreshable
                             if (File.Exists(Entry.Value))
                             {
                                 Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(Entry.Value, UIOption.AllDialogs,
-                                    RecycleOption.SendToRecycleBin);
-                                ModBase.Log($"[Datapack] 更新后的数据包文件已存在，将会把它放入回收站：{Entry.Value}", ModBase.LogLevel.Debug);
+                                    Config.Launch.DeleteToRecycleBin ? RecycleOption.SendToRecycleBin : RecycleOption.DeletePermanently);
+                                ModBase.Log($"[Datapack] 更新后的数据包文件已存在，将按删除设置处理旧文件：{Entry.Value}", ModBase.LogLevel.Debug);
                             }
 
                             if (Directory.Exists(ModBase.GetPathFromFullPath(Entry.Value)))
@@ -1424,11 +1424,9 @@ public partial class PageInstanceSavesDatapack : IRefreshable
             {
                 try
                 {
-                    if (isShiftPressed)
-                        File.Delete(DatapackEntity.path);
-                    else
-                        Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(DatapackEntity.path,
-                            UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+                    Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(DatapackEntity.path,
+                        UIOption.OnlyErrorDialogs, !isShiftPressed && Config.Launch.DeleteToRecycleBin
+                            ? RecycleOption.SendToRecycleBin : RecycleOption.DeletePermanently);
                 }
                 catch (OperationCanceledException ex)
                 {
@@ -1475,7 +1473,7 @@ public partial class PageInstanceSavesDatapack : IRefreshable
 
             if (!isSuccessful)
                 return;
-            if (isShiftPressed)
+            if (isShiftPressed || !Config.Launch.DeleteToRecycleBin)
             {
                 if (datapackList.Count() == 1)
                     HintService.Hint(Lang.Text("Instance.Saves.Datapack.Delete.PermanentSingle", datapackList.Single().FileName), HintType.Success);

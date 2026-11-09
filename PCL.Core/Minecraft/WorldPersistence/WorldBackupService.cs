@@ -64,9 +64,6 @@ public static class WorldBackupService
     public static IReadOnlyList<BackupSnapshot> List(string backupRoot, string worldDirectory)
         => BackupArchive.List(backupRoot, BackupSnapshotKind.World, worldDirectory);
 
-    public static IReadOnlyList<BackupSnapshot> ListDeleted(string backupRoot, string worldDirectory)
-        => BackupArchive.ListDeleted(backupRoot, BackupSnapshotKind.World, worldDirectory);
-
     public static IReadOnlyList<BackupDifference> CompareCurrent(string backupRoot, string snapshotId, string worldDirectory,
         CancellationToken cancellationToken = default)
         => BackupArchive.CompareCurrent(backupRoot, snapshotId, worldDirectory, BackupSnapshotKind.World,
@@ -77,11 +74,8 @@ public static class WorldBackupService
         => BackupArchive.Restore(backupRoot, snapshotId, worldDirectory, BackupSnapshotKind.World,
             preserveSaves: false, preserveLauncherData: false, cancellationToken);
 
-    public static bool Delete(string backupRoot, string snapshotId, string worldDirectory)
-        => BackupArchive.Delete(backupRoot, snapshotId, worldDirectory, BackupSnapshotKind.World);
-
-    public static bool RestoreDeleted(string backupRoot, string snapshotId, string worldDirectory)
-        => BackupArchive.RestoreDeleted(backupRoot, snapshotId, worldDirectory, BackupSnapshotKind.World);
+    public static bool Delete(string backupRoot, string snapshotId, string worldDirectory, Action<string>? deleteFile = null)
+        => BackupArchive.Delete(backupRoot, snapshotId, worldDirectory, BackupSnapshotKind.World, deleteFile);
 
     public static void ApplyRetention(string backupRoot, string worldDirectory, int maxSnapshots)
         => BackupArchive.ApplyRetention(backupRoot, BackupSnapshotKind.World, worldDirectory, maxSnapshots);
@@ -100,9 +94,6 @@ public static class EnvironmentRestorePointService
     public static IReadOnlyList<BackupSnapshot> List(string restorePointRoot, string instanceDirectory)
         => BackupArchive.List(restorePointRoot, BackupSnapshotKind.Environment, instanceDirectory);
 
-    public static IReadOnlyList<BackupSnapshot> ListDeleted(string restorePointRoot, string instanceDirectory)
-        => BackupArchive.ListDeleted(restorePointRoot, BackupSnapshotKind.Environment, instanceDirectory);
-
     public static IReadOnlyList<BackupDifference> CompareCurrent(string restorePointRoot, string snapshotId,
         string instanceDirectory, CancellationToken cancellationToken = default)
         => BackupArchive.CompareCurrent(restorePointRoot, snapshotId, instanceDirectory, BackupSnapshotKind.Environment,
@@ -115,9 +106,6 @@ public static class EnvironmentRestorePointService
 
     public static bool Delete(string restorePointRoot, string snapshotId, string instanceDirectory)
         => BackupArchive.Delete(restorePointRoot, snapshotId, instanceDirectory, BackupSnapshotKind.Environment);
-
-    public static bool RestoreDeleted(string restorePointRoot, string snapshotId, string instanceDirectory)
-        => BackupArchive.RestoreDeleted(restorePointRoot, snapshotId, instanceDirectory, BackupSnapshotKind.Environment);
 
     public static void ApplyRetention(string restorePointRoot, string instanceDirectory, int maxSnapshots)
         => BackupArchive.ApplyRetention(restorePointRoot, BackupSnapshotKind.Environment, instanceDirectory, maxSnapshots);
@@ -272,91 +260,6 @@ internal static class BackupArchive
     }
 
 
-    public static IReadOnlyList<BackupSnapshot> ListDeleted(string storePath, BackupSnapshotKind kind, string sourcePath)
-    {
-        var deletedRoot = Path.Combine(Path.GetFullPath(storePath), "deleted");
-        if (!Directory.Exists(deletedRoot)) return Array.Empty<BackupSnapshot>();
-        _RejectReparsePoint(deletedRoot);
-        var sourceKey = _SourceKey(Path.GetFullPath(sourcePath));
-        var snapshots = new List<BackupSnapshot>();
-        foreach (var batch in Directory.EnumerateDirectories(deletedRoot, "*", SearchOption.TopDirectoryOnly))
-        {
-            _RejectReparsePoint(batch);
-            if (!Guid.TryParseExact(Path.GetFileName(batch), "N", out _)) continue;
-            foreach (var manifestPath in Directory.EnumerateFiles(batch, "*.json", SearchOption.TopDirectoryOnly))
-            {
-                _RejectReparsePoint(manifestPath);
-                var snapshot = _ReadManifest(manifestPath);
-                if (snapshot.Kind != kind || !string.Equals(snapshot.SourceKey, sourceKey, StringComparison.Ordinal)) continue;
-                var archivePath = Path.Combine(batch, snapshot.Id + ".zip");
-                if (!File.Exists(archivePath)) continue;
-                _RejectReparsePoint(archivePath);
-                snapshots.Add(snapshot);
-            }
-        }
-        return snapshots.OrderByDescending(static snapshot => snapshot.CreatedUtc).ToArray();
-    }
-
-    public static bool RestoreDeleted(string storePath, string snapshotId, string sourcePath, BackupSnapshotKind kind)
-    {
-        if (!Guid.TryParseExact(snapshotId, "N", out _)) throw new InvalidDataException("Invalid backup snapshot identifier.");
-        var store = Path.GetFullPath(storePath);
-        var deletedRoot = Path.Combine(store, "deleted");
-        if (!Directory.Exists(deletedRoot)) return false;
-        _RejectReparsePoint(deletedRoot);
-        var sourceKey = _SourceKey(Path.GetFullPath(sourcePath));
-        string? batchPath = null;
-        BackupSnapshot? match = null;
-        foreach (var batch in Directory.EnumerateDirectories(deletedRoot, "*", SearchOption.TopDirectoryOnly))
-        {
-            _RejectReparsePoint(batch);
-            if (!Guid.TryParseExact(Path.GetFileName(batch), "N", out _)) continue;
-            var manifestPath = Path.Combine(batch, snapshotId + ".json");
-            if (!File.Exists(manifestPath)) continue;
-            _RejectReparsePoint(manifestPath);
-            var snapshot = _ReadManifest(manifestPath);
-            if (snapshot.Id != snapshotId || snapshot.Kind != kind || !string.Equals(snapshot.SourceKey, sourceKey, StringComparison.Ordinal))
-                throw new InvalidDataException("The deleted backup does not belong to this target.");
-            if (match is not null) throw new InvalidDataException("Multiple deleted backups share the same identifier.");
-            var archivePath = Path.Combine(batch, snapshotId + ".zip");
-            if (!File.Exists(archivePath)) throw new InvalidDataException("The deleted backup archive is missing.");
-            _RejectReparsePoint(archivePath);
-            var archiveInfo = new FileInfo(archivePath);
-            if (archiveInfo.Length != snapshot.ArchiveLength || !HashEquals(_HashFile(archivePath), snapshot.ArchiveSha256))
-                throw new InvalidDataException("The deleted backup archive failed its integrity check.");
-            match = snapshot;
-            batchPath = batch;
-        }
-        if (match is null || batchPath is null) return false;
-        var destinationManifest = Path.Combine(store, snapshotId + ".json");
-        var destinationArchive = Path.Combine(store, snapshotId + ".zip");
-        if (File.Exists(destinationManifest) || File.Exists(destinationArchive))
-            throw new IOException("An active backup with this identifier already exists.");
-        var sourceManifest = Path.Combine(batchPath, snapshotId + ".json");
-        var sourceArchive = Path.Combine(batchPath, snapshotId + ".zip");
-        var movedArchive = false;
-        try
-        {
-            File.Move(sourceArchive, destinationArchive);
-            movedArchive = true;
-            File.Move(sourceManifest, destinationManifest);
-        }
-        catch (Exception operationError)
-        {
-            if (movedArchive)
-            {
-                try { File.Move(destinationArchive, sourceArchive); }
-                catch (Exception rollbackError)
-                {
-                    throw new AggregateException("Deleted backup recovery failed and the archive could not be returned to its deleted batch.", operationError, rollbackError);
-                }
-            }
-            throw;
-        }
-        try { if (Directory.Exists(batchPath) && !Directory.EnumerateFileSystemEntries(batchPath).Any()) Directory.Delete(batchPath); }
-        catch { /* Backup restored; leave empty deleted batch for cleanup. */ }
-        return true;
-    }
     public static void Restore(string storePath, string snapshotId, string destinationPath, BackupSnapshotKind kind,
         bool preserveSaves, bool preserveLauncherData, CancellationToken cancellationToken)
     {
@@ -372,10 +275,6 @@ internal static class BackupArchive
         if (!File.Exists(archivePath) || new FileInfo(archivePath).Length != snapshot.ArchiveLength
             || !HashEquals(_HashFile(archivePath), snapshot.ArchiveSha256))
             throw new InvalidDataException("The backup archive failed its integrity check.");
-
-        // Keep a recoverable copy of the current target before applying any point.
-        Create(destination, store, kind, "Automatic backup before restore", excludeSaves: kind == BackupSnapshotKind.Environment,
-            retainFromAutomaticRetention: true, cancellationToken);
 
         var parent = Path.GetDirectoryName(destination) ?? throw new InvalidDataException("Target has no parent directory.");
         Directory.CreateDirectory(parent);
@@ -494,7 +393,7 @@ internal static class BackupArchive
         return differences.OrderBy(static item => item.Path, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
-    public static bool Delete(string storePath, string snapshotId, string sourcePath, BackupSnapshotKind kind)
+    public static bool Delete(string storePath, string snapshotId, string sourcePath, BackupSnapshotKind kind, Action<string>? deleteFile = null)
     {
         if (!Guid.TryParseExact(snapshotId, "N", out _)) throw new InvalidDataException("Invalid backup snapshot identifier.");
         var store = Path.GetFullPath(storePath);
@@ -506,33 +405,12 @@ internal static class BackupArchive
             throw new InvalidDataException("The backup snapshot does not belong to this target.");
         var archivePath = Path.Combine(store, snapshotId + ".zip");
         if (!File.Exists(archivePath)) throw new InvalidDataException("The backup archive is missing; the backup was left untouched.");
-        var deletedRoot = Path.Combine(store, "deleted");
-        Directory.CreateDirectory(deletedRoot);
-        _RejectReparsePoint(deletedRoot);
-        var deletedBatch = Path.Combine(deletedRoot, Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(deletedBatch);
-        var movedArchive = false;
-        try
-        {
-            File.Move(archivePath, Path.Combine(deletedBatch, snapshotId + ".zip"));
-            movedArchive = true;
-            File.Move(manifestPath, Path.Combine(deletedBatch, snapshotId + ".json"));
-        }
-        catch (Exception operationError)
-        {
-            if (movedArchive)
-            {
-                try { File.Move(Path.Combine(deletedBatch, snapshotId + ".zip"), archivePath); }
-                catch (Exception rollbackError)
-                {
-                    throw new AggregateException("Backup removal failed and the original archive could not be restored.",
-                        operationError, rollbackError);
-                }
-            }
-            try { if (Directory.Exists(deletedBatch)) Directory.Delete(deletedBatch, recursive: true); }
-            catch { }
-            throw;
-        }
+        _RejectReparsePoint(store);
+        _RejectReparsePoint(archivePath);
+        _RejectReparsePoint(manifestPath);
+        deleteFile ??= File.Delete;
+        deleteFile(archivePath);
+        deleteFile(manifestPath);
         return true;
     }
 

@@ -45,8 +45,7 @@ public sealed class BackupServiceTests
         Assert.AreEqual("regions-v1", File.ReadAllText(Path.Combine(world, "region", "r.0.0.mca")));
         Assert.IsFalse(File.Exists(Path.Combine(world, "new.dat")));
         Assert.AreEqual("other-world", File.ReadAllText(Path.Combine(otherWorld, "level.dat")));
-        Assert.IsTrue(WorldBackupService.List(backups, world).Any(item => item.RetainFromAutomaticRetention
-            && item.Reason == "Automatic backup before restore"));
+        Assert.AreEqual(1, WorldBackupService.List(backups, world).Count, "Restoring must not create another backup.");
     }
 
     [TestMethod]
@@ -148,44 +147,31 @@ public sealed class BackupServiceTests
 
         Assert.IsTrue(EnvironmentRestorePointService.Delete(restorePoints, first.Id, instance));
         Assert.IsFalse(EnvironmentRestorePointService.Delete(restorePoints, first.Id, instance));
-        var deletedCopy = Directory.GetFiles(Path.Combine(restorePoints, "deleted"), first.Id + ".zip", SearchOption.AllDirectories);
-        Assert.AreEqual(1, deletedCopy.Length);
+        Assert.IsFalse(File.Exists(Path.Combine(restorePoints, first.Id + ".zip")));
+        Assert.IsFalse(File.Exists(Path.Combine(restorePoints, first.Id + ".json")));
+        Assert.IsFalse(Directory.Exists(Path.Combine(restorePoints, "deleted")));
         var remaining = EnvironmentRestorePointService.List(restorePoints, instance);
         Assert.AreEqual(1, remaining.Count);
         Assert.AreEqual(second.Id, remaining[0].Id);
     }
     [TestMethod]
-    public void WorldBackup_DeletedBackupCanBeListedAndRestoredOnlyToItsOriginalWorld()
+    public void WorldBackup_DeleteUsesHostDeletionPolicyForArchiveAndManifest()
     {
-        var world = Path.Combine(_root, "game", "saves", "World");
-        var otherWorld = Path.Combine(_root, "game", "saves", "Other");
+        var world = Path.Combine(_root, "saves", "World");
         var backups = Path.Combine(_root, "backups");
-        Write(Path.Combine(world, "level.dat"), "level");
-        var snapshot = WorldBackupService.Create(world, backups, "before delete");
+        Write(Path.Combine(world, "level.dat"), "world");
+        var snapshot = WorldBackupService.Create(world, backups);
+        var deleted = new System.Collections.Generic.List<string>();
 
-        Assert.IsTrue(WorldBackupService.Delete(backups, snapshot.Id, world));
-        Assert.AreEqual(snapshot.Id, WorldBackupService.ListDeleted(backups, world).Single().Id);
-        Assert.AreEqual(0, WorldBackupService.ListDeleted(backups, otherWorld).Count);
+        Assert.IsTrue(WorldBackupService.Delete(backups, snapshot.Id, world, path =>
+        {
+            deleted.Add(Path.GetFileName(path));
+            File.Delete(path);
+        }));
 
-        Assert.IsTrue(WorldBackupService.RestoreDeleted(backups, snapshot.Id, world));
-        Assert.AreEqual(snapshot.Id, WorldBackupService.List(backups, world).Single().Id);
-        Assert.AreEqual(0, WorldBackupService.ListDeleted(backups, world).Count);
-        Assert.IsFalse(WorldBackupService.RestoreDeleted(backups, snapshot.Id, world));
-    }
-
-    [TestMethod]
-    public void EnvironmentRestorePoint_DeletedPointCanBeListedAndRestored()
-    {
-        var instance = Path.Combine(_root, "instance");
-        var restorePoints = Path.Combine(_root, "restore-points");
-        Write(Path.Combine(instance, "mods", "a.jar"), "mod");
-        var point = EnvironmentRestorePointService.Create(instance, restorePoints, "before delete");
-
-        Assert.IsTrue(EnvironmentRestorePointService.Delete(restorePoints, point.Id, instance));
-        Assert.AreEqual(point.Id, EnvironmentRestorePointService.ListDeleted(restorePoints, instance).Single().Id);
-        Assert.IsTrue(EnvironmentRestorePointService.RestoreDeleted(restorePoints, point.Id, instance));
-        Assert.AreEqual(point.Id, EnvironmentRestorePointService.List(restorePoints, instance).Single().Id);
-        Assert.AreEqual(0, EnvironmentRestorePointService.ListDeleted(restorePoints, instance).Count);
+        CollectionAssert.AreEquivalent(new[] { snapshot.Id + ".zip", snapshot.Id + ".json" }, deleted);
+        Assert.AreEqual(0, WorldBackupService.List(backups, world).Count);
+        Assert.IsFalse(Directory.Exists(Path.Combine(backups, "deleted")));
     }
 
     [TestMethod]

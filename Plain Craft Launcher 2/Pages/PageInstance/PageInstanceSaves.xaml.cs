@@ -20,7 +20,6 @@ public partial class PageInstanceSaves : IRefreshable
     private readonly DispatcherTimer searchTimer;
     private FileSystemWatcher fileSystemWatcher;
     private bool isLoad;
-    private bool loadingBackupPreferences;
 
     private object quickPlayFeature = false;
 
@@ -37,16 +36,7 @@ public partial class PageInstanceSaves : IRefreshable
         fileSystemRefreshTimer.Tick += FileSystemRefreshTimer_Tick;
         searchTimer.Tick += SearchTimer_Tick;
         SearchBox.TextChanged += SearchRun;
-        CheckAutoWorldBackup.Text = ModWorldBackups.Text("autoSetting");
-        LabBackupRetention.Text = ModWorldBackups.Text("retention");
-        CheckAutoWorldBackup.Change += (_, user) =>
-        {
-            if (!loadingBackupPreferences && user) SaveBackupPreferences();
-        };
-        ComboBackupRetention.SelectionChanged += (_, _) =>
-        {
-            if (!loadingBackupPreferences) SaveBackupPreferences();
-        };
+
     }
 
     void IRefreshable.Refresh()
@@ -73,7 +63,6 @@ public partial class PageInstanceSaves : IRefreshable
         // 重复加载部分
         PanBack.ScrollToHome();
         worldPath = PageInstanceLeft.McInstance.PathIndie + @"saves\";
-        RefreshBackupSettings();
         if (!Directory.Exists(worldPath))
             Directory.CreateDirectory(worldPath);
         Reload();
@@ -163,7 +152,7 @@ public partial class PageInstanceSaves : IRefreshable
     {
         try
         {
-            CardBackupSettings.Title = ModWorldBackups.Text("settingsTitle");
+
             if (IsSearching)
             {
                 var resultCount = _searchResult is null ? 0 : _searchResult.Count;
@@ -249,8 +238,9 @@ public partial class PageInstanceSaves : IRefreshable
                             try
                             {
                                 FileSystem.DeleteDirectory(tmpCurFolder, UIOption.OnlyErrorDialogs,
-                                    RecycleOption.SendToRecycleBin);
-                                HintService.Hint(Lang.Text("Instance.Saves.DeletedToRecycleBin"));
+                                    Config.Launch.DeleteToRecycleBin ? RecycleOption.SendToRecycleBin : RecycleOption.DeletePermanently);
+                                HintService.Hint(Lang.Text(Config.Launch.DeleteToRecycleBin
+                                    ? "Instance.Saves.DeletedToRecycleBin" : "Instance.Saves.DeletedPermanently"));
                                 ModBase.RunInUiWait(() => RemoveItem(worldItem));
                             }
                             catch (Exception ex)
@@ -408,10 +398,8 @@ public partial class PageInstanceSaves : IRefreshable
             var row = new MyListItem
             {
                 Title = snapshot.CreatedUtc.ToLocalTime().ToString("g"),
-                Info = string.IsNullOrWhiteSpace(snapshot.Reason)
-                    ? $"{snapshot.Files.Count} files · {snapshot.ArchiveLength:N0} B"
-                    : $"{snapshot.Reason} · {snapshot.Files.Count} files · {snapshot.ArchiveLength:N0} B",
-                Logo = "pack://application:,,,/images/Blocks/Chest.png"
+                Info = Lang.Text("Instance.Backup.ItemDetail", ModWorldBackups.DescribeReason(snapshot), snapshot.Files.Count, snapshot.ArchiveLength),
+                SvgIcon = "lucide/file-archive"
             };
             var restore = new MyIconButton { SvgIcon = "lucide/rotate-ccw", ToolTip = ModWorldBackups.Text("restore") };
             restore.Click += (_, _) =>
@@ -427,95 +415,19 @@ public partial class PageInstanceSaves : IRefreshable
             var delete = new MyIconButton { SvgIcon = "lucide/trash-2", ToolTip = ModWorldBackups.Text("delete") };
             delete.Click += (_, _) =>
             {
-                if (ModMain.MyMsgBox(ModWorldBackups.Text("confirmDelete"), ModWorldBackups.Text("delete"),
+                if (ModMain.MyMsgBox(Lang.Text(Config.Launch.DeleteToRecycleBin ? "Instance.Saves.Backup.ConfirmDelete.Windows" : "Instance.Saves.Backup.ConfirmDelete.Permanent"), ModWorldBackups.Text("delete"),
                         ModWorldBackups.Text("delete"), Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
                 RunBackupWork(instancePath, worldFolder, "delete", () =>
                 {
                     ModWorldBackups.Delete(worldFolder, snapshot.Id);
-                    return ModWorldBackups.Text("deleted", ModWorldBackups.DeletedBackupRoot(worldFolder));
+                    return Lang.Text(Config.Launch.DeleteToRecycleBin ? "Instance.Saves.Backup.DeletedToWindowsRecycleBin" : "Instance.Saves.Backup.DeletedPermanently");
                 });
             };
             row.Buttons = [restore, delete];
             stack.Children.Add(row);
         }
 
-        var showDeleted = new MyButton
-        {
-            Text = _DeletedBackupLabel(), Height = 30, MinWidth = 150,
-            Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(0, 10, 0, 0),
-            HorizontalAlignment = HorizontalAlignment.Left
-        };
-        var deletedItems = new StackPanel { Visibility = Visibility.Collapsed };
-        showDeleted.Click += (_, _) =>
-        {
-            if (deletedItems.Visibility == Visibility.Visible)
-            {
-                deletedItems.Visibility = Visibility.Collapsed;
-                return;
-            }
-            deletedItems.Children.Clear();
-            try
-            {
-                var deletedBackups = ModWorldBackups.ListDeleted(worldFolder);
-                if (deletedBackups.Count == 0)
-                    deletedItems.Children.Add(_BackupHint(_DeletedBackupEmptyLabel()));
-                foreach (var deletedSnapshot in deletedBackups)
-                {
-                    var deletedRow = new MyListItem
-                    {
-                        Title = deletedSnapshot.CreatedUtc.ToLocalTime().ToString("g"),
-                        Info = string.IsNullOrWhiteSpace(deletedSnapshot.Reason)
-                            ? $"{deletedSnapshot.Files.Count} files · {deletedSnapshot.ArchiveLength:N0} B"
-                            : $"{deletedSnapshot.Reason} · {deletedSnapshot.Files.Count} files · {deletedSnapshot.ArchiveLength:N0} B",
-                        Logo = "pack://application:,,,/images/Blocks/Chest.png"
-                    };
-                    var restoreDeleted = new MyIconButton { SvgIcon = "lucide/rotate-ccw", ToolTip = ModWorldBackups.Text("restore") };
-                    restoreDeleted.Click += (_, _) =>
-                    {
-                        if (ModMain.MyMsgBox(_ConfirmDeletedBackupLabel(), ModWorldBackups.Text("restore"),
-                                ModWorldBackups.Text("restore"), Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
-                        RunBackupWork(instancePath, worldFolder, "restore deleted", () =>
-                        {
-                            if (!ModWorldBackups.RestoreDeleted(worldFolder, deletedSnapshot.Id))
-                                throw new FileNotFoundException("Deleted backup is no longer available.");
-                            return ModWorldBackups.Text("restored");
-                        });
-                    };
-                    deletedRow.Buttons = [restoreDeleted];
-                    deletedItems.Children.Add(deletedRow);
-                }
-            }
-            catch (Exception ex)
-            {
-                ModBase.Log(ex, "读取已删除的世界备份失败");
-                deletedItems.Children.Add(_BackupHint(ModWorldBackups.Text("failed")));
-            }
-            deletedItems.Visibility = Visibility.Visible;
-        };
-        stack.Children.Add(showDeleted);
-        stack.Children.Add(deletedItems);
     }
-
-    private static string _DeletedBackupLabel() => PCL.Core.App.Localization.LocalizationService.CurrentLanguage.Code switch
-    {
-        "en-US" => "Deleted backups",
-        "zh-TW" => "已刪除的備份",
-        _ => "已删除的备份",
-    };
-
-    private static string _DeletedBackupEmptyLabel() => PCL.Core.App.Localization.LocalizationService.CurrentLanguage.Code switch
-    {
-        "en-US" => "No deleted backups.",
-        "zh-TW" => "沒有已刪除的備份。",
-        _ => "没有已删除的备份。",
-    };
-
-    private static string _ConfirmDeletedBackupLabel() => PCL.Core.App.Localization.LocalizationService.CurrentLanguage.Code switch
-    {
-        "en-US" => "Restore this deleted backup?",
-        "zh-TW" => "要復原這份已刪除的備份嗎？",
-        _ => "恢复这份已删除的备份？",
-    };
 
     private static TextBlock _BackupHint(string text)
     {
@@ -563,46 +475,6 @@ public partial class PageInstanceSaves : IRefreshable
         ModLoader.LoaderTaskbarAdd(combo);
         ModMain.frmMain.BtnExtraDownload.ShowRefresh();
         ModMain.frmMain.BtnExtraDownload.Ribble();
-    }
-
-    private void RefreshBackupSettings()
-    {
-        var instancePath = PageInstanceLeft.McInstance.PathInstance;
-        var preferences = ModWorldBackups.GetPreferences(instancePath, worldPath);
-        loadingBackupPreferences = true;
-        try
-        {
-            CardBackupSettings.Title = ModWorldBackups.Text("settingsTitle");
-            CheckAutoWorldBackup.Text = ModWorldBackups.Text("autoSetting");
-            LabBackupRetention.Text = ModWorldBackups.Text("retention");
-            CheckAutoWorldBackup.Checked = preferences.AutomaticEnabled;
-            foreach (var item in ComboBackupRetention.Items.OfType<MyComboBoxItem>())
-                if (Convert.ToInt32(item.Tag) == preferences.RetentionCount)
-                    ComboBackupRetention.SelectedItem = item;
-            if (ComboBackupRetention.SelectedItem is null) ComboBackupRetention.SelectedIndex = 2;
-        }
-        finally
-        {
-            loadingBackupPreferences = false;
-        }
-    }
-
-    private void SaveBackupPreferences()
-    {
-        if (!IsLoaded || PageInstanceLeft.McInstance is not { } instance) return;
-        try
-        {
-            var retention = ComboBackupRetention.SelectedItem is MyComboBoxItem item
-                ? Convert.ToInt32(item.Tag)
-                : 5;
-            ModWorldBackups.SavePreferences(instance.PathInstance, worldPath,
-                new ModWorldBackups.Preferences(CheckAutoWorldBackup.Checked == true, retention));
-        }
-        catch (Exception ex)
-        {
-            ModBase.Log(ex, "保存世界备份设置失败");
-            HintService.Hint(ModWorldBackups.Text("failed"), HintType.Error);
-        }
     }
 
     private void CheckQuickPlay()

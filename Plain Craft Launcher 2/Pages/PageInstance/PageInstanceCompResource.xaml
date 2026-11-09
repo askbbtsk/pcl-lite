@@ -22,8 +22,6 @@
                                             Margin="0,7,15,0" HorizontalAlignment="Left" />
                             <local:MyButton x:Name="BtnManageDownload" MinWidth="110" Text="{DynamicResource Instance.Resource.DownloadNew}" Padding="13,7"
                                             Margin="0,7,15,0" HorizontalAlignment="Left" />
-                            <local:MyButton x:Name="BtnManageRecycle" MinWidth="110" Text="{DynamicResource Instance.Resource.Recycle.Open}" Padding="13,7"
-                                            Margin="0,7,15,0" HorizontalAlignment="Left" />
                             <local:MyButton x:Name="BtnManageSelectAll" MinWidth="110" Text="{DynamicResource Instance.Resource.SelectAll}" Padding="13,7"
                                             Margin="0,7,15,0" HorizontalAlignment="Left" />
                             <local:MyButton x:Name="BtnManageInfoExport" MinWidth="110" Text="{DynamicResource Instance.Resource.ExportInfo}" Padding="13,7"

@@ -858,8 +858,7 @@ public static partial class Config
         [ConfigItem<bool>("LaunchPersonalOptionsAudio", false, ConfigSource.Local)] public partial bool PersonalOptionsAudio { get; set; }
 
         /// <summary>Automatically back up a quick-play world around game sessions.</summary>
-        [ConfigItem<bool>("LaunchWorldBackupAutoEnabled", true, ConfigSource.Local)] public partial bool WorldBackupAutoEnabled { get; set; }
-        [ConfigItem<int>("LaunchWorldBackupRetention", 5, ConfigSource.Local)] public partial int WorldBackupRetention { get; set; }
+        [ConfigItem<bool>("LaunchDeleteToRecycleBin", true, ConfigSource.Local)] public partial bool DeleteToRecycleBin { get; set; }
 
         /// <summary>
         /// 游戏窗口高度。

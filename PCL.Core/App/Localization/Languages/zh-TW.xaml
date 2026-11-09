@@ -1103,16 +1103,6 @@
     <sys:String x:Key="Instance.Resource.Delete.PermanentMultiple">已徹底刪除 {0} 個專案！</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.PermanentSingle">已徹底刪除 {0}！</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.RecycleMultiple">已將 {0} 個專案刪除到資源回收筒！</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Open">內部回收站</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Title">已刪除的資源</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Empty">內部回收站是空的。</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Entry">{0} · 刪除於 {1} · {2}</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Restore">還原</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Purge">永久刪除</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Action">選擇如何處理「{0}」。</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Restored">已還原資源：{0}</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Purged">已永久刪除：{0}</sys:String>
-    <sys:String x:Key="Instance.Resource.Recycle.Failed">回收站操作失敗。請檢查原位置是否已有同名檔案。</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.RecycleSingle">已將 {0} 刪除到資源回收筒！</sys:String>
     <sys:String x:Key="Instance.Resource.Disable">停用</sys:String>
     <sys:String x:Key="Instance.Resource.DownloadNew">下載新資源</sys:String>
@@ -1294,9 +1284,6 @@
     <sys:String x:Key="Instance.Saves.Left.Refreshing">重新整理中……</sys:String>
     <sys:String x:Key="Instance.Saves.Left.SwitchFailed">切換分頁失敗（ID {0}）</sys:String>
     <sys:String x:Key="Instance.Saves.Left.UnknownSubPage">未知的實例設定子畫面種類：{0}</sys:String>
-    <sys:String x:Key="Instance.Saves.Backup.Settings.Title">世界備份設定</sys:String>
-    <sys:String x:Key="Instance.Saves.Backup.Settings.Automatic">自動備份世界</sys:String>
-    <sys:String x:Key="Instance.Saves.Backup.Settings.Retention">自動備份保留數量</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.Card.Title">世界備份：{0}</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.Button.Tooltip">查看此世界的備份</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.Create">立即備份</sys:String>
@@ -1305,11 +1292,9 @@
     <sys:String x:Key="Instance.Saves.Backup.Delete">移除備份</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.Created">已建立世界備份。</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.Restored">已還原世界備份。還原前的世界副本也已保存。</sys:String>
-    <sys:String x:Key="Instance.Saves.Backup.Deleted">備份已移至本機備份 deleted 目錄，可在此位置手動取回：{0}</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.GameRunning">請先關閉此實例正在執行的 Minecraft，再操作世界備份。</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.OperationFailed">世界備份操作失敗，請查看記錄。</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.ConfirmRestore">要將此世界還原到備份時間點嗎？目前世界會先自動備份。</sys:String>
-    <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete">移除此備份？它會移到本機 deleted 目錄，可手動取回。</sys:String>
     <sys:String x:Key="Instance.Saves.ListTitle">存檔清單</sys:String>
     <sys:String x:Key="Instance.Saves.LoadListFailed">載入存檔清單失敗</sys:String>
     <sys:String x:Key="Instance.Saves.OpenFileLocation">開啟檔案位置</sys:String>
@@ -3994,4 +3979,16 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Setup.Launch.PersonalOptions.View">視野與畫面效果</sys:String>
     <sys:String x:Key="Setup.Launch.PersonalOptions.Accessibility">輔助功能</sys:String>
     <sys:String x:Key="Setup.Launch.PersonalOptions.Audio">音量設定</sys:String>
+    <sys:String x:Key="Setup.Misc.Delete.Title">檔案刪除</sys:String>
+    <sys:String x:Key="Setup.Misc.Delete.Recycle">刪除時移至 Windows 資源回收筒</sys:String>
+    <sys:String x:Key="Setup.Misc.Delete.Recycle.ToolTip">預設開啟。關閉後直接刪除；按住 Shift 也可直接刪除。實例還原點一律直接刪除，無法找回。</sys:String>
+    <sys:String x:Key="Instance.Backup.Reason.Normal">正常備份</sys:String>
+    <sys:String x:Key="Instance.Backup.Reason.Manual">手動備份</sys:String>
+    <sys:String x:Key="Instance.Backup.Reason.ManualRestorePoint">手動還原點</sys:String>
+    <sys:String x:Key="Instance.Backup.ItemDetail">{0} · {1} 個檔案 · {2:N0} B</sys:String>
+    <sys:String x:Key="Instance.Saves.Backup.DeletedToWindowsRecycleBin">備份已移至 Windows 資源回收筒。</sys:String>
+    <sys:String x:Key="Instance.Saves.Backup.DeletedPermanently">備份已永久刪除。</sys:String>
+    <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete.Windows">將這份備份移至 Windows 資源回收筒？</sys:String>
+    <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete.Permanent">永久刪除這份備份？此操作無法復原。</sys:String>
+    <sys:String x:Key="Instance.Saves.DeletedPermanently">存檔已永久刪除。</sys:String>
 </ResourceDictionary>

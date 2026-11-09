@@ -287,7 +287,10 @@ public partial class PageInstanceScreenshot : IRefreshable
         var path = GetPathFromSender(sender);
         try
         {
-            FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+            var useRecycleBin = Config.Launch.DeleteToRecycleBin &&
+                                !Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift);
+            FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs,
+                useRecycleBin ? RecycleOption.SendToRecycleBin : RecycleOption.DeletePermanently);
             RemoveItem(path);
             RefreshTip();
             HintService.Hint(Lang.Text("Instance.Screenshot.Deleted"));

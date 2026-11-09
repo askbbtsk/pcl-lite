@@ -15,7 +15,6 @@ using PCL.Network.Loaders;
 using FileSystem = Microsoft.VisualBasic.FileSystem;
 using SearchOption = System.IO.SearchOption;
 using PCL.Core.App.Localization;
-using PCL.Core.Minecraft.ResourceProject;
 using PCL.Core.Utils;
 
 namespace PCL;
@@ -38,7 +37,6 @@ public partial class PageInstanceCompResource : IRefreshable
         BtnManageBack.Click += BtnManageBack_Click;
         BtnHintBack.Click += BtnHintBack_Click;
         BtnManageOpen.Click += BtnManageOpen_Click;
-        BtnManageRecycle.Click += BtnManageRecycle_Click;
         BtnHintOpen.Click += BtnManageOpen_Click;
         BtnManageSelectAll.Click += BtnManageSelectAll_Click;
         BtnManageInstall.Click += BtnManageInstall_Click;
@@ -141,7 +139,6 @@ public partial class PageInstanceCompResource : IRefreshable
         BtnManageBack.Click += BtnManageBack_Click;
         BtnHintBack.Click += BtnHintBack_Click;
         BtnManageOpen.Click += BtnManageOpen_Click;
-        BtnManageRecycle.Click += BtnManageRecycle_Click;
         BtnHintOpen.Click += BtnManageOpen_Click;
         BtnManageSelectAll.Click += BtnManageSelectAll_Click;
         BtnManageInstall.Click += BtnManageInstall_Click;
@@ -168,71 +165,6 @@ public partial class PageInstanceCompResource : IRefreshable
         BtnSelectFavorites.Click += BtnSelectFavorites_Click;
         BtnSelectShare.Click += BtnSelectShare_Click;
         SearchBox.TextChanged += SearchRun;
-    }
-
-    private string GetResourceRoot()
-    {
-        var instance = PageInstanceLeft.McInstance ?? throw new InvalidOperationException("未选择实例。");
-        var prefix = instance.Info.HasLabyMod
-            ? Path.Combine("labymod-neo", "fabric", instance.Info.VanillaName)
-            : string.Empty;
-        return Path.GetFullPath(Path.Combine(instance.PathIndie, prefix,
-            ModLocalComp.GetPathNameByCompType(currentCompType)));
-    }
-
-    private string GetResourceRecycleRoot()
-    {
-        var instance = PageInstanceLeft.McInstance ?? throw new InvalidOperationException("未选择实例。");
-        return Path.Combine(instance.PathIndie, "PCL", "ResourceRecycle", currentCompType.ToString());
-    }
-
-    private void BtnManageRecycle_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var root = GetResourceRoot();
-            var recycleRoot = GetResourceRecycleRoot();
-            var entries = ResourceRecycleBinService.List(root, recycleRoot);
-            if (entries.Count == 0)
-            {
-                HintService.Hint(Lang.Text("Instance.Resource.Recycle.Empty"));
-                return;
-            }
-
-            var choices = entries.Select(entry => (IMyRadio)new MyRadioBox
-            {
-                Text = Lang.Text("Instance.Resource.Recycle.Entry", entry.Name,
-                    entry.DeletedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"), entry.OriginalPath)
-            }).ToList();
-            var selected = ModMain.MyMsgBoxSelect(choices, Lang.Text("Instance.Resource.Recycle.Title"),
-                Lang.Text("Instance.Resource.Recycle.Restore"), Lang.Text("Common.Action.Cancel"));
-            if (selected is null || selected < 0 || selected >= entries.Count) return;
-
-            var entryToProcess = entries[selected.Value];
-            var action = ModMain.MyMsgBox(
-                Lang.Text("Instance.Resource.Recycle.Action", entryToProcess.Name),
-                Lang.Text("Instance.Resource.Recycle.Title"),
-                Lang.Text("Instance.Resource.Recycle.Restore"),
-                Lang.Text("Instance.Resource.Recycle.Purge"), isWarn: true);
-            if (action == 1)
-            {
-                ResourceRecycleBinService.Restore(root, recycleRoot, entryToProcess.Id);
-                HintService.Hint(Lang.Text("Instance.Resource.Recycle.Restored", entryToProcess.Name), HintType.Success);
-            }
-            else if (action == 2)
-            {
-                ResourceRecycleBinService.Purge(root, recycleRoot, entryToProcess.Id);
-                HintService.Hint(Lang.Text("Instance.Resource.Recycle.Purged", entryToProcess.Name), HintType.Success);
-            }
-            else return;
-
-            ReloadCompFileList(true);
-        }
-        catch (Exception ex)
-        {
-            ModBase.Log(ex, "访问本地资源回收站失败", ModBase.LogLevel.Hint);
-            HintService.Hint(Lang.Text("Instance.Resource.Recycle.Failed"), HintType.Error);
-        }
     }
 
     private ModLocalComp.CompLocalLoaderData GetRequireLoaderData()
@@ -2350,7 +2282,8 @@ public partial class PageInstanceCompResource : IRefreshable
                 {
                     foreach (var Entry in modList)
                         if (File.Exists(Entry.path))
-                            ResourceRecycleBinService.RecycleMany(GetResourceRoot(), GetResourceRecycleRoot(), [Entry.path]);
+                            Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(Entry.path, UIOption.AllDialogs,
+                                Config.Launch.DeleteToRecycleBin ? RecycleOption.SendToRecycleBin : RecycleOption.DeletePermanently);
                         else
                             ModBase.Log($"[CompUpdate] 未找到更新前的资源文件，跳过对它的删除：{Entry.path}", ModBase.LogLevel.Debug);
 
@@ -2358,8 +2291,9 @@ public partial class PageInstanceCompResource : IRefreshable
                     {
                         if (File.Exists(Entry.Value))
                         {
-                            ResourceRecycleBinService.RecycleMany(GetResourceRoot(), GetResourceRecycleRoot(), [Entry.Value]);
-                            ModBase.Log($"[Mod] 更新后的资源文件已存在，将会把它放入 PCL 回收站：{Entry.Value}", ModBase.LogLevel.Debug);
+                            Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(Entry.Value, UIOption.AllDialogs,
+                                Config.Launch.DeleteToRecycleBin ? RecycleOption.SendToRecycleBin : RecycleOption.DeletePermanently);
+                            ModBase.Log($"[Mod] 更新后的资源文件已存在，将按删除设置处理旧文件：{Entry.Value}", ModBase.LogLevel.Debug);
                         }
 
                         if (Directory.Exists(ModBase.GetPathFromFullPath(Entry.Value)))
@@ -2498,15 +2432,12 @@ public partial class PageInstanceCompResource : IRefreshable
                 try
                 {
                     var sourcePath = ModEntity.IsFolder ? ModEntity.ActualPath : ModEntity.path;
-                    if (isShiftPressed)
-                    {
-                        if (ModEntity.IsFolder) Directory.Delete(sourcePath, true);
-                        else File.Delete(sourcePath);
-                    }
+                    var recycle = !isShiftPressed && Config.Launch.DeleteToRecycleBin
+                        ? RecycleOption.SendToRecycleBin : RecycleOption.DeletePermanently;
+                    if (ModEntity.IsFolder)
+                        Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory(sourcePath, UIOption.OnlyErrorDialogs, recycle);
                     else
-                    {
-                        ResourceRecycleBinService.RecycleMany(GetResourceRoot(), GetResourceRecycleRoot(), [sourcePath]);
-                    }
+                        Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(sourcePath, UIOption.OnlyErrorDialogs, recycle);
                 }
                 catch (OperationCanceledException ex)
                 {
@@ -2555,7 +2486,7 @@ public partial class PageInstanceCompResource : IRefreshable
             // 显示结果提示
             if (!isSuccessful)
                 return;
-            if (isShiftPressed)
+            if (isShiftPressed || !Config.Launch.DeleteToRecycleBin)
             {
                 if (modList.Count() == 1)
                     HintService.Hint(Lang.Text("Instance.Resource.Delete.PermanentSingle", modList.Single().FileName), HintType.Success);

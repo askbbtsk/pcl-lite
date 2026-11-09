@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.Minecraft.Packs;
-using PCL.Core.Minecraft.Backups;
 using PCL.Core.UI;
 using PCL.Core.Utils.Validate;
 using PCL.Network;
@@ -877,9 +876,6 @@ public static class ModModpack
                 plan = PackUpdatePlanner.Build(gameRoot, previous, target, payloadPaths, authorChoices);
             }
 
-            var restoreRoot = Path.Combine(Paths.SharedLocalData, "Minecraft", "PackRestorePoints");
-            EnvironmentRestorePointService.Create(gameRoot, restoreRoot, "before pack update " + (target.VersionId ?? ""));
-            EnvironmentRestorePointService.ApplyRetention(restoreRoot, gameRoot, 10);
             task.Progress = 0.55d;
             using var transactionCancellation = new CancellationTokenSource();
             PackUpdateTransaction.Apply(plan, transactionCancellation.Token,

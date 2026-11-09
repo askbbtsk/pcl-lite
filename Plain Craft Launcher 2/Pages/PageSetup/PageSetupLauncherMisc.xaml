@@ -7,6 +7,13 @@
     PanScroll="{Binding ElementName=PanBack}">
     <local:MyScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" x:Name="PanBack">
         <StackPanel x:Name="PanMain" Margin="25,10">
+            <local:MyCard Margin="0,15" Title="{DynamicResource Setup.Misc.Delete.Title}">
+                <StackPanel Margin="25,40,25,16">
+                    <local:MyCheckBox x:Name="CheckDeleteToRecycleBin" Tag="LaunchDeleteToRecycleBin"
+                                      Text="{DynamicResource Setup.Misc.Delete.Recycle}"
+                                      ToolTip="{DynamicResource Setup.Misc.Delete.Recycle.ToolTip}" Change="CheckBoxChange" />
+                </StackPanel>
+            </local:MyCard>
             <local:MyCard Margin="0,15" Title="{DynamicResource Setup.Misc.System.Title}">
                 <Grid Margin="25,40,25,16">
                     <Grid.ColumnDefinitions>

@@ -2607,7 +2607,6 @@ public static class ModLaunch
         var worldSessionHistory = new RecentWorldHistory();
         RecentWorldEntry? recentWorldSession = null;
         PersonalOptionsSession? personalOptionsSession = null;
-        PCL.Core.Minecraft.Backups.BackupSnapshot? launchEnvironmentRestorePoint = null;
         string? worldPath = null;
         var worldName = currentLaunchOptions?.WorldName;
         if (startedInstance is not null && !string.IsNullOrWhiteSpace(worldName))
@@ -2626,16 +2625,6 @@ public static class ModLaunch
             }
         }
 
-        if (startedInstance is not null)
-        {
-            try
-            {
-                ModWorldBackups.CreateAutomaticBeforeAllWorlds(startedInstance.PathInstance,
-                    Path.Combine(startedInstance.PathIndie, "saves"));
-            }
-            catch (Exception ex) { ModBase.Log(ex, "创建启动前世界备份失败；继续启动游戏", ModBase.LogLevel.Hint); }
-        }
-
         if (startedInstance is not null && Config.Launch.PersonalOptionsSync)
         {
             try
@@ -2650,17 +2639,6 @@ public static class ModLaunch
                 }
             }
             catch (Exception ex) { ModBase.Log(ex, "同步 Minecraft 个人设置失败；继续启动游戏", ModBase.LogLevel.Hint); }
-        }
-
-        if (startedInstance is not null)
-        {
-            try
-            {
-                launchEnvironmentRestorePoint = ModWorldBackups.CreateAutomaticEnvironmentRestorePoint(startedInstance);
-                if (launchEnvironmentRestorePoint is not null)
-                    ModWorldBackups.RegisterLaunchRestorePoint(startedInstance.PathInstance, launchEnvironmentRestorePoint.Id);
-            }
-            catch (Exception ex) { ModBase.Log(ex, "创建启动前实例还原点失败；继续启动游戏", ModBase.LogLevel.Hint); }
         }
 
         if (startedId is not null && startedName is not null)
@@ -2689,7 +2667,6 @@ public static class ModLaunch
         try { gameProcess.Start(); }
         catch
         {
-            if (startedInstance is not null) ModWorldBackups.CompleteNormalLaunch(startedInstance.PathInstance);
             if (recentWorldSession is not null)
             {
                 try { worldSessionHistory.FinishSession(recentWorldSession.SessionId, false); }
@@ -2818,17 +2795,6 @@ public static class ModLaunch
         while (watcher.State == ModWatcher.Watcher.MinecraftState.Loading)
             Thread.Sleep(100);
         if (watcher.State == ModWatcher.Watcher.MinecraftState.Crashed) throw new Exception("$$");
-        if (watcher.State != ModWatcher.Watcher.MinecraftState.Crashed)
-            ModWorldBackups.CompleteNormalLaunch(watcher.version.PathInstance);
-        if (watcher.State == ModWatcher.Watcher.MinecraftState.Ended)
-        {
-            try
-            {
-                ModWorldBackups.CreateAutomaticAfterExit(watcher.version.PathInstance,
-                    Path.Combine(watcher.version.PathIndie, "saves"));
-            }
-            catch (Exception ex) { ModBase.Log(ex, "创建退出后世界备份失败", ModBase.LogLevel.Hint); }
-        }
     }
 
     private static PersonalOptionCategories _GetPersonalOptionCategories()

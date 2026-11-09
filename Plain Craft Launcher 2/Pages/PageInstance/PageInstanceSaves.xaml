@@ -76,26 +76,6 @@
                     </Grid>
                 </local:MyCard>
 
-                <local:MyCard Margin="0,0,0,15" x:Name="CardBackupSettings" Title="">
-                    <Grid Margin="25,40,25,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="150" />
-                        </Grid.ColumnDefinitions>
-                        <local:MyCheckBox x:Name="CheckAutoWorldBackup" VerticalAlignment="Center" />
-                        <TextBlock x:Name="LabBackupRetention" Grid.Column="2" Margin="20,0,10,0" VerticalAlignment="Center" />
-                        <local:MyComboBox x:Name="ComboBackupRetention" Grid.Column="3" Height="30" VerticalAlignment="Center">
-                            <local:MyComboBoxItem Content="1" Tag="1" />
-                            <local:MyComboBoxItem Content="3" Tag="3" />
-                            <local:MyComboBoxItem Content="5" Tag="5" />
-                            <local:MyComboBoxItem Content="10" Tag="10" />
-                            <local:MyComboBoxItem Content="20" Tag="20" />
-                        </local:MyComboBox>
-                    </Grid>
-                </local:MyCard>
-
                 <local:MyCard Margin="0,0,0,15" x:Name="PanListBack" VerticalAlignment="Top"
                               Title="{DynamicResource Instance.Saves.ListTitle}"
                               MinHeight="55">

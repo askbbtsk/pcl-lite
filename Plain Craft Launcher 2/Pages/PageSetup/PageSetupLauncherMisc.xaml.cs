@@ -71,6 +71,7 @@ public partial class PageSetupLauncherMisc
 
     public void Reload()
     {
+        CheckDeleteToRecycleBin.Checked = Config.Launch.DeleteToRecycleBin;
         // 系统设置
         ComboSystemActivity.SelectedIndex = States.System.AnnounceSolution;
         CheckSystemDisableHardwareAcceleration.Checked = Config.System.DisableHardwareAcceleration;
@@ -124,6 +125,7 @@ public partial class PageSetupLauncherMisc
             Config.Network.Reset();
             Config.Debug.Reset();
             Config.System.Reset();
+            Config.Launch.DeleteToRecycleBin = true;
             ModBase.Log("[Setup] 已初始化启动器-杂项页设置");
             HintService.Hint(Lang.Text("Setup.Misc.Initialized"), HintType.Success, false);
             Reload();

@@ -309,6 +309,26 @@ public static partial class ModLunar
         return result;
     }
 
+    private static async Task<LunarIpcStartResult> StartIpcAsync(string installationId, long launchSession)
+    {
+        LunarIpcServer? previous = null;
+        if (!GameSessions.RunIfCurrent(launchSession, () => { previous = _ipcServer; _ipcServer = null; }))
+            throw new OperationCanceledException("Lunar launch session has changed.");
+        previous?.Dispose();
+        var fallback = _canRefreshSession ? new[] { LunarIpcServer.DefaultPort + 1 } : null;
+        var result = await LunarIpcServer.StartAsync(LunarIpcServer.DefaultPort, installationId,
+            (uuid, token) => GameSessions.IsCurrent(launchSession)
+                ? RefreshLunarAccountAsync(uuid, token)
+                : Task.FromCanceled<LunarRefreshResult>(new CancellationToken(canceled: true)),
+            message => LogSession(launchSession, message), fallbackPorts: fallback, host: IpcHost).ConfigureAwait(false);
+        if (!GameSessions.RunIfCurrent(launchSession, () => _ipcServer = result.Server))
+        {
+            result.Server?.Dispose();
+            throw new OperationCanceledException("Lunar launch session has changed.");
+        }
+        return result;
+    }
+
 
     private static void StopIpc()
     {

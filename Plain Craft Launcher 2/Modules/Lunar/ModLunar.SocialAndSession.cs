@@ -204,10 +204,17 @@ public static partial class ModLunar
     }
 
 
-    private static async Task LaunchCoreAsync(string gameDirectory)
+    private static Task LaunchCoreAsync(string gameDirectory)
+    {
+        var session = GameSessions.TryBegin(() => { _isBusy = true; _stopRequested = false; });
+        return session == 0 ? Task.CompletedTask : LaunchCoreAsync(gameDirectory, session);
+    }
+
+    private static async Task LaunchCoreAsync(string gameDirectory, long launchSession)
     {
         try
         {
+            if (!GameSessions.IsCurrent(launchSession)) return;
             _stopRequested = false;
             var subVersion = SelectedSubVersion;
             GameDirectory = gameDirectory;
@@ -267,9 +274,16 @@ public static partial class ModLunar
 
             // 物料补齐全交给 LunarInstaller：licenses → textures → assets →
             // artifacts/natives → jre → ui → logs，顺序与官方启动器一致
+            var acceptInstallProgress = 1;
             var javaPath = await LunarInstaller.EnsureInstalledAsync(
-                    data, LunarRoot, settings.JavaPathOverride, verifyFiles, Log, ReportInstallProgress)
+                    data, LunarRoot, settings.JavaPathOverride, verifyFiles,
+                    message => LogSession(launchSession, message),
+                    progress => QueueSessionNotification(launchSession, () =>
+                    {
+                        if (Volatile.Read(ref acceptInstallProgress) == 1) ReportInstallProgress(progress);
+                    }))
                 .ConfigureAwait(false);
+            Interlocked.Exchange(ref acceptInstallProgress, 0);
 
             if (string.IsNullOrWhiteSpace(javaPath))
                 throw new InvalidOperationException(
@@ -281,7 +295,7 @@ public static partial class ModLunar
 
             // 游戏会连 127.0.0.1:<ipcPort> 要账号续期。端口空闲就 PCL 自己接管；
             // 被占用说明 Lunar 启动器正开着，让它处理
-            var ipc = await StartIpcAsync(installationId).ConfigureAwait(false);
+            var ipc = await StartIpcAsync(installationId, launchSession).ConfigureAwait(false);
             Log(ipc.Message);
 
             var options = new LunarLaunchOptions
@@ -326,44 +340,39 @@ public static partial class ModLunar
             var vanillaReady = IsVanillaReady(subVersion);
 
             var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-            process.OutputDataReceived += (_, e) => CaptureGameOutput(e.Data ?? "");
-            process.ErrorDataReceived += (_, e) => CaptureGameOutput(e.Data ?? "");
+            process.OutputDataReceived += (_, e) => CaptureSessionOutput(launchSession, e.Data ?? "");
+            process.ErrorDataReceived += (_, e) => CaptureSessionOutput(launchSession, e.Data ?? "");
             process.Exited += (_, _) =>
             {
-                // 退出码先取，_process 置空之后就拿不到了
+                LunarIpcServer? retiredIpc = null;
                 var exitCode = -1;
-                try
-                {
-                    exitCode = process.ExitCode;
-                }
-                catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
-                {
-                    // 进程对象已经不可用，只能按未知处理
-                }
-
-                // 读完就复位，免得影响下一次启动
-                var stopped = _stopRequested;
-                _stopRequested = false;
-
-                _process = null;
-                IsBusy = false;
-                // 游戏没了就没人需要续期了，端口让出来给别的程序
-                StopIpc();
-
+                var stopped = false;
+                var tail = new List<string>();
+                try { exitCode = process.ExitCode; }
+                catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException) { }
                 var elapsed = DateTime.Now - startedAt;
-                Log($"游戏进程已退出（退出码 {exitCode}{(stopped ? "，由 PCL 结束" : "")}，运行 {elapsed.TotalSeconds:F0} 秒）");
-
-                // Windows 给被强制结束的进程的退出码是 -1。不是自己按的停止也可能是任务管理器
-                // 或杀软干掉的，这种情况说「异常退出」同样是冤枉 —— 只有真正的非零退出才算崩
+                var completed = GameSessions.Complete(launchSession, () =>
+                {
+                    stopped = _stopRequested;
+                    _stopRequested = false;
+                    _process = null;
+                    retiredIpc = _ipcServer;
+                    _ipcServer = null;
+                    tail = SnapshotGameOutput();
+                    var forcedExit = stopped || exitCode == -1;
+                    StatusText = forcedExit ? Lang.Text("Lunar.Status.Stopped")
+                        : exitCode == 0 ? Lang.Text("Lunar.Status.Exited") : Lang.Text("Lunar.Status.Crashed", exitCode);
+                    DetailText = forcedExit || exitCode == 0 ? "" : Lang.Text("Lunar.Status.CrashedDesc");
+                    // Publish availability only after final state is complete. No UI callbacks under the gate.
+                    _isBusy = false;
+                });
+                if (!completed) return;
+                try { retiredIpc?.Dispose(); }
+                catch (Exception ex) { ModBase.Log(ex, "[Lunar] 释放已退出会话的 IPC 失败", ModBase.LogLevel.Debug); }
+                LogSession(launchSession, $"游戏进程已退出（PID {process.Id}，退出码 {exitCode}{(stopped ? "，由 PCL 结束" : "")}，运行 {elapsed.TotalSeconds:F0} 秒）", completed: true);
                 var forced = stopped || exitCode == -1;
-                var clean = exitCode == 0;
-
-                // 异常退出，或者起来不到一分钟就没了 —— 这两种情况把最后几十行落进文件日志。
-                // 界面日志框只在页面打开时才有人看，导出也容易漏，文件日志才是排查的依据。
-                // 主动停止就别刷了，那不是问题
                 if (!forced && (exitCode != 0 || elapsed < TimeSpan.FromMinutes(1)))
                 {
-                    var tail = SnapshotGameOutput();
                     if (tail.Count == 0)
                     {
                         ModBase.Log("[Lunar] 子进程没有输出任何内容，说明它在 JVM 起来之前就结束了");
@@ -375,20 +384,17 @@ public static partial class ModLunar
                     }
                 }
 
-                StatusText = forced
-                    ? Lang.Text("Lunar.Status.Stopped")
-                    : clean
-                        ? Lang.Text("Lunar.Status.Exited")
-                        : Lang.Text("Lunar.Status.Crashed", exitCode);
-                DetailText = forced || clean ? "" : Lang.Text("Lunar.Status.CrashedDesc");
-                RaiseStateChanged();
+                QueueSessionNotification(launchSession, () => StateChanged?.Invoke(), completed: true);
             };
 
+            GameSessions.RunIfCurrent(launchSession, () =>
+            {
             _process = process;
+            Interlocked.Exchange(ref _processSession, launchSession);
             process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
-            WatchFirstWindow(process, gameDirectory, startedAt, subVersion, vanillaReady);
+            WatchFirstWindow(process, gameDirectory, startedAt, subVersion, vanillaReady, launchSession);
 
             // 首次启动某个版本时 Genesis 要先把原版客户端下下来，这期间不会有窗口，
             // 所以状态文案得说实话，不然用户只会看到「游戏运行中」却什么都没有。
@@ -401,18 +407,30 @@ public static partial class ModLunar
                 DetailText = vanillaReady
                     ? Lang.Text("Lunar.Status.RunningDesc")
                     : Lang.Text("Lunar.Status.VanillaPendingDesc", VanillaRoot);
-                RaiseStateChanged();
+                QueueSessionNotification(launchSession, () => StateChanged?.Invoke());
             }
+            });
         }
         catch (Exception ex)
         {
+            LunarIpcServer? retiredIpc = null;
+            var completed = GameSessions.Complete(launchSession, () =>
+            {
             _process = null;
-            IsBusy = false;
-            StopIpc();
+            retiredIpc = _ipcServer;
+            _ipcServer = null;
             StatusText = Lang.Text("Lunar.Status.Failed");
             DetailText = ex.Message;
-            RaiseStateChanged();
-            ModBase.Log(ex, "[Lunar] 启动失败", ModBase.LogLevel.Msgbox, userSummary: ex.Message);
+            _isBusy = false;
+            });
+            if (!completed) return;
+            try { retiredIpc?.Dispose(); }
+            catch (Exception disposeError) { ModBase.Log(disposeError, "[Lunar] 释放失败会话的 IPC 失败", ModBase.LogLevel.Debug); }
+            QueueSessionNotification(launchSession, () =>
+            {
+                StateChanged?.Invoke();
+                ModBase.Log(ex, "[Lunar] 启动失败", ModBase.LogLevel.Msgbox, userSummary: ex.Message);
+            }, completed: true);
         }
     }
 
@@ -434,24 +452,29 @@ public static partial class ModLunar
     /// </summary>
     private static void WatchFirstWindow(Process process, string gameDirectory, DateTime startedAt, string subVersion,
         bool vanillaReady)
+        => WatchFirstWindow(process, gameDirectory, startedAt, subVersion, vanillaReady, Interlocked.Read(ref _processSession));
+
+    private static void WatchFirstWindow(Process process, string gameDirectory, DateTime startedAt, string subVersion,
+        bool vanillaReady, long launchSession)
     {
         _ = Task.Run(async () =>
         {
             try
             {
+                if (!GameSessions.IsCurrent(launchSession) || !ReferenceEquals(_process, process) || process.HasExited) return;
                 if (!vanillaReady)
-                    Log($"原版 {subVersion} 的文件还没补齐，Lunar 会自己把剩下的下到 {VanillaRoot}。" +
+                    LogSession(launchSession, $"原版 {subVersion} 的文件还没补齐，Lunar 会自己把剩下的下到 {VanillaRoot}。" +
                         "这期间不会有窗口，属正常现象，别关进程。");
 
                 var lastBytes = MeasureVanillaFootprint().Bytes;
-                _lastCpuTime = ReadCpuTime(process);
+                var lastCpuTime = ReadCpuTime(process);
                 var stalled = 0;
 
                 // 每 20 秒看一次，最多看 10 分钟：大文件下载慢的时候也不至于提前下结论
                 for (var round = 1; round <= 30; round++)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
-                    if (process.HasExited) return;
+                    if (!GameSessions.IsCurrent(launchSession) || !ReferenceEquals(_process, process) || process.HasExited) return;
 
                     // 已经进游戏了，看门狗可以收工
                     if (HasGameWindow(process.Id)) return;
@@ -468,7 +491,7 @@ public static partial class ModLunar
                     var footprint = MeasureVanillaFootprint();
                     if (footprint.Bytes > lastBytes + 512 * 1024)
                     {
-                        Log($"Lunar 自己在补原版依赖（PCL 那边没补完）：已 {footprint.Bytes / 1024d / 1024d:F0} MB、" +
+                        LogSession(launchSession, $"Lunar 自己在补原版依赖（PCL 那边没补完）：已 {footprint.Bytes / 1024d / 1024d:F0} MB、" +
                             $"{footprint.Files} 个文件，继续等待…");
                         lastBytes = footprint.Bytes;
                         stalled = 0;
@@ -477,9 +500,9 @@ public static partial class ModLunar
 
                     // ③ 还在烧 CPU：解压、校验、生成 baked classes 这些都不打印日志
                     var cpu = ReadCpuTime(process);
-                    if (cpu - _lastCpuTime > TimeSpan.FromSeconds(1))
+                    if (cpu - lastCpuTime > TimeSpan.FromSeconds(1))
                     {
-                        _lastCpuTime = cpu;
+                        lastCpuTime = cpu;
                         lastBytes = footprint.Bytes;
                         stalled = 0;
                         continue;
@@ -489,9 +512,9 @@ public static partial class ModLunar
                     stalled += 1;
                     if (stalled < 3) continue;
 
-                    Log($"启动 {round * 20} 秒后既没有窗口、没有日志、原版依赖也不再变大 —— " +
+                    LogSession(launchSession, $"启动 {round * 20} 秒后既没有窗口、没有日志、原版依赖也不再变大 —— " +
                         "大概率是 Genesis 在下载依赖时被网络卡住了");
-                    HintService.Hint(Lang.Text("Lunar.Hint.Stalled"), HintType.Warning);
+                    QueueSessionNotification(launchSession, () => HintService.Hint(Lang.Text("Lunar.Hint.Stalled"), HintType.Warning));
                     return;
                 }
             }

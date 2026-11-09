@@ -66,4 +66,24 @@
   "Members": ["PCL.ModLaunch::MethodDeclaration::McLaunchStart(ModLoader.LoaderTask<McLaunchOptions, object> loader)"],
   "Reason": "Stage B: coordinate launch and explicit copies using a shared nonblocking process-safe file lease; non-sharing storage failures retain ordinary launch behavior."
 }
+,
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.ConfigurationAndAccountSelection.cs",
+  "Sha256": "77CB9F93C282DFD35EDFBEAE994C0D04ADA0746E12F4FDFAEDE578E63B4AB6CB",
+  "Members": [
+    "PCL.ModLunar::MethodDeclaration::Launch()",
+    "PCL.ModLunar::MethodDeclaration::Stop()",
+    "PCL.ModLunar::MethodDeclaration::StopCore(Process process)"
+  ],
+  "Reason": "Reported Lunar old-session exit/output/stop callbacks must not clear replacement process or IPC. Session-generation ownership and deferred UI delivery; regression replay tests."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
+  "Sha256": "7EEFB72BA634C5F6F7AB1E1DE62F498290AF7DA0F61A9C09B933602877F8F68A",
+  "Members": [
+    "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory)",
+    "PCL.ModLunar::MethodDeclaration::WatchFirstWindow(Process process, string gameDirectory, DateTime startedAt, string subVersion,\n        bool vanillaReady)"
+  ],
+  "Reason": "Reported Lunar old-session exit/output/stop callbacks must not clear replacement process or IPC. Session-generation ownership and deferred UI delivery; regression replay tests."
+}
 ]

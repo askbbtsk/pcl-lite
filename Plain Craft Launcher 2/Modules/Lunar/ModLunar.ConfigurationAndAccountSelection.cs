@@ -512,8 +512,10 @@ public static partial class ModLunar
         var gameDirectory = ResolveGameDirectory();
 
         // IsBusy 在 UI 线程上先占位，防止连点两次起两个进程
-        IsBusy = true;
-        _ = Task.Run(() => LaunchCoreAsync(gameDirectory));
+        var session = GameSessions.TryBegin(() => { _isBusy = true; _stopRequested = false; });
+        if (session == 0) return;
+        RaiseStateChanged();
+        _ = Task.Run(() => LaunchCoreAsync(gameDirectory, session));
     }
 
 
@@ -534,20 +536,28 @@ public static partial class ModLunar
     {
         var process = _process;
         if (process is null) return;
-
-        lock (StopLock)
+        var session = Interlocked.Read(ref _processSession);
+        var accepted = false;
+        GameSessions.RunIfCurrent(session, () =>
         {
-            if (_stopping) return;
-            _stopping = true;
-        }
-
-        // 先立牌子再动手：Exited 事件可能在 Kill 返回前就排上队了
-        _stopRequested = true;
-        _ = Task.Run(() => StopCore(process));
+            if (!ReferenceEquals(_process, process)) return;
+            lock (StopLock)
+            {
+                if (_stopping && ReferenceEquals(_stoppingProcess, process)) return;
+                _stoppingProcess = process;
+                _stopping = true;
+            }
+            _stopRequested = true;
+            accepted = true;
+        });
+        if (accepted) _ = Task.Run(() => StopCore(process, session));
     }
 
 
     private static void StopCore(Process process)
+        => StopCore(process, Interlocked.Read(ref _processSession));
+
+    private static void StopCore(Process process, long session)
     {
         try
         {
@@ -557,22 +567,26 @@ public static partial class ModLunar
             if (!process.HasExited)
             {
                 process.Kill();
-                Log("已结束游戏进程");
+                LogSession(session, $"已结束游戏进程（PID {process.Id}）", completed: true);
             }
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
         {
-            _stopRequested = false;
-            Log("结束进程失败：" + ex.Message);
+            GameSessions.RunIfCurrent(session, () => _stopRequested = false);
+            LogSession(session, "结束进程失败：" + ex.Message, completed: true);
         }
         catch (Exception ex)
         {
-            _stopRequested = false;
-            Log("结束进程时出错：" + ex);
+            GameSessions.RunIfCurrent(session, () => _stopRequested = false);
+            LogSession(session, "结束进程时出错：" + ex, completed: true);
         }
         finally
         {
-            lock (StopLock) _stopping = false;
+            lock (StopLock)
+            {
+                if (ReferenceEquals(_stoppingProcess, process))
+                { _stopping = false; _stoppingProcess = null; }
+            }
         }
     }
 

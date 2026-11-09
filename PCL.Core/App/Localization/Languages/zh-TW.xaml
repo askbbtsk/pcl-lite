@@ -1294,7 +1294,7 @@
     <sys:String x:Key="Instance.Saves.Backup.Restored">已還原世界備份。還原前的世界副本也已保存。</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.GameRunning">請先關閉此實例正在執行的 Minecraft，再操作世界備份。</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.OperationFailed">世界備份操作失敗，請查看記錄。</sys:String>
-    <sys:String x:Key="Instance.Saves.Backup.ConfirmRestore">要將此世界還原到備份時間點嗎？目前世界會先自動備份。</sys:String>
+    <sys:String x:Key="Instance.Saves.Backup.ConfirmRestore">要將此世界還原到備份時間點嗎？目前世界內容將被取代，請先手動備份需要保留的進度。</sys:String>
     <sys:String x:Key="Instance.Saves.ListTitle">存檔清單</sys:String>
     <sys:String x:Key="Instance.Saves.LoadListFailed">載入存檔清單失敗</sys:String>
     <sys:String x:Key="Instance.Saves.OpenFileLocation">開啟檔案位置</sys:String>

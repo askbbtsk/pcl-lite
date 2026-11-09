@@ -10,6 +10,8 @@
 
 Light 不是 Lite 的内嵌资源，不随 Lite 程序分发。附带任意启动器时，外层 ZIP 包含一个启动器和 `modpack.mrpack`。Light 的 SHA-256 必须匹配 Release digest，或同一 Release 的 SHA256SUMS.txt；无法取得唯一摘要时导出失败。网络访问仍遵循启动器的联网授权。
 
+EXE 与 SHA256SUMS.txt 均支持 GitHub 直链优先、现有更新 PROXY 列表依次回退，候选地址去重。校验清单每个来源设有超时，避免直链失败后一直阻塞代理；GitHub Release 元信息仍从官方 API 查询。
+
 ## Java 与隔离
 
 “打包实例目录内的 Java”默认关闭。页面查找实例内的 `bin/java.exe` 和 `lib` 目录，使用宿主 PE 解析器读取版本和架构，并优先选择该实例指定的 Java。不复制实例外的 Java，也不下载 Java。Light 的目标架构必须与所附 Java 一致。

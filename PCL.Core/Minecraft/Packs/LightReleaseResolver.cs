@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -12,6 +13,10 @@ public static class LightReleaseResolver
 {
     public const string Repository = "bedkillerspacex-boop/Pcl-Light";
     public const string BundledFileName = "PCL Light.exe";
+
+    public static string[] DownloadCandidates(string officialUrl, IEnumerable<string> proxies)
+        => new[] { officialUrl }.Concat(proxies.Select(proxy => proxy.TrimEnd('/') + "/" + officialUrl))
+            .Distinct(StringComparer.Ordinal).ToArray();
 
     public static LightReleaseAsset Resolve(string releaseJson, string architecture)
     {

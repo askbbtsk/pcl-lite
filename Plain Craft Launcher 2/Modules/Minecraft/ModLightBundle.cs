@@ -20,15 +20,13 @@ internal static class ModLightBundle
         if (expected is null)
         {
             if (release.ChecksumsUrl is null) throw new InvalidDataException("PCL Light release has no verifiable checksum.");
-            using var checksumResponse = HttpRequest.Create(release.ChecksumsUrl).SendAsync(cancellationToken: token).GetAwaiter().GetResult();
-            checksumResponse.EnsureSuccessStatusCode();
-            expected = LightReleaseResolver.ReadChecksum(checksumResponse.AsString(), release.Name);
+            expected = ReadChecksum(release.ChecksumsUrl, release.Name, token);
         }
         token.ThrowIfCancellationRequested();
         Directory.CreateDirectory(directory);
         var destination = Path.Combine(directory, LightReleaseResolver.BundledFileName);
         var temporary = destination + ".download";
-        var urls = new[] { release.Url }.Concat(UpdatesGitHubModel.DownloadProxies.Select(proxy => proxy + release.Url)).ToArray();
+        var urls = LightReleaseResolver.DownloadCandidates(release.Url, UpdatesGitHubModel.DownloadProxies);
         var tracked = new DownloadFile(urls, temporary);
         var download = FileDownloader.DownloadAsync(urls, temporary, cancellationToken: token, trackedFile: tracked);
         try
@@ -49,5 +47,26 @@ internal static class ModLightBundle
             task.Progress = 1;
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
+    }
+
+    private static string ReadChecksum(string url, string assetName, CancellationToken token)
+    {
+        Exception? lastError = null;
+        foreach (var candidate in LightReleaseResolver.DownloadCandidates(url, UpdatesGitHubModel.DownloadProxies))
+        {
+            token.ThrowIfCancellationRequested();
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+            timeout.CancelAfter(TimeSpan.FromSeconds(10));
+            try
+            {
+                using var response = HttpRequest.Create(candidate).SendAsync(retryTimes: 1, cancellationToken: timeout.Token)
+                    .GetAwaiter().GetResult();
+                response.EnsureSuccessStatusCode();
+                return LightReleaseResolver.ReadChecksum(response.Content.ReadAsStringAsync(timeout.Token).GetAwaiter().GetResult(), assetName);
+            }
+            catch (Exception ex) when (!token.IsCancellationRequested) { lastError = ex; }
+        }
+        token.ThrowIfCancellationRequested();
+        throw new IOException("PCL Light checksum could not be read from GitHub or its proxy fallbacks.", lastError);
     }
 }

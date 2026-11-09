@@ -56,6 +56,18 @@ public sealed class PackAuthoringTests
     }
 
     [TestMethod]
+    public void LightBinaryAndChecksumUseOfficialFirstAndDeduplicatedProxyFallbacks()
+    {
+        foreach (var name in new[] { "PCL-Light_1.0.0_x64.exe", "SHA256SUMS.txt" })
+        {
+            var official = $"https://github.com/{LightReleaseResolver.Repository}/releases/download/v1.0.0/{name}";
+            var candidates = LightReleaseResolver.DownloadCandidates(official,
+                new[] { "https://proxy.example/", "https://proxy.example", "https://fallback.example/" });
+            CollectionAssert.AreEqual(new[] { official, "https://proxy.example/" + official, "https://fallback.example/" + official }, candidates);
+        }
+    }
+
+    [TestMethod]
     public void LightMissingDigestRequiresChecksumFileAndUniqueEntry()
     {
         var release = LightReleaseResolver.Resolve(Release(null), "x64");

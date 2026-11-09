@@ -2318,6 +2318,9 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Minecraft.Launch.Dependency.Enable">啟用前置</sys:String>
     <sys:String x:Key="Minecraft.Launch.Dependency.Continue">仍然啟動</sys:String>
     <sys:String x:Key="Minecraft.Launch.Dependency.EnableFailed">無法啟用：{0}</sys:String>
+<sys:String x:Key="Minecraft.Launch.Dependency.SearchTask">搜尋模組相依項：{0}</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.DownloadTask">下載必要模組相依項</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.DownloadPrepareFailed">部分必要相依項無法準備下載。可以繼續啟動或取消。</sys:String>
     <!-- Minecraft.Launch.Precheck -->
 
     <sys:String x:Key="Minecraft.Launch.Precheck.AuthServerMismatch">目前檔案使用的第三方驗證伺服器與實例要求使用的不一致，請使用符合要求的檔案啟動遊戲！</sys:String>

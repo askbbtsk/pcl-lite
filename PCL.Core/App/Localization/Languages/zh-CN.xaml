@@ -2366,6 +2366,9 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Minecraft.Launch.Dependency.Enable">启用前置</sys:String>
     <sys:String x:Key="Minecraft.Launch.Dependency.Continue">仍然启动</sys:String>
     <sys:String x:Key="Minecraft.Launch.Dependency.EnableFailed">未能启用：{0}</sys:String>
+<sys:String x:Key="Minecraft.Launch.Dependency.SearchTask">查找模组前置：{0}</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.DownloadTask">下载必需模组前置</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.DownloadPrepareFailed">部分必需前置无法准备下载。可以继续启动，或取消。</sys:String>
     <!-- Minecraft.Launch.Precheck -->
 
     <sys:String x:Key="Minecraft.Launch.Precheck.AuthServerMismatch">当前档案使用的第三方验证服务器与实例要求使用的不一致，请使用符合要求的档案启动游戏！</sys:String>

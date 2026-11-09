@@ -2366,6 +2366,9 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Minecraft.Launch.Dependency.Enable">Enable dependencies</sys:String>
     <sys:String x:Key="Minecraft.Launch.Dependency.Continue">Launch anyway</sys:String>
     <sys:String x:Key="Minecraft.Launch.Dependency.EnableFailed">Could not enable: {0}</sys:String>
+<sys:String x:Key="Minecraft.Launch.Dependency.SearchTask">Finding mod dependency: {0}</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.DownloadTask">Downloading required mod dependencies</sys:String>
+    <sys:String x:Key="Minecraft.Launch.Dependency.DownloadPrepareFailed">Some required dependencies could not be prepared for download. Continue launch or cancel.</sys:String>
     <!-- Minecraft.Launch.Precheck -->
 
     <sys:String x:Key="Minecraft.Launch.Precheck.AuthServerMismatch">The third-party login server used by the current profile does not match the one required by this instance. Please use a matching profile!</sys:String>

@@ -1100,6 +1100,16 @@
     <sys:String x:Key="Instance.Resource.Delete.PermanentMultiple">已徹底刪除 {0} 個專案！</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.PermanentSingle">已徹底刪除 {0}！</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.RecycleMultiple">已將 {0} 個專案刪除到資源回收筒！</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Open">內部回收站</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Title">已刪除的資源</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Empty">內部回收站是空的。</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Entry">{0} · 刪除於 {1} · {2}</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Restore">還原</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Purge">永久刪除</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Action">選擇如何處理「{0}」。</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Restored">已還原資源：{0}</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Purged">已永久刪除：{0}</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Failed">回收站操作失敗。請檢查原位置是否已有同名檔案。</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.RecycleSingle">已將 {0} 刪除到資源回收筒！</sys:String>
     <sys:String x:Key="Instance.Resource.Disable">停用</sys:String>
     <sys:String x:Key="Instance.Resource.DownloadNew">下載新資源</sys:String>

@@ -1109,6 +1109,16 @@
     <sys:String x:Key="Instance.Resource.Delete.PermanentMultiple">Permanently deleted {0} items!</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.PermanentSingle">Permanently deleted {0}!</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.RecycleMultiple">Moved {0} items to the recycle bin!</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Open">Recycle bin</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Title">Deleted resources</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Empty">The internal recycle bin is empty.</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Entry">{0} · deleted {1} · {2}</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Restore">Restore</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Purge">Delete permanently</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Action">Choose what to do with “{0}”.</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Restored">Restored resource: {0}</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Purged">Permanently deleted: {0}</sys:String>
+    <sys:String x:Key="Instance.Resource.Recycle.Failed">Recycle bin operation failed. Check whether another item now uses the original name.</sys:String>
     <sys:String x:Key="Instance.Resource.Delete.RecycleSingle">Moved {0} to the recycle bin!</sys:String>
     <sys:String x:Key="Instance.Resource.Disable">Disable</sys:String>
     <sys:String x:Key="Instance.Resource.DownloadNew">Download new</sys:String>

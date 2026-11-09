@@ -184,6 +184,7 @@ internal static partial class Program
             .OrderBy(path => path.Replace('\\', '/'), StringComparer.Ordinal).ToArray();
         var current = Observe(files.Select(path => (path, Current(path))));
         var errors = new List<string>();
+        VerifySharedJavaRules(old, current, errors);
         var relocationPath = Path.Combine("tools", "SourceStructure", "relocations.json");
         var relocations = File.Exists(relocationPath) ? JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(relocationPath))! : new();
         foreach (var pair in old.Members)

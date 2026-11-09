@@ -151,4 +151,10 @@
   "Members": ["PCL.Network.Loaders.LoaderDownload::MethodDeclaration::Start(object input = null, bool isForceRestart = false)"],
   "Reason": "Stages D/E: expose actual worker completion after Abort so migration/import can await file-handle release before cleaning owned staging directories. Original download execution remains inside try/finally."
 }
+, {
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.JavaSelection.McLaunchJava.cs",
+  "Sha256": "4E2C0157FF25389E4AC94F41FD6F13FC989E7814333B444F877B029683BAFAC3",
+  "Members": ["PCL.ModLaunch::MethodDeclaration::McLaunchJava(ModLoader.LoaderTask<int, int> task)"],
+  "Reason": "Extract the ordered existing Java constraints unchanged into ResolveJavaConstraints for both normal launch and target validation; separate verifier compares every moved statement against baseline allowing only the instance parameter replacement."
+}
 ]

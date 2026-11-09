@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.Minecraft.Packs;
@@ -257,10 +258,11 @@ public sealed class PackUpdatePlannerTest
             ["mods/b.jar"] = payloadB,
         });
 
-        Assert.ThrowsExactly<IOException>(() => PackUpdateTransaction.Apply(plan, progress: (completed, _) =>
+        var failure = Assert.ThrowsExactly<AggregateException>(() => PackUpdateTransaction.Apply(plan, progress: (completed, _) =>
         {
             if (completed == 1) Write(b, "external-edit");
         }));
+        Assert.IsTrue(failure.Flatten().InnerExceptions.Any(static error => error is IOException));
         Assert.AreEqual("old-a", File.ReadAllText(a));
         Assert.AreEqual("external-edit", File.ReadAllText(b));
     }
@@ -396,6 +398,60 @@ public sealed class PackUpdatePlannerTest
         Assert.AreEqual("external-edit", File.ReadAllText(Path.Combine(game, "mods", "a.jar")));
         Assert.AreEqual("external-new-file", File.ReadAllText(Path.Combine(game, "mods", "b.jar")));
         Assert.AreEqual(1, Directory.GetDirectories(Path.GetDirectoryName(game)!, $".{Path.GetFileName(game)}.pcl-update-*").Length);
+    }
+
+    [TestMethod]
+    public void RecoverInterrupted_RestoresOriginalSourcesAndRemovesPartialNewFiles()
+    {
+        var game = Path.Combine(_root, "game");
+        Write(Path.Combine(game, "mods", "a.jar"), "new-a");
+        Write(Path.Combine(game, "mods", "b.jar"), "new-b");
+        var transaction = Path.Combine(_root, ".game.pcl-update-" + Guid.NewGuid().ToString("N"));
+        var backupName = "source-00000000.bin";
+        Write(Path.Combine(transaction, backupName), "old-a");
+        File.WriteAllText(Path.Combine(transaction, "transaction.json"), JsonSerializer.Serialize(new
+        {
+            Schema = 1,
+            Root = game,
+            Committed = false,
+            Entries = new object[]
+            {
+                new { RelativePath = "mods/a.jar", OriginalSha256 = Hash("old-a"), ExpectedCurrentSha256 = Hash("new-a"), BackupFile = backupName },
+                new { RelativePath = "mods/b.jar", OriginalSha256 = (string?)null, ExpectedCurrentSha256 = Hash("new-b"), BackupFile = (string?)null },
+            }
+        }));
+
+        Assert.AreEqual(1, PackUpdateTransaction.RecoverInterrupted(game));
+
+        Assert.AreEqual("old-a", File.ReadAllText(Path.Combine(game, "mods", "a.jar")));
+        Assert.IsFalse(File.Exists(Path.Combine(game, "mods", "b.jar")));
+        Assert.IsFalse(Directory.Exists(transaction));
+    }
+
+    [TestMethod]
+    public void RecoverInterrupted_PreservesExternalChangesAndOriginalBackup()
+    {
+        var game = Path.Combine(_root, "game");
+        Write(Path.Combine(game, "mods", "a.jar"), "external-edit");
+        var transaction = Path.Combine(_root, ".game.pcl-update-" + Guid.NewGuid().ToString("N"));
+        var backupName = "source-00000000.bin";
+        Write(Path.Combine(transaction, backupName), "old-a");
+        File.WriteAllText(Path.Combine(transaction, "transaction.json"), JsonSerializer.Serialize(new
+        {
+            Schema = 1,
+            Root = game,
+            Committed = false,
+            Entries = new[]
+            {
+                new { RelativePath = "mods/a.jar", OriginalSha256 = Hash("old-a"), ExpectedCurrentSha256 = Hash("new-a"), BackupFile = backupName }
+            }
+        }));
+
+        Assert.ThrowsExactly<IOException>(() => PackUpdateTransaction.RecoverInterrupted(game));
+
+        Assert.AreEqual("external-edit", File.ReadAllText(Path.Combine(game, "mods", "a.jar")));
+        Assert.AreEqual("old-a", File.ReadAllText(Path.Combine(transaction, backupName)));
+        Assert.IsTrue(Directory.Exists(transaction));
     }
 
     [TestMethod]

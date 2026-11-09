@@ -695,16 +695,31 @@ public static class ModModpack
 
     public static bool HasPackUpdateBaseline(string instancePath)
     {
-        try { return new PackBaselineStore(Paths.SharedLocalData).Load(instancePath) is { ProjectId.Length: > 0 }; }
+        try { return new PackBaselineStore(Paths.SharedLocalData).Load(instancePath) is { Files.Count: > 0 }; }
         catch (Exception ex) { ModBase.Log(ex, "检查整合包来源记录失败"); return false; }
     }
 
     /// <summary>Downloads the latest compatible upstream pack archive, stages it as a temporary instance, and applies a three-way update to the selected pack.</summary>
-    public static void UpdatePackFromOnline(McInstance instance)
+    public static void UpdatePackFromOnline(McInstance instance) => StartPackUpdate(instance, null);
+
+    public static void UpdatePackFromLocal(McInstance instance)
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+        var archivePath = SystemDialogs.SelectFile(Lang.Text("Minecraft.Download.Modpack.FileDialog.Filter"),
+            Lang.Text("Minecraft.Download.Modpack.FileDialog.Title"));
+        if (string.IsNullOrWhiteSpace(archivePath)) return;
+        var confirm = ModMain.MyMsgBox(Lang.Text("Instance.PackUpdate.Local.UnverifiedMessage"),
+            Lang.Text("Instance.PackUpdate.Local.Title"), Lang.Text("Common.Action.Confirm"),
+            Lang.Text("Common.Action.Cancel"), isWarn: true);
+        if (confirm != 1) return;
+        StartPackUpdate(instance, archivePath);
+    }
+
+    private static void StartPackUpdate(McInstance instance, string? localArchivePath)
     {
         ArgumentNullException.ThrowIfNull(instance);
         var task = new LoaderTask<int, int>(Lang.Text("Instance.PackUpdate.Task"), loader =>
-            _UpdatePackFromOnline(instance, loader)) { block = false };
+            _UpdatePackFromOnline(instance, loader, localArchivePath)) { block = false };
         var root = new LoaderCombo<int>(Lang.Text("Instance.PackUpdate.Task"), [task]) { show = false };
         root.Start(0);
         ModLoader.LoaderTaskbarAdd(root);
@@ -712,7 +727,7 @@ public static class ModModpack
         ModMain.frmMain.BtnExtraDownload.Ribble();
     }
 
-    private static void _UpdatePackFromOnline(McInstance instance, LoaderTask<int, int> task)
+    private static void _UpdatePackFromOnline(McInstance instance, LoaderTask<int, int> task, string? localArchivePath)
     {
         var store = new PackBaselineStore(Paths.SharedLocalData);
         var stageName = "PCLLiteUpdate" + Guid.NewGuid().ToString("N");
@@ -726,50 +741,65 @@ public static class ModModpack
                 throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.IsolationRequired"));
             if (ModWatcher.mcWatcherList.Any(static watcher => watcher.State is ModWatcher.Watcher.MinecraftState.Loading or ModWatcher.Watcher.MinecraftState.Running))
                 throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.GameRunning"));
+            PackUpdateTransaction.RecoverInterrupted(gameRoot);
 
             var previous = store.Load(instance.PathInstance);
-            if (previous is null || string.IsNullOrWhiteSpace(previous.ProjectId))
+            if (previous is null || localArchivePath is null && string.IsNullOrWhiteSpace(previous.ProjectId))
                 throw new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.NoBaseline"));
-            var projects = ModComp.CompRequest.GetCompProjectsByIds([previous.ProjectId]);
-            var project = projects.FirstOrDefault()
-                ?? throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.ProjectUnavailable"));
-            var releases = ModComp.CompFilesGet(project.Id, project.FromCurseForge)
-                .Where(static file => file.Available && file.Type == ModComp.CompType.ModPack)
-                .OrderByDescending(static file => file.Status == ModComp.CompFileStatus.Release)
-                .ThenByDescending(static file => file.ReleaseDate)
-                .Take(50)
-                .ToList();
-            if (releases.Count == 0) throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.NoReleases"));
-
-            var selection = releases.Select(file => (IMyRadio)new MyRadioBox
-            {
-                Text = $"{(string.IsNullOrWhiteSpace(file.DisplayName) ? file.FileName : file.DisplayName)}  ·  {file.ReleaseDate:yyyy-MM-dd}  ·  {file.Status}",
-            }).ToList();
-            var selected = ModBase.RunInUiWait(() => ModMain.MyMsgBoxSelect(selection,
-                Lang.Text("Instance.PackUpdate.SelectVersion.Title"), Lang.Text("Common.Action.Confirm"), Lang.Text("Common.Action.Cancel")));
-            if (selected is null || selected.Value < 0 || selected.Value >= releases.Count) throw new ModBase.CancelledException();
-            var release = releases[selected.Value];
-            task.Progress = 0.05d;
-
             Directory.CreateDirectory(stageRoot);
-            var archivePath = Path.Combine(stageRoot, "modpack" + (Path.GetExtension(release.FileName) is { Length: > 1 } extension && extension.Length <= 10 ? extension : ".zip"));
-            var packageDownload = release.ToNetFile(archivePath, ModComp.DownloadReason.ModPack,
-                instance.Info.VanillaName, _GetInstanceLoader(instance));
-            var packageLoader = new LoaderDownload(Lang.Text("Instance.PackUpdate.Task.Download"), [packageDownload]);
-            packageLoader.Start();
-            while (packageLoader.State == ModBase.LoadState.Loading)
+            string archivePath;
+            if (localArchivePath is null)
             {
-                if (task.IsAborted)
+                var projects = ModComp.CompRequest.GetCompProjectsByIds([previous.ProjectId]);
+                var project = projects.FirstOrDefault()
+                    ?? throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.ProjectUnavailable"));
+                var releases = ModComp.CompFilesGet(project.Id, project.FromCurseForge)
+                    .Where(static file => file.Available && file.Type == ModComp.CompType.ModPack)
+                    .OrderByDescending(static file => file.Status == ModComp.CompFileStatus.Release)
+                    .ThenByDescending(static file => file.ReleaseDate)
+                    .Take(50)
+                    .ToList();
+                if (releases.Count == 0) throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.NoReleases"));
+
+                var selection = releases.Select(file => (IMyRadio)new MyRadioBox
                 {
-                    packageLoader.Abort();
-                    throw new ModBase.CancelledException();
+                    Text = $"{(string.IsNullOrWhiteSpace(file.DisplayName) ? file.FileName : file.DisplayName)}  ·  {file.ReleaseDate:yyyy-MM-dd}  ·  {file.Status}",
+                }).ToList();
+                var selected = ModBase.RunInUiWait(() => ModMain.MyMsgBoxSelect(selection,
+                    Lang.Text("Instance.PackUpdate.SelectVersion.Title"), Lang.Text("Common.Action.Confirm"), Lang.Text("Common.Action.Cancel")));
+                if (selected is null || selected.Value < 0 || selected.Value >= releases.Count) throw new ModBase.CancelledException();
+                var release = releases[selected.Value];
+                task.Progress = 0.05d;
+
+                archivePath = Path.Combine(stageRoot, "modpack" + (Path.GetExtension(release.FileName) is { Length: > 1 } extension && extension.Length <= 10 ? extension : ".zip"));
+                var packageDownload = release.ToNetFile(archivePath, ModComp.DownloadReason.ModPack,
+                    instance.Info.VanillaName, _GetInstanceLoader(instance));
+                var packageLoader = new LoaderDownload(Lang.Text("Instance.PackUpdate.Task.Download"), [packageDownload]);
+                packageLoader.Start();
+                while (packageLoader.State == ModBase.LoadState.Loading)
+                {
+                    if (task.IsAborted)
+                    {
+                        packageLoader.Abort();
+                        throw new ModBase.CancelledException();
+                    }
+                    task.Progress = 0.05d + 0.1d * packageLoader.Progress;
+                    Thread.Sleep(50);
                 }
-                task.Progress = 0.05d + 0.1d * packageLoader.Progress;
-                Thread.Sleep(50);
+                if (packageLoader.State != ModBase.LoadState.Finished)
+                    throw packageLoader.Error ?? new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.DownloadFailed"));
+                task.Progress = 0.15d;
             }
-            if (packageLoader.State != ModBase.LoadState.Finished)
-                throw packageLoader.Error ?? new InvalidOperationException(Lang.Text("Instance.PackUpdate.Error.DownloadFailed"));
-            task.Progress = 0.15d;
+            else
+            {
+                if (!File.Exists(localArchivePath)) throw new FileNotFoundException(Lang.Text("Instance.PackUpdate.Error.DownloadFailed"), localArchivePath);
+                var extension = Path.GetExtension(localArchivePath);
+                if (!new[] { ".zip", ".mrpack", ".rar" }.Contains(extension, StringComparer.OrdinalIgnoreCase))
+                    throw new InvalidDataException(Lang.Text("Minecraft.Download.Modpack.UnsupportedArchive"));
+                archivePath = Path.Combine(stageRoot, "selected-local-package" + extension);
+                File.Copy(localArchivePath, archivePath, overwrite: false);
+                task.Progress = 0.05d;
+            }
 
             var stagingInstall = ModpackInstall(archivePath, stageName, resourceId: previous.ProjectId, isOnlineInstall: true);
             while (stagingInstall.State == ModBase.LoadState.Loading)
@@ -787,9 +817,28 @@ public static class ModModpack
 
             var target = store.Load(stageVersionPath)
                 ?? throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.BaselineMissing"));
-            if (!string.Equals(target.Source, previous.Source, StringComparison.OrdinalIgnoreCase)
+            if (localArchivePath is not null)
+            {
+                // The user explicitly supplied this package but its author/source
+                // cannot be independently authenticated. Keep the existing project
+                // association and derive provenance from the original installed baseline.
+                target = target with { Source = previous.Source, ProjectId = previous.ProjectId };
+                store.Save(stageVersionPath, target);
+                var stagedInstance = new McInstance(stageVersionPath).Load();
+                if (!string.Equals(stagedInstance.Info.VanillaName, instance.Info.VanillaName, StringComparison.OrdinalIgnoreCase)
+                    || stagedInstance.Info.HasForge != instance.Info.HasForge
+                    || stagedInstance.Info.HasNeoForge != instance.Info.HasNeoForge
+                    || stagedInstance.Info.HasFabric != instance.Info.HasFabric
+                    || stagedInstance.Info.HasLegacyFabric != instance.Info.HasLegacyFabric
+                    || stagedInstance.Info.HasQuilt != instance.Info.HasQuilt
+                    || stagedInstance.Info.HasCleanroom != instance.Info.HasCleanroom)
+                    throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.SourceMismatch"));
+            }
+            else if (!string.Equals(target.Source, previous.Source, StringComparison.OrdinalIgnoreCase)
                 || !string.Equals(target.ProjectId, previous.ProjectId, StringComparison.OrdinalIgnoreCase))
+            {
                 throw new InvalidDataException(Lang.Text("Instance.PackUpdate.Error.SourceMismatch"));
+            }
 
             var payloadPaths = target.Files.Values.ToDictionary(
                 static item => item.Path,

@@ -1011,6 +1011,9 @@
     <sys:String x:Key="Instance.PackUpdate.Card.Title">模組包更新</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Card.Description">檢查模組包的新版本，預覽作者檔案的新增、更新和移除，並預設保留已修改的個人檔案。</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Card.Button">檢查更新</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.Button">從本機檔案更新</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.Title">確認本機模組包來源</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">啟動器無法驗證所選壓縮檔是否屬於目前模組包。繼續後會將該檔案作為目前模組包的新版本，並保留目前市集專案關聯；請只選擇可信且確認屬於同一模組包的檔案。</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task">更新模組包</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task.Download">下載模組包版本</sys:String>
     <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">選擇模組包版本</sys:String>

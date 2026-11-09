@@ -1020,6 +1020,9 @@
     <sys:String x:Key="Instance.PackUpdate.Card.Title">整合包更新</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Card.Description">检查整合包的新版本，预览作者文件的新增、更新和移除，并默认保留已修改的个人文件。</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Card.Button">检查更新</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.Button">从本地文件更新</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.Title">确认本地整合包来源</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">启动器无法验证所选压缩包是否属于当前整合包。继续后会将该文件作为当前整合包的新版本，并保留当前市场项目关联；请只选择可信且确认属于同一整合包的文件。</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task">更新整合包</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task.Download">下载整合包版本</sys:String>
     <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">选择整合包版本</sys:String>

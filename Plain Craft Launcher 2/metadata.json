@@ -1,10 +1,10 @@
-﻿{
+{
   "name": "PCL Lite",
   "version": {
-    "base": "1.7.2",
+    "base": "1.7.5",
     "upstream": "2.12.1",
-    "suffix": "hotfix-2",
-    "code": 79
+    "suffix": "nightly-1",
+    "code": 80
   },
   "licenses": [
     {

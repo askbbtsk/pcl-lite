@@ -20,11 +20,14 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{DynamicResource Instance.PackUpdate.Card.Description}" TextWrapping="Wrap"
                                VerticalAlignment="Center" Margin="0,0,18,0" />
                     <local:MyButton x:Name="BtnPackUpdate" Grid.Column="1" MinWidth="155" Height="35"
-                                    Padding="13,0" Text="{DynamicResource Instance.PackUpdate.Card.Button}" />
+                                    Padding="13,0" Text="{DynamicResource Instance.PackUpdate.Card.Button}" Margin="0,0,8,0" />
+                    <local:MyButton x:Name="BtnPackUpdateLocal" Grid.Column="2" MinWidth="155" Height="35"
+                                    Padding="13,0" Text="{DynamicResource Instance.PackUpdate.Local.Button}" />
                 </Grid>
             </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Instance.RestorePoint.Title}" x:Name="PanRestorePoints">

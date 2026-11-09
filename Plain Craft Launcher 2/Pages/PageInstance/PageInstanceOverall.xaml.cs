@@ -49,6 +49,7 @@ public partial class PageInstanceOverall
         BtnManageDelete.Click += BtnManageDelete_Click;
         BtnManagePatch.Click += BtnManagePatch_Click;
         BtnPackUpdate.Click += BtnPackUpdate_Click;
+        BtnPackUpdateLocal.Click += BtnPackUpdateLocal_Click;
         BtnCreateRestorePoint.Click += BtnCreateRestorePoint_Click;
     }
 
@@ -125,6 +126,17 @@ public partial class PageInstanceOverall
             return;
         }
         ModModpack.UpdatePackFromOnline(instance);
+    }
+
+    private void BtnPackUpdateLocal_Click(object sender, MouseButtonEventArgs e)
+    {
+        var instance = PageInstanceLeft.McInstance;
+        if (instance is null || !ModModpack.HasPackUpdateBaseline(instance.PathInstance))
+        {
+            HintService.Hint(Lang.Text("Instance.PackUpdate.Error.NoBaseline"), HintType.Error);
+            return;
+        }
+        ModModpack.UpdatePackFromLocal(instance);
     }
 
     private void BtnCreateRestorePoint_Click(object sender, MouseButtonEventArgs e)

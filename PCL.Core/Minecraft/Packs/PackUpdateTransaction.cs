@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 
 namespace PCL.Core.Minecraft.Packs;
@@ -9,6 +10,86 @@ namespace PCL.Core.Minecraft.Packs;
 /// <summary>Applies a prepared pack update as a rollback-capable file transaction.</summary>
 public static class PackUpdateTransaction
 {
+    private sealed record JournalEntry(string RelativePath, string? OriginalSha256, string? ExpectedCurrentSha256, string? BackupFile);
+    private sealed record TransactionJournal(int Schema, string Root, bool Committed, IReadOnlyList<JournalEntry> Entries);
+    private static readonly JsonSerializerOptions JournalOptions = new() { WriteIndented = true };
+
+    /// <summary>Rolls back interrupted pack updates before the game is launched.</summary>
+    public static int RecoverInterrupted(string gameRoot)
+    {
+        var root = Path.GetFullPath(gameRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var parent = Path.GetDirectoryName(root) ?? throw new InvalidDataException("Pack root has no parent directory.");
+        if (!Directory.Exists(parent)) return 0;
+        var prefix = "." + Path.GetFileName(root) + ".pcl-update-";
+        var recovered = 0;
+        foreach (var transactionRoot in Directory.EnumerateDirectories(parent, prefix + "*", SearchOption.TopDirectoryOnly))
+        {
+            if ((File.GetAttributes(transactionRoot) & FileAttributes.ReparsePoint) != 0)
+                throw new InvalidDataException("Interrupted pack transaction is a reparse point.");
+            var transactionName = Path.GetFileName(transactionRoot);
+            if (!transactionName.StartsWith(prefix, StringComparison.Ordinal)
+                || !Guid.TryParseExact(transactionName[prefix.Length..], "N", out _)) continue;
+            var journalPath = Path.Combine(transactionRoot, "transaction.json");
+            if (!File.Exists(journalPath))
+            {
+                if (Directory.EnumerateFiles(transactionRoot).Any(path => Path.GetFileName(path) != "transaction.json.tmp"))
+                    throw new IOException($"Unrecognized interrupted update data was retained at '{transactionRoot}'.");
+                Directory.Delete(transactionRoot, recursive: true);
+                continue;
+            }
+            if ((File.GetAttributes(journalPath) & FileAttributes.ReparsePoint) != 0
+                || new FileInfo(journalPath).Length > 4 * 1024 * 1024)
+                throw new InvalidDataException("Interrupted pack transaction journal is invalid.");
+            var journal = JsonSerializer.Deserialize<TransactionJournal>(File.ReadAllText(journalPath), JournalOptions)
+                ?? throw new InvalidDataException("Interrupted pack transaction journal is empty.");
+            if (journal.Schema != 1 || !string.Equals(Path.GetFullPath(journal.Root).TrimEnd(Path.DirectorySeparatorChar), root, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Interrupted pack transaction journal does not match this instance.");
+            if (journal.Committed)
+            {
+                Directory.Delete(transactionRoot, recursive: true);
+                continue;
+            }
+
+            foreach (var entry in journal.Entries.Reverse())
+            {
+                PackUpdatePlanner.ValidateRelativePath(entry.RelativePath);
+                var destination = PackUpdatePlanner.ResolveWithin(root, entry.RelativePath);
+                EnsureNoReparsePointEscape(root, destination);
+                var current = File.Exists(destination) ? PackUpdatePlanner.HashFile(destination) : null;
+                if (PackUpdatePlanner.HashEquals(current, entry.OriginalSha256)) continue;
+                if (!PackUpdatePlanner.HashEquals(current, entry.ExpectedCurrentSha256))
+                    throw new IOException($"Interrupted pack recovery found an external change at '{entry.RelativePath}'; original data remains in '{transactionRoot}'.");
+                if (entry.OriginalSha256 is null)
+                {
+                    if (File.Exists(destination)) File.Delete(destination);
+                    continue;
+                }
+                if (string.IsNullOrWhiteSpace(entry.BackupFile) || Path.GetFileName(entry.BackupFile) != entry.BackupFile)
+                    throw new InvalidDataException("Interrupted pack transaction has an invalid backup reference.");
+                var backup = Path.Combine(transactionRoot, entry.BackupFile);
+                if (!File.Exists(backup) || !PackUpdatePlanner.HashEquals(PackUpdatePlanner.HashFile(backup), entry.OriginalSha256))
+                    throw new InvalidDataException($"Interrupted pack transaction lost its original source for '{entry.RelativePath}'.");
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                File.Copy(backup, destination, overwrite: true);
+            }
+            Directory.Delete(transactionRoot, recursive: true);
+            recovered++;
+        }
+        return recovered;
+    }
+
+    private static void WriteJournal(string transactionRoot, TransactionJournal journal)
+    {
+        var path = Path.Combine(transactionRoot, "transaction.json");
+        var temporary = path + ".tmp";
+        using (var file = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            JsonSerializer.Serialize(file, journal, JournalOptions);
+            file.Flush(flushToDisk: true);
+        }
+        File.Move(temporary, path, overwrite: true);
+    }
+
     public static void Apply(PackUpdatePlan plan, CancellationToken cancellationToken = default,
         Action<int, int>? progress = null, Action? commitMetadata = null)
     {
@@ -68,6 +149,29 @@ public static class PackUpdateTransaction
                     throw new IOException($"Pack destination changed after preview: '{Path.GetRelativePath(root, pair.Key)}'. Rebuild the update plan before applying it.");
             }
 
+            var journalEntries = new List<JournalEntry>();
+            var backupIndex = 0;
+            foreach (var pair in expectedCurrent)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var related = actions.First(action => string.Equals(PackUpdatePlanner.ResolveWithin(root, action.DestinationPath), pair.Key, StringComparison.OrdinalIgnoreCase));
+                var original = pair.Value;
+                string? backupFile = null;
+                if (original is not null)
+                {
+                    backupFile = $"source-{backupIndex++:D8}.bin";
+                    var backup = Path.Combine(transactionRoot, backupFile);
+                    File.Copy(pair.Key, backup, overwrite: false);
+                    if (!PackUpdatePlanner.HashEquals(PackUpdatePlanner.HashFile(backup), original))
+                        throw new IOException($"Pack destination changed while preserving its source: '{related.DestinationPath}'.");
+                    backups[pair.Key] = backup;
+                }
+                var newHash = related.Kind == PackUpdateActionKind.RemoveAuthorFile ? null : related.ExpectedSha256;
+                journalEntries.Add(new JournalEntry(Path.GetRelativePath(root, pair.Key).Replace('\\', '/'), original, newHash, backupFile));
+            }
+            var journal = new TransactionJournal(1, root, false, journalEntries);
+            WriteJournal(transactionRoot, journal);
+
             var index = 0;
             foreach (var action in actions)
             {
@@ -77,13 +181,6 @@ public static class PackUpdateTransaction
                 if (!expectedCurrent.TryGetValue(destination, out var expected) || !PackUpdatePlanner.HashEquals(current, expected))
                     throw new IOException($"Pack destination changed during update: '{action.DestinationPath}'.");
                 _EnsureParentDirectory(root, Path.GetDirectoryName(destination)!, createdDirectories);
-                if (File.Exists(destination))
-                {
-                    var backup = Path.Combine(transactionRoot, backups.Count.ToString("D8", System.Globalization.CultureInfo.InvariantCulture));
-                    File.Copy(destination, backup, overwrite: false);
-                    backups.Add(destination, backup);
-                }
-
                 if (action.Kind == PackUpdateActionKind.RemoveAuthorFile)
                 {
                     if (File.Exists(destination)) File.Delete(destination);
@@ -92,7 +189,7 @@ public static class PackUpdateTransaction
                 else
                 {
                     var payload = action.PayloadPath!;
-                    var temp = destination + $".pcl-{Guid.NewGuid():N}.tmp";
+                    var temp = Path.Combine(transactionRoot, $"new-{index:D8}.tmp");
                     try
                     {
                         File.Copy(payload, temp, overwrite: false);
@@ -111,6 +208,7 @@ public static class PackUpdateTransaction
             }
             cancellationToken.ThrowIfCancellationRequested();
             commitMetadata?.Invoke();
+            WriteJournal(transactionRoot, journal with { Committed = true });
             succeeded = true;
         }
         catch (Exception originalError)

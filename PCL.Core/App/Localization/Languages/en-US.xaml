@@ -1020,6 +1020,9 @@
     <sys:String x:Key="Instance.PackUpdate.Card.Title">Modpack updates</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Card.Description">Check for a new pack version, review author file additions, updates and removals, and keep modified personal files by default.</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Card.Button">Check for updates</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.Button">Update from file</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.Title">Confirm local pack source</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">The launcher cannot verify that this archive belongs to the current modpack. If you continue, it will be used as the current pack's new version while retaining the existing marketplace project link. Choose only a trusted archive that you know belongs to this same modpack.</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task">Update modpack</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task.Download">Download modpack version</sys:String>
     <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">Select modpack version</sys:String>

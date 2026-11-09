@@ -10,6 +10,7 @@ using PCL.Core.Minecraft;
 using PCL.Core.Minecraft.Backups;
 using PCL.Core.Minecraft.Worlds;
 using PCL.Core.Minecraft.PersonalOptions;
+using PCL.Core.Minecraft.Packs;
 using PCL.Core.Minecraft.Launch.Utils;
 using PCL.Core.Utils.OS;
 using PCL.Core.Utils;
@@ -60,6 +61,7 @@ public static class ModLaunch
         if (ModInstanceList.McMcInstanceSelected.state == McInstanceState.Error)
             throw new Exception(Lang.Text("Minecraft.Launch.Precheck.InstanceError", ModInstanceList.McMcInstanceSelected.Desc));
         EnvironmentRestorePointService.RecoverInterruptedRestore(ModInstanceList.McMcInstanceSelected.PathIndie);
+        PackUpdateTransaction.RecoverInterrupted(ModInstanceList.McMcInstanceSelected.PathIndie);
         var savesPath = Path.Combine(ModInstanceList.McMcInstanceSelected.PathIndie, "saves");
         if (Directory.Exists(savesPath) && (File.GetAttributes(savesPath) & FileAttributes.ReparsePoint) == 0)
             foreach (var worldPath in Directory.EnumerateDirectories(savesPath))

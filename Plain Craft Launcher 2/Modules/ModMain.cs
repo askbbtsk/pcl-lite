@@ -100,6 +100,7 @@ public static class ModMain
     public static PageDownloadCompDetail? frmDownloadCompDetail;
     public static PageHomepageNewsView? frmHomepageNews;
     public static PageWelcome? frmWelcome;
+    public static PagePerformance? frmPerformance;
 
     public static MySlider? dragControl = null;
     private static int timer4Count;

@@ -507,7 +507,8 @@
                         <TextBlock VerticalAlignment="Center" HorizontalAlignment="Left" Text="{DynamicResource Setup.Ui.Homepage.PresetLabel}" Margin="0,0,25,0" />
                         <local:MyComboBox x:Name="ComboCustomPreset" Grid.ColumnSpan="2" Tag="UiCustomPreset"
                                           Grid.Column="1" SelectionChanged="ComboChange">
-                            <local:MyComboBoxItem Content="PCL Lite 欢迎页" />
+                            <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Homepage.Preset.Welcome}" />
+                            <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Homepage.Preset.Performance}" />
                         </local:MyComboBox>
                     </Grid>
                 </StackPanel>

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Globalization;
 using System.Reflection;
 using System.Windows;
@@ -110,14 +110,21 @@ public partial class PageLaunchRight : IRefreshable
         }
         else if (uiCustomType == 3)
         {
-            // 预设主页：目前只有「PCL Lite 欢迎页」一项，完全由 C# 构造控件树，不加载任何远程 XAML
-            LogWrapper.Info("[Page] 主页数据来源：PCL Lite 欢迎页（预设）");
+            var preset = Config.Preference.Homepage.SelectedPreset;
+            LogWrapper.Info($"[Page] 主页数据来源：{(preset == 1 ? "性能状态页" : "PCL Lite 欢迎页")}（预设）");
             Dispatcher.Invoke(() =>
             {
-                if (ModMain.frmWelcome is null)
-                    ModMain.frmWelcome = new PageWelcome();
                 PanCustom.Children.Clear();
-                PanCustom.Children.Add(ModMain.frmWelcome);
+                if (preset == 1)
+                {
+                    ModMain.frmPerformance ??= new PagePerformance();
+                    PanCustom.Children.Add(ModMain.frmPerformance);
+                }
+                else
+                {
+                    ModMain.frmWelcome ??= new PageWelcome();
+                    PanCustom.Children.Add(ModMain.frmWelcome);
+                }
             });
             return;
         }

@@ -3991,4 +3991,6 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete.Windows">將這份備份移至 Windows 資源回收筒？</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete.Permanent">永久刪除這份備份？此操作無法復原。</sys:String>
     <sys:String x:Key="Instance.Saves.DeletedPermanently">存檔已永久刪除。</sys:String>
+    <sys:String x:Key="Setup.Ui.Homepage.Preset.Welcome">PCL Lite 歡迎頁</sys:String>
+    <sys:String x:Key="Setup.Ui.Homepage.Preset.Performance">PCL Lite 效能狀態頁</sys:String>
 </ResourceDictionary>

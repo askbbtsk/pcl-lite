@@ -3994,4 +3994,6 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete.Windows">将这份备份移入 Windows 回收站？</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete.Permanent">永久删除这份备份？此操作不可撤销。</sys:String>
     <sys:String x:Key="Instance.Saves.DeletedPermanently">存档已永久删除。</sys:String>
+    <sys:String x:Key="Setup.Ui.Homepage.Preset.Welcome">PCL Lite 欢迎页</sys:String>
+    <sys:String x:Key="Setup.Ui.Homepage.Preset.Performance">PCL Lite 性能状态页</sys:String>
 </ResourceDictionary>

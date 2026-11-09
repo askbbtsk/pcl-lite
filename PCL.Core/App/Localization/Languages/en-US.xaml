@@ -3991,4 +3991,6 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete.Windows">Move this backup to the Windows Recycle Bin?</sys:String>
     <sys:String x:Key="Instance.Saves.Backup.ConfirmDelete.Permanent">Permanently delete this backup? This cannot be undone.</sys:String>
     <sys:String x:Key="Instance.Saves.DeletedPermanently">World permanently deleted.</sys:String>
+    <sys:String x:Key="Setup.Ui.Homepage.Preset.Welcome">PCL Lite welcome page</sys:String>
+    <sys:String x:Key="Setup.Ui.Homepage.Preset.Performance">PCL Lite performance status</sys:String>
 </ResourceDictionary>

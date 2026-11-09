@@ -21,6 +21,7 @@ public sealed class EnhancementExportTests
         Assert.IsFalse(PackExportContent.IsInternalPath("mods/ResourceCollections/user.json"));
         Assert.IsTrue(PackExportContent.IsInternalPath("versions/.pcl-migration-123/mod.jar"));
         Assert.IsTrue(PackExportContent.IsInternalPath("versions/.pcl-prism-import-123/mod.jar"));
+        Assert.IsTrue(PackExportContent.IsInternalPath("versions/.pcl-modify-123/mod.jar"));
     }
 
     [TestMethod]

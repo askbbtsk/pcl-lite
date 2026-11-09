@@ -20,6 +20,7 @@ public static class PackExportContent
             || part.StartsWith(".pcl-import-", StringComparison.OrdinalIgnoreCase)
             || part.StartsWith(".pcl-prism-import-", StringComparison.OrdinalIgnoreCase)
             || part.StartsWith(".pcl-migration-", StringComparison.OrdinalIgnoreCase)
+            || part.StartsWith(".pcl-modify-", StringComparison.OrdinalIgnoreCase)
             || part.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
             || part.Equals("accounts.json", StringComparison.OrdinalIgnoreCase)
             || part.Equals("launcher_accounts.json", StringComparison.OrdinalIgnoreCase)

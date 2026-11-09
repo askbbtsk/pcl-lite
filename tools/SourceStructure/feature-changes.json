@@ -1,7 +1,7 @@
 [
   {
     "SourcePath": "PCL.Core/Minecraft/Packs/PackExportContent.cs",
-    "Sha256": "E17E7EDE2CDC6B6959A26AF026B0EDB52FCDF8C790A7102F4A690FBB665B41B1",
+    "Sha256": "FAA72B48588BAC80115FF3C6827C489F9C0C6669B190C17D1A5EAB8855F78870",
     "Members": [
       "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::IsInternalPath(string relativePath)",
       "PCL.Core.Minecraft.Packs.PackExportContent::MethodDeclaration::CopyTree(string source, string destination, CancellationToken token = default)"
@@ -107,7 +107,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.cs",
-  "Sha256": "54B422739B303BFB2BB1FE927CC911905D0D50E74F3BD7AB650DD1235DF729FE",
+  "Sha256": "58BF71B9A3356A05EE18AE1818E2B2F561902CFDF7B319E48609F4E53B508D96",
   "Members": [
     "PCL.ModLaunch::MethodDeclaration::McLaunchPrecheck()"
   ],
@@ -156,5 +156,34 @@
   "Sha256": "4E2C0157FF25389E4AC94F41FD6F13FC989E7814333B444F877B029683BAFAC3",
   "Members": ["PCL.ModLaunch::MethodDeclaration::McLaunchJava(ModLoader.LoaderTask<int, int> task)"],
   "Reason": "Extract the ordered existing Java constraints unchanged into ResolveJavaConstraints for both normal launch and target validation; separate verifier compares every moved statement against baseline allowing only the instance parameter replacement."
+}
+,
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyMsg/MyMsgText.xaml.cs",
+  "Sha256": "026E2DB3FC8D7F7E59D6E600368EDB22AFC5AF26316E32C27A2869005E6D16D2",
+  "Members": [
+    "PCL.MyMsgText::ConstructorDeclaration::.ctor(ModMain.MyMsgBoxConverter converter)",
+    "PCL.MyMsgText::MethodDeclaration::Load(object sender, RoutedEventArgs e)",
+    "PCL.MyMsgText::MethodDeclaration::Close()",
+    "PCL.MyMsgText::MethodDeclaration::Btn1_Click(object? sender = null, MouseButtonEventArgs? e = null)"
+  ],
+  "Reason": "User-requested loader selection unlock and direct version/loader modification, backup acknowledgement with visible monotonic 5-second delay and optional mod migration with 3-second delay. Existing dialog defaults unchanged."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceInstall.SelectionPresentation.cs",
+  "Sha256": "2F0EE828A920301DE628C3AA668CE9EE3054001F1DE4C44536AA602740B191CA",
+  "Members": [
+    "PCL.PageInstanceInstall::MethodDeclaration::GetCurrentInfo()"
+  ],
+  "Reason": "User-requested loader selection unlock and direct version/loader modification, backup acknowledgement with visible monotonic 5-second delay and optional mod migration with 3-second delay. Existing dialog defaults unchanged."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceInstall.xaml.cs",
+  "Sha256": "BF02D5F525AC138E510341B6EAC97D4962D219288ADCD7DC2230983D1962DAA4",
+  "Members": [
+    "PCL.PageInstanceInstall::MethodDeclaration::BtnSelectStart_Click(object sender, MouseButtonEventArgs mouseButtonEventArgs)",
+    "PCL.PageInstanceInstall::MethodDeclaration::MinecraftSelected(MyListItem sender, MouseButtonEventArgs e)"
+  ],
+  "Reason": "User-requested loader selection unlock and direct version/loader modification, backup acknowledgement with visible monotonic 5-second delay and optional mod migration with 3-second delay. Existing dialog defaults unchanged."
 }
 ]

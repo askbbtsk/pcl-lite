@@ -4077,9 +4077,9 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Instance.Enhancement.NoVerifiedSource">No verifiable declared source; skipped</sys:String>
     <sys:String x:Key="Instance.Enhancement.DownloadInvalid">Downloaded content does not match the declaration</sys:String>
     <sys:String x:Key="Instance.Enhancement.FillResult">Added {0} missing files; {1} were skipped or could not finish. Existing files were not replaced.</sys:String>
-    <sys:String x:Key="Instance.Migration.Title">Cross-loader migration</sys:String>
-    <sys:String x:Key="Instance.Migration.Description">Create a new instance with the selected loader and preview transferable mods. Source files remain unchanged.</sys:String>
-    <sys:String x:Key="Instance.Migration.PreviewButton">Preview migration to new instance</sys:String>
+    <sys:String x:Key="Instance.Migration.Title">Change loader</sys:String>
+    <sys:String x:Key="Instance.Migration.Description">Choose a target loader or Minecraft version to modify this instance. Back up first. You may migrate mods; original files are preserved and unresolved items are reported.</sys:String>
+    <sys:String x:Key="Instance.Migration.PreviewButton">Preview and modify this instance</sys:String>
     <sys:String x:Key="Instance.Migration.ChooseLoader">Select a target Minecraft version and a Fabric, Forge or NeoForge version first.</sys:String>
     <sys:String x:Key="Instance.Migration.TargetTitle">New instance name</sys:String>
     <sys:String x:Key="Instance.Migration.TargetPrompt">Source: {0}; target Minecraft: {1}; loader: {2}. Enter a new instance name.</sys:String>
@@ -4148,4 +4148,20 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Instance.Prism.LibrariesFailed">Target library validation failed: {0}</sys:String>
     <sys:String x:Key="Instance.Prism.JavaFailed">No compatible Java was selected for the imported instance.</sys:String>
     <sys:String x:Key="Instance.Prism.Busy">A related game or installation is running. Finish it before importing.</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.SelectTarget">Choose target loader</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.SelectVersion">Target loader changed to {0}. Select its version below; existing instance files have not changed.</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.BackupTitle">Back up before changing loaders</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.BackupWarning">Changing the loader or Minecraft version for “{0}” can make mods, configuration or worlds incompatible. Back up the full instance and worlds yourself and verify the backup first. In-place modification switches Java to automatic selection for the target environment while retaining other settings. A core-file backup is not a complete backup; this action does not create one for you.</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.BackedUp">I have backed up; continue</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.SecondWarning">Confirm again: you have a complete backup of “{0}” and understand that changing loaders can prevent launch or break compatibility. Wait 5 seconds before confirming. Cancel immediately to leave files unchanged.</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ConfirmChange">Confirm loader change</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ModTitle">Migrate existing mods</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ModPrompt">Change “{0}” from Minecraft {1} to {2}. Find and migrate mods supporting the target Minecraft version and loader? Keeping existing mods unchanged may leave incompatible files.</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.MigrateMods">Migrate mods</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.KeepMods">Keep mods unchanged</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ModSecondWarning">Confirm mod migration: only builds of the same project explicitly supporting the target version and loader are eligible. Replaced originals are retained as disabled files; unresolved or conflicting items are preserved and reported. Wait 3 seconds before confirming.</sys:String>
+    <sys:String x:Key="Instance.Modification.Task">Modify instance: {0}</sys:String>
+    <sys:String x:Key="Instance.Modification.VanillaMods">The target is vanilla Minecraft. Loader-based mod migration is unavailable; existing files were preserved.</sys:String>
+    <sys:String x:Key="Instance.Modification.ReplacePreview">After committing, these original mods will be retained as disabled files and replaced by the target builds. Their original bytes, configurations and worlds are preserved. Continue?&#xA;{0}</sys:String>
+    <sys:String x:Key="Instance.Modification.Success">Instance “{0}” was modified in place. Replaced originals were retained as disabled files. Unresolved items and reasons follow.</sys:String>
 </ResourceDictionary>

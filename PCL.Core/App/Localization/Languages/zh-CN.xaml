@@ -4080,9 +4080,9 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Instance.Enhancement.NoVerifiedSource">没有可验证的声明来源，已跳过</sys:String>
     <sys:String x:Key="Instance.Enhancement.DownloadInvalid">下载内容与声明校验值不符</sys:String>
     <sys:String x:Key="Instance.Enhancement.FillResult">已补齐 {0} 项，跳过或未完成 {1} 项；已有文件未覆盖。</sys:String>
-    <sys:String x:Key="Instance.Migration.Title">跨加载器迁移</sys:String>
-    <sys:String x:Key="Instance.Migration.Description">按当前选择创建新实例，预览可迁移模组；源实例和文件保持不变。</sys:String>
-    <sys:String x:Key="Instance.Migration.PreviewButton">预览迁移到新实例</sys:String>
+    <sys:String x:Key="Instance.Migration.Title">修改加载器</sys:String>
+    <sys:String x:Key="Instance.Migration.Description">选择目标加载器或游戏版本后，直接修改当前实例。执行前必须自行备份；可选择迁移模组，原文件会保留，不迁移的项会列出原因。</sys:String>
+    <sys:String x:Key="Instance.Migration.PreviewButton">预览并修改当前实例</sys:String>
     <sys:String x:Key="Instance.Migration.ChooseLoader">请先选择目标 Minecraft 和 Fabric、Forge 或 NeoForge 版本。</sys:String>
     <sys:String x:Key="Instance.Migration.TargetTitle">新实例名称</sys:String>
     <sys:String x:Key="Instance.Migration.TargetPrompt">来源：{0}；目标 Minecraft：{1}；加载器：{2}。请输入新的实例名称。</sys:String>
@@ -4151,4 +4151,20 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Instance.Prism.LibrariesFailed">目标运行库检查失败：{0}</sys:String>
     <sys:String x:Key="Instance.Prism.JavaFailed">没有选择到满足导入目标要求的 Java。</sys:String>
     <sys:String x:Key="Instance.Prism.Busy">相关游戏或安装正在运行，请结束后再导入。</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.SelectTarget">选择目标加载器</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.SelectVersion">已切换待修改加载器为 {0}，请在下方列表选择具体版本；当前实例文件尚未修改。</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.BackupTitle">修改加载器前必须备份</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.BackupWarning">修改“{0}”的加载器或游戏版本可能导致模组、配置或存档不兼容。必须先自行备份完整实例和存档，确认备份可用后再继续。原地修改后将按目标环境自动选择 Java，其他实例设置保留。现有核心文件备份不等于完整备份；本操作不会替你完成完整备份。</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.BackedUp">已自行备份，继续</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.SecondWarning">再次确认：你已为“{0}”完成完整备份，并理解更换加载器可能无法启动或无法兼容现有内容。请等待 5 秒后确认；取消可立即退出，不修改文件。</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ConfirmChange">确认修改加载器</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ModTitle">迁移现有模组</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ModPrompt">将“{0}”从 Minecraft {1} 修改为 {2}。是否同时查找并迁移支持目标游戏版本及加载器的模组？选择不迁移会保留现有模组原样，可能不兼容目标环境。</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.MigrateMods">迁移模组</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.KeepMods">不迁移，保留原样</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ModSecondWarning">再次确认迁移模组：仅处理明确支持目标版本及加载器的同项目构建。替换成功后原模组保留为禁用文件；无法迁移或冲突的项保留并列出原因。请等待 3 秒后确认。</sys:String>
+    <sys:String x:Key="Instance.Modification.Task">修改实例：{0}</sys:String>
+    <sys:String x:Key="Instance.Modification.VanillaMods">目标为原版，无法按加载器迁移模组；已保留现有文件。</sys:String>
+    <sys:String x:Key="Instance.Modification.ReplacePreview">提交后，下列原模组将保留为禁用文件，目标构建替代其启用位置。原字节保留；配置与存档不覆盖。是否继续？&#xA;{0}</sys:String>
+    <sys:String x:Key="Instance.Modification.Success">实例“{0}”已原地修改。原模组内容以禁用文件保留；未处理项及原因如下。</sys:String>
 </ResourceDictionary>

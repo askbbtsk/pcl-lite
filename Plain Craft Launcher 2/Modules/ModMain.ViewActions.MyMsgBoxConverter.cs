@@ -31,6 +31,11 @@ public static partial class ModMain
     /// </summary>
     public class MyMsgBoxConverter
     {
+        /// <summary>Optional monotonic delay for the primary text-dialog action, measured from visible load.</summary>
+        public int MinimumConfirmDelaySeconds { get; set; }
+        /// <summary>The delayed helper owns the sole PushModal/PopModal pair.</summary>
+        public bool ModalLifetimeOwnedByCaller { get; set; }
+
         // 设置轮询 Url
         public string Button1 = "";
 

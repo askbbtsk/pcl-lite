@@ -666,6 +666,7 @@ public partial class PageInstanceInstall
     // 当前信息获取
     public void GetCurrentInfo()
     {
+        _replacementLoader = null;
         ClearSelected();
         BtnSelectStart.IsEnabled = true;
         var currentInstance = PageInstanceLeft.McInstance.Info;

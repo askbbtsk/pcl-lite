@@ -26,6 +26,7 @@ public partial class MyMsgText
             ConfigurePrimaryButton(converter.Button1, converter.IsWarn);
             ConfigureSecondaryButton(Btn2, converter.Button2);
             ConfigureSecondaryButton(Btn3, converter.Button3);
+            InitializeConfirmationDelay();
             ShapeLine.StrokeThickness = ModBase.GetWPFSize(1d);
         }
 
@@ -90,6 +91,7 @@ public partial class MyMsgText
                 }, "MyMsgBox " + uuid);
             // 记录日志
             ModBase.Log("[Control] 普通弹窗：" + LabTitle.Text + "\r\n" + LabCaption.Text);
+            StartConfirmationDelay();
         }
 
         catch (Exception ex)
@@ -104,10 +106,11 @@ public partial class MyMsgText
 
     private void Close()
     {
+        StopConfirmationDelay();
         // 结束线程阻塞
         if (myConverter.ForceWait || !string.IsNullOrEmpty(myConverter.Button2))
             myConverter.WaitFrame.Continue = false;
-        ComponentDispatcher.PopModal();
+        if (!myConverter.ModalLifetimeOwnedByCaller) ComponentDispatcher.PopModal();
         // 动画
         ModAnimation.AniStart(new[]
         {
@@ -130,6 +133,7 @@ public partial class MyMsgText
 
     public void Btn1_Click(object? sender = null, MouseButtonEventArgs? e = null)
     {
+        if (!CanAcceptPrimaryConfirmation()) return;
         if (myConverter.IsExited)
             return;
         if (myConverter.Button1Action is not null)

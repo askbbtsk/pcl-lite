@@ -98,6 +98,8 @@ public partial class PageInstanceInstall
     private void BtnSelectStart_Click(object sender, MouseButtonEventArgs mouseButtonEventArgs)
     {
         if (!RestrictedFeaturePolicy.Check("minecraft-loader-install")) return;
+        if (!HasReplacementVersion()) return;
+        var changingInstance = PageInstanceLeft.McInstance;
         // Quilt 实例无法通过安装管线重装/修改（已移除 Quilt 安装支持）
         if (PageInstanceLeft.McInstance.Info.HasQuilt)
         {
@@ -121,6 +123,23 @@ public partial class PageInstanceInstall
                     Lang.Text("Common.Action.Cancel")
                 ) == 2)
                 return;
+
+        // Both explicit backup acknowledgements must finish before any instance mutation.
+        if (!ConfirmLoaderBackup(changingInstance) || !IsLoaded
+            || !ReferenceEquals(changingInstance, PageInstanceLeft.McInstance)) return;
+        if (_installAction == InstallAction.Modify)
+        {
+            var versionChanged = !string.Equals(changingInstance.Info.VanillaName, _vanillaName, StringComparison.Ordinal);
+            var loaderChanged = GetExistingLoader(changingInstance) != _selectedLoaderType;
+            if (versionChanged || loaderChanged)
+            {
+                var migrateMods = AskToMigrateMods(changingInstance);
+                if (migrateMods is null || !IsLoaded || !ReferenceEquals(changingInstance, PageInstanceLeft.McInstance)) return;
+                InstanceModificationRunner.Start(changingInstance, ModFolder.mcFolderSelected,
+                    BuildModificationRequest(changingInstance), migrateMods.Value);
+                return;
+            }
+        }
 
         // 删除 LabyMod Neo 文件
         if ((PageInstanceLeft.McInstance.PathIndie ?? "") != (PageInstanceLeft.McInstance.PathInstance ?? "") &&
@@ -355,6 +374,10 @@ public partial class PageInstanceInstall
     // 页面切换触发
     public void MinecraftSelected(MyListItem sender, MouseButtonEventArgs e)
     {
+        // Loader builds belong to a specific Minecraft version; do not reuse the source build
+        // after selecting another game version. This changes pending UI state only.
+        ClearSelected();
+        _replacementLoader = null;
         _vanillaName = sender.Title;
         _vanillaData = (JsonObject)sender.Tag;
         _vanillaIcon = sender.Logo;

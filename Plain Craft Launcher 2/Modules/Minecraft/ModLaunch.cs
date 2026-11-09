@@ -2667,7 +2667,7 @@ public static class ModLaunch
                 }
                 catch (Exception ex) { ModBase.Log(ex, "保存 Minecraft 个人设置失败", ModBase.LogLevel.Hint); }
                 var normalExit = gameProcess.ExitCode == 0;
-                if (normalExit && startedInstance is not null) ModWorldBackups.CompleteNormalLaunch(startedInstance.PathInstance);
+
                 if (recentWorldSession is not null)
                 {
                     try { worldSessionHistory.FinishSession(recentWorldSession.SessionId, normalExit); }
@@ -2809,6 +2809,8 @@ public static class ModLaunch
         while (watcher.State == ModWatcher.Watcher.MinecraftState.Loading)
             Thread.Sleep(100);
         if (watcher.State == ModWatcher.Watcher.MinecraftState.Crashed) throw new Exception("$$");
+        if (watcher.State != ModWatcher.Watcher.MinecraftState.Crashed)
+            ModWorldBackups.CompleteNormalLaunch(watcher.version.PathInstance);
         if (watcher.State == ModWatcher.Watcher.MinecraftState.Ended)
         {
             try

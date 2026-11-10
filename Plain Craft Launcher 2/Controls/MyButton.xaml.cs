@@ -32,7 +32,7 @@ public partial class MyButton
     public new static readonly DependencyProperty PaddingProperty = DependencyProperty.Register("Padding",
         typeof(Thickness), typeof(MyButton), new PropertyMetadata((sender, e) =>
         {
-            if (sender is not null) ((MyButton)sender).PanFore.Padding = (Thickness)e.NewValue;
+            if (sender is not null) ((MyButton)sender).PanButtonContent.Padding = (Thickness)e.NewValue;
         }));
     
     private ColorState _ColorType = ColorState.Normal; // 配色方案
@@ -56,6 +56,7 @@ public partial class MyButton
         MouseEnter += (_, _) => Button_MouseEnter();
         MouseLeftButtonUp += (_, _) => Button_MouseUp();
         MouseLeave += (_, _) => Button_MouseLeave();
+        InitializeTahoeButton();
     }
 
     public InlineCollection Inlines => LabText.Inlines;
@@ -84,8 +85,8 @@ public partial class MyButton
 
     public new Thickness Padding
     {
-        get => PanFore.Padding;
-        set => PanFore.Padding = value;
+        get => PanButtonContent.Padding;
+        set => PanButtonContent.Padding = value;
     }
 
     public Transform RealRenderTransform
@@ -121,6 +122,11 @@ public partial class MyButton
     {
         try
         {
+            if (_tahoeApplied)
+            {
+                RefreshTahoeButtonAppearance();
+                return;
+            }
             if (ControlVisualHelpers.ShouldAnimate(this)) // 防止默认属性变更触发动画
             {
                 if (IsEnabled)
@@ -155,6 +161,11 @@ public partial class MyButton
     {
         if (!isMouseDown)
             return;
+        InvokeButtonClick(sender, e);
+    }
+
+    private void InvokeButtonClick(object sender, MouseButtonEventArgs e)
+    {
         ModBase.Log("[Control] 按下按钮：" + Text);
         Click?.Invoke(sender, e);
         ModMain.RaiseCustomEvent(this);
@@ -162,8 +173,14 @@ public partial class MyButton
 
     private void Button_MouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (!IsEnabled) return;
         isMouseDown = true;
         Focus();
+        if (_tahoeApplied)
+        {
+            _tahoeMotion?.Press(e.GetPosition(this));
+            return;
+        }
         ModAnimation.AniStart(
             new[]
             {
@@ -175,6 +192,11 @@ public partial class MyButton
 
     private void Button_MouseEnter()
     {
+        if (_tahoeApplied)
+        {
+            RefreshTahoeButtonAppearance();
+            return;
+        }
         ModAnimation.AniStart(
             ModAnimation.AaColor(PanFore, BackgroundProperty,
                 _ColorType == ColorState.Red ? "ColorBrushRedBack" : "ColorBrush7", animationColorIn),
@@ -186,6 +208,11 @@ public partial class MyButton
         if (!isMouseDown)
             return;
         isMouseDown = false;
+        if (_tahoeApplied)
+        {
+            _tahoeMotion?.Release();
+            return;
+        }
         ModAnimation.AniStart(
             new[]
             {
@@ -196,6 +223,13 @@ public partial class MyButton
 
     private void Button_MouseLeave()
     {
+        if (_tahoeApplied)
+        {
+            isMouseDown = false;
+            _tahoeMotion?.Release();
+            RefreshTahoeButtonAppearance();
+            return;
+        }
         ModAnimation.AniStart(
             ModAnimation.AaColor(PanFore, BackgroundProperty, "ColorBrushHalfWhite", animationColorOut),
             "MyButton Background " + Uuid);

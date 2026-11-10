@@ -3152,6 +3152,23 @@ Release 發布時間：{2}
     <sys:String x:Key="Setup.Ui.Background.Suit.TopLeft">置於左上</sys:String>
     <sys:String x:Key="Setup.Ui.Background.Suit.TopRight">置於右上</sys:String>
 
+    <!-- Setup.Ui.Tahoe -->
+
+    <sys:String x:Key="Setup.Ui.Tahoe.Title">macOS Tahoe 液態玻璃</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Stopped">桌面折射已關閉。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Starting">正在等待桌面畫面，暫時顯示靜態材質。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Live">正在即時折射桌面。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">桌面取樣正常，目前裝置使用模糊相容材質。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">桌面取樣中斷，正在嘗試恢復；未就緒區域使用靜態材質。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Suspended">桌面取樣已暫停；視窗恢復可見後繼續。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">系統不支援桌面取樣，目前顯示靜態材質。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">桌面取樣恢復失敗，目前顯示靜態材質；可重新啟用「直接折射桌面」重試。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液態玻璃介面</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Description">為頂部導覽、側邊欄和按鈕套用 macOS Tahoe 風格材質，閱讀區域保持清晰。啟用後立即生效。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">直接折射桌面</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">隱藏啟動器桌布，對視窗後方的真實桌面使用八次方折射。為避免畫面遞迴，取樣期間本視窗會從系統截圖與錄影中排除，關閉後恢復。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">桌面取樣需要 Windows 10 2004 或更新版本。取樣無法使用時顯示靜態材質；不支援 Pixel Shader 3.0 時使用模糊材質。</sys:String>
+
     <!-- Setup.Ui.Basic -->
 
     <sys:String x:Key="Setup.Ui.Basic.AdvancedMaterial">高階材質</sys:String>

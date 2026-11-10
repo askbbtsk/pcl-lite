@@ -1,0 +1,319 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace PCL.Core.Test.UI;
+
+[TestClass]
+[DoNotParallelize]
+public sealed class TahoeDesktopCaptureTests
+{
+    [STATestMethod]
+    public void RetiredErrorsAndFramesCannotAffectReplacementSession()
+    {
+        WithCapture((capture, platform, _, image) =>
+        {
+            capture.Apply(true);
+            FakeSession retired = platform.Sessions.Single();
+            retired.Fail();
+            retired.Present();
+            capture.Apply(false);
+            capture.Apply(true);
+            FakeSession replacement = platform.Sessions.Last();
+            replacement.Present();
+            PumpUntil(() => capture.HasFrame);
+            Assert.AreEqual(TahoeCaptureState.Live, capture.State);
+            Assert.IsFalse(replacement.Disposed);
+            Assert.IsNotNull(image.Source);
+            Assert.AreEqual(1, retired.Completed);
+            Assert.AreEqual(1, replacement.Completed);
+        });
+    }
+
+    [STATestMethod]
+    public void DisplayChangeRebuildsSurvivingMonitorWithoutMovingWindow()
+    {
+        WithCapture((capture, platform, _, _) =>
+        {
+            platform.Monitors.Add(new TahoeCaptureMonitor(new IntPtr(2), platform.Monitors[0].Bounds));
+            capture.Apply(true);
+            Assert.AreEqual(2, platform.Sessions.Count);
+            platform.Sessions[0].Fail();
+            platform.Monitors.RemoveAt(0);
+            platform.RaiseDisplayChange();
+            PumpUntil(() => platform.Sessions.Count == 3);
+            FakeSession survivor = platform.Sessions.Last();
+            survivor.Present();
+            PumpUntil(() => capture.State == TahoeCaptureState.Live);
+            Assert.AreEqual(new IntPtr(2), survivor.Monitor);
+            Assert.IsTrue(platform.Sessions.Take(2).All(session => session.Disposed));
+        });
+    }
+
+    [STATestMethod]
+    public void InitializationRetriesAreBoundedAndDisplayChangeCanRecover()
+    {
+        WithCapture((capture, platform, _, image) =>
+        {
+            platform.FailCreation = true;
+            capture.Apply(true);
+            PumpUntil(() => capture.State == TahoeCaptureState.Failed);
+            Assert.AreEqual(4, platform.Creations, "One initial attempt and at most three retries.");
+            Assert.IsFalse(capture.HasFrame);
+            Assert.IsNull(image.Source);
+            PumpFor(TimeSpan.FromMilliseconds(40));
+            Assert.AreEqual(4, platform.Creations, "An exhausted service must not spin.");
+            platform.FailCreation = false;
+            platform.RaiseDisplayChange();
+            PumpUntil(() => platform.Sessions.Count == 1);
+            platform.Sessions[0].Present();
+            PumpUntil(() => capture.HasFrame);
+            Assert.AreEqual(TahoeCaptureState.Live, capture.State);
+        });
+    }
+
+    [STATestMethod]
+    public void CleanupFailureDoesNotSkipOtherSessionsAffinityOrImage()
+    {
+        WithCapture((capture, platform, _, image) =>
+        {
+            platform.Monitors.Add(new TahoeCaptureMonitor(new IntPtr(2), platform.Monitors[0].Bounds));
+            capture.Apply(true);
+            platform.Sessions[0].Present();
+            PumpUntil(() => capture.HasFrame);
+            platform.Sessions[0].ThrowOnDispose = true;
+            capture.Apply(false);
+            Assert.IsTrue(platform.Sessions.All(session => session.Disposed));
+            Assert.AreEqual(0u, platform.Affinity);
+            Assert.AreEqual(0, platform.DisplaySubscribers);
+            Assert.IsNull(image.Source);
+            Assert.IsFalse(capture.IsActive);
+            Assert.AreEqual(TahoeCaptureState.Stopped, capture.State);
+        });
+    }
+
+    [STATestMethod]
+    public void HealthyMonitorFramesDoNotResetBrokenMonitorRetryBudget()
+    {
+        WithCapture((capture, platform, _, _) =>
+        {
+            platform.Monitors.Add(new TahoeCaptureMonitor(new IntPtr(2), platform.Monitors[0].Bounds));
+            capture.Apply(true);
+            FakeSession healthy = platform.Sessions[0];
+            for (int attempt = 0; attempt < 4; attempt++)
+            {
+                FakeSession broken = platform.Sessions.Last();
+                healthy.Present();
+                PumpUntil(() => healthy.Completed > attempt);
+                broken.Fail();
+                if (attempt < 3) PumpUntil(() => platform.Sessions.Last() != broken);
+                else PumpUntil(() => capture.State == TahoeCaptureState.Failed);
+            }
+            Assert.AreEqual(5, platform.Creations, "Only the broken monitor should use the bounded recovery budget.");
+            Assert.IsFalse(healthy.Disposed);
+        });
+    }
+
+    [STATestMethod]
+    public void HideShowAndRepeatedTogglesDoNotLeaveSubscriptions()
+    {
+        WithCapture((capture, platform, window, _) =>
+        {
+            for (int iteration = 0; iteration < 3; iteration++)
+            {
+                capture.Apply(true);
+                Assert.AreEqual(1, platform.DisplaySubscribers);
+                platform.Sessions.Last().Present();
+                PumpUntil(() => capture.HasFrame);
+                window.Hide();
+                PumpUntil(() => capture.State == TahoeCaptureState.Suspended);
+                Assert.AreEqual(0u, platform.Affinity);
+                window.Show();
+                PumpUntil(() => !platform.Sessions.Last().Disposed);
+                platform.Sessions.Last().Present();
+                PumpUntil(() => capture.HasFrame);
+                capture.Apply(false);
+                Assert.AreEqual(0, platform.DisplaySubscribers);
+            }
+        });
+    }
+
+    [STATestMethod]
+    public void UnsupportedCaptureDoesNotExcludeWindowOrCreateSession()
+    {
+        WithCapture((capture, platform, _, _) =>
+        {
+            platform.IsSupported = false;
+            capture.Apply(true);
+            Assert.AreEqual(TahoeCaptureState.Unsupported, capture.State);
+            Assert.AreEqual(0, platform.Creations);
+            Assert.AreEqual(0u, platform.Affinity);
+            Assert.IsFalse(capture.HasFrame);
+        });
+    }
+
+    [STATestMethod]
+    public void DirtyRowsUploadToCorrectDestinationAndPreserveOtherPixels()
+    {
+        WithCapture((capture, platform, _, image) =>
+        {
+            capture.Apply(true);
+            FakeSession session = platform.Sessions.Single();
+            byte[] first = session.Present(fill: 17);
+            PumpUntil(() => capture.HasFrame);
+            int stride = session.Region!.Width * 4;
+            byte[] next = (byte[])first.Clone();
+            Array.Fill(next, (byte)93, stride * 2, stride);
+            session.Present(next, 2, 1);
+            PumpUntil(() => capture.PresentedFrames == 2);
+            var bitmap = (BitmapSource)image.Source;
+            byte[] actual = new byte[next.Length];
+            bitmap.CopyPixels(actual, stride, 0);
+            CollectionAssert.AreEqual(next, actual);
+            Assert.AreEqual((long)first.Length + stride, capture.UploadedBytes);
+        });
+    }
+
+    [TestMethod]
+    public void DirtyRowsSkipUnchangedFramesAndForceFullGeometryUpdates()
+    {
+        byte[] previous = new byte[4 * 8 * 10];
+        byte[] next = (byte[])previous.Clone();
+        Assert.AreEqual((0, 0), TahoeCaptureResources.DirtyRows(next, previous, 8, 10, false));
+        next[4 * 8 * 3 + 1] = 255;
+        next[4 * 8 * 5 + 1] = 255;
+        Assert.AreEqual((3, 3), TahoeCaptureResources.DirtyRows(next, previous, 8, 10, false));
+        Assert.AreEqual((0, 10), TahoeCaptureResources.DirtyRows(next, previous, 8, 10, true));
+    }
+
+    [TestMethod]
+    public void EveryNativeResourceIsReleasedEvenWhenMultipleCloseCallsFail()
+    {
+        var first = new FakeResource(true);
+        var second = new FakeResource(false);
+        var third = new FakeResource(true);
+        var error = TahoeCaptureResources.ReleaseAll(first, null, second, third);
+        Assert.IsTrue(first.Disposed && second.Disposed && third.Disposed);
+        Assert.AreEqual(2, ((AggregateException)error!).InnerExceptions.Count);
+    }
+
+    private static void WithCapture(Action<TahoeDesktopCapture, FakePlatform, Window, Image> action)
+    {
+        var image = new Image();
+        var viewport = new Grid();
+        viewport.Children.Add(image);
+        var window = new Window
+        {
+            Width = 160, Height = 100, Left = -10000, Top = -10000, Content = viewport,
+            ShowInTaskbar = false, ShowActivated = false, WindowStyle = WindowStyle.None
+        };
+        var platform = new FakePlatform();
+        using var capture = new TahoeDesktopCapture(window, viewport, image, new RotateTransform(),
+            new TranslateTransform(), platform, (_, _) => { }, TimeSpan.FromMilliseconds(2));
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+            PumpFor(TimeSpan.FromMilliseconds(10));
+            // WPF may constrain a deliberately offscreen test window to a real
+            // monitor. Derive the fake display from its actual screen position.
+            Point origin = viewport.PointToScreen(new Point());
+            platform.Monitors[0] = new TahoeCaptureMonitor(new IntPtr(1), new Rect(origin.X - 100, origin.Y - 100, 2000, 2000));
+            action(capture, platform, window, image);
+        }
+        finally
+        {
+            capture.Apply(false);
+            window.Close();
+            PumpFor(TimeSpan.FromMilliseconds(10));
+        }
+    }
+
+    private static void PumpUntil(Func<bool> condition)
+    {
+        var elapsed = Stopwatch.StartNew();
+        while (!condition() && elapsed.Elapsed < TimeSpan.FromSeconds(3)) PumpFor(TimeSpan.FromMilliseconds(4));
+        Assert.IsTrue(condition(), "The dispatcher did not reach the expected capture state.");
+    }
+
+    private static void PumpFor(TimeSpan duration)
+    {
+        var frame = new DispatcherFrame();
+        var timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = duration };
+        timer.Tick += (_, _) => frame.Continue = false;
+        timer.Start();
+        try { Dispatcher.PushFrame(frame); }
+        finally { timer.Stop(); }
+    }
+
+    private sealed class FakePlatform : ITahoeCapturePlatform
+    {
+        public bool IsSupported { get; set; } = true;
+        public bool FailCreation { get; set; }
+        public int Creations { get; private set; }
+        public uint Affinity { get; private set; }
+        public int DisplaySubscribers => DisplaysChanged?.GetInvocationList().Length ?? 0;
+        public event EventHandler? DisplaysChanged;
+        public List<FakeSession> Sessions { get; } = [];
+        public List<TahoeCaptureMonitor> Monitors { get; } = [new(new IntPtr(1), new Rect(-10100, -10100, 2000, 2000))];
+        public bool TryExcludeWindow(IntPtr window, out uint originalAffinity)
+        {
+            originalAffinity = Affinity;
+            Affinity = 0x11;
+            return true;
+        }
+        public bool RestoreWindow(IntPtr window, uint affinity) { Affinity = affinity; return true; }
+        public IReadOnlyList<TahoeCaptureMonitor> GetMonitors() => Monitors;
+        public void RaiseDisplayChange() => DisplaysChanged?.Invoke(this, EventArgs.Empty);
+        public ITahoeMonitorCapture CreateMonitor(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed)
+        {
+            Creations++;
+            if (FailCreation) throw new InvalidOperationException("Injected initialization failure.");
+            var session = new FakeSession(monitor, present, failed);
+            Sessions.Add(session);
+            return session;
+        }
+    }
+
+    private sealed class FakeSession(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed) : ITahoeMonitorCapture
+    {
+        public IntPtr Monitor { get; } = monitor;
+        public TahoeCaptureRegion? Region { get; private set; }
+        public bool Disposed { get; private set; }
+        public bool ThrowOnDispose { get; set; }
+        public int Completed { get; private set; }
+        public void SetRegion(TahoeCaptureRegion region) => Region = region;
+        public void Fail() => failed(new InvalidOperationException("Injected retired-session failure."));
+        public byte[] Present(byte fill = 33)
+        {
+            byte[] pixels = new byte[Region!.Width * Region.Height * 4];
+            Array.Fill(pixels, fill);
+            Present(pixels, 0, Region.Height);
+            return pixels;
+        }
+        public void Present(byte[] pixels, int dirtyY, int dirtyHeight) =>
+            present(new TahoeCaptureFrame(pixels, Region!, dirtyY, dirtyHeight), () => Completed++);
+        public void Dispose()
+        {
+            Disposed = true;
+            if (ThrowOnDispose) throw new InvalidOperationException("Injected Close failure.");
+        }
+    }
+
+    private sealed class FakeResource(bool throws) : IDisposable
+    {
+        public bool Disposed { get; private set; }
+        public void Dispose()
+        {
+            Disposed = true;
+            if (throws) throw new InvalidOperationException("Injected native Close failure.");
+        }
+    }
+}

@@ -31,6 +31,8 @@ public partial class MyListItem
             ContentHandler = null;
         }
 
+        if (RefreshTahoeNavigation(true)) return;
+
         // 判断当前颜色
         string stateNew;
         int time;

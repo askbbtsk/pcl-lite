@@ -109,16 +109,32 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition />
                 </Grid.RowDefinitions>
-                <Canvas x:Name="ImgBack" IsHitTestVisible="False" Grid.Row="1"
+                <!-- Independent opaque backdrop: no controls are sampled recursively. -->
+                <Grid x:Name="TahoeBackdrop" Grid.RowSpan="2" IsHitTestVisible="False"
+                      Background="{Binding Background, ElementName=PanForm}" ClipToBounds="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="48" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Image x:Name="TahoeDesktopImage" Grid.RowSpan="2" Stretch="Fill" Visibility="Collapsed" />
+                <Border x:Name="TahoeWallpaperHost" Grid.Row="1">
+                <Canvas x:Name="ImgBack" IsHitTestVisible="False"
                         RenderOptions.BitmapScalingMode="LowQuality">
                     <MediaElement x:Name="VideoBack" LoadedBehavior="Manual" UnloadedBehavior="Stop"
                                   Stretch="UniformToFill" IsHitTestVisible="False" Visibility="Visible"
                                   MediaEnded="VideoEnded" Volume="0" />
                 </Canvas>
+                </Border>
+                </Grid>
+                <local:TahoeGlassSurface x:Name="TahoeWindowGlass" Grid.RowSpan="2" CornerRadius="22" Visibility="Collapsed" />
                 <local:AnimatedBackgroundGrid Grid.Row="0" x:Name="PanTitle" Height="48"
                                               MouseLeftButtonDown="FormDragMove"
                                               WindowChrome.IsHitTestVisibleInChrome="True"
                                               BackgroundBrush="{DynamicResource ColorBrush3}">
+                    <local:TahoeGlassSurface x:Name="TahoeToolbar" Margin="8,5" CornerRadius="19"
+                                             Visibility="Collapsed" />
+                    <local:TahoeGlassSurface x:Name="TahoeWindowControls" Width="66" HorizontalAlignment="Right"
+                                             Margin="0,7,8,7" CornerRadius="17" Visibility="Collapsed" />
                     <!-- <Grid.Background> -->
                     <!--     <LinearGradientBrush EndPoint="1,0" StartPoint="0,0"> -->
                     <!--         <GradientStop Color="{StaticResource ColorObject4}" Offset="0"/> -->
@@ -216,7 +232,10 @@
                     </Grid.ColumnDefinitions>
                     <controls:BlurBorder IsHitTestVisible="False">
                         <local:AnimatedBackgroundGrid x:Name="RectLeftBackground" Width="0"
-                                                      BackgroundBrush="{DynamicResource ColorBrushTransparentBackground}" />
+                                                      BackgroundBrush="{DynamicResource ColorBrushTransparentBackground}">
+                            <local:TahoeGlassSurface x:Name="TahoeSidebar" Margin="8,3,6,8" CornerRadius="22"
+                                                     Visibility="Collapsed" />
+                        </local:AnimatedBackgroundGrid>
                     </controls:BlurBorder>
                     <Rectangle x:Name="RectLeftShadow" Width="4" HorizontalAlignment="Left" IsHitTestVisible="False"
                                Grid.Column="1">

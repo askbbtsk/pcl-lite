@@ -37,6 +37,7 @@ public static class ThemeManager
             RefreshTitleBar();
             RefreshBackground();
             RefreshAllContextMenuThemes();
+            TahoeThemeManager.Refresh();
         });
     }
 
@@ -83,7 +84,7 @@ public static class ThemeManager
     }
 
     // 主页面背景
-    private static void RefreshBackground()
+    internal static void RefreshBackground()
     {
         if (Config.Preference.Background.BackgroundColorful)
         {

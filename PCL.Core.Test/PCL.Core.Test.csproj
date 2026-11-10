@@ -54,6 +54,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Net\**" />
+    <Compile Include="..\Plain Craft Launcher 2\Controls\TahoeGlassMath.cs" Link="UI\TahoeGlassMath.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Controls\TahoeGlassSurface.cs" Link="UI\TahoeGlassSurface.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Controls\TahoeGlassEffect.cs" Link="UI\TahoeGlassEffect.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\TahoeCaptureContracts.cs" Link="UI\TahoeCaptureContracts.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\TahoeDesktopCapture.cs" Link="UI\TahoeDesktopCapture.cs" />
+    <Resource Include="..\Plain Craft Launcher 2\Resources\TahoeGlass\Glass.ps" Link="Resources\TahoeGlass\Glass.ps" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Remove="Net\**" />

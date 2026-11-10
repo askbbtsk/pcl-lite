@@ -8,7 +8,7 @@ using FluentValidation;
 using PCL.Core.App.Localization;
 namespace PCL;
 
-public class MyTextBox : TextBox
+public partial class MyTextBox : TextBox
 {
     public delegate void ValidateChangedEventHandler(object sender, EventArgs e);
 
@@ -52,6 +52,7 @@ public class MyTextBox : TextBox
 
     public MyTextBox()
     {
+        InitializeTahoeTextBox();
         Loaded += (_, _) => Validate();
         TextChanged += (a, b) => MyTextBox_TextChanged((MyTextBox)a, b);
         IsEnabledChanged += (_, _) => RefreshColor();
@@ -307,6 +308,7 @@ public class MyTextBox : TextBox
             // 不对 ComboBox 从属进行动画
             if (TemplatedParent is not null && TemplatedParent is MyComboBox)
                 return;
+            if (RefreshTahoeTextBoxChrome()) return;
             // 判断当前颜色
             string foreColorName;
             string backColorName;
@@ -378,6 +380,7 @@ public class MyTextBox : TextBox
 
     private void RefreshTextColor()
     {
+        if (RefreshTahoeTextBoxChrome()) return;
         var newColor = IsEnabled ? ThemeManager.colorGray1 : ThemeManager.colorGray4;
         if (((SolidColorBrush)Foreground).Color.R == newColor.r)
             return;

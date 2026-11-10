@@ -525,6 +525,19 @@ public static partial class Config
         }
 
         /// <summary>
+        /// macOS Tahoe 风格液态玻璃。
+        /// </summary>
+        [ConfigGroup("TahoeGlass")] partial class TahoeGlassConfigGroup
+        {
+            /// <summary>
+            /// 是否使用液态玻璃界面。
+            /// </summary>
+            [ConfigItem<bool>("UiTahoeGlassEnabled", false, ConfigSource.Local)] public partial bool IsEnabled { get; set; }
+            /// <summary>Capture the desktop behind the window as the refraction source.</summary>
+            [ConfigItem<bool>("UiTahoeDesktopBackdrop", true, ConfigSource.Local)] public partial bool UseDesktopBackdrop { get; set; }
+        }
+
+        /// <summary>
         /// 自定义主页。
         /// </summary>
         [ConfigGroup("Homepage")] partial class HomepageConfigGroup

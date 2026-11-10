@@ -6,7 +6,7 @@ using System.Windows.Input;
 using PCL.Core.App.Localization;
 namespace PCL;
 
-public class MyComboBox : ComboBox
+public partial class MyComboBox : ComboBox
 {
     public delegate void TextChangedEventHandler(object sender, TextChangedEventArgs e);
 
@@ -46,6 +46,9 @@ public class MyComboBox : ComboBox
         DropDownOpened += MyComboBox_DropDownOpened;
         DropDownClosed += MyComboBox_DropDownClosed;
         TextChanged += MyComboBox_TextChanged;
+        Loaded += TahoeComboLoaded;
+        Unloaded += TahoeComboUnloaded;
+        IsKeyboardFocusWithinChanged += (_, _) => RefreshColor();
     }
 
     public string HintText
@@ -90,6 +93,7 @@ public class MyComboBox : ComboBox
     public override void OnApplyTemplate()
     {
         base.OnApplyTemplate();
+        RefreshTahoeComboChrome();
         if (!IsEditable)
             return;
         try
@@ -129,6 +133,7 @@ public class MyComboBox : ComboBox
     // 指向动画
     public void RefreshColor()
     {
+        if (RefreshTahoeComboChrome()) return;
         // 判断当前颜色
         string foreColorName;
         string backColorName;

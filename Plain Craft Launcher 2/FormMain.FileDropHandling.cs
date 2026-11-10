@@ -493,7 +493,7 @@ public partial class FormMain
     private void VideoEnded(object sender, RoutedEventArgs e)
     {
         VideoBack.Position = TimeSpan.Zero;
-        VideoBack.Play();
+        ModVideoBack.VideoPlay();
     }
 
 

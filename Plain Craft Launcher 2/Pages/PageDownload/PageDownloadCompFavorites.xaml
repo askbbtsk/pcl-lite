@@ -1,4 +1,4 @@
-<local:MyPageRight
+﻿<local:MyPageRight
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:PCL" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -40,7 +40,7 @@
                     </StackPanel>
                 </StackPanel>
                 <local:MyCard HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40"
-                              x:Name="CardNoContent">
+                              x:Name="CardNoContent" TahoeIsFlat="True">
                     <Grid Margin="20,17">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -55,11 +55,11 @@
                             <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Row="0" Grid.ColumnSpan="4" Margin="0,0,0,9" HorizontalAlignment="Center"
-                                   Text="{DynamicResource Download.Comp.Favorites.Empty.Title}" FontSize="19"
+                                   Text="{DynamicResource Download.Comp.Favorites.Empty.Title}" Style="{StaticResource TahoeEmptyTitleStyle}"
                                    UseLayoutRounding="True" SnapsToDevicePixels="True"
-                                   Foreground="{DynamicResource ColorBrush3}" />
+                                   />
                         <Rectangle Grid.Row="1" Grid.ColumnSpan="4" HorizontalAlignment="Stretch" Height="2"
-                                   Fill="{DynamicResource ColorBrush3}" />
+                                   Style="{StaticResource TahoeEmptyRuleStyle}" />
                         <TextBlock Grid.Row="2" Grid.ColumnSpan="4" Margin="10,15,10,5"
                                    Text="{DynamicResource Download.Comp.Favorites.Empty.Description}"
                                    TextWrapping="Wrap" />

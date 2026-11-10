@@ -67,6 +67,7 @@ public partial class FormMain
         HintWrapper.OnShow += HintService.HintWrapper_OnShow;
         // 加载 UI
         InitializeComponent();
+        PanBack.SizeChanged += FormMain_SizeChanged;
         RefreshNavigationOverflow();
         PanTitleMain.SizeChanged += PanTitleSelect_SizeChanged;
         Loaded += (_, _) => QueueNavigationOverflowRefresh();
@@ -153,7 +154,7 @@ public partial class FormMain
         ModSetup.ApplyAll();
         Lifecycle.CurrentApplication.Resources["BlurSamplingRate"] = Config.Preference.Blur.SamplingRate * 0.01d;
         Lifecycle.CurrentApplication.Resources["BlurType"] = Config.Preference.Blur.KernelType;
-        if (Config.Preference.Blur.IsEnabled)
+        if (Config.Preference.Blur.IsEnabled && !Config.Preference.TahoeGlass.IsEnabled)
             Lifecycle.CurrentApplication.Resources["BlurRadius"] = Config.Preference.Blur.Radius * 1.0d;
         else
             Lifecycle.CurrentApplication.Resources["BlurRadius"] = 0.0d;

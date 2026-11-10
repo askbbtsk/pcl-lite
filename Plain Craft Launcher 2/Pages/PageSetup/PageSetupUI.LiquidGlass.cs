@@ -17,7 +17,8 @@ public partial class PageSetupUI
         {
             PanLiquidGlassSettings.Visibility = CheckTahoeGlass.Checked == true ? Visibility.Visible : Visibility.Collapsed;
             ComboLiquidGlassPreset.SelectedIndex = LiquidGlassPerformance.NormalizePreset(Config.Preference.TahoeGlass.PerformancePreset);
-            SliderLiquidGlassFrameRate.getHintText = value => FrameRateLabel(LiquidGlassPerformance.FrameRateFromSlider((int)value));
+            SliderLiquidGlassFrameRate.getHintText = new Func<object, object>(value =>
+                FrameRateLabel(LiquidGlassPerformance.FrameRateFromSlider((int)value)));
             SliderLiquidGlassFrameRate.Value = LiquidGlassPerformance.SliderFromFrameRate(Config.Preference.TahoeGlass.MaximumFrameRate);
             TextLiquidGlassFrameRate.Text = FrameRateLabel(Config.Preference.TahoeGlass.MaximumFrameRate);
             TextLiquidGlassCost.Text = Lang.Text("Setup.Ui.LiquidGlass.Cost."

@@ -442,7 +442,7 @@
     "PCL.PageSetupUI::MethodDeclaration::Reload()"
   ],
   "Reason": "Tahoe opt-in feature: Reload the two new opt-in appearance controls from local preferences. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
-  "Sha256": "477EB0876CF9D10FE8A3B839215F70189FCC8A9B8966E6223509888A1F46647D"
+  "Sha256": "52B41F929B5A69D41ECA8330EC9ADBBF1FDB97576751769D49268E08E224F279"
 }
 , {
   "SourcePath": "PCL.Core/App/ProjectLinks.cs",

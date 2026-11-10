@@ -613,6 +613,7 @@ public static partial class Config
             [ConfigItem<bool>("UiHiddenPageDownload", false, ConfigSource.Local)] public partial bool PageDownload { get; set; }
             [ConfigItem<bool>("UiHiddenPageBedrock", false, ConfigSource.Local)] public partial bool PageBedrock { get; set; }
             [ConfigItem<bool>("UiHiddenPageLunar", false, ConfigSource.Local)] public partial bool PageLunar { get; set; }
+            [ConfigItem<bool>("UiHiddenPagePlugins", false, ConfigSource.Local)] public partial bool PagePlugins { get; set; }
             [ConfigItem<bool>("UiHiddenPageSetup", false, ConfigSource.Local)] public partial bool PageSetup { get; set; }
             [ConfigItem<bool>("UiHiddenPageTools", false, ConfigSource.Local)] public partial bool PageTools { get; set; }
 

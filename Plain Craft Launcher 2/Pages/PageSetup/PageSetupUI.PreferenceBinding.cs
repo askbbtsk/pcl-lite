@@ -116,6 +116,7 @@ public partial class PageSetupUI
             CheckHiddenPageDownload.Checked = uiHidden.PageDownload;
             CheckHiddenPageBedrock.Checked = uiHidden.PageBedrock;
             CheckHiddenPageLunar.Checked = uiHidden.PageLunar;
+            CheckHiddenPagePlugins.Checked = uiHidden.PagePlugins;
             CheckHiddenPageSetup.Checked = uiHidden.PageSetup;
             CheckHiddenPageTools.Checked = uiHidden.PageTools;
 

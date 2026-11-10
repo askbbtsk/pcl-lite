@@ -9,7 +9,11 @@
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">Index every instance in all Minecraft folders discovered by PCL, including unselected and hidden instances. Shared mod folders with the same parser context are scanned once. Idle browsing does not build indexes; mod downloads still update them.</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">Discovering instances across all Minecraft folders. You can cancel. Your home-page selection will stay unchanged.</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllProgress">Instances processed: {0} / {1}&#xA;Current instance: {2}&#xA;Mod files processed for this instance: {3}</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">All-instance indexing ended: {0} instances succeeded, {1} items failed. Completed entries are kept on cancellation.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">Indexing ended: saved indexes for {0} instances ({1} with skipped files), skipped {2} mod files; {3} directory or save failures. Completed entries are kept on cancellation.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Partial">Saved indexes for {0} mods and skipped {1} unreadable files. Other indexes remain usable.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Skipped">These mod files were skipped and were not changed or deleted. Indexes for other files were saved and remain usable. Nested dependencies for the listed files are still incomplete:</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.FileUnavailable">The file is missing, unreadable, or is not a supported mod archive.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.FileIncomplete">Nested metadata could not be fully parsed, the archive exceeded parsing limits, or the file changed during scanning. Only this file was skipped.</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllFailed">These instances or folders could not be indexed. Other instances were processed. See the log for details:</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Create">Create index now</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.PromptSetting">Offer to create missing indexes when opening the mods page</sys:String>

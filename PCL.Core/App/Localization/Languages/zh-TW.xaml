@@ -9,7 +9,11 @@
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">為 PCL 已發現的所有 Minecraft 目錄中的實例建立索引，包括未選擇與隱藏的實例。相同解析環境下的共用模組目錄只掃描一次。待機與瀏覽時不自動補建；下載模組後仍自動更新。</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">正在發現所有 Minecraft 目錄中的實例，可隨時取消。不會切換首頁選擇的實例。</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllProgress">已處理實例：{0} / {1}&#xA;目前實例：{2}&#xA;目前實例已處理模組檔案：{3}</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">全實例索引工作結束：{0} 個實例成功，{1} 項失敗。取消時保留已完成項。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">全實例索引工作結束：已儲存 {0} 個實例索引（其中 {1} 個含略過項目），略過 {2} 個模組檔案，{3} 項目錄或儲存失敗。取消時保留已完成項。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Partial">已儲存 {0} 個模組的索引，略過 {1} 個無法解析的檔案；其餘索引正常可用。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Skipped">以下模組檔案已略過，未修改或刪除。其他檔案的索引已儲存並可正常使用；這些檔案的內嵌相依關係仍未完成：</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.FileUnavailable">檔案不存在、無法讀取，或不是目前支援的模組封存檔。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.FileIncomplete">內嵌中繼資料無法完整解析、封存檔超出解析限制，或檔案在掃描期間變更。僅略過此檔案。</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllFailed">以下實例或目錄未能完成索引，其餘實例繼續處理。詳情請見記錄：</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Create">立刻建立索引</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.PromptSetting">開啟模組頁面時，提示建立缺少的索引</sys:String>

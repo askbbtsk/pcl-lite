@@ -10,6 +10,8 @@ internal static partial class ModIndexService
     internal static void CreateAllNow()
     {
         var successful = 0;
+        var partial = 0;
+        var skipped = new System.Collections.Concurrent.ConcurrentQueue<ModIndexFileFailure>();
         var failed = new System.Collections.Concurrent.ConcurrentQueue<string>();
         var completed = NativeWorkDialog.RunWithStatus(Lang.Text("Setup.GameManage.ModIndex.Create"),
             Lang.Text("Setup.GameManage.ModIndex.Discovering"), async (token, status) =>
@@ -85,7 +87,7 @@ internal static partial class ModIndexService
                         void Report(int files) => status.Report(Lang.Text("Setup.GameManage.ModIndex.AllProgress",
                             done, count, instance.Name, files));
                         Report(0);
-                        bool built;
+                        ModIndexBuildResult built;
                         try
                         {
                             built = await BuildCoreAsync(instance, cancellation,
@@ -94,18 +96,26 @@ internal static partial class ModIndexService
                         catch (OperationCanceledException) { throw; }
                         catch (Exception error)
                         {
-                            built = false;
+                            built = new(false, 0, [], error.Message);
                             ModBase.Log(error, $"建立实例索引失败：{instance.PathInstance}", ModBase.LogLevel.Developer);
                         }
+                        foreach (var file in built.SkippedFiles) skipped.Enqueue(file);
                         foreach (var target in group)
                         {
                             cancellation.ThrowIfCancellationRequested();
                             var current = instances[target.InstancePath];
                             Register(current);
-                            var saved = built && (ReferenceEquals(current, instance)
+                            // Incomplete files do not invalidate valid entries or prevent shared-cache reuse.
+                            var saved = built.CacheSaved && (ReferenceEquals(current, instance)
                                 || ModJarInJarCache.CopySnapshot(instance.PathInstance, current.PathInstance));
-                            if (saved) { Interlocked.Increment(ref successful); Policy.AllowPromptAgain(current.PathInstance); }
-                            else failed.Enqueue(current.PathInstance);
+                            if (saved)
+                            {
+                                Interlocked.Increment(ref successful);
+                                if (built.SkippedFiles.Count > 0) Interlocked.Increment(ref partial);
+                                else Policy.AllowPromptAgain(current.PathInstance);
+                            }
+                            else failed.Enqueue(current.PathInstance
+                                + (built.SaveError is { Length: > 0 } ? " — " + built.SaveError : ""));
                             done++;
                         }
                         Report(0);
@@ -114,12 +124,11 @@ internal static partial class ModIndexService
                 }, token).ConfigureAwait(false);
             }, () => ModMain.frmMain?.IsLoaded == true);
 
-        HintService.Hint(Lang.Text("Setup.GameManage.ModIndex.AllResult", successful, failed.Count),
-            completed ? HintType.Success : HintType.Info);
-        if (failed.Count > 0)
-            ModMain.MyMsgBox(Lang.Text("Setup.GameManage.ModIndex.AllFailed") + Environment.NewLine
-                + string.Join(Environment.NewLine, failed.Distinct(StringComparer.OrdinalIgnoreCase)),
-                Lang.Text("Setup.GameManage.ModIndex.Title"));
+        HintService.Hint(Lang.Text("Setup.GameManage.ModIndex.AllResult", successful, partial,
+                skipped.Select(file => file.Path).Distinct(StringComparer.OrdinalIgnoreCase).Count(), failed.Count),
+            completed && skipped.IsEmpty ? HintType.Success : HintType.Info);
+        ShowSkippedFiles(skipped.DistinctBy(file => file.Path, StringComparer.OrdinalIgnoreCase),
+            failed.Distinct(StringComparer.OrdinalIgnoreCase));
         if (PageInstanceLeft.McInstance is not null && ModMain.frmInstanceMod?.IsVisible == true)
             ModMain.frmInstanceMod.ReloadCompFileList(true);
     }

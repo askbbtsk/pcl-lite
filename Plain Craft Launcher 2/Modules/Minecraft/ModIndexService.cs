@@ -90,7 +90,8 @@ internal static partial class ModIndexService
                     var queued = DownloadFiles[directory];
                     var files = queued.Keys.Where(path => queued.TryRemove(path, out _)).ToArray();
                     var generation = ModLocalComp.CurrentJijGeneration;
-                    if (await BuildAsync(instance, CancellationToken.None, new Progress<int>(), files).ConfigureAwait(false))
+                    var result = await BuildAsync(instance, CancellationToken.None, new Progress<int>(), files).ConfigureAwait(false);
+                    if (result.CacheSaved)
                         ModBase.RunInUi(() =>
                         {
                             if (generation == ModLocalComp.CurrentJijGeneration
@@ -115,7 +116,7 @@ internal static partial class ModIndexService
         });
     }
 
-    internal static async Task<bool> BuildAsync(McInstance instance, CancellationToken token, IProgress<int> progress,
+    internal static async Task<ModIndexBuildResult> BuildAsync(McInstance instance, CancellationToken token, IProgress<int> progress,
         IReadOnlyList<string>? selectedPaths = null)
     {
         if (selectedPaths is not null)
@@ -125,45 +126,45 @@ internal static partial class ModIndexService
         return await Builds.RunForegroundAsync(cancellation => BuildCoreAsync(instance, cancellation, progress, null), token).ConfigureAwait(false);
     }
 
-    private static async Task<bool> BuildCoreAsync(McInstance instance, CancellationToken token, IProgress<int> progress,
+    private static async Task<ModIndexBuildResult> BuildCoreAsync(McInstance instance, CancellationToken token, IProgress<int> progress,
         IReadOnlyList<string>? selectedPaths)
     {
         Register(instance);
         var clock = Stopwatch.StartNew();
-        var complete = false;
-        try
-        {
-            var directory = ModsDirectory(instance);
-            var files = selectedPaths?.ToArray() ?? (Directory.Exists(directory)
+        var directory = ModsDirectory(instance);
+        var files = selectedPaths?.ToArray() ?? (Directory.Exists(directory)
                 ? ModBase.EnumerateFiles(directory)
                     .Where(file => ModLocalComp.LocalCompFile.IsModFile(file.FullName)
                         && (string.Equals(file.DirectoryName, directory, StringComparison.OrdinalIgnoreCase)
                             || instance.Info.HasForge && instance.Info.Drop < 130
                                 && file.Directory?.Name == instance.Info.VanillaName))
-                    .OrderByDescending(file => file.Length).Select(file => file.FullName).ToArray()
+                    .OrderByDescending(file =>
+                    {
+                        try { return file.Length; }
+                        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return 0L; }
+                    }).Select(file => file.FullName).ToArray()
                 : []);
-            var completed = 0;
-            var failed = 0;
-            var scan = new ModJarInJar.ScanContext(() => token.IsCancellationRequested);
-            var preferredLoader = ModLocalComp.GetPreferredLoader(instance);
-            await Parallel.ForEachAsync(files, new ParallelOptions
-            {
-                MaxDegreeOfParallelism = WorkerCount, CancellationToken = token
-            }, (path, _) =>
+        var preferredLoader = ModLocalComp.GetPreferredLoader(instance);
+        var result = await ModIndexFileBatch.RunAsync(files, WorkerCount, (path, workerToken) =>
             {
                 ModJarInJarCache.UseInstance(instance.PathInstance);
-                ModLocalComp.JijScanContext = scan;
+                // A malformed/large archive must not exhaust the scan budget for unrelated files.
+                // Per-file depth, node, entry and decompression limits remain enforced.
+                ModLocalComp.JijScanContext = new ModJarInJar.ScanContext(() => workerToken.IsCancellationRequested);
                 ModLocalComp.DeferJijOnMiss = false;
                 try
                 {
+                    string? reason = null;
                     RunWorker(() =>
                     {
                         var mod = new ModLocalComp.LocalCompFile(path) { PreferredLoader = preferredLoader };
                         mod.Load();
-                        if (mod.JijPending || mod.State == ModLocalComp.LocalCompFile.LocalFileStatus.Unavailable)
-                            Interlocked.Increment(ref failed);
-                    }, token);
-                    progress.Report(Interlocked.Increment(ref completed));
+                        if (mod.State == ModLocalComp.LocalCompFile.LocalFileStatus.Unavailable)
+                            reason = mod.FileUnavailableReason?.Message ?? Lang.Text("Setup.GameManage.ModIndex.FileUnavailable");
+                        else if (mod.JijPending)
+                            reason = Lang.Text("Setup.GameManage.ModIndex.FileIncomplete");
+                    }, workerToken);
+                    return reason;
                 }
                 finally
                 {
@@ -171,20 +172,18 @@ internal static partial class ModIndexService
                     ModLocalComp.DeferJijOnMiss = false;
                     ModJarInJarCache.UseInstance(null);
                 }
-                return ValueTask.CompletedTask;
-            }).ConfigureAwait(false);
-            token.ThrowIfCancellationRequested();
-            ModBase.Log($"[ModIndex] {files.Length} files, {WorkerCount} workers, {clock.ElapsedMilliseconds} ms, {failed} incomplete");
-            complete = failed == 0;
-        }
-        finally
-        {
-            // Cancellation also saves completed entries, without pruning files from a partial snapshot.
-            ModJarInJarCache.UseInstance(instance.PathInstance);
-            try { complete &= ModJarInJarCache.SaveCurrent(); }
-            finally { ModJarInJarCache.UseInstance(null); }
-        }
-        return complete;
+            }, () =>
+            {
+                // Save good entries even after a bad file or cancellation; do not prune partial scans.
+                ModJarInJarCache.UseInstance(instance.PathInstance);
+                try { return ModJarInJarCache.SaveCurrent(); }
+                finally { ModJarInJarCache.UseInstance(null); }
+            }, progress, token).ConfigureAwait(false);
+            ModBase.Log($"[ModIndex] {instance.PathInstance}: {files.Length} files, {WorkerCount} workers, "
+                + $"{clock.ElapsedMilliseconds} ms, {result.IndexedFiles} indexed, {result.SkippedFiles.Count} skipped, saved={result.CacheSaved}");
+            foreach (var failure in result.SkippedFiles)
+                ModBase.Log($"[ModIndex] 跳过文件，保留其他索引：{failure.Path} — {failure.Reason}", ModBase.LogLevel.Developer);
+            return result;
     }
 
     internal static void CreateNow(McInstance? instance)
@@ -195,15 +194,39 @@ internal static partial class ModIndexService
             return;
         }
         if (!instance.IsLoaded) instance.Load();
+        ModIndexBuildResult? result = null;
         if (NativeWorkDialog.Run(Lang.Text("Setup.GameManage.ModIndex.Create"),
                 Lang.Text("Setup.GameManage.ModIndex.Working", instance.Name),
-                (token, progress) => BuildAsync(instance, token, progress), () => ModMain.frmMain?.IsLoaded == true))
+                async (token, progress) =>
+                {
+                    result = await BuildAsync(instance, token, progress).ConfigureAwait(false);
+                    return result.CacheSaved;
+                }, () => ModMain.frmMain?.IsLoaded == true))
         {
-            Policy.AllowPromptAgain(instance.PathInstance);
-            HintService.Hint(Lang.Text("Setup.GameManage.ModIndex.Complete"), HintType.Success);
+            if (result!.IsComplete)
+            {
+                Policy.AllowPromptAgain(instance.PathInstance);
+                HintService.Hint(Lang.Text("Setup.GameManage.ModIndex.Complete"), HintType.Success);
+            }
+            else
+            {
+                HintService.Hint(Lang.Text("Setup.GameManage.ModIndex.Partial", result.IndexedFiles, result.SkippedFiles.Count), HintType.Info);
+                ShowSkippedFiles(result.SkippedFiles);
+            }
         }
         else HintService.Hint(Lang.Text("Setup.GameManage.ModIndex.Incomplete"), HintType.Info);
         if (ReferenceEquals(instance, PageInstanceLeft.McInstance))
             ModMain.frmInstanceMod?.ReloadCompFileList(true);
+    }
+
+    private static void ShowSkippedFiles(IEnumerable<ModIndexFileFailure> files, IEnumerable<string>? failedDirectories = null)
+    {
+        var details = string.Join(Environment.NewLine, files.Select(file => file.Path + Environment.NewLine + "    " + file.Reason));
+        var failures = string.Join(Environment.NewLine, failedDirectories ?? []);
+        var sections = new List<string>();
+        if (details.Length > 0) sections.Add(Lang.Text("Setup.GameManage.ModIndex.Skipped") + Environment.NewLine + details);
+        if (failures.Length > 0) sections.Add(Lang.Text("Setup.GameManage.ModIndex.AllFailed") + Environment.NewLine + failures);
+        if (sections.Count > 0)
+            ModMain.MyMsgBox(string.Join(Environment.NewLine + Environment.NewLine, sections), Lang.Text("Setup.GameManage.ModIndex.Title"));
     }
 }

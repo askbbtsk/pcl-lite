@@ -16,7 +16,7 @@
 | [LUNAR.md](LUNAR.md) | Lunar Client 启动链路：不启动 Lunar 启动器直接拉起游戏的完整事实、认证与账号文件 | 想排查 Lunar 启动失败、想改 Lunar 相关逻辑 |
 | [HOMEPAGE-LANG.md](HOMEPAGE-LANG.md) | 主页语言 API：同一份主页内容按语言展示不同内容，兼容原版主页协议 | 想写多语言主页、想给页面加语言分支 |
 | [../plugin_docs.md](../plugin_docs.md) | 插件 SDK、API、签名、Mixin 与测试指南 | 开发或排查插件 |
-| [UPDATE.md](UPDATE.md) | 更新清单 `update.json`：为什么要有它、格式、发版时怎么改、换仓库怎么不翻车 | 要发版、要换仓库、更新检查出问题 |
+| [UPDATE.md](UPDATE.md) | v2 更新清单 `updatev2.json`：格式、更新源与仓库身份标记 | 要发版、要换仓库、更新检查出问题 |
 | [MIRROR.md](MIRROR.md) | 镜像仓库指南：怎么复制仓库、怎么搬 Release、怎么被列进更新清单、身份校验规则 | 想给更新链路做备份源、想当镜像 |
 | [CREDITS.md](CREDITS.md) | 开源项目清单：代码来源、第三方库、资源与各自的许可证 | 想知道哪段代码是谁的、想加新依赖 |
 

@@ -17,13 +17,11 @@ namespace PCL;
 /// <summary>
 /// 从清单仓库读取「当前该去哪些仓库拿版本」的更新源。
 /// <para>
-/// 存在两个文件，读的顺序是 <c>updatev2.json</c> → <c>update.json</c>：
+/// 服务仓库只读取 <c>updatev2.json</c>，不再读取 v1 单指针：
 /// </para>
 /// <list type="bullet">
 /// <item><c>updatev2.json</c>：多源清单，一次列多个仓库，每个带 tier/weight。
 /// 客户端并发问所有源，<b>按权重从高到低取第一个拿到版本的源</b>；权重打平才比版本号。</item>
-/// <item><c>update.json</c>：v1 的单行指针，<b>老客户端只认这个</b>，所以它必须原样留着。
-/// 新客户端在 v2 拉不到时退回到它，行为与加多源之前完全一致。</item>
 /// </list>
 /// <para>
 /// 为什么多源：单指针只表达得了「去问这一个仓库」。那个仓库整体出事
@@ -229,66 +227,18 @@ public class UpdatesManifestModel : IUpdateSource
     }
 
     /// <summary>
-    /// 先试多源清单，失败退回 v1 单指针。两条都失败才抛。
-    /// <para>
-    /// 「用哪份」的判断在 <see cref="UpdateManifestPlanner.Build"/> 里（纯函数，被单元测试盯着）；
-    /// 这里只负责把两份原文拉下来。
-    /// </para>
+    /// 仅拉取并解析多源清单；失败交给上层更新源处理，不请求服务仓库 v1。
     /// </summary>
     private (List<UpdateSourceEntry> Entries, List<UpdatesGitHubModel> Models) _Load(bool force)
     {
-        // 1) 先试多源清单
-        string? v2Body = null;
-        string? v2Failure = null;
-
+        UpdateManifestPlan plan;
         try
         {
-            v2Body = _FetchManifestText(ProjectLinks.ManifestV2FileName);
+            plan = UpdateManifestPlanner.Load(file => _FetchManifestText(file));
         }
         catch (Exception ex)
         {
-            v2Failure = ex.Message;
-            // 不是错误级别：updatev2.json 还没推上去、或者这个锚点没有这个文件都是正常情况，
-            // 退回 v1 之后一切照旧。用 Developer 级别免得日志里天天飘红。
-            ModBase.Log(ex, "[Update] 多源清单不可用，尝试单指针 update.json", ModBase.LogLevel.Developer);
-        }
-
-        UpdateManifestPlan? plan = null;
-        if (v2Body is not null)
-            try
-            {
-                plan = UpdateManifestPlanner.Build(v2Body, null);
-            }
-            catch (FormatException ex)
-            {
-                // 拿到了但内容不可用（写坏了 / 被反代回了 HTML），照样退回 v1
-                v2Failure = ex.Message;
-                ModBase.Log(ex, "[Update] 多源清单内容无法解析，尝试单指针 update.json", ModBase.LogLevel.Developer);
-            }
-
-        // 2) 退回单指针
-        if (plan is null)
-        {
-            string v1Body;
-            try
-            {
-                v1Body = _FetchManifestText(ProjectLinks.ManifestV1FileName);
-            }
-            catch (Exception ex)
-            {
-                throw new UpdateSourceException(
-                    $"更新清单不可用：多源清单（{v2Failure ?? "未获取"}）；单指针清单（{ex.Message}）", ex);
-            }
-
-            try
-            {
-                plan = UpdateManifestPlanner.Build(null, v1Body) with { V2Failure = v2Failure };
-            }
-            catch (FormatException ex)
-            {
-                throw new UpdateSourceException(
-                    $"更新清单不可用：多源清单（{v2Failure ?? "未获取"}）；{ex.Message}", ex);
-            }
+            throw new UpdateSourceException($"更新多源清单 updatev2.json 不可用：{ex.Message}", ex);
         }
 
         foreach (var problem in plan.Problems)
@@ -298,11 +248,8 @@ public class UpdatesManifestModel : IUpdateSource
             .Select(entry => new UpdatesGitHubModel(entry.Pointer, entry.Owner, entry.Repo))
             .ToList();
 
-        if (plan.UsedV2)
-            ModBase.Log($"[Update] 多源清单已加载，共 {plan.Sources.Count} 个源：" +
-                        string.Join("、", plan.Sources.Select(x => x.ToString())));
-        else
-            ModBase.Log($"[Update] 已回退到单指针清单（{plan.V2Failure}），指向 {plan.Sources[0].Pointer}");
+        ModBase.Log($"[Update] 多源清单已加载，共 {plan.Sources.Count} 个源：" +
+                    string.Join("、", plan.Sources.Select(x => x.ToString())));
 
         return (plan.Sources.ToList(), models);
     }
@@ -492,7 +439,7 @@ public class UpdatesManifestModel : IUpdateSource
         try
         {
             var body = _FetchFirstText(
-                _ChannelsFor(entry.Owner, entry.Repo, ProjectLinks.ManifestV1FileName, false),
+                _ChannelsFor(entry.Owner, entry.Repo, ProjectLinks.RepositoryIdentityFileName, false),
                 $"{entry.Pointer} 的 update.json");
             UpdateManifestPointer.Extract(body);
             trusted = true;
@@ -521,7 +468,7 @@ public class UpdatesManifestModel : IUpdateSource
     private static readonly TimeSpan ChannelTimeout = TimeSpan.FromSeconds(6);
 
     /// <summary>
-    /// 拉清单仓库里的某个文件（update.json / updatev2.json）。
+    /// 拉服务仓库的 v2 清单或公告；仓库身份校验独立走 _ChannelsFor。
     /// </summary>
     private static string _FetchManifestText(string fileName, bool freshOnly = false)
     {

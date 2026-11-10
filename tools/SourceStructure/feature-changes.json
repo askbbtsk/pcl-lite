@@ -311,4 +311,35 @@
   ],
   "Reason": "Synchronize the multiselect confirm button after adding controls and on Loaded so preselected migration rows can be confirmed immediately. The same tested index projection drives enabled state and submission; empty/all-unchecked selections remain blocked, single-select behavior is unchanged."
 }
+, {
+  "SourcePath": "PCL.Core/App/ProjectLinks.cs",
+  "Sha256": "F1CF39D98C4D4E12200324E4CBE0126ABB3ECF4AD049A371A34F0B53AA9E8097",
+  "Members": [
+    "PCL.Core.App.ProjectLinks::PropertyDeclaration::UpdateManifest",
+    "PCL.Core.App.ProjectLinks::PropertyDeclaration::UpdateManifestMirror",
+    "PCL.Core.App.ProjectLinks::PropertyDeclaration::UpdateManifestApi"
+  ],
+  "Reason": "User retires service v1. All service manifest properties now address updatev2.json. Existing three-argument URL builders and explicit repository-identity update.json requests remain compatible."
+},
+{
+  "SourcePath": "PCL.Core/App/Updates/UpdateManifestPlan.cs",
+  "Sha256": "8FEBCF60896A0CFB22BDCF14383E5CFFF53AAF2AE369670FD57B6AB14DECCD43",
+  "Members": ["PCL.Core.App.Updates.UpdateManifestPlanner::MethodDeclaration::Build(string? v2Body, string? v1Body)"],
+  "Reason": "User explicitly removes v2-to-v1 fallback. Compatibility overload ignores legacy body and delegates to v2-only parsing. Request-recording tests assert failure never causes a v1 fetch."
+},
+{
+  "SourcePath": "PCL.Core/App/Updates/UpdateManifestV2.cs",
+  "Sha256": "F2809E758E785A9AC27F9BB2E6481821DE2CC430E13058F35E27C6554ADE1A96",
+  "Members": ["PCL.Core.App.Updates.UpdateManifestV2::MethodDeclaration::_CollectEntries(JsonNode? root, List<string> problems)"],
+  "Reason": "Reject top-level v1 single-pointer bodies instead of promoting them to v2 sources. Valid v2 object/array forms and source ranking remain unchanged."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Updates/UpdatesManifestModel.cs",
+  "Sha256": "858BC59D4EF4EC4B4D355CB05B1CD2DB0B82F32D98846D9E2CE81D3BA0E0631F",
+  "Members": [
+    "PCL.UpdatesManifestModel::MethodDeclaration::_Load(bool force)",
+    "PCL.UpdatesManifestModel::MethodDeclaration::_IsTrustedSource(UpdateSourceEntry entry)"
+  ],
+  "Reason": "Only fetch updatev2.json from service anchors; failures propagate to the existing outer source pipeline without requesting v1. Nonofficial release repository identity uses separately named update.json constant with the exact existing value and validation."
+}
 ]

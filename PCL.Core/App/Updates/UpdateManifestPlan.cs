@@ -8,8 +8,8 @@ namespace PCL.Core.App.Updates;
 /// 本次检查更新最终采用哪份清单、包含哪些源。
 /// </summary>
 /// <param name="Sources">按权重降序排好的源。</param>
-/// <param name="UsedV2">是否用上了多源清单。false 表示退回了 v1 单指针。</param>
-/// <param name="V2Failure">退回 v1 时 v2 失败的原因，用于日志；用上 v2 时为 null。</param>
+/// <param name="UsedV2">保留原结果形状；成功解析时恒为 true。</param>
+/// <param name="V2Failure">保留原结果形状；成功解析时恒为 null，失败直接抛出。</param>
 /// <param name="Problems">解析过程中被跳过的条目说明。</param>
 public sealed record UpdateManifestPlan(
     IReadOnlyList<UpdateSourceEntry> Sources,
@@ -18,63 +18,28 @@ public sealed record UpdateManifestPlan(
     IReadOnlyList<string> Problems);
 
 /// <summary>
-/// 决定「这次用哪份清单」。
-/// <para>
-/// 顺序是 <c>updatev2.json</c> → <c>update.json</c>。抽成纯函数是为了能被单元测试盯住——
-/// 这条回退链是整个更新功能最不能出错的一段：v2 文件没推上去、被反代回了一页 HTML、
-/// 或者手改 json 改坏了，任何一种都必须<b>静默退化成单源</b>，而不是让用户看到「检查更新失败」。
-/// </para>
+/// 只接受 updatev2.json；不可用时抛出，不再回退服务仓库的 v1 文件。
 /// </summary>
 public static class UpdateManifestPlanner
 {
-    /// <summary>
-    /// 根据两份清单原文（哪份没拉到就传 null）决定最终用哪份。
-    /// </summary>
-    /// <exception cref="FormatException">两份都用不了。</exception>
-    public static UpdateManifestPlan Build(string? v2Body, string? v1Body)
+    /// <summary>Fetch only v2. Exceptions are propagated without issuing a v1 request.</summary>
+    public static UpdateManifestPlan Load(Func<string, string?> fetch)
     {
-        string v2Failure;
+        ArgumentNullException.ThrowIfNull(fetch);
+        return Build(fetch(ProjectLinks.ManifestV2FileName));
+    }
 
-        // 1) 多源清单
-        if (string.IsNullOrWhiteSpace(v2Body))
-        {
-            v2Failure = "多源清单没拉到";
-        }
-        else
-        {
-            try
-            {
-                var parsed = UpdateManifestV2.Parse(v2Body);
-                return new UpdateManifestPlan(parsed.Sources, true, null, parsed.Problems);
-            }
-            catch (FormatException ex)
-            {
-                v2Failure = ex.Message;
-            }
-        }
+    /// <summary>
+    /// 保留旧调用签名，但第二个参数不再使用，不能恢复 v1 支持。
+    /// </summary>
+    /// <exception cref="FormatException">v2 不可用。</exception>
+    public static UpdateManifestPlan Build(string? v2Body, string? v1Body)
+        => Build(v2Body);
 
-        // 2) v1 单指针兜底
-        if (string.IsNullOrWhiteSpace(v1Body))
-            throw new FormatException($"两份清单都不可用：多源清单（{v2Failure}）；单指针清单也没拉到。");
-
-        string pointer;
-        try
-        {
-            pointer = UpdateManifestPointer.Extract(v1Body);
-        }
-        catch (FormatException ex)
-        {
-            throw new FormatException($"两份清单都不可用：多源清单（{v2Failure}）；单指针清单（{ex.Message}）");
-        }
-
-        var (owner, repo) = UpdateManifestPointer.Parse(pointer);
-        var tier = UpdateManifestV2.TierOfficial;
-
-        return new UpdateManifestPlan(
-            [new UpdateSourceEntry(owner, repo, UpdateManifestV2.WeightOfTier(tier), tier)],
-            false,
-            v2Failure,
-            []);
+    public static UpdateManifestPlan Build(string? v2Body)
+    {
+        var parsed = UpdateManifestV2.Parse(v2Body);
+        return new UpdateManifestPlan(parsed.Sources, true, null, parsed.Problems);
     }
 }
 

@@ -462,7 +462,8 @@ public partial class McInstance
 
                                 if (!Equals(inheritInstanceName, ""))
                                 {
-                                    var inheritInstance = new McInstance(inheritInstanceName?.ToString() ?? "");
+                                    var inheritInstance = new McInstance(Path.Combine(
+                                        ModBase.GetPathFromFullPath(PathInstance), inheritInstanceName?.ToString() ?? ""));
                                     // 继续循环
                                     if (Equals(inheritInstance.InheritInstanceName,
                                             inheritInstanceName))

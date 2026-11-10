@@ -282,4 +282,10 @@
   "Members": ["PCL.PageSetupGameManage::MethodDeclaration::Reload()"],
   "Reason": "Load the persistent index prompt preference beside the new 42px native manual creation button. Other settings retain their existing bindings."
 }
+, {
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/McInstance.Members.PathInstance.cs",
+  "Sha256": "E913C78158117BDADA8194220EE4D8DF13F40A2E25EB6817A24BCEA49A2C37F0",
+  "Members": ["PCL.McInstance::PropertyDeclaration::JsonObject"],
+  "Reason": "All-folder index discovery must resolve inheritsFrom relative to the instance's own versions directory, matching Check() and preserving the selected global Minecraft root. The former name-only constructor silently used the selected root for other-root instances."
+}
 ]

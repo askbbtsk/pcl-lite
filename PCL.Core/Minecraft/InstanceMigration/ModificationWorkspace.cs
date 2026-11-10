@@ -68,7 +68,7 @@ public sealed class ModificationWorkspace : IDisposable
                 // Recheck after acquiring the lease; never follow links introduced into scratch trees.
                 DeleteOwned(directory, identity);
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or System.Security.SecurityException)
             {
                 report?.Invoke(error);
             }
@@ -129,7 +129,7 @@ public sealed class ModificationWorkspace : IDisposable
             lease.Dispose();
             DeleteOwned(Root, _identity);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or System.Security.SecurityException)
         {
             CleanupError = error;
         }

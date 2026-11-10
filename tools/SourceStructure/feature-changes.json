@@ -475,4 +475,10 @@
   ],
   "Reason": "Only fetch updatev2.json from service anchors; failures propagate to the existing outer source pipeline without requesting v1. Nonofficial release repository identity uses separately named update.json constant with the exact existing value and validation."
 }
+, {
+  "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+  "Sha256": "7082CEB367CBD32BA094CED2FE6BF2E47D767B1BA57CB8494370E0B56748C589",
+  "Members": ["PCL.FormMain::MethodDeclaration::IsNavigationFeatureHidden(int id)"],
+  "Reason": "User adds plugin market to existing personalization hide controls. Tab 14 follows the persisted PagePlugins preference and the existing HiddenForceShow override; overflow calculation already consumes this shared visibility predicate."
+}
 ]

@@ -124,7 +124,7 @@ public partial class PageSpeedLeft
                 // 已有此卡片
                 Grid card = rightCards[loader.name];
                 var newValue = loader.Progress + (double)loader.State;
-                if (ModBase.Val(card.Tag) == newValue)
+                if (ModBase.Val(card.Tag) == newValue && loader is not IOperationTaskPresentation)
                     return;
                 card.Tag = newValue;
                 if (card.Children.Count <= 3)
@@ -190,6 +190,9 @@ public partial class PageSpeedLeft
                                     var row = 0;
                                     foreach (var SubTask in loaderList)
                                     {
+                                        if (loader is IOperationTaskPresentation
+                                            && card.Children[row * 2 + 1] is TextBlock stageTitle)
+                                            stageTitle.Text = SubTask.name;
                                         switch (SubTask.State)
                                         {
                                             case ModBase.LoadState.Waiting:

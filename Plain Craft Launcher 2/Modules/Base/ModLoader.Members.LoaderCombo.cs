@@ -283,6 +283,11 @@ public static partial class ModLoader
         /// </summary>
         public static void GetLoaderList(LoaderCombo loader, ref List<LoaderBase> list, bool requireShow = true)
         {
+            if (requireShow && loader is IOperationTaskPresentation presentation)
+            {
+                list.AddRange(presentation.PresentedStages);
+                return;
+            }
             foreach (var SubLoader in loader.loaders)
             {
                 if (SubLoader.show || !requireShow)

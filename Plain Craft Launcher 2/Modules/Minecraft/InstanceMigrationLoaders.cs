@@ -10,7 +10,8 @@ namespace PCL;
 /// <summary>Cancellation changes loader state before workers finish; stage cleanup must await both.</summary>
 internal static class InstanceMigrationLoaders
 {
-    internal static void Wait(ModLoader.LoaderBase loader, object? input, ModLoader.LoaderBase parent, CancellationToken token)
+    internal static void Wait(ModLoader.LoaderBase loader, object? input, ModLoader.LoaderBase parent, CancellationToken token,
+        Action<double>? progress = null)
     {
         var workers = new HashSet<Task>();
         token.ThrowIfCancellationRequested();
@@ -21,13 +22,15 @@ internal static class InstanceMigrationLoaders
             {
                 Capture(loader, workers);
                 if (token.IsCancellationRequested) { loader.Abort(); break; }
-                parent.Progress = loader.Progress;
+                if (progress is null) parent.Progress = loader.Progress;
+                else progress(loader.Progress);
                 Thread.Sleep(10);
             }
             Capture(loader, workers);
             if (token.IsCancellationRequested) throw new OperationCanceledException(token);
             if (loader.State == ModBase.LoadState.Aborted) throw new OperationCanceledException(token);
             if (loader.State != ModBase.LoadState.Finished) throw loader.Error ?? new InvalidOperationException("Migration loader did not finish.");
+            progress?.Invoke(1);
         }
         finally
         {

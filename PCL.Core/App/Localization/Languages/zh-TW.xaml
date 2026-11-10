@@ -4167,4 +4167,11 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Instance.LoaderChange.Action.Game">修改遊戲版本</sys:String>
     <sys:String x:Key="Instance.LoaderChange.Action.Loader">修改載入器</sys:String>
     <sys:String x:Key="Instance.LoaderChange.Action.Both">修改遊戲版本及載入器</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Index">識別目前實例模組與目標建置</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Dependencies">預檢所有選取模組的相依項目</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Download">批次下載模組與已確認的前置</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Validate">驗證目標檔案、模組關係與 Java</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Commit">提交目前實例修改</sys:String>
+    <sys:String x:Key="Instance.Modification.DependencyBatch">已在下載前彙整以下必要前置，將依目標遊戲版本與載入器下載，每個工件只處理一次：&#xA;&#xA;{0}&#xA;&#xA;是否繼續？</sys:String>
+    <sys:String x:Key="Instance.Modification.DependencySkipped">下列模組的目標相依項目無法可靠滿足，已從本次替換排除，保留原始檔案：&#xA;&#xA;{0}&#xA;&#xA;繼續僅修改其餘通過預檢的項目；保留的舊模組可能不相容新環境。如需自行處理，請取消。</sys:String>
 </ResourceDictionary>

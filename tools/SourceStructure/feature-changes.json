@@ -253,4 +253,16 @@
   ],
   "Reason": "Snapshot-3 hotfix must remain on snapshot channel, follow snapshot-3, and precede snapshot-4 and stable. Plain stable hotfix ordering unchanged; regression tests cover mixed suffix."
 }
+, {
+  "SourcePath": "Plain Craft Launcher 2/Modules/Base/ModLoader.Members.LoaderCombo.cs",
+  "Sha256": "D41EE9B01955B3DB3F0B7847A348FEF0D1118242C13ED120BEF11ACC04EF54C5",
+  "Members": ["PCL.ModLoader+LoaderCombo::MethodDeclaration::GetLoaderList(LoaderCombo loader, ref List<LoaderBase> list, bool requireShow = true)"],
+  "Reason": "Present the explicitly declared migration phase rows in the existing PCL task card; ordinary loader execution, ownership, cancellation and lists requested without presentation remain unchanged."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageSpeedLeft.xaml.cs",
+  "Sha256": "DA85B6EF0695706C5DA3107E7B2396B21265B4BEDC207092A28C378C0E4DDCC6",
+  "Members": ["PCL.PageSpeedLeft::MethodDeclaration::TaskRefresh(ModLoader.LoaderBase loader)"],
+  "Reason": "Refresh migration phase state and current file/project labels even when total progress is unchanged during a network lookup. Existing PCL task card controls and cancellation are reused."
+}
 ]

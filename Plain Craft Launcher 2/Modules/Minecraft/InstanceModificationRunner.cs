@@ -28,8 +28,16 @@ internal static class InstanceModificationRunner
     internal static void Start(McInstance source, string minecraftRoot, ModDownloadLib.McInstallRequest request, bool migrateMods)
     {
         var instance = source.PathInstance; var game = source.PathIndie;
+        var presentation = new OperationTaskPresentation(
+            (Lang.Text("Instance.Modification.Stage.Index"), 12),
+            (Lang.Text("Instance.Modification.Stage.Dependencies"), 18),
+            (Lang.Text("Instance.Migration.InstallStage"), 35),
+            (Lang.Text("Instance.Modification.Stage.Download"), 25),
+            (Lang.Text("Instance.Modification.Stage.Validate"), 7),
+            (Lang.Text("Instance.Modification.Stage.Commit"), 3));
         var loader = new ModLoader.LoaderTask<string, string>(Lang.Text("Instance.Modification.Task", source.Name), task =>
         {
+            presentation.Begin(0);
             var token = task.AbortedToken;
             using var operation = InstanceOperationCoordinator.Acquire(Path.Combine(Paths.SharedLocalData, "InstanceOperations"), minecraftRoot, game);
             InstanceMigrationRunner.EnsureContext(source, minecraftRoot);
@@ -55,24 +63,41 @@ internal static class InstanceModificationRunner
                 ModBase.WriteIni(Path.Combine(stage, "PCL", "Setup.ini"), "VersionArgumentIndieV2", "True");
                 ModBase.WriteIni(Path.Combine(stage, "PCL", "Setup.ini"), "VersionArgumentJavaSelect", "{\"kind\":\"auto\"}");
                 request.targetInstanceName = stageName; request.targetInstanceFolder = stage + Path.DirectorySeparatorChar;
+                var targetLoader = TargetLoader(request);
+                var stagedMods = Path.Combine(stage, "mods");
+                InstanceMigrationCatalog.Preview? preview = null;
+                IReadOnlyList<MigrationModPlan> chosen = [];
+                if (migrateMods && targetLoader is not null)
+                {
+                    preview = InstanceMigrationCatalog.Build(source, request.minecraftName, targetLoader.Value, token,
+                        value => presentation.Report(0, value), detail => presentation.Describe(0, detail));
+                    chosen = ChooseMods(preview) ?? throw new OperationCanceledException(token);
+                    foreach (var missing in preview.Plan.Mods.Where(item => item.Action == MigrationModAction.NeedsReview))
+                        notices.Add(Path.GetFileName(missing.Source.Path) + ": " + missing.Reason);
+                }
+                else if (migrateMods) notices.Add(Lang.Text("Instance.Modification.VanillaMods"));
+                presentation.Begin(1);
+                var prepared = preview is null ? new ModificationDependencyCoordinator.Prepared([], [], [])
+                    : ModificationDependencyCoordinator.Prepare(preview, chosen, request.minecraftName,
+                        targetLoader!.Value, stagedMods, token, value => presentation.Report(1, value),
+                        detail => presentation.Describe(1, detail));
+                notices.AddRange(prepared.Notices);
+                // Do not install or download target mods until all selected roots have been reviewed.
+                token.ThrowIfCancellationRequested();
+                InstanceMigrationRunner.EnsureContext(source, minecraftRoot);
+                presentation.Begin(2);
                 var steps = ModDownloadLib.McInstallLoader(request);
                 if (steps is null) throw new IOException(Lang.Text("Instance.Migration.InstallFailed"));
-                InstanceMigrationLoaders.Wait(new ModLoader.LoaderCombo<string>(Lang.Text("Instance.Migration.InstallStage"), steps), request.targetInstanceFolder, task, token);
+                InstanceMigrationLoaders.Wait(new ModLoader.LoaderCombo<string>(Lang.Text("Instance.Migration.InstallStage"), steps),
+                    request.targetInstanceFolder, task, token, value => presentation.Report(2, value));
                 var replacements = new List<ModificationModReplacement>();
                 var selectedPayloadNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                if (migrateMods)
+                presentation.Begin(3);
+                if (preview is not null && targetLoader is not null)
                 {
-                    var targetLoader = TargetLoader(request);
-                    if (targetLoader is null) notices.Add(Lang.Text("Instance.Modification.VanillaMods"));
-                    else
-                    {
-                        var preview = InstanceMigrationCatalog.Build(source, request.minecraftName, targetLoader.Value, token);
-                        var chosen = ChooseMods(preview);
-                        if (chosen is null) throw new OperationCanceledException(token);
-                        var stagedMods = Path.Combine(stage, "mods"); Directory.CreateDirectory(stagedMods);
-                        foreach (var missing in preview.Plan.Mods.Where(item => item.Action == MigrationModAction.NeedsReview))
-                            notices.Add(Path.GetFileName(missing.Source.Path) + ": " + missing.Reason);
-                        foreach (var item in chosen)
+                        Directory.CreateDirectory(stagedMods);
+                        var downloads = new List<PCL.Network.DownloadFile>(prepared.Dependencies);
+                        foreach (var item in prepared.Mods)
                         {
                             token.ThrowIfCancellationRequested(); InstanceMigrationRunner.EnsureContext(source, minecraftRoot);
                             var destination = Path.Combine(stagedMods, item.TargetFileName!);
@@ -97,30 +122,20 @@ internal static class InstanceModificationRunner
                                 if (!string.Equals(copied.DestinationPath, destination, StringComparison.OrdinalIgnoreCase))
                                     File.Move(copied.DestinationPath!, destination, overwrite: false);
                             }
-                            else if (!alreadyStaged) Download(targetDownload, task, token);
+                            else if (!alreadyStaged) downloads.Add(targetDownload);
                             replacements.Add(new(item.Source.Path, item.Source.Sha256, destination, item.TargetFileName!));
                             selectedPayloadNames.Add(item.TargetFileName!);
-                            if (!item.Disabled)
-                            {
-                                var project = ModComp.compProjectCache[remote.ProjectId];
-                                var dependencies = new ModDependencyResolver().Resolve(ModCompDependency.BuildRequest(remote, project,
-                                    request.minecraftName, [InstanceMigrationCatalog.ToHostLoader(targetLoader.Value)], stagedMods));
-                                if (dependencies.Unresolved.Count > 0) throw new IOException(Lang.Text("Instance.Migration.DependenciesFailed",
-                                    string.Join(", ", dependencies.Unresolved.Select(value => value.ProjectId))));
-                                if (dependencies.ToInstall.Count > 0)
-                                {
-                                    var consent = ModBase.RunInUiWait(() => ModCompDependency.ConfirmDependencyInstall(dependencies));
-                                    if (consent != ModComp.CompDepsInstallTypes.WithDeps) throw new OperationCanceledException(token);
-                                    foreach (var dependency in ModCompDependency.BuildDependencyDownloads(dependencies, stagedMods))
-                                        if (!File.Exists(dependency.File.LocalPath)) Download(dependency.File, task, token);
-                                }
-                            }
                         }
-                    }
+                        if (downloads.Count > 0)
+                            InstanceMigrationLoaders.Wait(new LoaderDownload(Lang.Text("Instance.Modification.Stage.Download"), downloads),
+                                null, task, token, value => presentation.Report(3, value));
                 }
+                presentation.Begin(4);
                 token.ThrowIfCancellationRequested(); InstanceMigrationRunner.EnsureContext(source, minecraftRoot);
                 var installed = new McInstance(request.targetInstanceFolder).Load();
                 ValidateInstalled(installed, request, minecraftRoot, token);
+                ValidateMigratedMods(installed, token);
+                presentation.Report(4, 0.8);
                 var stagedJson = Path.Combine(stage, stageName + ".json");
                 var json = JsonNode.Parse(File.ReadAllText(stagedJson))!.AsObject();
                 json["id"] = source.Name; if (json["jar"]?.ToString() == stageName) json["jar"] = source.Name;
@@ -154,10 +169,13 @@ internal static class InstanceModificationRunner
                         Lang.Text("Instance.Migration.Title"), Lang.Text("Common.Action.Continue"), Lang.Text("Common.Action.Cancel"), isWarn: true));
                     if (confirmed != 1) throw new OperationCanceledException(token);
                 }
+                presentation.Begin(5);
                 token.ThrowIfCancellationRequested(); InstanceMigrationRunner.EnsureContext(source, minecraftRoot);
                 if (!string.Equals(Path.TrimEndingDirectorySeparator(source.PathIndie), Path.TrimEndingDirectorySeparator(game), StringComparison.OrdinalIgnoreCase))
                     throw new IOException(Lang.Text("Instance.Migration.ContextChanged"));
-                InstanceModificationTransaction.Apply(instance, game, plan, token);
+                InstanceModificationTransaction.Apply(instance, game, plan, token,
+                    (completed, total) => presentation.Report(5, total == 0 ? 0 : 0.98 * completed / total));
+                presentation.Complete(5);
                 try
                 {
                     ModBase.IniClearCache(originalIni);
@@ -192,9 +210,10 @@ internal static class InstanceModificationRunner
             }
         });
         loader.OnStateChanged = ModDownloadLib.LoaderStateChangedHintOnly;
-        var taskGroup = new ModLoader.LoaderCombo<string>(loader.name, [loader]) { show = false };
+        var taskGroup = presentation.Wrap(loader.name, loader);
         taskGroup.Start(instance); ModLoader.LoaderTaskbarAdd(taskGroup);
         ModMain.frmMain.BtnExtraDownload.ShowRefresh(); ModMain.frmMain.BtnExtraDownload.Ribble();
+        ModMain.frmMain.PageChange(FormMain.PageType.TaskManager);
     }
 
     private static MigrationLoader? TargetLoader(ModDownloadLib.McInstallRequest request)
@@ -220,9 +239,6 @@ internal static class InstanceModificationRunner
         });
     }
 
-    private static void Download(PCL.Network.DownloadFile file, ModLoader.LoaderBase parent, CancellationToken token)
-        => InstanceMigrationLoaders.Wait(new LoaderDownload(Lang.Text("Instance.Migration.DownloadStage"), [file]), null, parent, token);
-
     private static void ValidateInstalled(McInstance installed, ModDownloadLib.McInstallRequest request, string root, CancellationToken token)
     {
         if (installed.Info.VanillaName != request.minecraftName) throw new IOException(Lang.Text("Instance.Migration.InstallFailed"));
@@ -239,6 +255,37 @@ internal static class InstanceModificationRunner
         if (report.Libraries.Any(file => file.Status is not (LibraryHealthStatus.Valid or LibraryHealthStatus.Unverified)))
             throw new IOException(Lang.Text("Instance.Migration.InstallFailed"));
         if (!InstanceMigrationJava.SelectForTarget(installed)) throw new IOException(Lang.Text("Instance.Migration.JavaFailed"));
+    }
+
+    private static void ValidateMigratedMods(McInstance installed, CancellationToken token)
+    {
+        var directory = Path.Combine(installed.PathIndie, "mods");
+        if (!Directory.Exists(directory)) return;
+        var mods = new List<ModLocalComp.LocalCompFile>();
+        foreach (var path in Directory.EnumerateFiles(directory).Where(ModLocalComp.LocalCompFile.IsModFile))
+        {
+            token.ThrowIfCancellationRequested();
+            var mod = new ModLocalComp.LocalCompFile(path) { PreferredLoader = ModLocalComp.GetPreferredLoader(installed) };
+            mod.Load();
+            if (mod.State == ModLocalComp.LocalCompFile.LocalFileStatus.Unavailable)
+                throw new InvalidDataException(Lang.Text("Instance.Migration.DependenciesFailed", Path.GetFileName(path)));
+            if (mod.JijPending && !mod.ResolveJijNow())
+                throw new InvalidDataException(Lang.Text("Instance.Migration.DependenciesFailed", Path.GetFileName(path)));
+            mods.Add(mod);
+        }
+        var index = new ModJarInJarIndex(mods, installed.Info.VanillaName);
+        foreach (var mod in mods.Where(item => item.State == ModLocalComp.LocalCompFile.LocalFileStatus.Fine))
+        foreach (var dependency in index.GetDependencies(mod).Where(dependency => !dependency.Optional
+                     && !ModDependencyIds.IsPlatform(dependency.DepId)))
+        {
+            token.ThrowIfCancellationRequested();
+            if (index.Analyze(mod, dependency) is not (JijDepStatus.Installed or JijDepStatus.Bundled))
+                throw new InvalidDataException(Lang.Text("Instance.Migration.DependenciesFailed",
+                    mod.FileName + " → " + dependency.DepId));
+        }
+        foreach (var conflict in index.FindActiveConflicts().Where(conflict => conflict.Hard))
+            throw new InvalidDataException(Lang.Text("Instance.Migration.DependenciesFailed",
+                conflict.A.FileName + " / " + conflict.B.FileName));
     }
 
     private static IEnumerable<string> EnumerateSafe(string root)

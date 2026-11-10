@@ -104,7 +104,7 @@ public static class InstanceModificationTransaction
     }
 
     public static void Apply(string instanceDirectory, string gameDirectory, InstanceModificationPlan plan,
-        CancellationToken token = default)
+        CancellationToken token = default, Action<int, int>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         var roots = Roots(instanceDirectory, gameDirectory);
@@ -116,7 +116,7 @@ public static class InstanceModificationTransaction
             if (!string.Equals(HashOrMissing(destination), change.ExpectedOldSha256, StringComparison.OrdinalIgnoreCase))
                 throw new IOException("Modification destination changed after preview: " + change.RelativePath);
         }
-        DurableFileTransaction.Apply(StoragePath(instanceDirectory), roots, plan.Changes, token);
+        DurableFileTransaction.Apply(StoragePath(instanceDirectory), roots, plan.Changes, token, progress);
     }
 
     private static IReadOnlyDictionary<string, string> Roots(string instanceDirectory, string gameDirectory)

@@ -20,16 +20,21 @@ internal static class InstanceMigrationCatalog
 
     internal static string Key(MigrationCandidate candidate) => candidate.Platform + ":" + candidate.ProjectId + ":" + candidate.FileId;
 
-    internal static Preview Build(McInstance source, string minecraftVersion, MigrationLoader loader, CancellationToken token)
+    internal static Preview Build(McInstance source, string minecraftVersion, MigrationLoader loader, CancellationToken token,
+        Action<double>? progress = null, Action<string>? activity = null)
     {
+        progress?.Invoke(0);
         var modsDirectory = Path.Combine(source.PathIndie, "mods");
         var paths = Directory.Exists(modsDirectory) ? Directory.EnumerateFiles(modsDirectory).ToArray() : [];
         var index = ResourceCollectionIndexer.Capture("migration", paths, token);
         var sources = new List<MigrationSourceMod>();
         var locals = new List<Local>();
+        var indexed = 0;
         foreach (var entry in index.Entries)
         {
             token.ThrowIfCancellationRequested();
+            progress?.Invoke(0.25 * ++indexed / Math.Max(1, index.Entries.Count));
+            activity?.Invoke($"{indexed}/{index.Entries.Count} · {Path.GetFileName(entry.CanonicalPath)}");
             if (entry.Availability != ResourceAvailability.Available)
             {
                 sources.Add(new() { Path = entry.CanonicalPath, Sha256 = "", UnresolvedReason =
@@ -62,6 +67,7 @@ internal static class InstanceMigrationCatalog
         }
 
         var curseForge = new Dictionary<string, JsonObject>(StringComparer.OrdinalIgnoreCase);
+        progress?.Invoke(0.35);
         foreach (var group in locals.Where(file => !modrinth.ContainsKey(file.Path)).Chunk(500))
         {
             token.ThrowIfCancellationRequested();
@@ -83,9 +89,12 @@ internal static class InstanceMigrationCatalog
         }
 
         var remoteFiles = new Dictionary<string, ModComp.CompFile>(StringComparer.Ordinal);
+        progress?.Invoke(0.4);
+        var queried = 0;
         foreach (var local in locals)
         {
             token.ThrowIfCancellationRequested();
+            activity?.Invoke($"{queried + 1}/{locals.Count} · {Path.GetFileName(local.Path)}");
             var platform = modrinth.ContainsKey(local.Path) ? "Modrinth" : curseForge.ContainsKey(local.Path) ? "CurseForge" : null;
             var metadata = platform == "Modrinth" ? modrinth[local.Path] : platform == "CurseForge" ? curseForge[local.Path] : null;
             var projectId = metadata?[platform == "Modrinth" ? "project_id" : "modId"]?.ToString();
@@ -117,7 +126,9 @@ internal static class InstanceMigrationCatalog
                 Path = local.Path, Sha256 = local.Sha256, Sha1 = local.Sha1, Platform = platform,
                 ProjectId = projectId, Candidates = candidates, UnresolvedReason = failure ?? (projectId is null ? Lang.Text("Instance.Migration.UnknownProject") : null),
             });
+            progress?.Invoke(0.4 + 0.6 * ++queried / Math.Max(1, locals.Count));
         }
+        progress?.Invoke(1);
         return new(InstanceMigrationPlanner.Create(minecraftVersion, loader, sources), remoteFiles);
     }
 

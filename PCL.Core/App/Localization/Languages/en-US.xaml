@@ -4167,4 +4167,11 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Instance.LoaderChange.Action.Game">Change Minecraft version</sys:String>
     <sys:String x:Key="Instance.LoaderChange.Action.Loader">Change loader</sys:String>
     <sys:String x:Key="Instance.LoaderChange.Action.Both">Change Minecraft version and loader</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Index">Identify current-instance mods and target builds</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Dependencies">Preflight dependencies of all selected mods</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Download">Download mods and approved dependencies in a batch</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Validate">Verify target files, mod relationships and Java</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Commit">Commit changes to this instance</sys:String>
+    <sys:String x:Key="Instance.Modification.DependencyBatch">The following required dependencies were collected before downloading. Each artifact will be handled once for the target game version and loader:&#xA;&#xA;{0}&#xA;&#xA;Continue?</sys:String>
+    <sys:String x:Key="Instance.Modification.DependencySkipped">These mods have target dependencies that cannot be reliably satisfied. They are excluded from replacement and their original files are preserved:&#xA;&#xA;{0}&#xA;&#xA;Continue to modify only items that passed preflight. Preserved old mods may be incompatible with the new environment. Cancel to resolve them manually.</sys:String>
 </ResourceDictionary>

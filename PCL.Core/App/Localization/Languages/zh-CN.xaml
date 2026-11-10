@@ -4170,4 +4170,11 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Instance.LoaderChange.Action.Game">修改游戏版本</sys:String>
     <sys:String x:Key="Instance.LoaderChange.Action.Loader">修改加载器</sys:String>
     <sys:String x:Key="Instance.LoaderChange.Action.Both">修改游戏版本及加载器</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Index">识别当前实例模组与目标构建</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Dependencies">预检全部选中模组的依赖</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Download">批量下载模组及已确认的前置</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Validate">校验目标文件、模组关系与 Java</sys:String>
+    <sys:String x:Key="Instance.Modification.Stage.Commit">提交当前实例修改</sys:String>
+    <sys:String x:Key="Instance.Modification.DependencyBatch">已在下载前汇总以下必需前置，将按目标游戏版本及加载器下载，每个工件只处理一次：&#xA;&#xA;{0}&#xA;&#xA;是否继续？</sys:String>
+    <sys:String x:Key="Instance.Modification.DependencySkipped">以下模组的目标依赖无法可靠满足，已从本次替换中排除，原文件保留：&#xA;&#xA;{0}&#xA;&#xA;继续只修改其余已通过预检的项；保留的旧模组可能不兼容新环境。如需自行处理，请取消。</sys:String>
 </ResourceDictionary>

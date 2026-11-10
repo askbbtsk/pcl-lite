@@ -85,6 +85,8 @@ public partial class MyListItem : IMyRadio
         MouseLeftButtonDown += RefreshColor;
         MouseLeftButtonUp += RefreshColor;
         Loaded += MyListItem_Loaded;
+        Loaded += TahoeNavigationLoaded;
+        Unloaded += TahoeNavigationUnloaded;
     }
 
     public static readonly DependencyProperty LogoProperty = DependencyProperty.Register(

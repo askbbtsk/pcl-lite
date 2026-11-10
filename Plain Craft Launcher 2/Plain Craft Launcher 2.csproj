@@ -2,7 +2,8 @@
     <PropertyGroup>
         <!-- 旧 WPF UI 尚未完成全量 nullable 流分析迁移；保留注解供 API 使用，避免把数千条历史假阳性混入构建。 -->
         <Nullable>annotations</Nullable>
-        <TargetFramework>net10.0-windows</TargetFramework>
+        <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+        <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
         <OutputType>WinExe</OutputType>
         <RootNamespace>PCL</RootNamespace>
         <MyType>Custom</MyType>
@@ -78,6 +79,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Dapper" Version="2.1.79" />
+        <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
         <PackageReference Include="DotNet.Glob" Version="3.1.3" />
         <PackageReference Include="Downloader" Version="5.9.4" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />

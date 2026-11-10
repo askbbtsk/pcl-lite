@@ -310,6 +310,139 @@
     "PCL.MyMsgSelect::MethodDeclaration::_UpdateCheckedState()"
   ],
   "Reason": "Synchronize the multiselect confirm button after adding controls and on Loaded so preselected migration rows can be confirmed immediately. The same tested index projection drives enabled state and submission; empty/all-unchecked selections remain blocked, single-select behavior is unchanged."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.xaml.cs",
+  "Members": [
+    "PCL.MyButton::FieldDeclaration::PaddingProperty",
+    "PCL.MyButton::ConstructorDeclaration::.ctor()",
+    "PCL.MyButton::PropertyDeclaration::Padding",
+    "PCL.MyButton::MethodDeclaration::RefreshColor(object obj = null, object e = null)",
+    "PCL.MyButton::MethodDeclaration::Button_MouseUp(object sender, MouseButtonEventArgs e)",
+    "PCL.MyButton::MethodDeclaration::Button_MouseDown(object sender, MouseButtonEventArgs e)",
+    "PCL.MyButton::MethodDeclaration::Button_MouseEnter()",
+    "PCL.MyButton::MethodDeclaration::Button_MouseUp()",
+    "PCL.MyButton::MethodDeclaration::Button_MouseLeave()"
+  ],
+  "Reason": "Tahoe opt-in feature: Route the opt-in glass press/keyboard states and separated padding/content layer; disabled mode retains the original mouse and color path. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "F348229CAABA46C0DD7C386674E58DA46C3CEB2E5155B1896CFB3C0564408CC0"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyCard.cs",
+  "Members": [
+    "PCL.MyCard::ConstructorDeclaration::.ctor()",
+    "PCL.MyCard::PropertyDeclaration::AnimatableBrush",
+    "PCL.MyCard::MethodDeclaration::MyCard_MouseEnter(object sender, MouseEventArgs e)",
+    "PCL.MyCard::MethodDeclaration::MyCard_MouseLeave(object sender, MouseEventArgs e)"
+  ],
+  "Reason": "Tahoe opt-in feature: Use neutral reading surfaces in the opt-in theme and suppress the former colored hover shadow; restore original chrome when disabled. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "A9EEB9526657E5561B5C1B502D94ACC0D9F2F0AB181A57A4C186FA808A44AC37"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyComboBox.cs",
+  "Members": [
+    "PCL.MyComboBox::ConstructorDeclaration::.ctor()",
+    "PCL.MyComboBox::MethodDeclaration::OnApplyTemplate()",
+    "PCL.MyComboBox::MethodDeclaration::RefreshColor()"
+  ],
+  "Reason": "Tahoe opt-in feature: Apply and restore opt-in field chrome after template, focus and theme changes. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "0D3E1F4BFFA9BC68ABE2F22BBB39EB629DA908CFE1BC3BFD89FA6A21CF958876"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyListItem.InputAndSelection.cs",
+  "Members": [
+    "PCL.MyListItem::MethodDeclaration::RefreshColor(object sender, EventArgs e)"
+  ],
+  "Reason": "Tahoe opt-in feature: Apply navigation-only opt-in visuals after existing selection/event logic, preserving instance and file-list behavior. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "3BBDC61DF48383BBB992DE9D65A35EDCED62D960160A9152415D0FB2EF47EF53"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyListItem.xaml.cs",
+  "Members": [
+    "PCL.MyListItem::ConstructorDeclaration::.ctor()"
+  ],
+  "Reason": "Tahoe opt-in feature: Apply navigation-only opt-in visuals after existing selection/event logic, preserving instance and file-list behavior. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "A6D441FCEDEEC12291F59A8B12F7E4D8E5A237BE96B1A813206E10033FC98633"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyListItem.SelectionAnimation.cs",
+  "Members": [
+    "PCL.MyListItem::MethodDeclaration::SetChecked(bool value, bool user, bool anime)"
+  ],
+  "Reason": "Tahoe opt-in feature: Apply navigation-only opt-in visuals after existing selection/event logic, preserving instance and file-list behavior. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "3971A3852E67B0785C34EBF8681614C1FC783BE7EA01E8445F4C1E57B53E8E13"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyRadioButton.xaml.cs",
+  "Members": [
+    "PCL.MyRadioButton::ConstructorDeclaration::.ctor()",
+    "PCL.MyRadioButton::MethodDeclaration::RefreshColor(object obj = null, object e = null)"
+  ],
+  "Reason": "Tahoe opt-in feature: Subscribe/unsubscribe opt-in theme notifications and select the Tahoe color path while enabled. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "161B00733CDE6C3AEF4B1859664EBC1C94025A9082220632403B517B77B62607"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyTextBox.cs",
+  "Members": [
+    "PCL.MyTextBox::ConstructorDeclaration::.ctor()",
+    "PCL.MyTextBox::MethodDeclaration::RefreshColor()",
+    "PCL.MyTextBox::MethodDeclaration::RefreshTextColor()"
+  ],
+  "Reason": "Tahoe opt-in feature: Apply/restorably refresh opt-in field chrome without replacing validation or input behavior. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "2A73F4B6236895C8B3A3951C4A6855D66B5A803FF15C21962FD53F8F7B4B7E20"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/FormMain.xaml.cs",
+  "Members": [
+    "PCL.FormMain::ConstructorDeclaration::.ctor()",
+    "PCL.FormMain::MethodDeclaration::FormMain_Loaded()"
+  ],
+  "Reason": "Tahoe opt-in feature: Wire rounded host resizing, suppress competing legacy blur and route video looping through desktop-mode pause policy. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "F78394354724B950517B094B3C37A1BD1CEAB0207EDAF5F194E4733E70D823FD"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/FormMain.FileDropHandling.cs",
+  "Members": [
+    "PCL.FormMain::MethodDeclaration::VideoEnded(object sender, RoutedEventArgs e)"
+  ],
+  "Reason": "Tahoe opt-in feature: Wire rounded host resizing, suppress competing legacy blur and route video looping through desktop-mode pause policy. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "6B051E9657D39E31628FC49A381708C634E6409B8041F2E02E0AC2EFCCDAC96C"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Base/ModSetup.cs",
+  "Members": [
+    "PCL.ModSetup::ConstructorDeclaration::.ctor()",
+    "PCL.ModSetup::MethodDeclaration::ApplyAll()",
+    "PCL.ModSetup::MethodDeclaration::UiFont(string value)",
+    "PCL.ModSetup::MethodDeclaration::UiBlurValue(int value)"
+  ],
+  "Reason": "Tahoe opt-in feature: Observe the two opt-in settings, refresh appearance after font changes, and suppress competing legacy blur while enabled. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "B12E9F1F0F08D82A6E31E64336138078A30C961EEEC68E6701E064BF87DA85F6"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/ModVideoBack.cs",
+  "Members": [
+    "PCL.ModVideoBack::MethodDeclaration::VideoPlay()"
+  ],
+  "Reason": "Tahoe opt-in feature: Pause configured wallpaper video during requested desktop refraction without deleting its source/settings. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "91811E258947C57CD6304C26489DA6E980293E4A833B1AB7305677BEDBD5401A"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/ThemeManager.cs",
+  "Members": [
+    "PCL.ThemeManager::MethodDeclaration::ThemeRefreshMain()",
+    "PCL.ThemeManager::MethodDeclaration::RefreshBackground()"
+  ],
+  "Reason": "Tahoe opt-in feature: Apply opt-in appearance after base-theme refresh and expose background refresh for restoring the original mode. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "1BA34207D27EB9EAF59153FB5F7E5B159766196850306FE626EC343B9822AB9C"
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.PreferenceBinding.cs",
+  "Members": [
+    "PCL.PageSetupUI::MethodDeclaration::Reload()"
+  ],
+  "Reason": "Tahoe opt-in feature: Reload the two new opt-in appearance controls from local preferences. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
+  "Sha256": "52B41F929B5A69D41ECA8330EC9ADBBF1FDB97576751769D49268E08E224F279"
 }
 , {
   "SourcePath": "PCL.Core/App/ProjectLinks.cs",
@@ -341,5 +474,11 @@
     "PCL.UpdatesManifestModel::MethodDeclaration::_IsTrustedSource(UpdateSourceEntry entry)"
   ],
   "Reason": "Only fetch updatev2.json from service anchors; failures propagate to the existing outer source pipeline without requesting v1. Nonofficial release repository identity uses separately named update.json constant with the exact existing value and validation."
+}
+, {
+  "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+  "Sha256": "7082CEB367CBD32BA094CED2FE6BF2E47D767B1BA57CB8494370E0B56748C589",
+  "Members": ["PCL.FormMain::MethodDeclaration::IsNavigationFeatureHidden(int id)"],
+  "Reason": "User adds plugin market to existing personalization hide controls. Tab 14 follows the persisted PagePlugins preference and the existing HiddenForceShow override; overflow calculation already consumes this shared visibility predicate."
 }
 ]

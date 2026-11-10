@@ -9,14 +9,21 @@
         <Border.RenderTransform>
             <ScaleTransform />
         </Border.RenderTransform>
-        <TextBlock TextOptions.TextFormattingMode="Display" SnapsToDevicePixels="True" TextTrimming="None"
+        <Grid x:Name="PanButtonVisual">
+            <Grid.RenderTransform>
+                <TranslateTransform />
+            </Grid.RenderTransform>
+            <Border x:Name="PanButtonContent">
+                <TextBlock TextOptions.TextFormattingMode="Display" SnapsToDevicePixels="True" TextTrimming="None"
                    HorizontalAlignment="Center" x:Name="LabText" VerticalAlignment="Center"
                    RenderTransformOrigin="0.5,0.5"
-                   Foreground="{Binding Parent.BorderBrush, RelativeSource={RelativeSource Self}}" FontSize="13"
+                   Foreground="{Binding BorderBrush, ElementName=PanFore}" FontSize="13"
                    IsHitTestVisible="False">
             <TextBlock.RenderTransform>
                 <ScaleTransform />
             </TextBlock.RenderTransform>
-        </TextBlock>
+                </TextBlock>
+            </Border>
+        </Grid>
     </Border>
 </Border>

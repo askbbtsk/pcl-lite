@@ -52,6 +52,9 @@ public partial class PageSetupUI
             ComboUiFont.SelectedFontTag = Config.Preference.Font;
             ComboUiMotdFont.SelectedFontTag = Config.Preference.MotdFont;
 
+            CheckTahoeGlass.Checked = LiquidGlassCore.IsEnabled;
+            CheckTahoeDesktop.Checked = Config.Preference.TahoeGlass.UseDesktopBackdrop && Config.Preference.TahoeGlass.DesktopCaptureConsent;
+            RefreshLiquidGlassSettings();
             CheckBlur.Checked = Config.Preference.Blur.IsEnabled;
             SliderBlurValue.Value = Config.Preference.Blur.Radius;
             SliderBlurSamplingRate.Value = Config.Preference.Blur.SamplingRate;
@@ -113,6 +116,7 @@ public partial class PageSetupUI
             CheckHiddenPageDownload.Checked = uiHidden.PageDownload;
             CheckHiddenPageBedrock.Checked = uiHidden.PageBedrock;
             CheckHiddenPageLunar.Checked = uiHidden.PageLunar;
+            CheckHiddenPagePlugins.Checked = uiHidden.PagePlugins;
             CheckHiddenPageSetup.Checked = uiHidden.PageSetup;
             CheckHiddenPageTools.Checked = uiHidden.PageTools;
 

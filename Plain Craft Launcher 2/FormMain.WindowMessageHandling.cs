@@ -446,6 +446,7 @@ public partial class FormMain
             3 => hidden.PageSetup,
             4 => hidden.PageTools,
             13 => hidden.PageLunar,
+            14 => hidden.PagePlugins,
             _ => false
         };
     }

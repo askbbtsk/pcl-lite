@@ -4,6 +4,19 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.2">High quality</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.3">Ultra</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.0">Low: 0 DIP blur, no dispersion or press animation, 30 FPS by default. Expected lowest cost; resolution, background and hardware still matter.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.1">Balanced: 1 DIP blur, 0.08 dispersion and press animation, 60 FPS by default. Expected everyday balance; integrated GPUs can still see extra load.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">High: 2 DIP blur, 0.20 dispersion and press animation, 90 FPS by default. Expected higher load, especially at high resolution or across monitors.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">Ultra: 3 DIP blur, 0.30 dispersion, stronger highlights and press animation, 120 FPS by default. Expected highest load; power use, heat and stutter may increase.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">Effect frame cap (30–240 FPS; far right is unlimited)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">Unlimited (may significantly increase power use)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">Enable liquid glass?&#xA;Preset: {0}; effect frame cap: {1}.&#xA;{2}&#xA;This adds CPU/GPU, memory and battery costs. These are relative estimates, not device benchmarks or a smoothness guarantee. Screenshot-friendly background mode is the default. If live desktop refraction is enabled separately, the launcher is excluded from screenshots and recordings. No countdown is required.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction captures local monitor frames and continuously uses GPU/CPU resources. Frames are never saved or uploaded. To avoid recursive capture, Windows excludes the launcher from screenshots and recordings; the actual window stays open. Turn this option off to take a screenshot. Enable anyway?</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">Mod dependency index</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">Index every instance in all Minecraft folders discovered by PCL, including unselected and hidden instances. Shared mod folders with the same parser context are scanned once. Idle browsing does not build indexes; mod downloads still update them.</sys:String>
@@ -3208,6 +3221,23 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Background.Suit.Tile">Tile</sys:String>
     <sys:String x:Key="Setup.Ui.Background.Suit.TopLeft">Top-left</sys:String>
     <sys:String x:Key="Setup.Ui.Background.Suit.TopRight">Top-right</sys:String>
+
+    <!-- Setup.Ui.Tahoe -->
+
+    <sys:String x:Key="Setup.Ui.Tahoe.Title">Liquid Glass · LiquidGlass Core</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Stopped">Desktop refraction is off.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Starting">Waiting for the desktop frame. Showing a static material.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Live">Refracting the desktop live.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">Desktop capture is active. This device uses the blur compatibility material.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">Desktop capture was interrupted. Recovering; unavailable areas use a static material.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Suspended">Desktop capture is paused until the window is visible again.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">Desktop capture is unsupported. Showing a static material.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">Desktop capture could not recover. Showing a static material. Toggle “Refract the desktop directly” to retry.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Enable">Use the Liquid Glass interface</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Description">Independent from advanced materials. The default launcher-background refraction supports screenshots. Enabling requires performance confirmation; quality and effect frame rate can be adjusted below.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction (excludes screenshots)</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Hide the launcher wallpaper and apply eighth-power refraction to the real desktop behind the window. To prevent recursive capture, this window is excluded from screenshots and recordings while sampling. Turning this off restores capture visibility.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">Desktop sampling requires Windows 10 version 2004 or later. Unavailable capture uses a static material; devices without Pixel Shader 3.0 use blur.</sys:String>
 
     <!-- Setup.Ui.Basic -->
 

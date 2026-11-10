@@ -525,6 +525,24 @@ public static partial class Config
         }
 
         /// <summary>
+        /// macOS Tahoe 风格液态玻璃。
+        /// </summary>
+        [ConfigGroup("TahoeGlass")] partial class TahoeGlassConfigGroup
+        {
+            /// <summary>
+            /// 是否使用液态玻璃界面。
+            /// </summary>
+            [ConfigItem<bool>("UiTahoeGlassEnabled", false, ConfigSource.Local)] public partial bool IsEnabled { get; set; }
+            /// <summary>Capture the desktop behind the window as the refraction source.</summary>
+            [ConfigItem<bool>("UiTahoeDesktopBackdrop", false, ConfigSource.Local)] public partial bool UseDesktopBackdrop { get; set; }
+            [ConfigItem<int>("UiLiquidGlassPreset", 1, ConfigSource.Local)] public partial int PerformancePreset { get; set; }
+            [ConfigItem<int>("UiLiquidGlassFrameRate", 60, ConfigSource.Local)] public partial int MaximumFrameRate { get; set; }
+            // Fresh opt-in is required even for settings left by earlier experimental builds.
+            [ConfigItem<bool>("UiLiquidGlassConsent", false, ConfigSource.Local)] public partial bool PerformanceConsent { get; set; }
+            [ConfigItem<bool>("UiLiquidGlassDesktopConsent", false, ConfigSource.Local)] public partial bool DesktopCaptureConsent { get; set; }
+        }
+
+        /// <summary>
         /// 自定义主页。
         /// </summary>
         [ConfigGroup("Homepage")] partial class HomepageConfigGroup
@@ -595,6 +613,7 @@ public static partial class Config
             [ConfigItem<bool>("UiHiddenPageDownload", false, ConfigSource.Local)] public partial bool PageDownload { get; set; }
             [ConfigItem<bool>("UiHiddenPageBedrock", false, ConfigSource.Local)] public partial bool PageBedrock { get; set; }
             [ConfigItem<bool>("UiHiddenPageLunar", false, ConfigSource.Local)] public partial bool PageLunar { get; set; }
+            [ConfigItem<bool>("UiHiddenPagePlugins", false, ConfigSource.Local)] public partial bool PagePlugins { get; set; }
             [ConfigItem<bool>("UiHiddenPageSetup", false, ConfigSource.Local)] public partial bool PageSetup { get; set; }
             [ConfigItem<bool>("UiHiddenPageTools", false, ConfigSource.Local)] public partial bool PageTools { get; set; }
 

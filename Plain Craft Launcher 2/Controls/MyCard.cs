@@ -9,7 +9,7 @@ using PCL.Core.UI.Controls;
 
 namespace PCL;
 
-public class MyCard : AnimatedBackgroundGrid
+public partial class MyCard : AnimatedBackgroundGrid
 {
     // 动画
     private const double dropShadowIdleOpacity = 0.07d;
@@ -42,6 +42,8 @@ public class MyCard : AnimatedBackgroundGrid
         // 设置背景色
         SetResourceReference(BackgroundBrushProperty, "ColorBrushTransparentBackground");
         Loaded += (_, _) => Init();
+        Loaded += OnTahoeCardLoaded;
+        Unloaded += OnTahoeCardUnloaded;
         MouseEnter += MyCard_MouseEnter;
         MouseLeave += MyCard_MouseLeave;
         SizeChanged += MySizeChanged;
@@ -105,7 +107,7 @@ public class MyCard : AnimatedBackgroundGrid
     protected override SolidColorBrush AnimatableBrush
     {
         get => (SolidColorBrush)mainBorder.Background;
-        set => mainBorder.Background = value;
+        set => mainBorder.Background = TahoeThemeManager.IsEnabled ? TahoeContentBrush() : value;
     }
 
     protected override FrameworkElement AnimatableElement => mainBorder;
@@ -190,6 +192,7 @@ public class MyCard : AnimatedBackgroundGrid
 
     private void MyCard_MouseEnter(object sender, MouseEventArgs e)
     {
+        if (TahoeThemeManager.IsEnabled) return;
         if (!HasMouseAnimation)
             return;
         var aniList = new List<ModAnimation.AniData>();
@@ -200,7 +203,7 @@ public class MyCard : AnimatedBackgroundGrid
         aniList.AddRange(new[]
         {
             ModAnimation.AaColor(MainChrome, MyDropShadow.ColorProperty, "ColorObject4", 90),
-            ModAnimation.AaOpacity(MainChrome, dropShadowHoverOpacity - MainChrome.Opacity, 90)
+            ModAnimation.AaOpacity(MainChrome, (TahoeThemeManager.IsEnabled ? 0.12d : dropShadowHoverOpacity) - MainChrome.Opacity, 90)
         });
         if (!IsAnimating)
             ModAnimation.AniStart(aniList, "MyCard Mouse " + uuid);
@@ -208,6 +211,7 @@ public class MyCard : AnimatedBackgroundGrid
 
     private void MyCard_MouseLeave(object sender, MouseEventArgs e)
     {
+        if (TahoeThemeManager.IsEnabled) return;
         if (!HasMouseAnimation)
             return;
         var aniList = new List<ModAnimation.AniData>();
@@ -218,7 +222,7 @@ public class MyCard : AnimatedBackgroundGrid
         aniList.AddRange(new[]
         {
             ModAnimation.AaColor(MainChrome, MyDropShadow.ColorProperty, "ColorObject1", 90),
-            ModAnimation.AaOpacity(MainChrome, dropShadowIdleOpacity - MainChrome.Opacity, 90)
+            ModAnimation.AaOpacity(MainChrome, (TahoeThemeManager.IsEnabled ? 0.045d : dropShadowIdleOpacity) - MainChrome.Opacity, 90)
         });
         if (!IsAnimating)
             ModAnimation.AniStart(aniList, "MyCard Mouse " + uuid);

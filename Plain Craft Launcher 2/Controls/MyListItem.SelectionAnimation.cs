@@ -125,6 +125,8 @@ public partial class MyListItem
                 }
             }
 
+            if (RefreshTahoeNavigation(anime)) return;
+
             var customHeight = 20d; // 修改左侧神秘动画条的高度
 
             if (IsLoaded && ModAnimation.AniControlEnabled == 0 && anime) // 防止默认属性变更触发动画

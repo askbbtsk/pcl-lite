@@ -57,12 +57,17 @@ public partial class MyRadioButton
 
             ThemeService.ColorModeChanged += OnColorModeChanged;
             ThemeService.ColorThemeChanged += OnColorThemeChanged;
+            TahoeThemeManager.Changed += OnTahoeThemeChanged;
+            ApplyTahoeChrome();
         };
 
         Unloaded += (_, _) =>
         {
             ThemeService.ColorModeChanged -= OnColorModeChanged;
             ThemeService.ColorThemeChanged -= OnColorThemeChanged;
+            TahoeThemeManager.Changed -= OnTahoeThemeChanged;
+            ModAnimation.AniStop("MyRadioButton Checked " + Uuid);
+            ModAnimation.AniStop("MyRadioButton Color " + Uuid);
         };
 
         MouseLeftButtonUp += (_, _) => Radiobox_MouseUp();
@@ -318,6 +323,13 @@ public partial class MyRadioButton
     {
         try
         {
+            if (TahoeThemeManager.IsEnabled)
+            {
+                ApplyTahoeChrome();
+                RefreshTahoeColor(!false.Equals(e));
+                return;
+            }
+
             if (IsLoaded && ModAnimation.AniControlEnabled == 0 &&
                 !false.Equals(e)) // 防止默认属性变更触发动画，若强制不执行动画，则 e 为 False
             {

@@ -57,8 +57,7 @@
                     </Grid>
 
                     <!--  选择区 + 信息块：标签与值分列，值过长时省略并用 ToolTip 显示全文  -->
-                    <Border Background="{DynamicResource ColorBrushTransparentBackground}"
-                            CornerRadius="5" Padding="14,12" Margin="6,0,6,0">
+                    <Border Style="{StaticResource TahoeInsetFormStyle}" Padding="14,12" Margin="6,0,6,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="70" />
@@ -302,8 +301,7 @@
                         TextBox 自己的模板两条滚动条都有，而且不套一层 ScrollViewer
                         才不会把左键拖动选中抢走。
                     -->
-                    <Border Background="{DynamicResource ColorBrushTransparentBackground}"
-                            CornerRadius="5" Padding="10">
+                    <Border Style="{StaticResource TahoeInsetFormStyle}" Padding="10">
                         <TextBox x:Name="TextLog" Height="230" IsReadOnly="True" BorderThickness="0"
                                  Background="Transparent" FontFamily="Consolas" FontSize="11.5"
                                  Foreground="{DynamicResource ColorBrush1}"

@@ -82,6 +82,20 @@ public class ModSetup
         Config.Preference.Blur.KernelTypeConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
             e => UiBlurType((int)e.Value!)));
 
+        // UI - Tahoe liquid glass
+        Config.Preference.TahoeGlass.IsEnabledConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            e => UiTahoeGlass((bool)e.Value!)));
+        Config.Preference.TahoeGlass.UseDesktopBackdropConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => TahoeThemeManager.Refresh())));
+        Config.Preference.TahoeGlass.PerformancePresetConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => LiquidGlassCore.Refresh())));
+        Config.Preference.TahoeGlass.MaximumFrameRateConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => LiquidGlassCore.Refresh())));
+        Config.Preference.TahoeGlass.PerformanceConsentConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => LiquidGlassCore.Refresh())));
+        Config.Preference.TahoeGlass.DesktopCaptureConsentConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => LiquidGlassCore.Refresh())));
+
         // UI - 用户文件夹名打码
         // 关掉之后界面上（含启动日志）的 C:\Users\xxx 原样显示；崩溃报告不受这个开关影响，始终打码
         Config.Preference.MaskUserFolderConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
@@ -168,6 +182,7 @@ public class ModSetup
         }
 
         UiBlur(Config.Preference.Blur.IsEnabled);
+        UiTahoeGlass(Config.Preference.TahoeGlass.IsEnabled);
 
         // UI - 用户文件夹名打码（默认开）
         UserPathMasker.Enabled = Config.Preference.MaskUserFolder;
@@ -455,6 +470,7 @@ public class ModSetup
         try
         {
             ModBase.SetLaunchFont(value);
+            TahoeThemeManager.Refresh();
         }
         catch (Exception ex)
         {
@@ -535,8 +551,11 @@ public class ModSetup
 
     public static void UiBlurValue(int value)
     {
-        System.Windows.Application.Current.Resources["BlurRadius"] = value * 1.0d;
+        System.Windows.Application.Current.Resources["BlurRadius"] =
+            Config.Preference.TahoeGlass.IsEnabled ? 0.0d : value * 1.0d;
     }
+
+    public static void UiTahoeGlass(bool value) => ModBase.RunInUi(() => TahoeThemeManager.Refresh());
 
     public static void UiBlurSamplingRate(int value)
     {

@@ -54,6 +54,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Net\**" />
+    <Compile Include="..\Plain Craft Launcher 2\Controls\LiquidGlassMath.cs" Link="UI\LiquidGlassMath.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Controls\LiquidGlassSurface.cs" Link="UI\LiquidGlassSurface.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Controls\LiquidGlassEffect.cs" Link="UI\LiquidGlassEffect.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassCaptureContracts.cs" Link="UI\LiquidGlassCaptureContracts.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassDesktopCapture.cs" Link="UI\LiquidGlassDesktopCapture.cs" />
+    <Resource Include="..\Plain Craft Launcher 2\Resources\LiquidGlass\Glass.ps" Link="Resources\LiquidGlass\Glass.ps" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Remove="Net\**" />

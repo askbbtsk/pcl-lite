@@ -173,6 +173,9 @@ public class LoaderDownload : ModLoader.LoaderBase
 
     public void OnFileFinish(PCL.Network.DownloadFile file)
     {
+        // Queue only completed mod files. Never make a successful download wait for indexing.
+        try { ModIndexService.DownloadCompleted(file.LocalPath); }
+        catch (Exception error) { ModBase.Log(error, "安排下载后的模组索引失败", ModBase.LogLevel.Developer); }
         lock (_fileRemainLock)
         {
             _fileRemain -= 1;

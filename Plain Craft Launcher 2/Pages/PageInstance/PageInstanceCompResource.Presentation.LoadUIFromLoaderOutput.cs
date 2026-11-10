@@ -114,6 +114,7 @@ public partial class PageInstanceCompResource
                 SearchBox.Text = ""; // 这会触发结果刷新，所以需要在 ModItems 更新之后，详见 #3124 的视频
                 RefreshUI();
                 SetSortMethod(SortMethod.CompName);
+                OfferModIndex();
             });
         }
         catch (Exception ex)

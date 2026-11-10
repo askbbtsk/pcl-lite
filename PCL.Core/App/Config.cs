@@ -113,6 +113,7 @@ public static partial class Config
             [ConfigItem<int>("ToolDownloadTranslateV2", 1)] public partial int NameFormatV2 { get; set; }
             [ConfigItem<bool>("ToolDownloadIgnoreQuilt", true)] public partial bool IgnoreQuilt { get; set; }
             [ConfigItem<bool>("ToolDownloadAutoInstallDependencies", true)] public partial bool AutoInstallDependencies { get; set; }
+            [ConfigItem<bool>("ToolModIndexPrompt", true)] public partial bool PromptToCreateModIndex { get; set; }
             [ConfigItem<bool>("ToolDownloadClipboard", false)] public partial bool ReadClipboard { get; set; }
             [ConfigItem<int>("ToolDownloadMod", 1)] public partial int CompSourceSolution { get; set; }
             [ConfigItem<int>("ToolModLocalNameStyle", 0)] public partial int UiCompNameSolution { get; set; }

@@ -7,6 +7,16 @@
     PanScroll="{Binding ElementName=PanBack}">
     <local:MyScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" x:Name="PanBack">
         <StackPanel x:Name="PanMain" Margin="25,10">
+            <local:MyCard Margin="0,15,0,0" Title="{DynamicResource Setup.GameManage.ModIndex.Title}">
+                <StackPanel Margin="25,40,25,20">
+                    <TextBlock Text="{DynamicResource Setup.GameManage.ModIndex.Description}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                    <local:MyButton Text="{DynamicResource Setup.GameManage.ModIndex.Create}" Height="42" MinWidth="220"
+                                    HorizontalAlignment="Left" Padding="22,0" Click="CreateModIndex_Click" />
+                    <local:MyCheckBox x:Name="CheckModIndexPrompt" Text="{DynamicResource Setup.GameManage.ModIndex.PromptSetting}"
+                                      Tag="ToolModIndexPrompt" Change="CheckBoxChange" Loaded="ModIndexPrompt_Loaded"
+                                      Height="32" Margin="0,10,0,0" />
+                </StackPanel>
+            </local:MyCard>
             <local:MyCard Margin="0,15" Title="{DynamicResource Setup.GameManage.Source.Title}">
                 <StackPanel Margin="25,37,25,15">
                     <Grid>

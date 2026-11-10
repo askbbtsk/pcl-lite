@@ -66,6 +66,7 @@ public partial class PageSetupGameManage
         ComboDownloadQuickBehavior.SelectedIndex = Config.Download.Comp.QuickDownloadBehavior;
         CheckDownloadIgnoreQuilt.Checked = Config.Download.Comp.IgnoreQuilt;
         CheckDownloadAutoInstallDependencies.Checked = Config.Download.Comp.AutoInstallDependencies;
+        CheckModIndexPrompt.Checked = Config.Download.Comp.PromptToCreateModIndex;
         CheckDownloadClipboard.Checked = Config.Download.Comp.ReadClipboard;
 
         // Minecraft 更新提示
@@ -122,6 +123,16 @@ public partial class PageSetupGameManage
 
     private static void SetByTag(string tag, object value)
         => ConfigService.TrySetValue(tag, value);
+
+    private void CreateModIndex_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        => ModIndexService.CreateNow(ModInstanceList.McMcInstanceSelected ?? PageInstanceLeft.McInstance);
+
+    private void ModIndexPrompt_Loaded(object sender, RoutedEventArgs e)
+    {
+        ModAnimation.AniControlEnabled += 1;
+        try { CheckModIndexPrompt.Checked = Config.Download.Comp.PromptToCreateModIndex; }
+        finally { ModAnimation.AniControlEnabled -= 1; }
+    }
 
     // 滑动条
     private void SliderLoad()

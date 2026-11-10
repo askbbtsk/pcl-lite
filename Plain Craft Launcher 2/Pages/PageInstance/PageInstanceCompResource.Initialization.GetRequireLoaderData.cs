@@ -77,6 +77,7 @@ public partial class PageInstanceCompResource
         ReloadCompFileList();
         ChangeAllSelected(false);
         ModAnimation.AniControlEnabled -= 1;
+        OfferModIndex();
 
         // 非重复加载部分
         if (isLoad)

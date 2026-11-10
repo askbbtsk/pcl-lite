@@ -80,24 +80,9 @@ public static class ModJarInJar
 
         var cached = ModJarInJarCache.TryGet(modFilePath, lastModified, size);
         if (cached is not null) return _FromNodes(cached, modFilePath);
-        // 缓存未命中且要求延后：返回 null 交由列表加载完成后的后台线程补解析，
-        // 不在首屏同步解压嵌套 jar（冷缓存下几百个 mod 的递归解压会拖慢列表出现）
+        // Browsing is cache-only. Missing entries are built only by an explicit request or download.
         if (deferOnMiss)
         {
-            // Most mods have metadata but no nested payload. Cache that cheap fact immediately
-            // instead of reopening every ordinary JAR in the deferred recursive scan.
-            var declared = new List<_NestedJarInfo>();
-            var known = _CollectFabricNestedJars(jar, declared);
-            known &= _CollectQuiltNestedJars(jar, declared);
-            known &= _CollectForgeNestedJars(jar, declared);
-            known &= _CollectManifestEmbeddedJars(jar, declared);
-            if (known && declared.Count == 0)
-            {
-                if (!_FingerprintMatches(new FileInfo(modFilePath), lastModified, size))
-                { complete = false; return null; }
-                ModJarInJarCache.Set(modFilePath, lastModified, size, []);
-                return [];
-            }
             complete = false;
             return null;
         }

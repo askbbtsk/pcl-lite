@@ -45,7 +45,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceCompResource.Presentation.LoadUIFromLoaderOutput.cs",
-  "Sha256": "A151D4DFF6A4E9101CEA81E1995B4D94546496FCD52A52D03E5FB077EF74CF50",
+  "Sha256": "8449D2EF6A77901DAC9D9A5334CDD20EE37B0CED49DE7A8569C5110DBB139EC7",
   "Members": [
     "PCL.PageInstanceCompResource::MethodDeclaration::LoadUIFromLoaderOutput()",
     "PCL.PageInstanceCompResource::MethodDeclaration::BuildLocalCompItem(ModLocalComp.LocalCompFile entry)"
@@ -147,9 +147,12 @@
 }
 , {
   "SourcePath": "Plain Craft Launcher 2/Modules/Network/Loaders/LoaderDownload.cs",
-  "Sha256": "9252DE65F275DAC8D617817511C6545D6A8DDA2F65E90B9090033744C417C77D",
-  "Members": ["PCL.Network.Loaders.LoaderDownload::MethodDeclaration::Start(object input = null, bool isForceRestart = false)"],
-  "Reason": "Stages D/E: expose actual worker completion after Abort so migration/import can await file-handle release before cleaning owned staging directories. Original download execution remains inside try/finally."
+  "Sha256": "31D7C1E41E0D104FF387E5F2C50EA0296D125C949718CA476DD33D051289CDA8",
+  "Members": [
+    "PCL.Network.Loaders.LoaderDownload::MethodDeclaration::Start(object input = null, bool isForceRestart = false)",
+    "PCL.Network.Loaders.LoaderDownload::MethodDeclaration::OnFileFinish(PCL.Network.DownloadFile file)"
+  ],
+  "Reason": "Retain awaited cancellation/handle release; completed mod downloads enqueue coalesced indexing without delaying or failing the original download. Idle browsing no longer starts indexing."
 }
 , {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.JavaSelection.McLaunchJava.cs",
@@ -199,7 +202,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModJarInJar.cs",
-  "Sha256": "449DBA8966C2F9EF66832EC88CF34990580EBAD4540770B5A68826B64A95C420",
+  "Sha256": "8F8FD2024577ADF49F03A93CB16729601998E061A22A23622A4C7F3D14670CFD",
   "Members": [
     "PCL.ModJarInJar::MethodDeclaration::ResolveCached(string modFilePath, ZipArchive jar,\n        out bool complete, bool deferOnMiss = false,\n        long? expectedLastModified = null, long? expectedSize = null, ScanContext? scan = null,\n        string? preferredLoader = null)",
     "PCL.ModJarInJar::MethodDeclaration::_Resolve(string parentPath, ZipArchive jar, int depth,\n        _ResolveBudget budget)"
@@ -208,18 +211,19 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModJarInJarCache.cs",
-  "Sha256": "4664773E0181216655C31FC3359AD7267DA4AF25FAC749602AAF6E7E5F8A70C8",
+  "Sha256": "371F774EBDF156EF83C272899F2FD0DBC9821E248A76F9826550D9F3C44204CC",
   "Members": [
     "PCL.ModJarInJarCache::MethodDeclaration::TryGet(string path, long lastModified, long size)",
     "PCL.ModJarInJarCache::MethodDeclaration::Set(string path, long lastModified, long size, List<EmbeddedModNode> tree)",
     "PCL.ModJarInJarCache::MethodDeclaration::Prune(IEnumerable<string> keepPaths)",
-    "PCL.ModJarInJarCache::MethodDeclaration::Flush()"
+    "PCL.ModJarInJarCache::MethodDeclaration::Flush()",
+    "PCL.ModJarInJarCache::MethodDeclaration::_FlushStore(_Store store)"
   ],
   "Reason": "User-reported long indexing and file-in-use: latest current-instance bounded workers, empty-tree fast path, per-instance cache locks, no-delete-blocking hash stream with fingerprint invalidation, cancellable native foreground progress instead of UI-thread recursive parsing."
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLocalComp.Members.GetFolderDescription.cs",
-  "Sha256": "71E971E1D862E5BEBF51D9CB2CAC83D6B084C067D2B4AA80B2A4F2E7EEFB4490",
+  "Sha256": "575E0F49B6BCCB4C48253B2B827AA9C54075EE5F44494C1B5B48C1884FC04339",
   "Members": [
     "PCL.ModLocalComp::MethodDeclaration::_ResolveJijPendingBackground(List<LocalCompFile> pending, List<string> allModPaths,\n        string instancePath, int loaderTaskId, int generation)",
     "PCL.ModLocalComp::MethodDeclaration::CompResourceListLoad(LoaderTask<CompLocalLoaderData, List<LocalCompFile>> loader)"
@@ -228,9 +232,10 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceCompResource.SelectionActions.BtnSelectED_Click.cs",
-  "Sha256": "73AAD94B1C348955067196172FAFE6888B5C8E8C54D4FE016AF6E5236E81D612",
+  "Sha256": "1562BD5540FD5456CA94BC4BDF64D4C32B61B343341D0F19B03BC57E175CFC97",
   "Members": [
-    "PCL.PageInstanceCompResource::MethodDeclaration::_ConfirmCascadeReady()"
+    "PCL.PageInstanceCompResource::MethodDeclaration::_ConfirmCascadeReady()",
+    "PCL.PageInstanceCompResource::MethodDeclaration::UpdateResource(IEnumerable<ModLocalComp.LocalCompFile> modList)"
   ],
   "Reason": "User-reported long indexing and file-in-use: latest current-instance bounded workers, empty-tree fast path, per-instance cache locks, no-delete-blocking hash stream with fingerprint invalidation, cancellable native foreground progress instead of UI-thread recursive parsing."
 }
@@ -264,5 +269,17 @@
   "Sha256": "DA85B6EF0695706C5DA3107E7B2396B21265B4BEDC207092A28C378C0E4DDCC6",
   "Members": ["PCL.PageSpeedLeft::MethodDeclaration::TaskRefresh(ModLoader.LoaderBase loader)"],
   "Reason": "Refresh migration phase state and current file/project labels even when total progress is unchanged during a network lookup. Existing PCL task card controls and cancellation are reused."
+}
+, {
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceCompResource.Initialization.GetRequireLoaderData.cs",
+  "Sha256": "98D0E4FE79156FF18C3ED0110D72ECDA9056D3D9CBDFF23D617C3E49798ED5E2",
+  "Members": ["PCL.PageInstanceCompResource::MethodDeclaration::PageOther_Loaded()"],
+  "Reason": "Offer explicit missing-index creation once per instance/session, with persistent don't-ask preference, instead of idle indexing."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupGameManage.xaml.cs",
+  "Sha256": "DE68F016EFF2B0EE57D911473BEE95E690E4E0A489910B3E0CBB281E51260E1B",
+  "Members": ["PCL.PageSetupGameManage::MethodDeclaration::Reload()"],
+  "Reason": "Load the persistent index prompt preference beside the new 42px native manual creation button. Other settings retain their existing bindings."
 }
 ]

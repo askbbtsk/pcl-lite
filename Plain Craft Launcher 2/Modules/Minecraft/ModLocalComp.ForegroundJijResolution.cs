@@ -34,7 +34,11 @@ public static partial class ModLocalComp
             ModJarInJarCache.UseInstance(instancePath);
             lock (sharedScanGate)
                 JijScanContext = sharedScan ??= new ModJarInJar.ScanContext(() => workerToken.IsCancellationRequested || !IsCurrent());
-            try { mod.ResolveJijNow(); progress.Report(Interlocked.Increment(ref completed)); }
+            try
+            {
+                ModIndexService.RunWorker(() => mod.ResolveJijNow(), workerToken);
+                progress.Report(Interlocked.Increment(ref completed));
+            }
             finally { JijScanContext = null; ModJarInJarCache.UseInstance(null); }
         }, token, IsCurrent).ConfigureAwait(false);
         if (!IsCurrent()) return false;

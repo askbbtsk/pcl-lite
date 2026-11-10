@@ -217,9 +217,17 @@ public static class ModJarInJarCache
 
     /// <summary>Persist only the current instance; unrelated stores must not delay foreground indexing.</summary>
     public static void FlushCurrent()
+        => SaveCurrent();
+
+    internal static bool SaveCurrent()
     {
         var store = _current;
-        if (store is not null) lock (store.SyncRoot) _FlushStore(store);
+        if (store is null) return true;
+        lock (store.SyncRoot)
+        {
+            _FlushStore(store);
+            return !store.Dirty;
+        }
     }
 
     private static void _FlushStore(_Store store)
@@ -229,16 +237,14 @@ public static class ModJarInJarCache
         {
             Directory.CreateDirectory(Path.GetDirectoryName(store.CachePath)!);
             var tmp = store.CachePath + ".tmp";
-            byte[] bytes;
-            using (var ms = new MemoryStream())
+            // Stream directly to the owned temporary file instead of retaining two copies of
+            // the compressed index; Fastest avoids spending foreground time on optimal gzip.
+            using (var output = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                using (var gz = new GZipStream(ms, CompressionLevel.Optimal, true))
+                using (var gz = new GZipStream(output, CompressionLevel.Fastest, true))
                     JsonSerializer.Serialize(gz,
                         new CacheFile { Version = FormatVersion, Entries = store.Entries }, _jsonOpts);
-                bytes = ms.ToArray();
             }
-
-            File.WriteAllBytes(tmp, bytes);
             File.Move(tmp, store.CachePath, true);
             // 清理旧版明文缓存（.json → .bin 迁移后残留）
             var legacy = Path.Combine(Path.GetDirectoryName(store.CachePath)!, "JarInJar.json");

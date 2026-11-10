@@ -5,6 +5,18 @@
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
 
+    <sys:String x:Key="Setup.GameManage.ModIndex.Title">模組相依索引</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Description">為首頁目前選擇的實例建立索引，加速內嵌模組關係與相依檢查。待機和瀏覽頁面時不再自動補建；下載模組後仍自動更新相關檔案。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Create">立刻建立索引</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.PromptSetting">開啟模組頁面時，提示建立缺少的索引</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.NoInstance">請先在首頁選擇一個實例，再建立索引。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Working">正在為「{0}」建立索引。可隨時取消，已完成的索引會保留。已處理檔案數：</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Complete">模組索引建立完成。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Incomplete">索引尚未全部完成或已取消。已儲存完成項，可稍後重試；詳情請見記錄。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Prompt">「{0}」有尚未建立索引的模組，內嵌關係與相依檢查可能不完整。是否現在建立？也可稍後在設定 → 遊戲管理中按下「立刻建立索引」。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Later">稍後</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Never">不再提示</sys:String>
+
     <!-- Meta -->
 
     <sys:String x:Key="Meta.Code">zh-TW</sys:String>

@@ -388,6 +388,7 @@ public partial class PageInstanceCompResource
                         {
                             File.Move(Entry.Key, Entry.Value);
                             finishedFileNames.Add(ModBase.GetFileNameFromPath(Entry.Value));
+                            ModIndexService.DownloadCompleted(Entry.Value);
                         }
                         else
                         {

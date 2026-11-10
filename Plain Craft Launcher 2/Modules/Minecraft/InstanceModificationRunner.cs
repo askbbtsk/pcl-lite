@@ -22,7 +22,7 @@ using PCL.Core.Utils;
 
 namespace PCL;
 
-/// <summary>Installs into a private sibling first, then switches only explicitly planned live files.</summary>
+/// <summary>Installs in an owned OS-temp workspace, then switches only explicitly planned live files.</summary>
 internal static class InstanceModificationRunner
 {
     internal static void Start(McInstance source, string minecraftRoot, ModDownloadLib.McInstallRequest request, bool migrateMods,
@@ -52,10 +52,8 @@ internal static class InstanceModificationRunner
             if (!string.Equals(InstanceModificationTransaction.HashOrMissing(originalIni), iniBefore, StringComparison.OrdinalIgnoreCase))
                 throw new IOException(Lang.Text("Instance.Migration.SourceChanged", "Setup.ini"));
             if (jsonBefore is null) throw new IOException(Lang.Text("Instance.Migration.SourceChanged", source.Name));
-            var parent = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(instance))!;
-            var stageName = ".pcl-modify-" + Guid.NewGuid().ToString("N"); var stage = Path.Combine(parent, stageName);
-            var marker = Path.Combine(stage, ".pcl-modify-owner"); var identity = Guid.NewGuid().ToString("N");
-            Directory.CreateDirectory(stage); File.WriteAllText(marker, identity);
+            using var workspace = ModificationWorkspace.Create();
+            var stageName = workspace.StageName; var stage = workspace.StageDirectory;
             var notices = new List<string>();
             try
             {
@@ -204,14 +202,9 @@ internal static class InstanceModificationRunner
             }
             finally
             {
-                try
-                {
-                    PackExportContent.CheckAncestors(parent, stage); PackExportContent.CheckAncestors(stage, marker);
-                    if (File.Exists(marker) && File.ReadAllText(marker) == identity)
-                    { _ = EnumerateSafe(stage).ToArray(); Directory.Delete(stage, recursive: true); }
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException)
-                { ModBase.Log(error, "保留无法安全清理的修改暂存目录", ModBase.LogLevel.Developer); }
+                workspace.Dispose();
+                if (workspace.CleanupError is { } error)
+                    ModBase.Log(error, $"暂存目录未能立即清理，将在下次启动重试：{workspace.Root}", ModBase.LogLevel.Developer);
             }
         });
         loader.OnStateChanged = ModDownloadLib.LoaderStateChangedHintOnly;

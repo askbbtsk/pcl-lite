@@ -288,4 +288,27 @@
   "Members": ["PCL.McInstance::PropertyDeclaration::JsonObject"],
   "Reason": "All-folder index discovery must resolve inheritsFrom relative to the instance's own versions directory, matching Check() and preserving the selected global Minecraft root. The former name-only constructor silently used the selected root for other-root instances."
 }
+, {
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageDownload/ModDownloadLib.InstanceInstallCoordinator.cs",
+  "Sha256": "9341B014A19E688E3F476E83AB1BDD1BE5BF35E85CDA19BD176A81E31143A772",
+  "Members": ["PCL.ModDownloadLib::MethodDeclaration::McInstallLoader(McInstallRequest request, bool dontFixLibraries = false,\n        bool ignoreDump = false)"],
+  "Reason": "Honor the requested target instance folder for ignore markers and final JSON merge, and pass its own Minecraft root to vanilla download. Modification staging now lives under OS temp instead of polluting live versions; ordinary requests still resolve to the same folder."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Program.cs",
+  "Sha256": "D2DBF6D78F4462EFAB974777C99AE76737FCE1EF471D6B2CB3E8E830F6D35148",
+  "Members": ["PCL.Program::MethodDeclaration::Main()"],
+  "Reason": "At startup retry cleanup of marked unlocked modification workspaces only in the dedicated OS-temp namespace. Active leases, ownership changes and links are preserved. Cleanup errors are logged off the UI thread."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Controls/MyMsg/MyMsgSelect.xaml.cs",
+  "Sha256": "360973D25403FBD984DC7E3E0A6E6376EB5EC39F14C49B32E565FE87667EF03F",
+  "Members": [
+    "PCL.MyMsgSelect::MethodDeclaration::InitializeSelectionList(object content)",
+    "PCL.MyMsgSelect::MethodDeclaration::Load(object sender, EventArgs e)",
+    "PCL.MyMsgSelect::MethodDeclaration::Btn1_Click(object sender, MouseButtonEventArgs e)",
+    "PCL.MyMsgSelect::MethodDeclaration::_UpdateCheckedState()"
+  ],
+  "Reason": "Synchronize the multiselect confirm button after adding controls and on Loaded so preselected migration rows can be confirmed immediately. The same tested index projection drives enabled state and submission; empty/all-unchecked selections remain blocked, single-select behavior is unchanged."
+}
 ]

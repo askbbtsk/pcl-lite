@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using PCL.Core.UI.Controls;
+using PCL.Core.UI;
 
 using PCL.Core.App.Localization;
 namespace PCL;
@@ -97,6 +98,7 @@ public partial class MyMsgSelect
                 }
             }
         }
+        _UpdateCheckedState();
     }
 
     private void Load(object sender, EventArgs e)
@@ -104,6 +106,7 @@ public partial class MyMsgSelect
         try
         {
             // UI 初始化
+            _UpdateCheckedState();
             if (Btn2.IsVisible && !(Btn1.ColorType == MyButton.ColorState.Red))
                 Btn1.ColorType = MyButton.ColorState.Highlight;
             // 动画
@@ -169,10 +172,8 @@ public partial class MyMsgSelect
             return;
         if (myConverter.MultiSelect)
         {
-            var indices = new List<int>();
-            for (var i = 0; i < PanSelection.Children.Count; i++)
-                if (PanSelection.Children[i] is MyListItem { Checked: true })
-                    indices.Add(i);
+            var indices = SelectionConfirmation.SelectedIndices(PanSelection.Children.Cast<UIElement>()
+                .Select(child => child is MyListItem { Checked: true }));
             if (indices.Count == 0)
                 return;
             myConverter.IsExited = true;
@@ -210,11 +211,8 @@ public partial class MyMsgSelect
         // 多选
         if (!myConverter.MultiSelect)
             return;
-        var checkedCount = 0;
-        foreach (var child in PanSelection.Children)
-            if (child is MyListItem { Checked: true })
-                checkedCount += 1;
-        Btn1.IsEnabled = checkedCount > 0;
+        Btn1.IsEnabled = SelectionConfirmation.SelectedIndices(PanSelection.Children.Cast<UIElement>()
+            .Select(child => child is MyListItem { Checked: true })).Count > 0;
     }
 
     private void Drag(object sender, MouseButtonEventArgs e)

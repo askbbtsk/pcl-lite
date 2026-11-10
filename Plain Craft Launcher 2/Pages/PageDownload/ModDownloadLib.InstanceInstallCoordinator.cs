@@ -92,7 +92,11 @@ public static partial class ModDownloadLib
                                                          request.neoForgeEntry is not null);
 
         // 获取参数
-        var instanceFolder = Path.Combine(ModFolder.mcFolderSelected, "versions", request.targetInstanceName);
+        var instanceFolder = string.IsNullOrWhiteSpace(request.targetInstanceFolder)
+            ? Path.Combine(ModFolder.mcFolderSelected, "versions", request.targetInstanceName)
+            : Path.GetFullPath(request.targetInstanceFolder);
+        var targetMinecraftRoot = Directory.GetParent(Path.TrimEndingDirectorySeparator(instanceFolder))?.Parent?.FullName
+            ?? ModFolder.mcFolderSelected;
         if (Directory.Exists(tempMcFolder))
             ModBase.DeleteDirectory(tempMcFolder);
         string optiFineFolder = null;
@@ -237,7 +241,8 @@ public static partial class ModDownloadLib
                 request.minecraftName
             ),
             McDownloadClientLoader(
-                request.minecraftName, request.minecraftJson, request.targetInstanceName
+                request.minecraftName, request.minecraftJson, request.targetInstanceName,
+                targetMcFolder: targetMinecraftRoot
             )
         )
         {

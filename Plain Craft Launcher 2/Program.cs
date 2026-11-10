@@ -60,6 +60,15 @@ internal static class Program
                 FileDownloader.DownloadAsync(urls, path, cancellationToken: ct, enableParallelChunks: true);
             try { new RecentWorldHistory().RecoverInterruptedSessions(); }
             catch (Exception ex) { ModBase.Log(ex, "恢复上次运行中断的最近世界记录失败", ModBase.LogLevel.Hint); }
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    PCL.Core.Minecraft.InstanceMigration.ModificationWorkspace.CleanupAbandoned(
+                        error => ModBase.Log(error, "跳过仍在使用或无法安全清理的修改临时目录", ModBase.LogLevel.Developer));
+                }
+                catch (Exception error) { ModBase.Log(error, "清理修改临时目录失败", ModBase.LogLevel.Developer); }
+            });
             var form = new FormMain();
             return form;
         };

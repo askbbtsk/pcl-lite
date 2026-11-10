@@ -122,7 +122,7 @@ public static class ModificationDependencyPlanner
             var destination = InstanceMigrationPlanner.PreserveDisabledName(root.Target.FileName, root.SourcePath);
             if (acceptedDestinations.Contains(destination))
             {
-                rejected.Add(new(root.SourcePath, destination + ": another selected source already supplies this target file."));
+                rejected.Add(new(root.SourcePath, destination + ": target filename is already supplied by another selected source."));
                 continue;
             }
             if (root.Disabled)

@@ -3,8 +3,8 @@
   "version": {
     "base": "1.7.5",
     "upstream": "2.12.1",
-    "suffix": "snapshot-5",
-    "code": 87
+    "suffix": "pre-1",
+    "code": 88
   },
   "licenses": [
     {

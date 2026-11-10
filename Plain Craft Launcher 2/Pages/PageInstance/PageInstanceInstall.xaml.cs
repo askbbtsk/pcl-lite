@@ -136,7 +136,8 @@ public partial class PageInstanceInstall
                 var migrateMods = AskToMigrateMods(changingInstance);
                 if (migrateMods is null || !IsLoaded || !ReferenceEquals(changingInstance, PageInstanceLeft.McInstance)) return;
                 InstanceModificationRunner.Start(changingInstance, ModFolder.mcFolderSelected,
-                    BuildModificationRequest(changingInstance), migrateMods.Value);
+                    BuildModificationRequest(changingInstance), migrateMods.Value,
+                    CheckAutomaticMigrationDependencies.Checked == true);
                 return;
             }
         }

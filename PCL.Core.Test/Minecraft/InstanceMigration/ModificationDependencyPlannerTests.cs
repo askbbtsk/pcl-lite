@@ -10,6 +10,52 @@ namespace PCL.Core.Test.Minecraft.InstanceMigration;
 [TestClass]
 public sealed class ModificationDependencyPlannerTests
 {
+    [TestMethod]
+    public void DifferentOldSourcesMappingToOneTargetCannotQueueTheSameArtifactTwice()
+    {
+        var target = File("library", "same-version");
+        var result = Plan([Root("old-v1.jar", target), Root("old-v2.jar", target)]);
+        CollectionAssert.AreEqual(new[] { "old-v1.jar" }, result.AcceptedSources.ToArray());
+        Assert.AreEqual("old-v2.jar", result.Rejected.Single().SourcePath);
+        Assert.AreEqual(0, result.Downloads.Count);
+    }
+
+    [TestMethod]
+    public void SelectedDependencyAfterConsumerIsNotDownloadedOrRequestedAgain()
+    {
+        var dependency = File("dependency", "chosen");
+        var first = File("first", "v1", Ref("dependency", "chosen"));
+        var second = File("second", "v1", Ref("dependency", "chosen"));
+        var requests = 0;
+        var result = ModificationDependencyPlanner.Plan([
+            Root("first.jar", first), Root("second.jar", second), Root("dependency.jar", dependency)
+        ], Minecraft, Loader, (_, _) =>
+        {
+            requests++;
+            throw new InvalidOperationException("A chosen target is already available to the whole graph.");
+        });
+        Assert.AreEqual(3, result.AcceptedSources.Count);
+        Assert.AreEqual(0, result.Downloads.Count);
+        Assert.AreEqual(0, requests);
+    }
+
+    [TestMethod]
+    public void ManyModsRequestingOneUnselectedDependencyProduceOneDownload()
+    {
+        var dependency = File("shared");
+        var roots = Enumerable.Range(0, 100).Select(index => Root("mod" + index + ".jar",
+            File("mod" + index, "v1", Ref("shared")))).ToArray();
+        var queries = 0;
+        var result = ModificationDependencyPlanner.Plan(roots, Minecraft, Loader, (_, _) =>
+        {
+            queries++;
+            return [dependency];
+        });
+        Assert.AreEqual(100, result.AcceptedSources.Count);
+        Assert.AreEqual(1, result.Downloads.Count);
+        Assert.AreEqual(1, queries);
+    }
+
     private const string Minecraft = "26.2";
     private const string Loader = "NeoForge";
     private const string Platform = "Modrinth";

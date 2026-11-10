@@ -179,7 +179,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceInstall.xaml.cs",
-  "Sha256": "BF02D5F525AC138E510341B6EAC97D4962D219288ADCD7DC2230983D1962DAA4",
+  "Sha256": "6CC15AE15B1E890C3DF43C001DB3264B00B2A7B5E1475F78EE50F3471B7BEB37",
   "Members": [
     "PCL.PageInstanceInstall::MethodDeclaration::BtnSelectStart_Click(object sender, MouseButtonEventArgs mouseButtonEventArgs)",
     "PCL.PageInstanceInstall::MethodDeclaration::MinecraftSelected(MyListItem sender, MouseButtonEventArgs e)"

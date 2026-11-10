@@ -46,6 +46,10 @@
                         <local:MyCard Title="{DynamicResource Instance.Migration.Title}" Margin="0,15,0,0" CanSwap="True">
                             <StackPanel Margin="20,38,20,17">
                                 <TextBlock Text="{DynamicResource Instance.Migration.Description}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                <local:MyCheckBox x:Name="CheckAutomaticMigrationDependencies"
+                                                  Text="{DynamicResource Instance.Modification.AutoDependencies}"
+                                                  ToolTip="{DynamicResource Instance.Modification.AutoDependencies.ToolTip}"
+                                                  Checked="False" MinHeight="30" Margin="0,0,0,10" />
                                 <WrapPanel>
                                     <local:MyButton Text="{DynamicResource Instance.LoaderChange.SelectTarget}"
                                                     Height="35" MinWidth="170" Padding="14,0" Margin="0,0,10,6"

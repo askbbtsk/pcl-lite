@@ -4177,4 +4177,7 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Instance.Modification.Stage.Commit">提交当前实例修改</sys:String>
     <sys:String x:Key="Instance.Modification.DependencyBatch">已在下载前汇总以下必需前置，将按目标游戏版本及加载器下载，每个工件只处理一次：&#xA;&#xA;{0}&#xA;&#xA;是否继续？</sys:String>
     <sys:String x:Key="Instance.Modification.DependencySkipped">以下模组的目标依赖无法可靠满足，已从本次替换中排除，原文件保留：&#xA;&#xA;{0}&#xA;&#xA;继续只修改其余已通过预检的项；保留的旧模组可能不兼容新环境。如需自行处理，请取消。</sys:String>
+    <sys:String x:Key="Instance.Modification.AutoDependencies">自动下载全部必需依赖</sys:String>
+    <sys:String x:Key="Instance.Modification.AutoDependencies.ToolTip">本次修改自动批量下载兼容目标环境的必需前置，不逐项询问；已选中的同版本模组不重复下载。不会加入可选依赖，冲突和无兼容构建仍会提示。</sys:String>
+    <sys:String x:Key="Instance.Modification.DownloadCount">已完成 {0}/{1} 个文件</sys:String>
 </ResourceDictionary>

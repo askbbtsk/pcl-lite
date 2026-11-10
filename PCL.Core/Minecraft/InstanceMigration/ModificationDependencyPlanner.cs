@@ -47,6 +47,7 @@ public static class ModificationDependencyPlanner
         var accepted = new List<string>(); var rejected = new List<ModificationDependencyRejection>();
         var merged = new Dictionary<string, ModificationDependencyFile>(StringComparer.Ordinal);
         var acceptedRootFiles = new HashSet<string>(StringComparer.Ordinal);
+        var acceptedDestinations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var root in roots)
         {
             token.ThrowIfCancellationRequested();
@@ -118,10 +119,17 @@ public static class ModificationDependencyPlanner
                 return true;
             }
             if (!Visit(root.Target, 0)) { rejected.Add(new(root.SourcePath, problem ?? "Dependency resolution failed.")); continue; }
+            var destination = InstanceMigrationPlanner.PreserveDisabledName(root.Target.FileName, root.SourcePath);
+            if (acceptedDestinations.Contains(destination))
+            {
+                rejected.Add(new(root.SourcePath, destination + ": another selected source already supplies this target file."));
+                continue;
+            }
             if (root.Disabled)
             {
                 // Keeping a disabled replacement does not satisfy another enabled mod's dependency.
                 accepted.Add(root.SourcePath);
+                acceptedDestinations.Add(destination);
                 continue;
             }
             var conflict = closure.FirstOrDefault(pair => merged.TryGetValue(pair.Key, out var old) && old.FileId != pair.Value.FileId);
@@ -133,6 +141,7 @@ public static class ModificationDependencyPlanner
             { rejected.Add(new(root.SourcePath, collision.Key + ": different required artifacts have the same destination filename.")); continue; }
             foreach (var pair in closure) merged[pair.Key] = pair.Value;
             accepted.Add(root.SourcePath); acceptedRootFiles.Add(FileKey(root.Target));
+            acceptedDestinations.Add(destination);
         }
         // Every artifact appears at most once; files already chosen as root replacements are not downloaded again as dependencies.
         return new(accepted, merged.Values.Where(file => !acceptedRootFiles.Contains(FileKey(file))).ToArray(), rejected);

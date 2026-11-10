@@ -19,12 +19,13 @@ internal static class ModificationDependencyCoordinator
 
     internal static Prepared Prepare(InstanceMigrationCatalog.Preview preview, IReadOnlyList<MigrationModPlan> chosen,
         string targetMinecraftVersion, MigrationLoader targetLoader, string stageModsDirectory, CancellationToken token,
-        Action<double>? progress = null, Action<string>? activity = null)
+        Action<double>? progress = null, Action<string>? activity = null, bool automaticDependencies = false)
     {
         var loader = targetLoader.ToString();
         var projects = new Dictionary<string, IReadOnlyList<ModificationDependencyFile>>(StringComparer.Ordinal);
         var rawFiles = new Dictionary<string, ModComp.CompFile>(StringComparer.Ordinal);
-        var notices = new List<string>();
+        var notices = preview.Plan.Mods.Where(item => item.Action == MigrationModAction.NeedsReview)
+            .Select(item => Path.GetFileName(item.Source.Path) + ": " + item.Reason).ToList();
         IReadOnlyList<ModificationDependencyFile> GetFiles(string platform, string projectId)
         {
             token.ThrowIfCancellationRequested();
@@ -82,14 +83,15 @@ internal static class ModificationDependencyCoordinator
             try
             {
                 var file = GetFiles(candidate.Platform, candidate.ProjectId).FirstOrDefault(value => value.FileId == candidate.FileId);
-                if (file is null)
+                if (file is null || !string.Equals(file.Hash, candidate.Hash, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(file.FileName, candidate.FileName, StringComparison.Ordinal))
                 { notices.Add(Path.GetFileName(item.Source.Path) + ": " + Lang.Text("Instance.Migration.LookupFailed")); continue; }
                 roots.Add(new(item.Source.Path, file, item.Disabled));
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception error)
             { notices.Add(Path.GetFileName(item.Source.Path) + ": " + error.Message); }
-            progress?.Invoke(0.5 * ++inspected / Math.Max(1, chosen.Count));
+            finally { progress?.Invoke(0.5 * ++inspected / Math.Max(1, chosen.Count)); }
         }
         var plan = ModificationDependencyPlanner.Plan(roots, targetMinecraftVersion, loader, GetFiles, token);
         progress?.Invoke(0.9);
@@ -106,7 +108,7 @@ internal static class ModificationDependencyCoordinator
             downloads.Add(host.ToNetFile(target, ModComp.DownloadReason.Dependency, targetMinecraftVersion,
                 InstanceMigrationCatalog.ToHostLoader(targetLoader)));
         }
-        if (downloads.Count > 0)
+        if (downloads.Count > 0 && !automaticDependencies)
         {
             var summary = string.Join(Environment.NewLine, plan.Downloads.Select(file => file.ProjectId + " / " + file.FileName));
             var consent = ModBase.RunInUiWait(() => ModMain.MyMsgBox(

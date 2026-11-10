@@ -25,7 +25,8 @@ namespace PCL;
 /// <summary>Installs into a private sibling first, then switches only explicitly planned live files.</summary>
 internal static class InstanceModificationRunner
 {
-    internal static void Start(McInstance source, string minecraftRoot, ModDownloadLib.McInstallRequest request, bool migrateMods)
+    internal static void Start(McInstance source, string minecraftRoot, ModDownloadLib.McInstallRequest request, bool migrateMods,
+        bool automaticDependencies = false)
     {
         var instance = source.PathInstance; var game = source.PathIndie;
         var presentation = new OperationTaskPresentation(
@@ -72,15 +73,13 @@ internal static class InstanceModificationRunner
                     preview = InstanceMigrationCatalog.Build(source, request.minecraftName, targetLoader.Value, token,
                         value => presentation.Report(0, value), detail => presentation.Describe(0, detail));
                     chosen = ChooseMods(preview) ?? throw new OperationCanceledException(token);
-                    foreach (var missing in preview.Plan.Mods.Where(item => item.Action == MigrationModAction.NeedsReview))
-                        notices.Add(Path.GetFileName(missing.Source.Path) + ": " + missing.Reason);
                 }
                 else if (migrateMods) notices.Add(Lang.Text("Instance.Modification.VanillaMods"));
                 presentation.Begin(1);
                 var prepared = preview is null ? new ModificationDependencyCoordinator.Prepared([], [], [])
                     : ModificationDependencyCoordinator.Prepare(preview, chosen, request.minecraftName,
                         targetLoader!.Value, stagedMods, token, value => presentation.Report(1, value),
-                        detail => presentation.Describe(1, detail));
+                        detail => presentation.Describe(1, detail), automaticDependencies);
                 notices.AddRange(prepared.Notices);
                 // Do not install or download target mods until all selected roots have been reviewed.
                 token.ThrowIfCancellationRequested();
@@ -95,40 +94,46 @@ internal static class InstanceModificationRunner
                 presentation.Begin(3);
                 if (preview is not null && targetLoader is not null)
                 {
-                        Directory.CreateDirectory(stagedMods);
-                        var downloads = new List<PCL.Network.DownloadFile>(prepared.Dependencies);
-                        foreach (var item in prepared.Mods)
+                    Directory.CreateDirectory(stagedMods);
+                    var downloads = new List<PCL.Network.DownloadFile>(prepared.Dependencies);
+                    foreach (var item in prepared.Mods)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        InstanceMigrationRunner.EnsureContext(source, minecraftRoot);
+                        var destination = Path.Combine(stagedMods, item.TargetFileName!);
+                        var remote = preview.Files[InstanceMigrationCatalog.Key(item.Candidate!)];
+                        var targetDownload = remote.ToNetFile(destination, ModComp.DownloadReason.Dependency, request.minecraftName,
+                            InstanceMigrationCatalog.ToHostLoader(targetLoader.Value));
+                        var alreadyStaged = File.Exists(destination);
+                        if (alreadyStaged && (targetDownload.Check is null || targetDownload.Check.Check(destination) is not null))
                         {
-                            token.ThrowIfCancellationRequested(); InstanceMigrationRunner.EnsureContext(source, minecraftRoot);
-                            var destination = Path.Combine(stagedMods, item.TargetFileName!);
-                            var remote = preview.Files[InstanceMigrationCatalog.Key(item.Candidate!)];
-                            var targetDownload = remote.ToNetFile(destination, ModComp.DownloadReason.Dependency, request.minecraftName,
-                                InstanceMigrationCatalog.ToHostLoader(targetLoader.Value));
-                            var alreadyStaged = File.Exists(destination);
-                            if (alreadyStaged && (targetDownload.Check is null || targetDownload.Check.Check(destination) is not null))
-                            {
-                                // The installer may have populated a different Fabric API build. Only this private
-                                // stage file may be replaced; no live instance file is touched before the transaction.
-                                PackExportContent.CheckAncestors(stage, destination);
-                                File.Delete(destination); alreadyStaged = false;
-                            }
-                            if (!alreadyStaged && item.Action == MigrationModAction.CopyVerifiedLocal)
-                            {
-                                var copy = ResourceCollectionCopyService.Copy([item.Source.Path], stagedMods, token);
-                                if (copy.Cancelled) throw new OperationCanceledException(token);
-                                var copied = copy.Items.Single();
-                                if (copied.Status is not (ResourceCopyStatus.Copied or ResourceCopyStatus.AlreadyPresent))
-                                    throw new IOException(copied.Error);
-                                if (!string.Equals(copied.DestinationPath, destination, StringComparison.OrdinalIgnoreCase))
-                                    File.Move(copied.DestinationPath!, destination, overwrite: false);
-                            }
-                            else if (!alreadyStaged) downloads.Add(targetDownload);
-                            replacements.Add(new(item.Source.Path, item.Source.Sha256, destination, item.TargetFileName!));
-                            selectedPayloadNames.Add(item.TargetFileName!);
+                            // Only an owned stage file may be replaced before the transaction.
+                            PackExportContent.CheckAncestors(stage, destination);
+                            File.Delete(destination);
+                            alreadyStaged = false;
                         }
-                        if (downloads.Count > 0)
-                            InstanceMigrationLoaders.Wait(new LoaderDownload(Lang.Text("Instance.Modification.Stage.Download"), downloads),
-                                null, task, token, value => presentation.Report(3, value));
+                        if (!alreadyStaged && item.Action == MigrationModAction.CopyVerifiedLocal)
+                        {
+                            var copy = ResourceCollectionCopyService.Copy([item.Source.Path], stagedMods, token);
+                            if (copy.Cancelled) throw new OperationCanceledException(token);
+                            var copied = copy.Items.Single();
+                            if (copied.Status is not (ResourceCopyStatus.Copied or ResourceCopyStatus.AlreadyPresent))
+                                throw new IOException(copied.Error);
+                            if (!string.Equals(copied.DestinationPath, destination, StringComparison.OrdinalIgnoreCase))
+                                File.Move(copied.DestinationPath!, destination, overwrite: false);
+                        }
+                        else if (!alreadyStaged) downloads.Add(targetDownload);
+                        replacements.Add(new(item.Source.Path, item.Source.Sha256, destination, item.TargetFileName!));
+                        selectedPayloadNames.Add(item.TargetFileName!);
+                    }
+                    if (downloads.Count > 0)
+                        InstanceMigrationLoaders.Wait(new LoaderDownload(Lang.Text("Instance.Modification.Stage.Download"), downloads),
+                            null, task, token, value =>
+                            {
+                                presentation.Report(3, value);
+                                presentation.Describe(3, Lang.Text("Instance.Modification.DownloadCount",
+                                    downloads.Count(file => file.State == PCL.Network.NetState.Finished), downloads.Count));
+                            });
                 }
                 presentation.Begin(4);
                 token.ThrowIfCancellationRequested(); InstanceMigrationRunner.EnsureContext(source, minecraftRoot);

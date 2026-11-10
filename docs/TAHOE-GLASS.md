@@ -74,6 +74,7 @@ dotnet test PCL.Core.Test/PCL.Core.Test.csproj -c Debug --filter "FullyQualified
 
 - 着色器重新编译为 `ps_3_0/main`，2696 字节。
 - 23 项针对性回归通过：原有 13 项数学/STA 材质测试，以及 10 项桌面协调器与缓冲测试。新增测试通过注入采集平台覆盖过期回调、显示器恢复、有界重试、部分显示器故障、清理异常、重复开关、隐藏恢复、不支持采集以及脏行目标坐标。
+- 已基于上游 `9865e3c` 重建，启动器 Debug 构建 0 警告、0 错误；全量 958 项测试通过、无跳过。测试构建有两条上游既有的 MSTEST0044 过时用法警告。DEBUG / CI / RELEASE / BETA 四种源码契约检查均通过；有意变更的 35 个控件接线成员按仓库机制记录了逐成员审批与精确源 SHA256，没有修改校验器或使用通配跳过。
 - 本机同一隔离配置、启动到主页后等待 6 秒，再采样 6 秒：修复前消耗 1593.75 ms CPU，修复后 1218.75 ms CPU，约减少 23.5%。工作集约 270 MB → 279 MB，私有内存约 281 MB → 282 MB；没有内存下降的结论。
 - 这是 Debug 单次短样本，实际桌面内容未完全受控，不能等价于帧率提升、长时间负载或跨设备性能保证；原始采样保存在本地忽略目录 `artifacts/tahoe-integration/perf-before.json` 与 `perf-after.json`。
 - 修复版实际日志记录 `DesktopCapture=Live; Shader=EighthPower; f=0.05`，随后 `Desktop=LiveDesktopRefraction`。真实多显示器拔插、四档系统 DPI 及最终视觉比较仍需实机矩阵；故障恢复测试使用替身平台，不冒充物理显示器拔插验收。

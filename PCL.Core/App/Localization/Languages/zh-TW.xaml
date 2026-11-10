@@ -4156,7 +4156,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Instance.LoaderChange.SecondWarning">再次確認：你已為「{0}」完成完整備份，並理解更換載入器後可能無法啟動或相容既有內容。請等待 5 秒後確認；取消可立即退出，不修改檔案。</sys:String>
     <sys:String x:Key="Instance.LoaderChange.ConfirmChange">確認修改載入器</sys:String>
     <sys:String x:Key="Instance.LoaderChange.ModTitle">遷移現有模組</sys:String>
-    <sys:String x:Key="Instance.LoaderChange.ModPrompt">將「{0}」從 Minecraft {1} 修改為 {2}。是否同時尋找並遷移支援目標遊戲版本與載入器的模組？選擇不遷移會原樣保留既有模組，可能不相容。</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.ModPrompt">實例：「{0}」&#xA;本次操作：{3}&#xA;目前環境：{1}&#xA;目標環境：{2}&#xA;&#xA;是否尋找並遷移支援目標環境的模組？選擇不遷移會原樣保留既有模組，可能與目標環境不相容。</sys:String>
     <sys:String x:Key="Instance.LoaderChange.MigrateMods">遷移模組</sys:String>
     <sys:String x:Key="Instance.LoaderChange.KeepMods">不遷移，保留原樣</sys:String>
     <sys:String x:Key="Instance.LoaderChange.ModSecondWarning">再次確認遷移模組：僅處理明確支援目標版本與載入器的同專案建置。替換成功後原模組保留為停用檔案；無法遷移或衝突的項目保留並列出原因。請等待 3 秒後確認。</sys:String>
@@ -4164,4 +4164,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Instance.Modification.VanillaMods">目標為原版，無法依載入器遷移模組；已保留既有檔案。</sys:String>
     <sys:String x:Key="Instance.Modification.ReplacePreview">提交後，下列原模組會保留為停用檔案，由目標建置取代其啟用位置。保留原始內容，不覆寫設定與存檔。是否繼續？&#xA;{0}</sys:String>
     <sys:String x:Key="Instance.Modification.Success">實例「{0}」已原地修改。原模組內容以停用檔案保留；未處理項目及原因如下。</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.Action.Game">修改遊戲版本</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.Action.Loader">修改載入器</sys:String>
+    <sys:String x:Key="Instance.LoaderChange.Action.Both">修改遊戲版本及載入器</sys:String>
 </ResourceDictionary>

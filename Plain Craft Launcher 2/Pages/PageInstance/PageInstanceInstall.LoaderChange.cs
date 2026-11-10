@@ -79,13 +79,24 @@ public partial class PageInstanceInstall
 
     private bool? AskToMigrateMods(McInstance instance)
     {
-        var choice = ModMain.MyMsgBox(Lang.Text("Instance.LoaderChange.ModPrompt", instance.Name,
-                instance.Info.VanillaName, _vanillaName),
+        // Use the same complete source/target summaries as the modification preview. Showing
+        // only Minecraft numbers makes a loader-only change look like a no-op (26.2 -> 26.2).
+        var before = currentInfo;
+        var after = GetSelectInfo();
+        if (string.IsNullOrWhiteSpace(before) || string.IsNullOrWhiteSpace(after)) return null;
+        var changesGame = !string.Equals(instance.Info.VanillaName, _vanillaName, StringComparison.Ordinal);
+        var changesLoader = GetExistingLoader(instance) != _selectedLoaderType;
+        var actionKey = changesGame
+            ? changesLoader ? "Instance.LoaderChange.Action.Both" : "Instance.LoaderChange.Action.Game"
+            : "Instance.LoaderChange.Action.Loader";
+        var summary = Lang.Text("Instance.LoaderChange.ModPrompt", instance.Name, before, after, Lang.Text(actionKey));
+        var choice = ModMain.MyMsgBox(summary,
             Lang.Text("Instance.LoaderChange.ModTitle"), Lang.Text("Instance.LoaderChange.MigrateMods"),
             Lang.Text("Instance.LoaderChange.KeepMods"), Lang.Text("Common.Action.Cancel"), isWarn: true);
         if (choice == 2) return false;
         if (choice != 1) return null;
-        if (TimedConfirmation.Show(Lang.Text("Instance.LoaderChange.ModSecondWarning"),
+        if (TimedConfirmation.Show(summary + Environment.NewLine + Environment.NewLine
+                + Lang.Text("Instance.LoaderChange.ModSecondWarning"),
                 Lang.Text("Instance.LoaderChange.ModTitle"), Lang.Text("Instance.LoaderChange.MigrateMods"),
                 Lang.Text("Common.Action.Cancel"), 3) != 1) return null;
         return true;

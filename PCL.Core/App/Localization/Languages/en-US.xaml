@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.5 stable: modpack authoring and local updates, instance and mod migration, on-demand indexing across instances, Prism import, manual backup and recovery, and optional LiquidGlass. See the release notes for usage and limitations.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.5 hotfix-1: smaller LiquidGlass Windows projections and native graphics bindings reduce executable size. Fixed background opacity in glass mode; glass, text and the launcher badge retain their opacity.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>

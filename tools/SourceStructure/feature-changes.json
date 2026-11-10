@@ -435,8 +435,8 @@
     "PCL.ThemeManager::MethodDeclaration::ThemeRefreshMain()",
     "PCL.ThemeManager::MethodDeclaration::RefreshBackground()"
   ],
-  "Reason": "Tahoe opt-in feature: Apply opt-in appearance after base-theme refresh and expose background refresh for restoring the original mode. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
-  "Sha256": "1BA34207D27EB9EAF59153FB5F7E5B159766196850306FE626EC343B9822AB9C"
+  "Reason": "LiquidGlass hotfix-1: preserve the existing theme brush calculation but draw it only in LauncherBackgroundLayer. PanForm must remain transparent so the background-only opacity slider works. The source hash also pins the unchanged ThemeRefreshMain entry. Covered by shipped-XAML and rendered background-pixel regressions.",
+  "Sha256": "EDF91C867BC700396E078011FC849182E2C90CF9590CC42E0ACC822E8ECC0786"
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.PreferenceBinding.cs",

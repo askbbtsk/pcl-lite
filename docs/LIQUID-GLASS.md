@@ -77,6 +77,14 @@ Android 自身的 `circleMap()` 没有沿用，折射曲线按要求使用八次
 
 ## 渲染与生命周期
 
+### 1.7.5 hotfix-1 的接口与背景分层
+
+- Windows Graphics Capture / D3D11 继续调用 Windows 自带组件。C#/WinRT 2.3.1 在构建时生成必要的接口及其类型依赖，嵌入当前程序集，不分发完整 `Microsoft.Windows.SDK.NET.dll` 或独立的 `WinRT.Runtime.dll`。D3D11 使用仅包含本捕获流程所需操作的 COM/PInvoke 接口，替换整套 Vortice/SharpGen 依赖。
+- 生成配置集中于 `build/WindowsGraphicsProjection.props`。元数据固定为 Windows SDK Contracts 10.0.19041.2；Contracts 和代码生成器均为构建依赖，不随程序交付。间接依赖包含 CaptureItem 的 Visual 类型和 FramePool 的 DispatcherQueue 类型，不能只凭调用次数删除。
+- 构建使用 Windows 上的 C#/WinRT 编译器，生成文件保留在 `obj/`，不手工改写或提交。CI 对两种架构检查 EXE 不超过 30,000,000 字节。保留依赖现有 .NET Desktop Runtime 的单文件发布方式，不通过捆绑运行时启用压缩，也不使用 WPF 不支持的全程序裁剪。
+- 主题背景由 `LauncherBackgroundLayer` 唯一持有；父级 `PanForm` 不再重复绘制不透明背景。开启液态玻璃时，不透明度滑块只调整主题背景和图片/视频背景。实时桌面采样、玻璃、文字及 PCL Lite 徽标不随之变淡。关闭玻璃时恢复原有整窗不透明度语义。
+- 回归测试同时覆盖真实窗口 XAML 的图层结构、背景混合像素、切回普通模式，以及 WARP D3D11 设备通过生成的 WinRT 接口往返。CI 环境可验证设备与事件 ABI；真实显示器捕获、混合 DPI 和不同显卡的最终画面仍需实机验收。
+
 - `TahoeBackdrop` 只包含桌面采样像素或用户背景图片/视频，与玻璃层相互独立。
 - 桌面采集按显示器与窗口交集建立会话，GPU 只回读交集区域；有界帧队列、用户帧率上限、复用像素缓冲、跳过相同帧。最小化/隐藏释放会话，恢复后重建；坐标使用实际屏幕像素及 WPF 变换。
 - 坐标通过不可变区域快照无锁发布，原生会话在工作线程退役；UI 不等待 GPU 回读或 WGC Close。每个会话最多只有一份待呈现帧；缓冲比较后仅上传发生变化的行带，连续内存一次复制。

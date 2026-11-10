@@ -1,0 +1,75 @@
+<Project>
+  <PropertyGroup>
+    <CsWinRTEmbedded>true</CsWinRTEmbedded>
+    <CsWinRTWindowsMetadata>$(PkgMicrosoft_Windows_SDK_Contracts)\ref\netstandard2.0</CsWinRTWindowsMetadata>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- CaptureItem.CreateFromVisual and FramePool.DispatcherQueue expose additional
+         types even though capture uses monitor interop and CreateFreeThreaded.
+         Keep their required type closure, not the full Windows SDK projection.
+         Windows.UI itself also emits CsWinRT's built-in Color struct addition. -->
+    <CsWinRTIncludes>
+      Windows.Graphics.Capture;
+      Windows.Graphics.DirectX;
+      Windows.Graphics.SizeInt32;
+      Windows.Graphics.PointInt32;
+      Windows.Graphics.RectInt32;
+      Windows.Graphics.IGeometrySource2D;
+      Windows.Graphics.Effects;
+      Windows.Foundation;
+      Windows.System.DispatcherQueue;
+      Windows.System.IDispatcherQueue;
+      Windows.System.VirtualKey;
+      Windows.UI;
+      Windows.UI.Core.CoreDispatcher;
+      Windows.UI.Core.ICoreDispatcher;
+      Windows.UI.Core.CoreProcessEventsOption;
+      Windows.UI.Core.DispatchedHandler;
+      Windows.UI.Core.IdleDispatchedHandler;
+      Windows.UI.Core.IdleDispatchedHandlerArgs;
+      Windows.UI.Core.IIdleDispatchedHandlerArgs;
+      Windows.UI.Core.CoreDispatcherPriority;
+      Windows.UI.Core.AcceleratorKeyEventArgs;
+      Windows.UI.Core.IAcceleratorKeyEventArgs;
+      Windows.UI.Core.ICoreAcceleratorKeys;
+      Windows.UI.Core.ICoreWindowEventArgs;
+      Windows.UI.Core.CorePhysicalKeyStatus;
+      Windows.UI.Core.CoreAcceleratorKeyEventType;
+      Windows.UI.Core.CoreVirtualKeyStates;
+      Windows.UI.Input.Pointer;
+      Windows.UI.Input.IPointer;
+      Windows.Devices.Input.PointerDevice;
+      Windows.Devices.Input.IPointerDevice;
+    </CsWinRTIncludes>
+    <!-- More specific prefixes win. PropertyType is supplied by the embedded runtime;
+         Diagnostics would unnecessarily pull storage and logging projections. -->
+    <CsWinRTExcludes>
+      Windows;Microsoft;
+      Windows.Foundation.Diagnostics;
+      Windows.Foundation.PropertyType;
+      Windows.UI.Xaml;
+      Windows.UI.ApplicationSettings;
+      Windows.UI.Input;
+      Windows.UI.Notifications;
+      Windows.UI.Popups;
+      Windows.UI.Shell;
+      Windows.UI.StartScreen;
+      Windows.UI.Text;
+      Windows.UI.ViewManagement;
+      Windows.UI.WebUI;
+      Windows.UI.WindowManagement;
+      Windows.UI.Core;
+      Windows.UI.Composition.Interactions;
+      Windows.UI.Composition.Scenes;
+    </CsWinRTExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.1"
+                      PrivateAssets="all" ExcludeAssets="compile;runtime" />
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.2"
+                      PrivateAssets="all" ExcludeAssets="all" GeneratePathProperty="true" />
+  </ItemGroup>
+  <Target Name="RequireEmbeddedWindowsGraphics" AfterTargets="ResolveReferences">
+    <Error Condition="'%(ReferencePath.Filename)' == 'Microsoft.Windows.SDK.NET' Or '%(ReferencePath.Filename)' == 'WinRT.Runtime'"
+           Text="Desktop capture must use the embedded projection, not the full SDK or external WinRT.Runtime." />
+  </Target>
+</Project>

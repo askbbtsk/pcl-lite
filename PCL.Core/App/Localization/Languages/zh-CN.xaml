@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.5 正式版：整合包制作与本地更新、实例环境修改和模组迁移、全实例按需索引、Prism 导入、手动备份与恢复，以及可选的 LiquidGlass。具体限制和使用方法见发布说明。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.5 hotfix-1：精简 LiquidGlass 的 Windows 接口依赖，减小程序体积；修复液态玻璃开启时背景不透明度调低后背景没有变淡的问题，玻璃、文字和徽标保持不变。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">性能预设</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>

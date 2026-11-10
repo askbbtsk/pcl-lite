@@ -114,12 +114,8 @@ public static class LiquidGlassCore
     {
         var window = ModMain.frmMain;
         if (window?.LauncherBackgroundLayer is null) return;
-        window.Opacity = PCL.Core.UI.LiquidGlassComposition.WindowOpacity(IsEnabled, value);
-        var opacity = PCL.Core.UI.LiquidGlassComposition.BackgroundOpacity(IsEnabled, value);
-        window.LauncherBackgroundLayer.Opacity = opacity;
-        window.TahoeWallpaperHost.Opacity = opacity;
-        // The sampled desktop is an independent source: never fade it together with the wallpaper.
-        window.TahoeDesktopImage.Opacity = 1;
+        PCL.Core.UI.LiquidGlassComposition.Apply(IsEnabled, value, window,
+            window.LauncherBackgroundLayer, window.TahoeWallpaperHost, window.TahoeDesktopImage);
     }
 
     private static IEnumerable<TahoeGlassSurface> GlassSurfaces(DependencyObject parent)

@@ -16,7 +16,11 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    # C#/WinRT's projection compiler is a Windows executable.
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     env:
       LANG: en_US.UTF-8
 
@@ -57,6 +61,22 @@ jobs:
           dotnet publish "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" \
           -p:Configuration="$BUILD_CONFIGURATION" -p:Platform="$BUILD_ARCHITECTURE" \
           -p:DeleteExistingFiles=true -o ./artifact --no-self-contained
+
+      - name: Verify compact single-file output
+        shell: pwsh
+        env:
+          BUILD_CONFIGURATION: ${{ inputs.configuration }}
+        run: |
+          $binary = Get-Item -LiteralPath './artifact/Plain Craft Launcher 2.exe'
+          Write-Host "Executable size: $($binary.Length) bytes"
+          if ($env:BUILD_CONFIGURATION -ne 'CI' -and $binary.Length -gt 30000000) {
+            throw "The launcher exceeds the 30 MB release size limit."
+          }
+          foreach ($name in @('Microsoft.Windows.SDK.NET.dll', 'WinRT.Runtime.dll')) {
+            if (Get-ChildItem ./artifact -Recurse -Filter $name) {
+              throw "Unexpected external Windows projection: $name"
+            }
+          }
 
       - name: Upload the Build Artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

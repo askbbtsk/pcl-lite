@@ -4,10 +4,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Microsoft.Win32;
-using Vortice.Direct3D;
-using Vortice.Direct3D11;
-using Vortice.DXGI;
-using Vortice.Mathematics;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.DirectX.Direct3D11;
@@ -21,7 +17,7 @@ namespace PCL;
 /// <summary>Windows Graphics Capture and D3D11, isolated from the WPF lifecycle.</summary>
 internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITahoeCapturePlatform
 {
-    public bool IsSupported => GraphicsCaptureSession.IsSupported();
+    public bool IsSupported => OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041) && GraphicsCaptureSession.IsSupported();
     public event EventHandler DisplaysChanged
     {
         add => SystemEvents.DisplaySettingsChanged += value;
@@ -43,8 +39,12 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
         return monitors;
     }
 
-    public ITahoeMonitorCapture CreateMonitor(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed) =>
-        new MonitorCapture(monitor, present, failed, log);
+    public ITahoeMonitorCapture CreateMonitor(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed)
+    {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+            throw new PlatformNotSupportedException("Desktop capture requires Windows 10 version 2004 or later.");
+        return new MonitorCapture(monitor, present, failed, log);
+    }
 
     [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
     private delegate bool MonitorEnum(IntPtr monitor, IntPtr dc, ref NativeRect rect, IntPtr data);
@@ -55,18 +55,20 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
     [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetWindowDisplayAffinity(IntPtr hwnd, out uint affinity);
 
+    [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.19041")]
     private sealed class MonitorCapture : ITahoeMonitorCapture
     {
         private readonly object _gate = new();
         private readonly Action<TahoeCaptureFrame, Action> _present;
         private readonly Action<Exception> _failed;
-        private ID3D11Device? _device;
-        private ID3D11DeviceContext? _context;
+        private LiquidGlassD3D11.Resource? _device;
+        private LiquidGlassD3D11.Resource? _context;
         private IDirect3DDevice? _winrtDevice;
         private GraphicsCaptureItem? _item;
         private Direct3D11CaptureFramePool? _pool;
         private GraphicsCaptureSession? _session;
-        private ID3D11Texture2D? _staging;
+        private LiquidGlassD3D11.Resource? _staging;
+        private int _stagingWidth, _stagingHeight;
         private TahoeCaptureRegion? _region;
         private byte[]? _pixels, _scratch;
         private Windows.Graphics.SizeInt32 _frameSize;
@@ -82,10 +84,8 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
             _log = log;
             try
             {
-                D3D11.D3D11CreateDevice((IDXGIAdapter?)null, DriverType.Hardware, DeviceCreationFlags.BgraSupport,
-                    [FeatureLevel.Level_11_0, FeatureLevel.Level_10_1], out _device, out _context).CheckError();
-                using var dxgi = _device.QueryInterface<IDXGIDevice>();
-                Marshal.ThrowExceptionForHR(CreateDirect3D11DeviceFromDXGIDevice(dxgi.NativePointer, out IntPtr nativeDevice));
+                LiquidGlassD3D11.CreateDevice(out _device, out _context);
+                IntPtr nativeDevice = LiquidGlassD3D11.CreateWinRtDevice(_device);
                 try { _winrtDevice = MarshalInterface<IDirect3DDevice>.FromAbi(nativeDevice); }
                 finally { Marshal.Release(nativeDevice); }
                 _item = CreateItem(monitor);
@@ -124,35 +124,31 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
                     if (!LiquidGlassPerformance.ShouldRender(now - _lastFrame, Stopwatch.Frequency,
                             LiquidGlassPerformance.NormalizeFrameRate(Config.Preference.TahoeGlass.MaximumFrameRate))) return;
                     _lastFrame = now;
-                    using ID3D11Texture2D texture = SurfaceTexture(frame.Surface);
-                    var desc = texture.Description;
+                    using var texture = SurfaceTexture(frame.Surface);
+                    var desc = LiquidGlassD3D11.Describe(texture);
                     if (region.X < 0 || region.Y < 0 || region.X + region.Width > desc.Width || region.Y + region.Height > desc.Height) return;
-                    if (_staging == null || _staging.Description.Width != region.Width || _staging.Description.Height != region.Height)
+                    if (_staging == null || _stagingWidth != region.Width || _stagingHeight != region.Height)
                     {
                         _staging?.Dispose();
-                        _staging = _device!.CreateTexture2D(new Texture2DDescription
-                        {
-                            Width = (uint)region.Width, Height = (uint)region.Height, MipLevels = 1, ArraySize = 1,
-                            Format = Format.B8G8R8A8_UNorm, SampleDescription = new SampleDescription(1, 0),
-                            Usage = ResourceUsage.Staging, CPUAccessFlags = CpuAccessFlags.Read
-                        });
+                        _staging = LiquidGlassD3D11.CreateStagingTexture(_device!, region.Width, region.Height);
+                        _stagingWidth = region.Width;
+                        _stagingHeight = region.Height;
                         _pixels = null;
                         _scratch = null;
                     }
-                    _context!.CopySubresourceRegion(_staging, 0, 0, 0, 0, texture, 0,
-                        new Box(region.X, region.Y, 0, region.X + region.Width, region.Y + region.Height, 1));
-                    _context.Map(_staging, 0, MapMode.Read, Vortice.Direct3D11.MapFlags.None, out MappedSubresource mapped).CheckError();
+                    LiquidGlassD3D11.CopyRegion(_context!, _staging, texture, region.X, region.Y, region.Width, region.Height);
+                    var mapped = LiquidGlassD3D11.MapRead(_context!, _staging);
                     int stride = region.Width * 4;
                     byte[] pixels = _scratch ?? new byte[stride * region.Height];
                     try
                     {
                         if (mapped.RowPitch == stride)
-                            Marshal.Copy(mapped.DataPointer, pixels, 0, pixels.Length);
+                            Marshal.Copy(mapped.Data, pixels, 0, pixels.Length);
                         else
                             for (int y = 0; y < region.Height; y++)
-                                Marshal.Copy(mapped.DataPointer + checked((int)mapped.RowPitch * y), pixels, y * stride, stride);
+                                Marshal.Copy(mapped.Data + checked((int)mapped.RowPitch * y), pixels, y * stride, stride);
                     }
-                    finally { _context.Unmap(_staging, 0); }
+                    finally { LiquidGlassD3D11.Unmap(_context!, _staging); }
                     var dirty = TahoeCaptureResources.DirtyRows(pixels, _pixels, region.Width, region.Height, region.Version != _lastVersion);
                     if (dirty.Height == 0)
                     {
@@ -224,7 +220,7 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
             }
         }
 
-        private static ID3D11Texture2D SurfaceTexture(IDirect3DSurface surface)
+        private static LiquidGlassD3D11.Resource SurfaceTexture(IDirect3DSurface surface)
         {
             IntPtr inspectable = MarshalInterface<IDirect3DSurface>.FromManaged(surface);
             IntPtr access = IntPtr.Zero;
@@ -233,9 +229,9 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
                 Guid accessId = new("a9b3d012-3df2-4ee3-b8d1-8695f457d3c1");
                 Marshal.ThrowExceptionForHR(Marshal.QueryInterface(inspectable, in accessId, out access));
                 var get = Marshal.GetDelegateForFunctionPointer<GetInterface>(Marshal.ReadIntPtr(Marshal.ReadIntPtr(access), 3 * IntPtr.Size));
-                Guid textureId = typeof(ID3D11Texture2D).GUID;
+                Guid textureId = LiquidGlassD3D11.Texture2DId;
                 Marshal.ThrowExceptionForHR(get(access, ref textureId, out IntPtr texture));
-                return new ID3D11Texture2D(texture);
+                return new LiquidGlassD3D11.Resource(texture);
             }
             finally
             {
@@ -249,6 +245,5 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
         [DllImport("combase.dll", CharSet = CharSet.Unicode)] private static extern int WindowsCreateString(string source, int length, out IntPtr text);
         [DllImport("combase.dll")] private static extern int WindowsDeleteString(IntPtr text);
         [DllImport("combase.dll")] private static extern int RoGetActivationFactory(IntPtr text, ref Guid iid, out IntPtr factory);
-        [DllImport("d3d11.dll")] private static extern int CreateDirect3D11DeviceFromDXGIDevice(IntPtr device, out IntPtr inspectable);
     }
 }

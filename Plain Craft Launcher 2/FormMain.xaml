@@ -110,13 +110,14 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <!-- Independent opaque backdrop: no controls are sampled recursively. -->
-                <Grid x:Name="TahoeBackdrop" Grid.RowSpan="2" IsHitTestVisible="False"
-                      Background="{Binding Background, ElementName=PanForm}" ClipToBounds="True">
+                <Grid x:Name="TahoeBackdrop" Grid.RowSpan="2" IsHitTestVisible="False" ClipToBounds="True">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="48" />
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <Image x:Name="TahoeDesktopImage" Grid.RowSpan="2" Stretch="Fill" Visibility="Collapsed" />
+                    <Border x:Name="LauncherBackgroundLayer" Grid.RowSpan="2"
+                            Background="{Binding Background, ElementName=PanForm}" />
                 <Border x:Name="TahoeWallpaperHost" Grid.Row="1">
                 <Canvas x:Name="ImgBack" IsHitTestVisible="False"
                         RenderOptions.BitmapScalingMode="LowQuality">

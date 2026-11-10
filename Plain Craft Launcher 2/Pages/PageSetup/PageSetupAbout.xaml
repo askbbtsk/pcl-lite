@@ -23,6 +23,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="45" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="40" />
@@ -72,6 +73,9 @@
                         local:CustomEventService.EventType="OpenUrl"
                         Text="{DynamicResource Setup.About.SourceCode}" />
                     <!--  Minecraft 使用准则要求在所有相关材料上显著声明非官方身份，故置于首屏卡片内。  -->
+                    <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Margin="0,12,0,0"
+                               Text="{DynamicResource Setup.About.ReleaseDescription}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource ColorBrushGray1}" />
                     <TextBlock
                         Grid.Row="1"
                         Grid.Column="0"

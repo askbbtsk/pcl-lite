@@ -559,6 +559,7 @@ public static class ModBedrockUwp
             // Application Id 由 Manifest 决定（UWP 版为 Game，而非 App），拼错会让 explorer 打开文档文件夹
             var appId = GetApplicationId(packageName) ?? (packageName == ReleasePackageName ? "Game" : "App");
             var aumid = $"{info.Value.FamilyName}!{appId}";
+            var previousProcesses = PCL.Core.Link.Bedrock.BedrockLaunchStatistics.CaptureRunningProcesses();
             try
             {
                 Process.Start(new ProcessStartInfo
@@ -567,6 +568,7 @@ public static class ModBedrockUwp
                     Arguments = $"shell:AppsFolder\\{aumid}",
                     UseShellExecute = true
                 });
+                PCL.Core.Link.Bedrock.BedrockLaunchStatistics.ObserveActivatedGame(previousProcesses);
                 return true;
             }
             catch (Exception ex)
@@ -587,6 +589,7 @@ public static class ModBedrockUwp
     {
         foreach (var uri in new[] { "minecraft://creator/?Editor=true", "minecraft-preview://creator/?Editor=true" })
         {
+            var previousProcesses = PCL.Core.Link.Bedrock.BedrockLaunchStatistics.CaptureRunningProcesses();
             try
             {
                 Process.Start(new ProcessStartInfo
@@ -594,6 +597,7 @@ public static class ModBedrockUwp
                     FileName = uri,
                     UseShellExecute = true
                 });
+                PCL.Core.Link.Bedrock.BedrockLaunchStatistics.ObserveActivatedGame(previousProcesses);
                 ModBase.Log($"[Bedrock] 正在通过 {uri} 以编辑器模式启动 Minecraft Bedrock Edition...");
                 return true;
             }

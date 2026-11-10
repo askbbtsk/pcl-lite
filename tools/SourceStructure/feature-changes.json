@@ -79,7 +79,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
-  "Sha256": "7EEFB72BA634C5F6F7AB1E1DE62F498290AF7DA0F61A9C09B933602877F8F68A",
+  "Sha256": "7404DF793B3608B2A167431896C44F25AD8430E1D93701E81F98B36BA6B865AA",
   "Members": [
     "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory)",
     "PCL.ModLunar::MethodDeclaration::WatchFirstWindow(Process process, string gameDirectory, DateTime startedAt, string subVersion,\n        bool vanillaReady)"
@@ -115,9 +115,10 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.GameProcessLifecycle.McLaunchPrerun.cs",
-  "Sha256": "8BDE16B502182AE00E5E5793A6E74B96F688805BBEFB40F10F61FBB660548E7C",
+  "Sha256": "850D15B6E463A88F8FACD842B6CB8215F5E4F8EA325D993F3D8A30EC18B9D608",
   "Members": [
-    "PCL.ModLaunch::MethodDeclaration::McLaunchRun(ModLoader.LoaderTask<int, Process> loader)"
+    "PCL.ModLaunch::MethodDeclaration::McLaunchRun(ModLoader.LoaderTask<int, Process> loader)",
+    "PCL.ModLaunch::MethodDeclaration::McLaunchEnd()"
   ],
   "Reason": "Plan stage C: explicit metadata-aware durable update/recovery, installer exit validation, clone declaration isolation and reviewed per-instance controls memory. New regression tests cover interruption, conflicts and settings preservation."
 },
@@ -413,19 +414,20 @@
   "Members": [
     "PCL.ModSetup::ConstructorDeclaration::.ctor()",
     "PCL.ModSetup::MethodDeclaration::ApplyAll()",
+    "PCL.ModSetup::MethodDeclaration::UiLauncherTransparent(int value)",
     "PCL.ModSetup::MethodDeclaration::UiFont(string value)",
     "PCL.ModSetup::MethodDeclaration::UiBlurValue(int value)"
   ],
-  "Reason": "Tahoe opt-in feature: Observe the two opt-in settings, refresh appearance after font changes, and suppress competing legacy blur while enabled. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
-  "Sha256": "B12E9F1F0F08D82A6E31E64336138078A30C961EEEC68E6701E064BF87DA85F6"
+  "Reason": "Glass settings observers remain. User-requested opacity separation now delegates to LiquidGlassCore: glass mode only fades background layers; disabling restores the original whole-window opacity. Tests cover the entire slider range and invalid values.",
+  "Sha256": "67D302432BD62DD8E1CDC82EEEB30C479888EB47F6D8AD6D9861A5259C3A5319"
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/ModVideoBack.cs",
   "Members": [
     "PCL.ModVideoBack::MethodDeclaration::VideoPlay()"
   ],
-  "Reason": "Tahoe opt-in feature: Pause configured wallpaper video during requested desktop refraction without deleting its source/settings. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
-  "Sha256": "91811E258947C57CD6304C26489DA6E980293E4A833B1AB7305677BEDBD5401A"
+  "Reason": "Restore the normal configured wallpaper video playback path. Desktop refraction no longer automatically hides or pauses the background; manual opacity controls presentation.",
+  "Sha256": "30747FF4A2CA68C3B3EA8932F4D5DE6DF8661970848247A6C57E4356555E3A2D"
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/ThemeManager.cs",
@@ -480,5 +482,32 @@
   "Sha256": "7082CEB367CBD32BA094CED2FE6BF2E47D767B1BA57CB8494370E0B56748C589",
   "Members": ["PCL.FormMain::MethodDeclaration::IsNavigationFeatureHidden(int id)"],
   "Reason": "User adds plugin market to existing personalization hide controls. Tab 14 follows the persisted PagePlugins preference and the existing HiddenForceShow override; overflow calculation already consumes this shared visibility predicate."
+}
+, {
+  "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.ThemesAndHomepage.cs",
+  "Sha256": "42CAF35206B6A7717555F683FBF5715FE3BA6F7FBA1D26046473C74E1E7691BF",
+  "Members": ["PCL.PageSetupUI::MethodDeclaration::SliderLoad()"],
+  "Reason": "Opacity hint uses the same composition policy as rendering: 0-100% background while glass is enabled, original 40-100% whole-window opacity otherwise. Other slider bindings remain unchanged."
+}
+, {
+  "SourcePath": "PCL.Core/Link/Bedrock/BedrockService.cs",
+  "Sha256": "2FD28F75A843D14C0B9190982CE673EF117E4917D1CA66973F0B372AE1385BEA",
+  "Members": ["PCL.Core.Link.Bedrock.BedrockService::MethodDeclaration::Launch(BedrockInstall install, out string? error)"],
+  "Reason": "Extend the existing successful game counter to portable/Store Bedrock. Capture preexisting game processes and observe only actual new live game processes after accepted activation; shell processes and repeated PID/start-time observations cannot increment."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModBedrockGdk.cs",
+  "Sha256": "40FF3AF42EC50F523523A5E34F23E0D5F5965BA61114E0CEB38ECAD700D7D978",
+  "Members": ["PCL.ModBedrockGdk::MethodDeclaration::Launch(string gameDirectory, string? arguments = null, string? versionId = null)"],
+  "Reason": "Register successful direct Bedrock game PID for shared launch counting without changing process arguments, launch order or CIK behavior. Existing and failed processes do not count."
+},
+{
+  "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModBedrockUwp.cs",
+  "Sha256": "F9C920D92A3FBC62A25F5C7872821B34233C7FFE0F2A959E4639F8F1BF2A5692",
+  "Members": [
+    "PCL.ModBedrockUwp::MethodDeclaration::LaunchPackage(string? targetPackageName = null)",
+    "PCL.ModBedrockUwp::MethodDeclaration::LaunchEditor()"
+  ],
+  "Reason": "Observe new actual Minecraft processes after existing UWP/Editor activation paths. UWP does not require a process-owned HWND, since ApplicationFrameHost may own its window. Shell success alone never increments."
 }
 ]

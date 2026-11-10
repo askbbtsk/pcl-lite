@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.5 stable: modpack authoring and local updates, instance and mod migration, on-demand indexing across instances, Prism import, manual backup and recovery, and optional LiquidGlass. See the release notes for usage and limitations.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>
@@ -3224,7 +3225,7 @@ This corroborates the current asset against the Release record; it does not veri
 
     <!-- Setup.Ui.Tahoe -->
 
-    <sys:String x:Key="Setup.Ui.Tahoe.Title">Liquid Glass · LiquidGlass Core</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Title">Liquid Glass · LiquidGlass</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Stopped">Desktop refraction is off.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Starting">Waiting for the desktop frame. Showing a static material.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Live">Refracting the desktop live.</sys:String>
@@ -3236,7 +3237,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">Use the Liquid Glass interface</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">Independent from advanced materials. The default launcher-background refraction supports screenshots. Enabling requires performance confirmation; quality and effect frame rate can be adjusted below.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction (excludes screenshots)</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Hide the launcher wallpaper and apply eighth-power refraction to the real desktop behind the window. To prevent recursive capture, this window is excluded from screenshots and recordings while sampling. Turning this off restores capture visibility.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Refract the real desktop while keeping your background image or video. To hide the background, manually lower “Background / window opacity” above. With glass enabled, that slider affects only the background, leaving glass and text unchanged. Desktop sampling excludes the launcher from screenshots and recordings to prevent recursion; turning it off restores visibility.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">Desktop sampling requires Windows 10 version 2004 or later. Unavailable capture uses a static material; devices without Pixel Shader 3.0 use blur.</sys:String>
 
     <!-- Setup.Ui.Basic -->
@@ -3259,7 +3260,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Basic.BlurSamplingRate.ToolTip">Sets the sampling rate of the blur effect. Higher values produce finer blur.&#xA;If your device has poor performance, try lowering this value for better performance.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.GetSnapshot">Get official snapshot build</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.LockWindow">Lock launcher size</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.Opacity">Opacity</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.Opacity">Background / window opacity</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size">Window size</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Classic">PCL classic</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Hint">Next launch only</sys:String>
@@ -3666,7 +3667,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Tools.Test.Dependency.MissingMessage">Required dependency "{0}" is missing.&#xA;&#xA;Click OK to open Microsoft Store.</sys:String>
     <sys:String x:Key="Tools.Test.Dependency.Title">Dependency check</sys:String>
     <sys:String x:Key="Tools.Test.Error.OperationFailed">A test utility operation failed. See the details below.</sys:String>
-    <sys:String x:Key="Tools.Test.LaunchCount.Message">PCL Lite has launched games for you {0} times.</sys:String>
+    <sys:String x:Key="Tools.Test.LaunchCount.Message">PCL Lite has successfully launched games {0} times (Java, Bedrock and Lunar). Your existing total is preserved; previously unrecorded Bedrock and Lunar launches are not reconstructed.</sys:String>
     <sys:String x:Key="Tools.Test.LaunchCount.Title">View launch count</sys:String>
     <sys:String x:Key="Tools.Test.ServerQuery.Title">Check server</sys:String>
     <sys:String x:Key="Tools.Test.Title">Utilities</sys:String>

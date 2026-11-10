@@ -394,6 +394,7 @@ public static partial class ModLunar
             process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
+            ObserveSuccessfulGame(process, launchSession);
             WatchFirstWindow(process, gameDirectory, startedAt, subVersion, vanillaReady, launchSession);
 
             // 首次启动某个版本时 Genesis 要先把原版客户端下下来，这期间不会有窗口，

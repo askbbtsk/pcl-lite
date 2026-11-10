@@ -179,7 +179,11 @@ public static class ModBedrockGdk
 
         // PCL Lite 不做 DLL 注入：GDK 版就是「解包目录里直接跑主程序」，多版本天然共存。
         ModBase.Log($"[Bedrock] 启动 GDK 版：{exePath}", ModBase.LogLevel.Normal);
-        return Process.Start(startInfo);
+        var previousProcesses = PCL.Core.Link.Bedrock.BedrockLaunchStatistics.CaptureRunningProcesses();
+        var process = Process.Start(startInfo);
+        if (process is not null)
+            PCL.Core.Link.Bedrock.BedrockLaunchStatistics.ObserveStartedGame(process, previousProcesses);
+        return process;
     }
 
     /// <summary>结束正在运行的 GDK 版进程（解包前释放文件占用）。</summary>

@@ -19,7 +19,6 @@ public static class LiquidGlassCore
     private static string? _lastDiagnostics;
     private static Geometry? _originalSidebarClip;
     private static TahoeDesktopCapture? _desktopCapture;
-    private static bool _wallpaperSuppressed;
     private static readonly Dictionary<MyIconButton, MyIconButton.Themes> OriginalIconThemes = new();
     private static readonly Dictionary<string, object?> OriginalThemeResources = new();
 
@@ -31,7 +30,8 @@ public static class LiquidGlassCore
         Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent,
         Config.Preference.TahoeGlass.UseDesktopBackdrop, Config.Preference.TahoeGlass.DesktopCaptureConsent);
     public static FrameworkElement? BackdropSource => IsEnabled &&
-        (!IsDesktopBackdropRequested || _desktopCapture?.HasFrame == true) ? _window?.TahoeBackdrop : null;
+        (!IsDesktopBackdropRequested || _desktopCapture?.HasFrame == true)
+            ? IsDesktopBackdropRequested ? _window?.TahoeDesktopImage : _window?.TahoeBackdrop : null;
     public static event EventHandler? Changed;
     public static PCL.Core.UI.LiquidGlassProfile Profile =>
         PCL.Core.UI.LiquidGlassPerformance.GetProfile(Config.Preference.TahoeGlass.PerformancePreset);
@@ -76,15 +76,6 @@ public static class LiquidGlassCore
                 _applied = false;
             }
             Appearance.IsEnabled = IsEnabled;
-            if (IsEnabled)
-            {
-                foreach (var surface in GlassSurfaces(window))
-                {
-                    surface.BlurRadius = Profile.BlurRadius;
-                    surface.Dispersion = Profile.Dispersion;
-                    surface.HighlightStrength = Profile.Highlight;
-                }
-            }
             Appearance.IsDesktopRequested = IsDesktopBackdropRequested;
             string captureState = (_desktopCapture?.State ?? TahoeCaptureState.Stopped).ToString();
             if (_desktopCapture?.State == TahoeCaptureState.Live && !window.TahoeWindowGlass.IsRefractionActive)
@@ -119,6 +110,18 @@ public static class LiquidGlassCore
         else ModBase.Log(error, message);
     }
 
+    public static void ApplyOpacity(int value)
+    {
+        var window = ModMain.frmMain;
+        if (window?.LauncherBackgroundLayer is null) return;
+        window.Opacity = PCL.Core.UI.LiquidGlassComposition.WindowOpacity(IsEnabled, value);
+        var opacity = PCL.Core.UI.LiquidGlassComposition.BackgroundOpacity(IsEnabled, value);
+        window.LauncherBackgroundLayer.Opacity = opacity;
+        window.TahoeWallpaperHost.Opacity = opacity;
+        // The sampled desktop is an independent source: never fade it together with the wallpaper.
+        window.TahoeDesktopImage.Opacity = 1;
+    }
+
     private static IEnumerable<TahoeGlassSurface> GlassSurfaces(DependencyObject parent)
     {
         if (parent is TahoeGlassSurface surface) yield return surface;
@@ -148,19 +151,10 @@ public static class LiquidGlassCore
         foreground.Freeze();
         _desktopCapture!.Apply(IsDesktopBackdropRequested);
         window.TahoeBackdrop.Visibility = Visibility.Visible;
-        window.TahoeWallpaperHost.Visibility = IsDesktopBackdropRequested ? Visibility.Collapsed : Visibility.Visible;
+        window.TahoeWallpaperHost.Visibility = Visibility.Visible;
         window.TahoeDesktopImage.Visibility = IsDesktopBackdropRequested ? Visibility.Visible : Visibility.Collapsed;
-        if (_wallpaperSuppressed != IsDesktopBackdropRequested)
-        {
-            _wallpaperSuppressed = IsDesktopBackdropRequested;
-            if (_wallpaperSuppressed && window.VideoBack.Source != null) window.VideoBack.Pause();
-            else if (!_wallpaperSuppressed) ModVideoBack.VideoPlay();
-        }
-        if (IsDesktopBackdropRequested)
-            window.PanForm.Background = SystemParameters.HighContrast ? SystemColors.WindowBrush
-                : new SolidColorBrush(dark ? Color.FromRgb(28, 29, 32) : Color.FromRgb(243, 243, 245));
-        else
-            ThemeManager.RefreshBackground();
+        ThemeManager.RefreshBackground();
+        ApplyOpacity(Config.Preference.Theme.WindowOpacity);
         SetBrush(window, "TahoeText", dark ? "#F2F3F5" : "#252830");
         SetBrush(window, "TahoeSecondaryText", dark ? "#B9BEC8" : "#5D626D");
         SetBrush(window, "TahoeSidebarSection", dark ? "#16FFFFFF" : "#52FFFFFF");
@@ -245,11 +239,7 @@ public static class LiquidGlassCore
         window.TahoeBackdrop.Visibility = Visibility.Visible;
         window.TahoeWallpaperHost.Visibility = Visibility.Visible;
         window.TahoeDesktopImage.Visibility = Visibility.Collapsed;
-        if (_wallpaperSuppressed)
-        {
-            _wallpaperSuppressed = false;
-            ModVideoBack.VideoPlay();
-        }
+        ApplyOpacity(Config.Preference.Theme.WindowOpacity);
         ThemeManager.RefreshBackground();
         window.TahoeToolbar.Visibility = window.TahoeSidebar.Visibility = Visibility.Collapsed;
         window.TahoeWindowControls.Visibility = Visibility.Collapsed;
@@ -353,7 +343,6 @@ public static class LiquidGlassCore
         }
         _desktopCapture = null;
         _window = null;
-        _wallpaperSuppressed = false;
         _applied = false;
     }
 }

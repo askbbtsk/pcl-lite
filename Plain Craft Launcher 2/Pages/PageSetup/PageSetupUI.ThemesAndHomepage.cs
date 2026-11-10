@@ -460,7 +460,9 @@ public partial class PageSetupUI
         SliderMusicVolume.getHintText = new Func<object, object>(v =>
             Lang.Number(Math.Ceiling(Convert.ToDouble(v) * 0.1d) / 100d, "P0"));
         SliderLauncherOpacity.getHintText = new Func<object, object>(v =>
-            Lang.Number(Math.Round(40 + Convert.ToDouble(v) * 0.1d) / 100d, "P0"));
+            Lang.Number(LiquidGlassCore.IsEnabled
+                ? PCL.Core.UI.LiquidGlassComposition.BackgroundOpacity(true, Convert.ToInt32(v))
+                : PCL.Core.UI.LiquidGlassComposition.WindowOpacity(false, Convert.ToInt32(v)), "P0"));
         SliderBackgroundOpacity.getHintText = new Func<object, object>(v =>
             Lang.Number(Math.Round(Convert.ToDouble(v) * 0.1d) / 100d, "P0"));
         SliderBackgroundBlur.getHintText = new Func<object, object>(v => Lang.Text("Setup.Ui.Slider.Pixel", Lang.Number(Convert.ToDouble(v), "N0")));

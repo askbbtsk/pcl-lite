@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.5 正式版：整合包製作與本機更新、實例環境修改和模組移轉、全實例按需索引、Prism 匯入、手動備份與還原，以及可選的 LiquidGlass。具體限制與使用方式請見發布說明。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">效能預設</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>
@@ -3167,7 +3168,7 @@ Release 發布時間：{2}
 
     <!-- Setup.Ui.Tahoe -->
 
-    <sys:String x:Key="Setup.Ui.Tahoe.Title">液態玻璃 · LiquidGlass Core</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Title">液態玻璃 · LiquidGlass</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Stopped">桌面折射已關閉。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Starting">正在等待桌面畫面，暫時顯示靜態材質。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Live">正在即時折射桌面。</sys:String>
@@ -3179,7 +3180,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液態玻璃介面</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">獨立的液態玻璃效果，不屬於進階材質。預設折射啟動器背景，可正常截圖；啟用前需確認效能開銷，下方可調整畫質與影格率。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop">即時桌面折射（會排除截圖）</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">隱藏啟動器桌布，對視窗後方的真實桌面使用八次方折射。為避免畫面遞迴，取樣期間本視窗會從系統截圖與錄影中排除，關閉後恢復。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">折射視窗後的真實桌面，啟用時保留背景圖片與影片。需要隱藏背景時手動降低上方「背景 / 視窗不透明度」；玻璃模式下此滑桿只影響背景，不淡化玻璃與文字。為避免遞迴，取樣期間啟動器會從截圖與錄影中排除，關閉後恢復。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">桌面取樣需要 Windows 10 2004 或更新版本。取樣無法使用時顯示靜態材質；不支援 Pixel Shader 3.0 時使用模糊材質。</sys:String>
 
     <!-- Setup.Ui.Basic -->
@@ -3202,7 +3203,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Setup.Ui.Basic.BlurSamplingRate.ToolTip">設定模糊效果的取樣率，值越大模糊效果越細緻。&#xA;若裝置效能不佳，可嘗試降低該值以獲得更好的效能。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.GetSnapshot">取得官方快照版</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.LockWindow">鎖定啟動器大小</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.Opacity">不透明度</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.Opacity">背景 / 視窗不透明度</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size">視窗大小</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Classic">PCL 經典</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Hint">僅影響下次啟動</sys:String>
@@ -3609,7 +3610,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Tools.Test.Dependency.MissingMessage">目前系統環境缺失軟體執行所需依賴"{0}"&#xA;&#xA;點擊確定開啟微軟應用商店安裝</sys:String>
     <sys:String x:Key="Tools.Test.Dependency.Title">依賴檢查</sys:String>
     <sys:String x:Key="Tools.Test.Error.OperationFailed">測試工具操作失敗。請檢視錯誤詳情。</sys:String>
-    <sys:String x:Key="Tools.Test.LaunchCount.Message">PCL Lite 已經為你啟動了 {0} 次遊戲了。</sys:String>
+    <sys:String x:Key="Tools.Test.LaunchCount.Message">PCL Lite 已為你成功啟動 {0} 次遊戲（Java、基岩版與 Lunar）。保留舊累計值，升級前未記錄的基岩版與 Lunar 啟動不會補算。</sys:String>
     <sys:String x:Key="Tools.Test.LaunchCount.Title">檢視啟動計數</sys:String>
     <sys:String x:Key="Tools.Test.ServerQuery.Title">看眼伺服器</sys:String>
     <sys:String x:Key="Tools.Test.Title">百寶箱</sys:String>

@@ -261,7 +261,7 @@ public class ModSetup
     // 启动器
     public static void UiLauncherTransparent(int value)
     {
-        ModMain.frmMain.Opacity = value / 1000d + 0.4d;
+        LiquidGlassCore.ApplyOpacity(value);
     }
 
     public static void UiLauncherTheme(int value)

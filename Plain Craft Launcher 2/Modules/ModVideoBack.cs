@@ -84,11 +84,6 @@ public static class ModVideoBack
     {
         ModBase.RunInUi(() =>
         {
-            if (TahoeThemeManager.IsDesktopBackdropRequested)
-            {
-                if (ModMain.frmMain.VideoBack.Source != null) ModMain.frmMain.VideoBack.Pause();
-                return;
-            }
             if (ModMain.frmMain.VideoBack.Source is not null && !isMinimized)
                 if (!IsGaming || ForcePlay)
                     try

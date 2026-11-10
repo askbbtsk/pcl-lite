@@ -23,6 +23,7 @@
         </Style.Triggers>
     </Style>
     <Style x:Key="TahoeSidebarHeadingStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushGray1}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Opacity" Value="0.6" />
         <Setter Property="Margin" Value="13,10,5,4" />
@@ -37,6 +38,7 @@
         </Style.Triggers>
     </Style>
     <Style x:Key="TahoeSidebarPathStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushGray1}" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="FontSize" Value="10.5" />
         <Setter Property="Opacity" Value="0.62" />
@@ -80,6 +82,7 @@
         </Style.Triggers>
     </Style>
     <Style x:Key="TahoeLaunchSubtitleStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushGray1}" />
         <Setter Property="Opacity" Value="0.65" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsEnabled, Source={x:Static local:TahoeThemeManager.Appearance}}" Value="True">

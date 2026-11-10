@@ -170,6 +170,7 @@ public static class BedrockService
     public static bool Launch(BedrockInstall install, out string? error)
     {
         error = null;
+        var previousProcesses = BedrockLaunchStatistics.CaptureRunningProcesses();
         try
         {
             if (install.Kind == BedrockKind.GdkPortable)
@@ -180,11 +181,12 @@ public static class BedrockService
                     return false;
                 }
 
-                Process.Start(new ProcessStartInfo(exe)
+                using var process = Process.Start(new ProcessStartInfo(exe)
                 {
                     WorkingDirectory = Path.GetDirectoryName(exe) ?? ".",
                     UseShellExecute = true
                 });
+                BedrockLaunchStatistics.ObserveStartedGame(process, previousProcesses);
                 return true;
             }
 
@@ -202,6 +204,7 @@ public static class BedrockService
             {
                 UseShellExecute = true
             });
+            BedrockLaunchStatistics.ObserveActivatedGame(previousProcesses);
             return true;
         }
         catch (Exception ex)

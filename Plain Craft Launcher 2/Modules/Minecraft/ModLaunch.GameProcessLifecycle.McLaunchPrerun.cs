@@ -649,6 +649,8 @@ public static partial class ModLaunch
         // 暂停视频背景播放
         ModVideoBack.IsGaming = true;
         ModVideoBack.VideoPause();
+        // Persist success before a configured "exit immediately" can close the launcher.
+        PCL.Core.Minecraft.Launch.GameLaunchStatistics.RecordSuccessfulProcess(mcLaunchProcess);
         // 启动器可见性
         McLaunchLog(
             "启动器可见性：" + Config.Launch.LauncherVisibility);
@@ -684,8 +686,6 @@ public static partial class ModLaunch
         }
 
         // 启动计数
-        States.System.LaunchCount += 1;
-
         States.Instance.LaunchCount[ModInstanceList.McMcInstanceSelected.PathInstance] =
             States.Instance.LaunchCount[ModInstanceList.McMcInstanceSelected.PathInstance] + 1;
     }

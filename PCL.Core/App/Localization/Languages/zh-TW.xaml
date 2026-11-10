@@ -3927,8 +3927,8 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Instance.Resource.Mod.JarInJar.Entry">模組關係</sys:String>
     <sys:String x:Key="Instance.Resource.Mod.JarInJar.Entry.ToolTip">檢視模組的依賴關係、缺少前置與內嵌（Jar-in-Jar）結構</sys:String>
     <sys:String x:Key="Instance.Resource.Mod.JarInJar.Message">這裡概覽模組間的依賴關係與內嵌結構。停用或刪除模組時會提示受影響的依賴項。</sys:String>
-    <sys:String x:Key="Instance.Resource.Mod.JarInJar.ParsePending.Title">模組仍在解析</sys:String>
-    <sys:String x:Key="Instance.Resource.Mod.JarInJar.ParsePending.Message">內嵌模組關係仍在背景解析，此時停用或刪除的連帶依賴偵測可能不完整，可能遺漏應一併處理的模組。是否仍要繼續？</sys:String>
+    <sys:String x:Key="Instance.Resource.Mod.JarInJar.ParsePending.Title">模組索引尚未完成</sys:String>
+    <sys:String x:Key="Instance.Resource.Mod.JarInJar.ParsePending.Message">部分內嵌模組關係尚未建立完整索引，停用或刪除時可能遺漏相關相依項目。繼續將先建立缺少的索引，可隨時取消；完成後才執行原操作。</sys:String>
     <sys:String x:Key="Instance.Resource.Mod.JarInJar.Empty.Title">沒有可分析的模組關係</sys:String>
     <sys:String x:Key="Instance.Resource.Mod.JarInJar.Empty.Message">目前執行個體的模組均無依賴宣告或內嵌模組，或模組清單尚未載入完成。</sys:String>
     <sys:String x:Key="Instance.Resource.Mod.JarInJar.Section.Warnings">警告</sys:String>

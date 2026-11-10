@@ -230,6 +230,41 @@ public static class ModJarInJarCache
         }
     }
 
+    /// <summary>Publish a completed scan into another instance with the same directory and parser context.</summary>
+    internal static bool CopySnapshot(string sourceInstance, string targetInstance)
+    {
+        var previous = _current;
+        try
+        {
+            UseInstance(sourceInstance);
+            var source = _current!;
+            Dictionary<string, CacheEntry> snapshot;
+            lock (source.SyncRoot)
+            {
+                _EnsureLoaded(source);
+                snapshot = source.Entries.ToDictionary(entry => entry.Key, entry => new CacheEntry
+                {
+                    LastModified = entry.Value.LastModified, Size = entry.Value.Size, Tree = entry.Value.Tree
+                });
+            }
+            UseInstance(targetInstance);
+            var target = _current!;
+            lock (target.SyncRoot)
+            {
+                target.Entries = snapshot;
+                target.Dirty = true;
+                _FlushStore(target);
+                return !target.Dirty;
+            }
+        }
+        catch (Exception error)
+        {
+            ModBase.Log(error, $"复用共享模组目录索引失败：{targetInstance}", ModBase.LogLevel.Developer);
+            return false;
+        }
+        finally { _current = previous; }
+    }
+
     private static void _FlushStore(_Store store)
     {
         if (!store.Dirty || store.Entries is null) return;

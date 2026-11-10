@@ -125,7 +125,7 @@ public partial class PageSetupGameManage
         => ConfigService.TrySetValue(tag, value);
 
     private void CreateModIndex_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        => ModIndexService.CreateNow(ModInstanceList.McMcInstanceSelected ?? PageInstanceLeft.McInstance);
+        => ModIndexService.CreateAllNow();
 
     private void ModIndexPrompt_Loaded(object sender, RoutedEventArgs e)
     {

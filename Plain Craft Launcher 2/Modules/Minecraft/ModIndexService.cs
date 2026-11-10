@@ -10,7 +10,7 @@ using PCL.Core.Utils.OS;
 namespace PCL;
 
 /// <summary>Explicit index creation and download-triggered refresh; no idle scans.</summary>
-internal static class ModIndexService
+internal static partial class ModIndexService
 {
     internal static readonly ModIndexingPolicy Policy = new();
     internal static readonly int WorkerCount = ModIndexingPolicy.GetWorkerCount(
@@ -21,9 +21,18 @@ internal static class ModIndexService
     private static readonly ConcurrentDictionary<string, byte> DownloadWorkers = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> DownloadFiles = new(StringComparer.OrdinalIgnoreCase);
 
-    internal static string ModsDirectory(McInstance instance) => Path.GetFullPath(Path.Combine(
-        instance.PathIndie, instance.Info.HasLabyMod
+    internal static string ModsDirectory(McInstance instance)
+    {
+        // PathIndie uses the selected root when isolation is off. Resolve that case against
+        // this instance's actual root without switching the user's selected Minecraft folder.
+        var gameDirectory = instance.PathIndie;
+        if (!string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(gameDirectory)),
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(instance.PathInstance)), StringComparison.OrdinalIgnoreCase))
+            gameDirectory = Directory.GetParent(Path.TrimEndingDirectorySeparator(instance.PathInstance))?.Parent?.FullName
+                ?? gameDirectory;
+        return Path.GetFullPath(Path.Combine(gameDirectory, instance.Info.HasLabyMod
             ? Path.Combine("labymod-neo", "fabric", instance.Info.VanillaName, "mods") : "mods"));
+    }
 
     internal static void Register(McInstance instance) => KnownDirectories[ModsDirectory(instance)] = instance;
 

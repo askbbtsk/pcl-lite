@@ -14,6 +14,17 @@ internal static class NativeWorkDialog
 {
     internal static bool Run(string title, string caption, Func<CancellationToken, IProgress<int>, Task<bool>> execute,
         Func<bool> contextIsCurrent)
+        => RunWithStatus(title, caption,
+            (token, status) => execute(token, new StatusProgress<int>(value => status.Report(caption + Environment.NewLine + value))),
+            contextIsCurrent);
+
+    internal sealed class StatusProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
+    }
+
+    internal static bool RunWithStatus(string title, string caption,
+        Func<CancellationToken, IProgress<string>, Task<bool>> execute, Func<bool> contextIsCurrent)
     {
         var window = ModMain.frmMain;
         if (window?.PanMsg is null || !window.Dispatcher.CheckAccess() || !window.IsLoaded) return false;
@@ -32,9 +43,9 @@ internal static class NativeWorkDialog
             if (control is not null) control.Btn2_Click(null!, null!);
             else { converter.IsExited = true; converter.WaitFrame.Continue = false; ModMain.WaitingMyMsgBox.Remove(converter); }
         }
-        var progress = new Progress<int>(value =>
+        var progress = new Progress<string>(value =>
         {
-            if (!converter.IsExited && contextIsCurrent()) Control()?.SetWorkMessage(caption + Environment.NewLine + value);
+            if (!converter.IsExited && contextIsCurrent()) Control()?.SetWorkMessage(value);
         });
         var work = Task.Run(() => execute(cancellation.Token, progress));
         var timer = new DispatcherTimer(DispatcherPriority.Normal, window.Dispatcher) { Interval = TimeSpan.FromMilliseconds(100) };

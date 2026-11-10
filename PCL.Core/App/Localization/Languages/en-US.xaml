@@ -6,7 +6,11 @@
     xml:space="preserve">
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">Mod dependency index</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.Description">Build the index for the instance selected on the home page to speed up nested mod and dependency checks. Idle browsing no longer builds missing indexes. Downloaded mods are still indexed automatically.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Description">Index every instance in all Minecraft folders discovered by PCL, including unselected and hidden instances. Shared mod folders with the same parser context are scanned once. Idle browsing does not build indexes; mod downloads still update them.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">Discovering instances across all Minecraft folders. You can cancel. Your home-page selection will stay unchanged.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.AllProgress">Instances processed: {0} / {1}&#xA;Current instance: {2}&#xA;Mod files processed for this instance: {3}</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">All-instance indexing ended: {0} instances succeeded, {1} items failed. Completed entries are kept on cancellation.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.AllFailed">These instances or folders could not be indexed. Other instances were processed. See the log for details:</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Create">Create index now</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.PromptSetting">Offer to create missing indexes when opening the mods page</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.NoInstance">Select an instance on the home page before creating its index.</sys:String>

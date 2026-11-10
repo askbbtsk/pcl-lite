@@ -211,7 +211,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModJarInJarCache.cs",
-  "Sha256": "371F774EBDF156EF83C272899F2FD0DBC9821E248A76F9826550D9F3C44204CC",
+  "Sha256": "67C8707C51B719E75E998276655E567B188CCE15150E335BE4B7E429CF21EFFF",
   "Members": [
     "PCL.ModJarInJarCache::MethodDeclaration::TryGet(string path, long lastModified, long size)",
     "PCL.ModJarInJarCache::MethodDeclaration::Set(string path, long lastModified, long size, List<EmbeddedModNode> tree)",
@@ -278,7 +278,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupGameManage.xaml.cs",
-  "Sha256": "DE68F016EFF2B0EE57D911473BEE95E690E4E0A489910B3E0CBB281E51260E1B",
+  "Sha256": "45041B906E63F9FF03A5487BB58E034784B1CF0243CAF44D3E3B1886F4D57C5B",
   "Members": ["PCL.PageSetupGameManage::MethodDeclaration::Reload()"],
   "Reason": "Load the persistent index prompt preference beside the new 42px native manual creation button. Other settings retain their existing bindings."
 }

@@ -10,6 +10,12 @@ public static partial class ModLocalComp
 {
     internal static int CurrentJijGeneration => Volatile.Read(ref _jijGeneration);
 
+    internal static void CancelBackgroundIndex()
+    {
+        Interlocked.Increment(ref _jijGeneration);
+        JijWorkers.CancelObsolete();
+    }
+
     internal static async Task<bool> ResolveJijForCurrentOutputAsync(List<LocalCompFile> output, string instancePath,
         int expectedGeneration, CancellationToken token, IProgress<int> progress)
     {

@@ -223,7 +223,7 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLocalComp.Members.GetFolderDescription.cs",
-  "Sha256": "575E0F49B6BCCB4C48253B2B827AA9C54075EE5F44494C1B5B48C1884FC04339",
+  "Sha256": "8D139C22CF78827665EE1F0CAE29F1A798D5F5F5A14F403B214B158E9DA9E891",
   "Members": [
     "PCL.ModLocalComp::MethodDeclaration::_ResolveJijPendingBackground(List<LocalCompFile> pending, List<string> allModPaths,\n        string instancePath, int loaderTaskId, int generation)",
     "PCL.ModLocalComp::MethodDeclaration::CompResourceListLoad(LoaderTask<CompLocalLoaderData, List<LocalCompFile>> loader)"

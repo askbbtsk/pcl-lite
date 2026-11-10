@@ -16,7 +16,7 @@ internal static class ModIndexService
     internal static readonly int WorkerCount = ModIndexingPolicy.GetWorkerCount(
         Environment.ProcessorCount, AvailableWorkerMemory());
     private static readonly SemaphoreSlim WorkerSlots = new(WorkerCount);
-    private static readonly SemaphoreSlim BuildGate = new(1);
+    private static readonly ModIndexWorkCoordinator Builds = new();
     private static readonly ConcurrentDictionary<string, McInstance> KnownDirectories = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, byte> DownloadWorkers = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> DownloadFiles = new(StringComparer.OrdinalIgnoreCase);
@@ -44,7 +44,17 @@ internal static class ModIndexService
     {
         if (!ModLocalComp.LocalCompFile.IsModFile(path)) return;
         var directory = Path.GetDirectoryName(Path.GetFullPath(path));
-        if (directory is null || !Path.GetFileName(directory).Equals("mods", StringComparison.OrdinalIgnoreCase)) return;
+        if (directory is null) return;
+        // Legacy Forge permits mods/<MC version>/. Resolve only one such level under a mods root.
+        if (!Path.GetFileName(directory).Equals("mods", StringComparison.OrdinalIgnoreCase))
+        {
+            var parent = Path.GetDirectoryName(directory);
+            if (parent is null || !Path.GetFileName(parent).Equals("mods", StringComparison.OrdinalIgnoreCase)) return;
+            if (KnownDirectories.TryGetValue(parent, out var legacy)
+                && !(legacy.Info.HasForge && legacy.Info.Drop < 130
+                    && Path.GetFileName(directory) == legacy.Info.VanillaName)) return;
+            directory = parent;
+        }
         // The instance might not have been opened yet. Its next list load will consume the request.
         if (!KnownDirectories.TryGetValue(directory, out var instance))
         {
@@ -70,7 +80,16 @@ internal static class ModIndexService
                     await Task.Delay(200).ConfigureAwait(false);
                     var queued = DownloadFiles[directory];
                     var files = queued.Keys.Where(path => queued.TryRemove(path, out _)).ToArray();
-                    await BuildAsync(instance, CancellationToken.None, new Progress<int>(), files).ConfigureAwait(false);
+                    var generation = ModLocalComp.CurrentJijGeneration;
+                    if (await BuildAsync(instance, CancellationToken.None, new Progress<int>(), files).ConfigureAwait(false))
+                        ModBase.RunInUi(() =>
+                        {
+                            if (generation == ModLocalComp.CurrentJijGeneration
+                                && ReferenceEquals(instance, PageInstanceLeft.McInstance)
+                                && ModMain.frmInstanceMod?.IsVisible == true
+                                && ModLocalComp.compResourceListLoader.State == ModBase.LoadState.Finished)
+                                ModMain.frmInstanceMod.ReloadCompFileList(true);
+                        });
                 }
             }
             catch (Exception error) { ModBase.Log(error, "下载后建立模组索引失败", ModBase.LogLevel.Developer); }
@@ -90,8 +109,17 @@ internal static class ModIndexService
     internal static async Task<bool> BuildAsync(McInstance instance, CancellationToken token, IProgress<int> progress,
         IReadOnlyList<string>? selectedPaths = null)
     {
+        if (selectedPaths is not null)
+            return await Builds.RunBackgroundAsync(cancellation => BuildCoreAsync(instance, cancellation, progress, selectedPaths), token).ConfigureAwait(false);
+        token.ThrowIfCancellationRequested();
+        ModLocalComp.CancelBackgroundIndex();
+        return await Builds.RunForegroundAsync(cancellation => BuildCoreAsync(instance, cancellation, progress, null), token).ConfigureAwait(false);
+    }
+
+    private static async Task<bool> BuildCoreAsync(McInstance instance, CancellationToken token, IProgress<int> progress,
+        IReadOnlyList<string>? selectedPaths)
+    {
         Register(instance);
-        await BuildGate.WaitAsync(token).ConfigureAwait(false);
         var clock = Stopwatch.StartNew();
         var complete = false;
         try
@@ -145,7 +173,7 @@ internal static class ModIndexService
             // Cancellation also saves completed entries, without pruning files from a partial snapshot.
             ModJarInJarCache.UseInstance(instance.PathInstance);
             try { complete &= ModJarInJarCache.SaveCurrent(); }
-            finally { ModJarInJarCache.UseInstance(null); BuildGate.Release(); }
+            finally { ModJarInJarCache.UseInstance(null); }
         }
         return complete;
     }

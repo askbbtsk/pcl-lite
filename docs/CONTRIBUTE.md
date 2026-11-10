@@ -122,12 +122,12 @@ dotnet publish "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" `
 
 ```
 客户端（写死锚点，永不改变）
-  └─> bedkillerspacex-boop/PCL-Lite-service 仓库里的 update.json / updatev2.json
+  └─> bedkillerspacex-boop/PCL-Lite-service 仓库里的 updatev2.json（唯一更新清单）
         └─> 里面写着「当前该去哪个仓库拿版本」
               └─> 那个仓库的 GitHub Releases
 ```
 
-**客户端根本不会读你自己仓库根目录这份。** 那份 `update.json` 只有两个作用：
+**服务清单不会读取源码仓库根目录这份来做 v1 回退。** 那份 `update.json` 只用于仓库身份标记：
 
 1. 它是"**这个仓库属于本项目**"的公开标记。任何第三方仓库想被列进更新清单当镜像，
    根目录必须有一份能解析的 `update.json`，客户端会去拉它做身份校验（`tier` 不是 `official` 时才验）
@@ -168,9 +168,9 @@ public const string GitHubRepo = "pcl-lite";
 
 那是维护者的活，而且改的是**锚点仓库**里那份，不是本仓库这份：
 
-1. 改 `bedkillerspacex-boop/PCL-Lite-service` 里的 `update.json`（写死新仓库的完整指针）
-2. 同步改那个仓库里的 `updatev2.json`
-3. 本仓库根目录的 `update.json` 保持 `{"update": "self"}` 不动
+1. 改 `bedkillerspacex-boop/PCL-Lite-service` 里的 `updatev2.json`，更新 sources
+2. 服务仓库的 v1 `update.json` 已删除，不要恢复
+3. 本仓库根目录用于身份校验的 `update.json` 保持 `{"update": "self"}` 不动
 
 细节和为什么这么设计见 [UPDATE.md](UPDATE.md)。
 

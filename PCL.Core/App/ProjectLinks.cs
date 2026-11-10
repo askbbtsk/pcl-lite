@@ -97,17 +97,15 @@ public static class ProjectLinks
     /// <summary>
     /// 更新清单的原始地址（raw.githubusercontent，走 CDN，不吃 API 限流）。
     /// <para>
-    /// 老客户端把这个地址硬编码在心里，所以它<b>永远不能变</b>。
-    /// 以后要换发布仓库、换组织、换下载通道，都只改这份 json 里的内容，
-    /// 老版本依旧能顺着它找到新版本，不会因为仓库搬家而失联。
+    /// 服务仓库只提供 updatev2.json。换发布仓库时修改其中的 sources。
     /// </para>
     /// </summary>
     public static string UpdateManifest =>
-        $"https://raw.githubusercontent.com/{ServiceOwner}/{ServiceRepo}/main/update.json";
+        ManifestRaw(ServiceOwner, ServiceRepo, ManifestV2FileName);
 
     /// <summary>更新清单的镜像地址（jsDelivr）。raw.githubusercontent 在国内经常连不上。</summary>
     public static string UpdateManifestMirror =>
-        $"https://cdn.jsdelivr.net/gh/{ServiceOwner}/{ServiceRepo}@main/update.json";
+        ManifestMirror(ServiceOwner, ServiceRepo, ManifestV2FileName);
 
     /// <summary>Static plugin marketplace index hosted alongside the update service manifests.</summary>
     public static string PluginCatalog => ManifestRaw(ServiceOwner, ServiceRepo, "plugins/index.json");
@@ -120,7 +118,7 @@ public static class ProjectLinks
     /// </para>
     /// </summary>
     public static string UpdateManifestApi =>
-        $"https://api.github.com/repos/{ServiceOwner}/{ServiceRepo}/contents/update.json";
+        ManifestApi(ServiceOwner, ServiceRepo, ManifestV2FileName);
 
     /// <summary>更新清单仓库的网页地址，用于报错时告诉用户去哪儿看。</summary>
     public static string ServiceRepository => $"https://github.com/{ServiceOwner}/{ServiceRepo}";
@@ -129,8 +127,9 @@ public static class ProjectLinks
     //  多源清单 updatev2.json
     // ─────────────────────────────────────────────────────────────
 
-    /// <summary>v1 清单文件名：单指针，老客户端只认这个，<b>永远不能删</b>。</summary>
+    /// <summary>兼容旧常量名；仅用于发布仓库身份标记，不再用于服务清单回退。</summary>
     public const string ManifestV1FileName = "update.json";
+    public const string RepositoryIdentityFileName = "update.json";
 
     /// <summary>
     /// 公告文件名。和清单放在同一个仓库、同一个分支，所以走的是同一套多通道抢答。
@@ -153,8 +152,7 @@ public static class ProjectLinks
     /// 必然有一边要妥协。分文件之后两边各读各的，互不影响。
     /// </para>
     /// <para>
-    /// 新客户端先试这个文件，404 / 写坏 / 超时都退回 v1。所以发布顺序上，
-    /// <b>v2 文件没推上去也不影响任何人</b>——只是退化成单源而已。
+    /// 这是服务仓库唯一支持的更新清单；404、损坏或超时不再请求 v1。
     /// </para>
     /// </summary>
     public const string ManifestV2FileName = "updatev2.json";
@@ -164,7 +162,7 @@ public static class ProjectLinks
     // ─────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// 额外的清单锚点，每项写 <c>owner/repo</c>（该仓库根目录下也要有一份内容相同的 <c>update.json</c>）。
+    /// 额外的清单锚点，每项写 <c>owner/repo</c>（其根目录也须提供相同的 <c>updatev2.json</c>）。
     /// <para>
     /// 为什么需要这个：锚点解决了「发布仓库搬家」，但解决不了「托管锚点的账号整体出事」。
     /// 2026-10 就发生过一次——组织被 GitHub 标记隐藏，组织下所有仓库对匿名访问全部 404，
@@ -182,14 +180,17 @@ public static class ProjectLinks
     public static readonly string[] ExtraServiceAnchors = [];
 
     /// <summary>某个锚点的清单原始地址。</summary>
+    public static string ManifestRaw(string owner, string repo) => ManifestRaw(owner, repo, ManifestV2FileName);
     public static string ManifestRaw(string owner, string repo, string fileName = ManifestV1FileName) =>
         $"https://raw.githubusercontent.com/{owner}/{repo}/main/{fileName}";
 
     /// <summary>某个锚点的 jsDelivr 镜像地址。</summary>
+    public static string ManifestMirror(string owner, string repo) => ManifestMirror(owner, repo, ManifestV2FileName);
     public static string ManifestMirror(string owner, string repo, string fileName = ManifestV1FileName) =>
         $"https://cdn.jsdelivr.net/gh/{owner}/{repo}@main/{fileName}";
 
     /// <summary>某个锚点的 Contents API 地址。</summary>
+    public static string ManifestApi(string owner, string repo) => ManifestApi(owner, repo, ManifestV2FileName);
     public static string ManifestApi(string owner, string repo, string fileName = ManifestV1FileName) =>
         $"https://api.github.com/repos/{owner}/{repo}/contents/{fileName}";
 

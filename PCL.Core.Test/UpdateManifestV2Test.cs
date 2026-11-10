@@ -9,10 +9,8 @@ namespace PCL.Core.Test;
 /// <summary>
 /// 多源清单 <c>updatev2.json</c> 的解析测试。
 /// <para>
-/// 这份文件的头号要求不是「能解析」，而是「<b>解析不了也不能让更新挂掉</b>」：
-/// 它只是一个锦上添花的文件，写坏了、被反代回了一页 HTML、或者压根没推上去，
-/// 都必须能静默退回 v1 的单指针。所以这里的用例分成两组：
-/// 能解析的写法（宽容度）、和必须被判定为不可用的写法（防呆）。
+/// 只接受多源列表，v2 缺失或损坏时不能恢复服务仓库已停用的 v1 单指针。
+/// 列表中的个别坏条目可跳过，但整份旧格式应拒绝。
 /// </para>
 /// </summary>
 [TestClass]
@@ -70,14 +68,10 @@ public class UpdateManifestV2Test
     }
 
     [TestMethod]
-    public void ParseShouldAcceptV1ShapeAsSingleOfficialSource()
+    public void ParseShouldRejectV1ShapeRatherThanPromoteItToAnOfficialSource()
     {
-        // 有人可能把 updatev2.json 直接写成 v1 的样子。不能因此炸掉
-        var result = UpdateManifestV2.Parse("{\"update\": \"askbbtsk/pcl-lite/releases/latest\"}");
-
-        Assert.AreEqual(1, result.Sources.Count);
-        Assert.AreEqual("askbbtsk", result.Sources[0].Owner);
-        Assert.AreEqual("pcl-lite", result.Sources[0].Repo);
+        Assert.ThrowsExactly<FormatException>(() =>
+            UpdateManifestV2.Parse("{\"update\": \"askbbtsk/pcl-lite/releases/latest\"}"));
     }
 
     [TestMethod]
@@ -168,7 +162,7 @@ public class UpdateManifestV2Test
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  必须判定为不可用（上层据此回退 v1）
+    //  必须判定为不可用（不能回退 v1）
     // ─────────────────────────────────────────────────────────────
 
     [TestMethod]

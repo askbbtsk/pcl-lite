@@ -1,4 +1,4 @@
-# 更新清单 `update.json`
+# 更新清单 `updatev2.json`
 
 ## 它解决什么问题
 
@@ -11,21 +11,21 @@
 
 ```
 客户端（写死，永不改变）
-    └──> bedkillerspacex-boop/PCL-Lite-service 的 update.json   ← 唯一锚点，只有一行指针
+    └──> bedkillerspacex-boop/PCL-Lite-service 的 updatev2.json ← 唯一更新清单
              └──> 当前发布仓库 / releases/latest                ← 随时可以改
                       └──> Release 自己提供版本号、资产、直链、SHA-256
 ```
 
-客户端只认 `update.json` 的地址。以后要换发布仓库，改那一行就行，
-所有还在跑老版本的机器下次检查更新时自然会走到新地址。
+从 1.7.5-pre-4 起，客户端只读取服务仓库的 `updatev2.json`，换发布仓库时修改其 sources。
+服务仓库已停止提供 v1 `update.json`；只支持 v1 的旧客户端不再从该文件获得更新指针。
 
 ## 地址
 
 | 用途 | 地址 |
 | --- | --- |
-| 主通道 | `https://raw.githubusercontent.com/bedkillerspacex-boop/PCL-Lite-service/main/update.json` |
-| 镜像通道 | `https://cdn.jsdelivr.net/gh/bedkillerspacex-boop/PCL-Lite-service@main/update.json` |
-| API 通道 | `https://api.github.com/repos/bedkillerspacex-boop/PCL-Lite-service/contents/update.json` |
+| 主通道 | `https://raw.githubusercontent.com/bedkillerspacex-boop/PCL-Lite-service/main/updatev2.json` |
+| 镜像通道 | `https://cdn.jsdelivr.net/gh/bedkillerspacex-boop/PCL-Lite-service@main/updatev2.json` |
+| API 通道 | `https://api.github.com/repos/bedkillerspacex-boop/PCL-Lite-service/contents/updatev2.json` |
 
 > **2026-10 迁址记录**：锚点原在 `Pcl-Lite` 组织下（`Pcl-Lite/Pcl-Lite-service`）。
 > 该组织被 GitHub 标记隐藏后，组织下所有仓库对匿名访问全部 404，
@@ -69,14 +69,12 @@ Release 被删）时客户端没有任何退路——2026-10 就这么断过一�
 }
 ```
 
-### 为什么是另一个文件，不是往 `update.json` 里加字段
+### v1 已停止支持
 
-老客户端的解析器对形状很严：顶层对象里出现**多个字符串值**就判失败。
-同一个文件既当单指针又当多源列表，必然有一边要妥协。分文件之后两边各读各的，
-互不影响。**`update.json` 必须原样留着**，它还在给所有已发出去的老版本供数。
-
-读取顺序是 `updatev2.json` → `update.json`：v2 拿不到（404 / 写坏 / 超时 / 被反代回一页 HTML）
-就静默退回单指针，行为与加多源之前完全一致。两条路都断才算这次检查更新失败。
+服务仓库只保留 `updatev2.json`。v2 缺失、损坏、超时或返回 HTML 时，该清单源失败，
+不再发起任何服务仓库 v1 请求；上层已有的直接 GitHub Releases 后备源保持。
+把 v1 单指针写入 v2 文件也会被拒绝，必须提供多源列表。
+发布/镜像仓库根目录的 `update.json` 是独立的身份标记，仍保留并用于原有校验。
 
 ### 选优规则：权重分档，不是版本最新
 
@@ -129,17 +127,16 @@ Release 被删）时客户端没有任何退路——2026-10 就这么断过一�
 
 > 注意区分两份文件：
 > - **源码仓库根目录**的 `update.json` → `{"update": "self"}`，永远不要改
-> - **锚点仓库**（`PCL-Lite-service`）里的 `update.json` → 必须写死具体指针。
->   锚点存在的意义就是「换仓库时只改这一行」，写 `self` 就失去这层间接了。
+> - **锚点仓库**（`PCL-Lite-service`）只维护 `updatev2.json` 的 sources，不再提供 `update.json`。
 
 ### 实测
 
 ```bash
-# 线上真实数据（v2 还没推上去时应当走回退分支）
-PCL_TEST_PROXY=http://127.0.0.1:7890 python tools/verify-manifest-fallback.py
+# 线上 v2 通道检查；失败不会请求 v1
+python tools/verify-manifest-v2.py
 
 # 用本地文件模拟「v2 已经推上去了」，验证多源解析与分档选优
-PCL_TEST_PROXY=http://127.0.0.1:7890 python tools/verify-manifest-fallback.py --v2 release/updatev2.json
+python tools/verify-manifest-v2.py --v2 release/updatev2.json
 ```
 
 ### 发布包（exe）的下载顺序和清单不一样
@@ -282,7 +279,7 @@ GitHub 现在会给每个 Release 资产带上 `digest` 字段（`sha256:…`）
 
 ```bash
 # 链路能不能走通：锚点 -> latest -> 挑资产 -> 下载 -> 比对 SHA-256
-python tools/verify-update-chain.py
+python tools/verify-manifest-v2.py
 
 # 四档通道对着线上 Release 列表挑出来的版本对不对
 python tools/verify-channels.py

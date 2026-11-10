@@ -44,9 +44,7 @@ public sealed class UpdateManifestV2Result
 /// v2 允许一次列出多个仓库，每个带权重，客户端挨个问、挑版本最新的那个。
 /// </para>
 /// <para>
-/// 兼容性硬要求：<b>老客户端只认 <c>update.json</c>，那份文件必须原样留着</b>。
-/// 所以这里读的是另一个文件 <c>updatev2.json</c>，新客户端先试 v2，拿不到（404 / 写坏 / 超时）
-/// 再退回 v1 的单指针。两条路都断才算这次检查更新失败。
+/// 只接受多源列表，服务仓库已停用 v1。缺失、损坏或只有旧单指针时直接失败。
 /// </para>
 /// <para>
 /// 解析风格刻意和 <see cref="UpdateManifestPointer"/> 一致：宽容写法、严格形状校验。
@@ -175,7 +173,7 @@ public static class UpdateManifestV2
 
     /// <summary>
     /// 把顶层结构摊平成「一堆待解析的条目」。
-    /// 支持：顶层数组、<c>{sources:[...]}</c>、以及 v1 那种单指针对象（当成一个 official 源）。
+    /// 支持顶层数组或包含源列表的对象；不再将 v1 单指针提升为更新源。
     /// </summary>
     private static List<JsonNode?> _CollectEntries(JsonNode? root, List<string> problems)
     {
@@ -197,26 +195,7 @@ public static class UpdateManifestV2
                     return list;
                 }
 
-                // 没有源列表：可能整份就是 v1 的单指针写法，直接当官方源用。
-                // 这样 updatev2.json 里写老格式也照样能跑，改一半不会把更新搞挂。
-                string single;
-                try
-                {
-                    single = UpdateManifestPointer.Extract(obj.ToJsonString());
-                }
-                catch (FormatException ex)
-                {
-                    throw new FormatException($"多源清单里既没有源列表，也不是单指针写法：{ex.Message}", ex);
-                }
-
-                list.Add(JsonValue.Create(single));
-                return list;
-            }
-            case JsonValue value when value.TryGetValue<string>(out var bare):
-            {
-                // 纯字符串：一个源
-                list.Add(JsonValue.Create(bare));
-                return list;
+                throw new FormatException("多源清单缺少源列表，不再支持 v1 单指针。");
             }
             default:
                 problems.Add("清单顶层既不是数组也不是对象。");

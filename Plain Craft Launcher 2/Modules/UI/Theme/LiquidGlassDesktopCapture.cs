@@ -26,6 +26,8 @@ internal sealed class TahoeDesktopCapture : IDisposable
     private readonly Dictionary<IntPtr, Session> _sessions = [];
     private readonly HashSet<IntPtr> _expectedMonitors = [];
     private readonly DispatcherTimer _retry;
+    private readonly DispatcherTimer _affinityRetry;
+    private int _affinityAttempts;
     private IntPtr _handle;
     private uint _originalAffinity;
     private WriteableBitmap? _bitmap;
@@ -58,6 +60,10 @@ internal sealed class TahoeDesktopCapture : IDisposable
             Interval = retryDelay ?? TimeSpan.FromMilliseconds(250)
         };
         _retry.Tick += Retry;
+        _affinityRetry = new DispatcherTimer(DispatcherPriority.Background, window.Dispatcher)
+        { Interval = retryDelay ?? TimeSpan.FromMilliseconds(250) };
+        _affinityRetry.Tick += RetryAffinity;
+        window.Closed += WindowClosed;
     }
 
     public void Apply(bool enabled)
@@ -204,7 +210,11 @@ internal sealed class TahoeDesktopCapture : IDisposable
                 RestoreAffinity();
                 SetState(TahoeCaptureState.Suspended);
             }
-            else if (!HasFrame) SetState(TahoeCaptureState.Starting);
+            else
+            {
+                _affinityRetry.Stop(); // Capture intentionally excludes this live session.
+                if (!HasFrame) SetState(TahoeCaptureState.Starting);
+            }
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
@@ -285,6 +295,9 @@ internal sealed class TahoeDesktopCapture : IDisposable
         if (!_enabled || _disposed || _retry.IsEnabled) return;
         if (++_attempts > 3)
         {
+            RetireAll();
+            ClearImage();
+            RestoreAffinity();
             _topologyDirty = false;
             SetState(TahoeCaptureState.Failed);
             return;
@@ -313,10 +326,41 @@ internal sealed class TahoeDesktopCapture : IDisposable
         if (!_excluded) return;
         try
         {
-            if (_platform.RestoreWindow(_handle, _originalAffinity)) _excluded = false;
+            if (_platform.RestoreWindow(_handle, _originalAffinity))
+            {
+                _excluded = false;
+                _affinityAttempts = 0;
+                _affinityRetry.Stop();
+                if (_disposed) DetachAffinityRetry();
+                return;
+            }
             else _log("[Tahoe] Restoring capture visibility failed", null);
         }
         catch (Exception error) when (error is not OutOfMemoryException) { _log("[Tahoe] Restoring capture visibility failed", error); }
+        if (_affinityAttempts < 3 && !_window.Dispatcher.HasShutdownStarted) _affinityRetry.Start();
+        else if (_disposed) DetachAffinityRetry();
+    }
+
+    private void RetryAffinity(object? sender, EventArgs args)
+    {
+        _affinityRetry.Stop();
+        if (_enabled && _sessions.Count > 0) return;
+        ++_affinityAttempts;
+        RestoreAffinity();
+    }
+
+    private void WindowClosed(object? sender, EventArgs args)
+    {
+        // A destroyed HWND cannot remain excluded and must not keep a dispatcher retry alive.
+        _excluded = false;
+        DetachAffinityRetry();
+    }
+
+    private void DetachAffinityRetry()
+    {
+        _affinityRetry.Stop();
+        _affinityRetry.Tick -= RetryAffinity;
+        _window.Closed -= WindowClosed;
     }
 
     private void ClearImage()
@@ -366,6 +410,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
         Stop();
         _disposed = true;
         _retry.Tick -= Retry;
+        if (!_excluded) DetachAffinityRetry();
     }
 
     private sealed class Session(IntPtr monitor)

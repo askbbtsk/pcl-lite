@@ -12,6 +12,8 @@ using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.DirectX.Direct3D11;
 using WinRT;
+using PCL.Core.App;
+using PCL.Core.UI;
 using Rect = System.Windows.Rect;
 
 namespace PCL;
@@ -118,7 +120,9 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
                         return;
                     }
                     long now = Stopwatch.GetTimestamp();
-                    if (region.Version == _lastVersion && Stopwatch.GetElapsedTime(_lastFrame, now).TotalMilliseconds < 1000d / 30) return;
+                    // Apply the user's cap even during dragging/resizing; geometry changes do not bypass it.
+                    if (!LiquidGlassPerformance.ShouldRender(now - _lastFrame, Stopwatch.Frequency,
+                            LiquidGlassPerformance.NormalizeFrameRate(Config.Preference.TahoeGlass.MaximumFrameRate))) return;
                     _lastFrame = now;
                     using ID3D11Texture2D texture = SurfaceTexture(frame.Surface);
                     var desc = texture.Description;

@@ -117,7 +117,9 @@ public sealed class TahoeDesktopCaptureTests
                 else PumpUntil(() => capture.State == TahoeCaptureState.Failed);
             }
             Assert.AreEqual(5, platform.Creations, "Only the broken monitor should use the bounded recovery budget.");
-            Assert.IsFalse(healthy.Disposed);
+            Assert.IsTrue(healthy.Disposed, "Exhausted recovery must retire even healthy stale-version sessions.");
+            Assert.AreEqual(0u, platform.Affinity, "Failed live capture cannot leave the launcher invisible in screenshots.");
+            Assert.IsFalse(capture.HasFrame);
         });
     }
 
@@ -204,6 +206,59 @@ public sealed class TahoeDesktopCaptureTests
         Assert.AreEqual(2, ((AggregateException)error!).InnerExceptions.Count);
     }
 
+    [STATestMethod]
+    public void DisablingCaptureRetriesTransientAffinityFailureAndRestoresScreenshots()
+    {
+        WithCapture((capture, platform, _, _) =>
+        {
+            capture.Apply(true);
+            Assert.AreEqual(0x11u, platform.Affinity);
+            platform.RestoreFailures = 1;
+            capture.Apply(false);
+            PumpUntil(() => platform.Affinity == 0);
+            Assert.AreEqual(2, platform.RestoreCalls);
+        });
+    }
+
+    [STATestMethod]
+    public void DisposeRetainsBoundedRestoreWorkUntilWindowCaptureVisibilityIsRestored()
+    {
+        WithCapture((capture, platform, _, _) =>
+        {
+            capture.Apply(true);
+            platform.RestoreFailures = 1;
+            capture.Dispose();
+            PumpUntil(() => platform.Affinity == 0);
+            Assert.AreEqual(2, platform.RestoreCalls);
+        });
+    }
+
+    [STATestMethod]
+    public void PermanentAffinityFailureDoesNotSpinForever()
+    {
+        WithCapture((capture, platform, _, _) =>
+        {
+            capture.Apply(true);
+            platform.RestoreFailures = int.MaxValue;
+            capture.Dispose();
+            PumpUntil(() => platform.RestoreCalls == 4);
+            PumpFor(TimeSpan.FromMilliseconds(40));
+            Assert.AreEqual(4, platform.RestoreCalls);
+        });
+    }
+
+    [STATestMethod]
+    public void ScreenshotFriendlyModeNeverStartsCaptureOrSetsExclusion()
+    {
+        WithCapture((capture, platform, _, _) =>
+        {
+            capture.Apply(false);
+            Assert.AreEqual(0, platform.Creations);
+            Assert.AreEqual(0u, platform.Affinity);
+            Assert.AreEqual(TahoeCaptureState.Stopped, capture.State);
+        });
+    }
+
     private static void WithCapture(Action<TahoeDesktopCapture, FakePlatform, Window, Image> action)
     {
         var image = new Image();
@@ -269,7 +324,15 @@ public sealed class TahoeDesktopCaptureTests
             Affinity = 0x11;
             return true;
         }
-        public bool RestoreWindow(IntPtr window, uint affinity) { Affinity = affinity; return true; }
+        public int RestoreFailures { get; set; }
+        public int RestoreCalls { get; private set; }
+        public bool RestoreWindow(IntPtr window, uint affinity)
+        {
+            RestoreCalls++;
+            if (RestoreFailures-- > 0) return false;
+            Affinity = affinity;
+            return true;
+        }
         public IReadOnlyList<TahoeCaptureMonitor> GetMonitors() => Monitors;
         public void RaiseDisplayChange() => DisplaysChanged?.Invoke(this, EventArgs.Empty);
         public ITahoeMonitorCapture CreateMonitor(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed)

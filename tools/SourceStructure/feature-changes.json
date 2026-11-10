@@ -417,7 +417,7 @@
     "PCL.ModSetup::MethodDeclaration::UiBlurValue(int value)"
   ],
   "Reason": "Tahoe opt-in feature: Observe the two opt-in settings, refresh appearance after font changes, and suppress competing legacy blur while enabled. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
-  "Sha256": "75C36516C741643CF1E68B66A7A42019189C2C925D9B7D42197CCE6D59AC7C2A"
+  "Sha256": "B12E9F1F0F08D82A6E31E64336138078A30C961EEEC68E6701E064BF87DA85F6"
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Modules/ModVideoBack.cs",
@@ -442,7 +442,7 @@
     "PCL.PageSetupUI::MethodDeclaration::Reload()"
   ],
   "Reason": "Tahoe opt-in feature: Reload the two new opt-in appearance controls from local preferences. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
-  "Sha256": "1CC70805D8F68B0A056EF9D620A3D6186422812A0FFDA23E99B8EC2795C99D77"
+  "Sha256": "477EB0876CF9D10FE8A3B839215F70189FCC8A9B8966E6223509888A1F46647D"
 }
 , {
   "SourcePath": "PCL.Core/App/ProjectLinks.cs",

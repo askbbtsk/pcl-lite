@@ -52,8 +52,9 @@ public partial class PageSetupUI
             ComboUiFont.SelectedFontTag = Config.Preference.Font;
             ComboUiMotdFont.SelectedFontTag = Config.Preference.MotdFont;
 
-            CheckTahoeGlass.Checked = Config.Preference.TahoeGlass.IsEnabled;
-            CheckTahoeDesktop.Checked = Config.Preference.TahoeGlass.UseDesktopBackdrop;
+            CheckTahoeGlass.Checked = LiquidGlassCore.IsEnabled;
+            CheckTahoeDesktop.Checked = Config.Preference.TahoeGlass.UseDesktopBackdrop && Config.Preference.TahoeGlass.DesktopCaptureConsent;
+            RefreshLiquidGlassSettings();
             CheckBlur.Checked = Config.Preference.Blur.IsEnabled;
             SliderBlurValue.Value = Config.Preference.Blur.Radius;
             SliderBlurSamplingRate.Value = Config.Preference.Blur.SamplingRate;

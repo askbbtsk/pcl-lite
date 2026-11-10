@@ -9,7 +9,7 @@ namespace PCL;
 /// Native optical material. WGC provides desktop pixels to an independent sibling
 /// source; the existing shader refracts that source without sampling foreground UI.
 /// </summary>
-public static class TahoeThemeManager
+public static class LiquidGlassCore
 {
     private static FormMain? _window;
     private static bool _applied;
@@ -24,12 +24,17 @@ public static class TahoeThemeManager
     private static readonly Dictionary<string, object?> OriginalThemeResources = new();
 
     public static TahoeAppearance Appearance { get; } = new();
-    public static bool IsEnabled => Config.Preference.TahoeGlass.IsEnabled;
+    public static bool IsEnabled => PCL.Core.UI.LiquidGlassPerformance.IsEnabled(
+        Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent);
     public static bool IsDesktopBackdropActive => IsEnabled && _desktopCapture?.IsActive == true;
-    public static bool IsDesktopBackdropRequested => IsEnabled && Config.Preference.TahoeGlass.UseDesktopBackdrop;
+    public static bool IsDesktopBackdropRequested => PCL.Core.UI.LiquidGlassPerformance.ShouldCaptureDesktop(
+        Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent,
+        Config.Preference.TahoeGlass.UseDesktopBackdrop, Config.Preference.TahoeGlass.DesktopCaptureConsent);
     public static FrameworkElement? BackdropSource => IsEnabled &&
         (!IsDesktopBackdropRequested || _desktopCapture?.HasFrame == true) ? _window?.TahoeBackdrop : null;
     public static event EventHandler? Changed;
+    public static PCL.Core.UI.LiquidGlassProfile Profile =>
+        PCL.Core.UI.LiquidGlassPerformance.GetProfile(Config.Preference.TahoeGlass.PerformancePreset);
 
     public static void Refresh()
     {
@@ -71,12 +76,30 @@ public static class TahoeThemeManager
                 _applied = false;
             }
             Appearance.IsEnabled = IsEnabled;
+            if (IsEnabled)
+            {
+                foreach (var surface in GlassSurfaces(window))
+                {
+                    surface.BlurRadius = Profile.BlurRadius;
+                    surface.Dispersion = Profile.Dispersion;
+                    surface.HighlightStrength = Profile.Highlight;
+                }
+            }
             Appearance.IsDesktopRequested = IsDesktopBackdropRequested;
             string captureState = (_desktopCapture?.State ?? TahoeCaptureState.Stopped).ToString();
             if (_desktopCapture?.State == TahoeCaptureState.Live && !window.TahoeWindowGlass.IsRefractionActive)
                 captureState = "Compatibility";
             Appearance.DesktopStatus = PCL.Core.App.Localization.Lang.Text("Setup.Ui.Tahoe.State." + captureState);
             Changed?.Invoke(null, EventArgs.Empty);
+            if (IsEnabled)
+            {
+                foreach (var surface in GlassSurfaces(window))
+                {
+                    surface.BlurRadius = Profile.BlurRadius;
+                    surface.Dispersion = Profile.Dispersion;
+                    surface.HighlightStrength = Profile.Highlight;
+                }
+            }
             window.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, () =>
             {
                 if (_window != window) return;
@@ -94,6 +117,13 @@ public static class TahoeThemeManager
     {
         if (error == null) ModBase.Log(message, ModBase.LogLevel.Developer);
         else ModBase.Log(error, message);
+    }
+
+    private static IEnumerable<TahoeGlassSurface> GlassSurfaces(DependencyObject parent)
+    {
+        if (parent is TahoeGlassSurface surface) yield return surface;
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+            foreach (var child in GlassSurfaces(VisualTreeHelper.GetChild(parent, index))) yield return child;
     }
 
     private static void OnCaptureStateChanged(object? sender, EventArgs args) => Refresh();
@@ -201,7 +231,9 @@ public static class TahoeThemeManager
             : dark ? Color.FromRgb(23, 29, 39) : Colors.White;
         surface.TintOpacity = SystemParameters.HighContrast ? 1 : opacity;
         surface.ForceCompatibility = SystemParameters.HighContrast;
-        surface.BlurRadius = 2;
+        surface.BlurRadius = Profile.BlurRadius;
+        surface.Dispersion = Profile.Dispersion;
+        surface.HighlightStrength = Profile.Highlight;
         surface.RefractionStrength = .05;
         surface.Visibility = Visibility.Visible;
         surface.RefreshSampling();
@@ -324,6 +356,21 @@ public static class TahoeThemeManager
         _wallpaperSuppressed = false;
         _applied = false;
     }
+}
+
+/// <summary>Compatibility entry for the original PR's XAML and control hooks.</summary>
+public static class TahoeThemeManager
+{
+    public static TahoeAppearance Appearance => LiquidGlassCore.Appearance;
+    public static bool IsEnabled => LiquidGlassCore.IsEnabled;
+    public static bool IsDesktopBackdropRequested => LiquidGlassCore.IsDesktopBackdropRequested;
+    public static FrameworkElement? BackdropSource => LiquidGlassCore.BackdropSource;
+    public static event EventHandler? Changed
+    {
+        add => LiquidGlassCore.Changed += value;
+        remove => LiquidGlassCore.Changed -= value;
+    }
+    public static void Refresh() => LiquidGlassCore.Refresh();
 }
 
 /// <summary>Observable opt-in state for XAML triggers; styles revert automatically when disabled.</summary>

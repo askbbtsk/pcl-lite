@@ -534,7 +534,12 @@ public static partial class Config
             /// </summary>
             [ConfigItem<bool>("UiTahoeGlassEnabled", false, ConfigSource.Local)] public partial bool IsEnabled { get; set; }
             /// <summary>Capture the desktop behind the window as the refraction source.</summary>
-            [ConfigItem<bool>("UiTahoeDesktopBackdrop", true, ConfigSource.Local)] public partial bool UseDesktopBackdrop { get; set; }
+            [ConfigItem<bool>("UiTahoeDesktopBackdrop", false, ConfigSource.Local)] public partial bool UseDesktopBackdrop { get; set; }
+            [ConfigItem<int>("UiLiquidGlassPreset", 1, ConfigSource.Local)] public partial int PerformancePreset { get; set; }
+            [ConfigItem<int>("UiLiquidGlassFrameRate", 60, ConfigSource.Local)] public partial int MaximumFrameRate { get; set; }
+            // Fresh opt-in is required even for settings left by earlier experimental builds.
+            [ConfigItem<bool>("UiLiquidGlassConsent", false, ConfigSource.Local)] public partial bool PerformanceConsent { get; set; }
+            [ConfigItem<bool>("UiLiquidGlassDesktopConsent", false, ConfigSource.Local)] public partial bool DesktopCaptureConsent { get; set; }
         }
 
         /// <summary>

@@ -147,7 +147,9 @@ public partial class MyButton
             {
                 IsHitTestVisible = false,
                 RefractionStrength = 0.05,
-                BlurRadius = 2,
+                BlurRadius = LiquidGlassCore.Profile.BlurRadius,
+                Dispersion = LiquidGlassCore.Profile.Dispersion,
+                HighlightStrength = LiquidGlassCore.Profile.Highlight,
                 TintOpacity = 0.1
             };
             _tahoeWash = new Border { Background = Brushes.White, Opacity = 0, IsHitTestVisible = false };

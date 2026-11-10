@@ -144,6 +144,7 @@ public sealed class TahoeGlassSurface : Grid
         else OnUnloaded(this, new RoutedEventArgs());
     }
 
+
     private void OnSystemParametersChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(SystemParameters.HighContrast)) return;

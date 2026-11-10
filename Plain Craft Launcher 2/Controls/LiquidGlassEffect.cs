@@ -12,7 +12,7 @@ internal sealed class TahoeGlassEffect : ShaderEffect
     private static readonly Lazy<PixelShader> CompiledShader = new(() =>
     {
         string assembly = typeof(TahoeGlassEffect).Assembly.GetName().Name!;
-        var resource = new Uri($"/{assembly};component/Resources/TahoeGlass/Glass.ps", UriKind.Relative);
+        var resource = new Uri($"/{assembly};component/Resources/LiquidGlass/Glass.ps", UriKind.Relative);
         using Stream stream = Application.GetResourceStream(resource)?.Stream
             ?? throw new FileNotFoundException("The compiled Tahoe glass shader resource was not found.");
         var shader = new PixelShader();

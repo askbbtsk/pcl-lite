@@ -1,11 +1,36 @@
-# PCL Lite 原生液态玻璃
+# PCL Lite LiquidGlass Core
 
-入口：设置 → 个性化 → macOS Tahoe 液态玻璃 → 使用液态玻璃界面。
-默认关闭，本地键为 `UiTahoeGlassEnabled`，立即生效；关闭恢复原版外观与高级材质配置。
+入口：设置 → 个性化 → 液态玻璃 · LiquidGlass Core。独立卡片，不放进高级材质选项。
+默认关闭；点击开关先显示性能确认，无倒计时。取消不会开启。确认后在开关下展开设置。
+原 `UiTahoeGlassEnabled` / `UiTahoeDesktopBackdrop` 配置键和控件类型保留兼容；
+主实现与文件统一为 `LiquidGlassCore.cs`、`LiquidGlass*.cs` 和 `Resources/LiquidGlass/`。
+旧实验配置没有新的性能与桌面采样确认标记时不能自行启用。
 
-“直接折射桌面”默认勾选，本地键为 `UiTahoeDesktopBackdrop`。Windows Graphics Capture 采样窗口后方的真实桌面，经 D3D11 局部回读后送入原有八次幂着色器；没有 Acrylic 替代路径。该模式隐藏启动器壁纸并暂停视频，不删除文件或修改壁纸配置。
+默认折射启动器背景，可正常截图和录屏，不设置 HWND 截图排除。没有背景图片时显示静态材质。
+“实时折射桌面”默认关闭，单独开启还需确认截图限制。Windows Graphics Capture 采样真实桌面，经 D3D11 局部回读送入八次幂着色器。该模式隐藏启动器壁纸并暂停视频，不删除文件或修改壁纸配置。
 
 为防止递归绘制，采样期间通过 `WDA_EXCLUDEFROMCAPTURE` 排除启动器自身；因此启动器也不会出现在系统截图或录屏中。关闭、失败或退出时恢复原有截图状态。系统可能显示桌面采集边框；实现没有绕过系统的录制提示或授权设置。
+
+这是原 PR“截屏时窗口消失”的原因：实际窗口没有关闭，是系统截图刻意排除了它。
+实时桌面与普通截图兼容无法在当前 WGC 自排除实现中同时保证，不以移除标志造成递归画面来伪装修复。
+多屏恢复耗尽时全部退役并恢复截图状态；affinity 恢复暂时失败时，独立 dispatcher 最多重试三次，
+即使主采集已停用或 Dispose 也保留有限恢复；窗口销毁后停止。永久系统调用失败记录日志，不承诺系统一定接受。
+
+## 性能设置
+
+预设框及选项最小高度 38 DIP，开关高 32 DIP，关闭时设置折叠于开关下。
+
+| 预设 | 模糊 | 色散 | 高光 | 按压动效 | 默认效果帧率 |
+| --- | ---: | ---: | ---: | --- | ---: |
+| 低消耗 | 0 DIP | 0 | 0.35 | 关闭 | 30 FPS |
+| 均衡 | 1 DIP | 0.08 | 0.50 | 开启 | 60 FPS |
+| 高画质 | 2 DIP | 0.20 | 0.65 | 开启 | 90 FPS |
+| 极致 | 3 DIP | 0.30 | 0.80 | 开启 | 120 FPS |
+
+原生滑块可选 30–240 FPS，最右端不限制。切换预设会应用该档默认帧率，之后可独立修改。
+上限作用于桌面回读/上传及按压动画，不修改 Minecraft 帧率，不保证实际渲染达到设置值；
+移动/缩放不绕过上限，不限制仍受系统采集和显示器刷新率约束。
+开销只作相对预估，不填造 CPU 百分比或内存数值，硬件、分辨率、多屏、动态背景均会影响结果。
 
 ## 来源与参数
 
@@ -45,7 +70,7 @@ Android 自身的 `circleMap()` 没有沿用，折射曲线按要求使用八次
 ## 渲染与生命周期
 
 - `TahoeBackdrop` 只包含桌面采样像素或用户背景图片/视频，与玻璃层相互独立。
-- 桌面采集按显示器与窗口交集建立会话，GPU 只回读交集区域；有界帧队列、30 Hz 上限、复用像素缓冲、跳过相同帧。最小化/隐藏释放会话，恢复后重建；坐标使用实际屏幕像素及 WPF 变换。
+- 桌面采集按显示器与窗口交集建立会话，GPU 只回读交集区域；有界帧队列、用户帧率上限、复用像素缓冲、跳过相同帧。最小化/隐藏释放会话，恢复后重建；坐标使用实际屏幕像素及 WPF 变换。
 - 坐标通过不可变区域快照无锁发布，原生会话在工作线程退役；UI 不等待 GPU 回读或 WGC Close。每个会话最多只有一份待呈现帧；缓冲比较后仅上传发生变化的行带，连续内存一次复制。
 - 监听显示器拓扑变化并重新枚举；旧会话的帧和失败回调按身份隔离。失败最多自动重试三次，耗尽后停止定时器；显示器变化或重新开关可重试，单块健康显示器不会重置故障显示器的重试预算。
 - 采样未就绪时不给控件提供虚假的可折射背景；设置页实时显示等待、工作、暂停、恢复、失败及模糊兼容状态。
@@ -56,12 +81,12 @@ Android 自身的 `circleMap()` 没有沿用，折射曲线按要求使用八次
 - 布局、源和祖先变换改变时更新坐标；隐藏或卸载解除观察并释放画刷。
 - 普通 LayoutUpdated 不再重复构建祖先列表与变换集合；同一帧的连续变换合并更新采样参数，卸载时取消排队更新。
 - 按钮弹簧只在未收敛时订阅 Rendering，遵循系统减少动画设置。
-- Android Apache 2.0 完整许可与来源随 `Resources/TahoeGlass/NOTICE.txt` 嵌入。
+- Android Apache 2.0 完整许可与来源随 `Resources/LiquidGlass/NOTICE.txt` 嵌入。
 
 ## 构建与验证
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "Plain Craft Launcher 2/Resources/TahoeGlass/Compile.ps1"
+powershell -ExecutionPolicy Bypass -File "Plain Craft Launcher 2/Resources/LiquidGlass/Compile.ps1"
 dotnet build "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" -c Debug
 dotnet test PCL.Core.Test/PCL.Core.Test.csproj -c Debug --filter "FullyQualifiedName~TahoeGlass"
 ```

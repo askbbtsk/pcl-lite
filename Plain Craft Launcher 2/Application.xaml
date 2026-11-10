@@ -12,7 +12,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Resources/Markdown.xaml" />
-                <ResourceDictionary Source="/Resources/TahoeGlass/Styles.xaml" />
+                <ResourceDictionary Source="/Resources/LiquidGlass/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <sys:Double x:Key="BlurRadius">0.0</sys:Double>
             <sys:Double x:Key="BlurSamplingRate">0.7</sys:Double>

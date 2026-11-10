@@ -28,6 +28,7 @@ internal sealed class TahoeButtonMotion(
 
     public void Press(Point position)
     {
+        if (!LiquidGlassCore.Profile.Motion) { Reset(); return; }
         _pressed = true;
         _start = position;
         _positionX.Snap(position.X);
@@ -38,7 +39,7 @@ internal sealed class TahoeButtonMotion(
 
     public void Move(Point position)
     {
-        if (!_pressed) return;
+        if (!_pressed || !LiquidGlassCore.Profile.Motion) return;
         // Compose snaps the drag position to the pointer; only the return is sprung.
         _positionX.Snap(position.X);
         _positionY.Snap(position.Y);
@@ -71,7 +72,7 @@ internal sealed class TahoeButtonMotion(
 
     private void Animate()
     {
-        if (!owner.IsLoaded || !SystemParameters.ClientAreaAnimation)
+        if (!owner.IsLoaded || !SystemParameters.ClientAreaAnimation || !LiquidGlassCore.Profile.Motion)
         {
             _press.Snap(_press.Target);
             _positionX.Snap(_positionX.Target);
@@ -93,12 +94,14 @@ internal sealed class TahoeButtonMotion(
             Reset();
             return;
         }
-        if (!SystemParameters.ClientAreaAnimation)
+        if (!SystemParameters.ClientAreaAnimation || !LiquidGlassCore.Profile.Motion)
         {
             Animate();
             return;
         }
         var timestamp = Stopwatch.GetTimestamp();
+        if (!PCL.Core.UI.LiquidGlassPerformance.ShouldRender(timestamp - _lastTimestamp, Stopwatch.Frequency,
+                PCL.Core.App.Config.Preference.TahoeGlass.MaximumFrameRate)) return;
         var elapsed = Math.Clamp((timestamp - _lastTimestamp) / (double)Stopwatch.Frequency, 0, 0.1);
         _lastTimestamp = timestamp;
         _press.Step(elapsed);

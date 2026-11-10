@@ -87,6 +87,14 @@ public class ModSetup
             e => UiTahoeGlass((bool)e.Value!)));
         Config.Preference.TahoeGlass.UseDesktopBackdropConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
             _ => ModBase.RunInUi(() => TahoeThemeManager.Refresh())));
+        Config.Preference.TahoeGlass.PerformancePresetConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => LiquidGlassCore.Refresh())));
+        Config.Preference.TahoeGlass.MaximumFrameRateConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => LiquidGlassCore.Refresh())));
+        Config.Preference.TahoeGlass.PerformanceConsentConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => LiquidGlassCore.Refresh())));
+        Config.Preference.TahoeGlass.DesktopCaptureConsentConfig.Observe(new ConfigObserver(ConfigEvent.Changed,
+            _ => ModBase.RunInUi(() => LiquidGlassCore.Refresh())));
 
         // UI - 用户文件夹名打码
         // 关掉之后界面上（含启动日志）的 C:\Users\xxx 原样显示；崩溃报告不受这个开关影响，始终打码

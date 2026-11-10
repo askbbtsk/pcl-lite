@@ -264,14 +264,32 @@
             <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Setup.Ui.Tahoe.Title}">
                 <StackPanel Margin="25,40,25,15">
                     <local:MyCheckBox x:Name="CheckTahoeGlass" Text="{DynamicResource Setup.Ui.Tahoe.Enable}"
-                                      Tag="UiTahoeGlassEnabled" Height="24" Margin="0,0,0,8"
-                                      Change="CheckBoxChange" />
+                                      Height="32" Margin="0,0,0,8"
+                                      Change="LiquidGlassEnabled_Change" />
+                    <StackPanel x:Name="PanLiquidGlassSettings" Visibility="Collapsed">
                     <TextBlock Text="{DynamicResource Setup.Ui.Tahoe.Description}"
                                TextWrapping="Wrap" Opacity="0.8" Margin="0,0,0,6" />
+                    <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Preset}" Margin="0,8,0,6" />
+                    <local:MyComboBox x:Name="ComboLiquidGlassPreset" Height="38" MinHeight="38"
+                                      HorizontalAlignment="Stretch" VerticalContentAlignment="Center"
+                                      SelectionChanged="LiquidGlassPreset_Changed">
+                        <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.Preset.0}" MinHeight="38" />
+                        <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.Preset.1}" MinHeight="38" />
+                        <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.Preset.2}" MinHeight="38" />
+                        <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.Preset.3}" MinHeight="38" />
+                    </local:MyComboBox>
+                    <TextBlock x:Name="TextLiquidGlassCost" TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,12" />
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.FrameRate}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock x:Name="TextLiquidGlassFrameRate" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    </Grid>
+                    <local:MySlider x:Name="SliderLiquidGlassFrameRate" MaxValue="211" ValueByKey="1"
+                                    Height="32" Change="LiquidGlassFrameRate_Changed" Margin="0,0,0,8" />
                     <local:MyCheckBox x:Name="CheckTahoeDesktop" Text="{DynamicResource Setup.Ui.Tahoe.Desktop}"
-                                      Tag="UiTahoeDesktopBackdrop" Height="24" Margin="0,6,0,6"
+                                      Height="32" Margin="0,6,0,6"
                                       IsEnabled="{Binding Checked, ElementName=CheckTahoeGlass}"
-                                      Change="CheckBoxChange" />
+                                      Change="LiquidGlassDesktop_Change" />
                     <TextBlock Text="{DynamicResource Setup.Ui.Tahoe.Desktop.Description}"
                                TextWrapping="Wrap" Opacity="0.8" Margin="0,0,0,6" />
                     <TextBlock Text="{DynamicResource Setup.Ui.Tahoe.Compatibility}"
@@ -289,6 +307,7 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
+                    </StackPanel>
                 </StackPanel>
             </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Setup.Ui.TopBarCollapse.Title}">

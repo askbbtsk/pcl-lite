@@ -1,0 +1,52 @@
+[
+  {
+    "Path": "Plain Craft Launcher 2/Application.xaml", "Control": "RepeatButton",
+    "Fingerprint": "B57A996F43A0840B76AA1D2C613B7C31C0D576BB158F5F59734BF808D0B6B268", "Count": 1,
+    "Reason": "Existing invisible page-left hit target inside the PCL horizontal scrollbar template; not a visible native action button."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Application.xaml", "Control": "RepeatButton",
+    "Fingerprint": "4FA0BE9FDBF898BC40AAF974FBC21133962873334E8695686F9A9F3136171EBA", "Count": 1,
+    "Reason": "Existing invisible page-right hit target inside the PCL horizontal scrollbar template."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Application.xaml", "Control": "RepeatButton",
+    "Fingerprint": "8A14597DC9153EC92C4C4C8E606421CC7BA01F70951CF1920439D6602B7125F2", "Count": 1,
+    "Reason": "Existing invisible page-up hit target inside the PCL vertical scrollbar template."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Application.xaml", "Control": "RepeatButton",
+    "Fingerprint": "6C52A1BC57EB32DC1C39101725F219875A0FB844EB883FBC7AE2E6B1E57EF754", "Count": 1,
+    "Reason": "Existing invisible page-down hit target inside the PCL vertical scrollbar template."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Application.xaml", "Control": "RepeatButton",
+    "Fingerprint": "E1AC3E8F12A6F51D71C74C3448ED361D4E71F631BAE34A7B86E2B519C1E1B6A4", "Count": 1,
+    "Reason": "Existing invisible page-up hit target in the alternate PCL vertical scrollbar template."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Application.xaml", "Control": "RepeatButton",
+    "Fingerprint": "5C31586F66E855DF3BB75B230AC021311D2466D44AEBB83A3C146C2727FEA9A4", "Count": 1,
+    "Reason": "Existing invisible page-down hit target in the alternate PCL vertical scrollbar template."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Application.xaml", "Control": "ToggleButton",
+    "Fingerprint": "3B1B95138AB761EB542E0A3834D754B8170B3BBD27D1CB0F8B823DFC65478D2B", "Count": 2,
+    "Reason": "The two existing combo-box template arrow primitives use the PCL ToggleButton template defined in this resource dictionary."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Pages/PageLaunch/PageLoginAuth.xaml", "Control": "PasswordBox",
+    "Fingerprint": "844A4CEFFE1C05AFDFD6A6D4F94D78D0759B5E94C46DA81178EAAB0D48C0D323", "Count": 1,
+    "Reason": "Existing secure password input uses the PCL PasswordBox control template from Application.xaml; never replace it with plaintext input."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Pages/PageLogRight.xaml", "Control": "RichTextBox",
+    "Fingerprint": "A7B756797F95B4609ABE3A7A561FF48173FC2F7A708E5CEA29EC5185A34B91E0", "Count": 1,
+    "Reason": "Existing read-only formatted game-log document host, with no border and transparent background, inside PCL card and scrolling controls."
+  },
+  {
+    "Path": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.xaml", "Control": "TextBox",
+    "Fingerprint": "39912D10A1CF723417F6CF1C550047CEA329B7E8FDDCB01E70002352E93FCB21", "Count": 1,
+    "Reason": "Existing read-only Lunar log viewer uses explicit PCL foreground, selection colors and inset surface; its text-selection/scrolling behavior is intentional."
+  }
+]

@@ -20,7 +20,11 @@ on:
   workflow_dispatch:
 
 jobs:
+  ui_smoke:
+    uses: ./.github/workflows/ui-smoke.yml
+
   build:
+    needs: [ui_smoke]
     strategy:
       matrix:
         include:

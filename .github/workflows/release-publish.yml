@@ -21,7 +21,11 @@ on:
         type: string
 
 jobs:
+  ui_smoke:
+    uses: ./.github/workflows/ui-smoke.yml
+
   build:
+    needs: [ui_smoke]
     strategy:
       matrix:
         include:
@@ -38,6 +42,7 @@ jobs:
     secrets: inherit
 
   changelog:
+    needs: [ui_smoke]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout all

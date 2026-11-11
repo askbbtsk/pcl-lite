@@ -4,6 +4,8 @@
 
 ## 目录
 
+发布前 UI 检查见 [UI-SMOKE.md](UI-SMOKE.md)：新增原生交互控件会让 PR CI 和发布流程失败。
+
 | 文档 | 讲什么 | 什么时候看 |
 | --- | --- | --- |
 | [CONTRIBUTE.md](CONTRIBUTE.md) | 贡献指南：fork、构建、`update.json` 为什么不用改、代码规矩、PR 清单、常见坑 | **第一次提 PR 先看这个** |

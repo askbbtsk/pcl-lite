@@ -208,9 +208,9 @@ public partial class MyButton
         // The material owns its rim; avoid a second outline covering the bevel.
         _tahoeBody.BorderBrush = highContrast ? SystemColors.WindowTextBrush : Brushes.Transparent;
         _tahoeSurface.ForceCompatibility = highContrast;
-        _tahoeSurface.TintColor = highContrast ? SystemColors.WindowColor
-            : ThemeManager.IsDarkMode ? Color.FromRgb(28, 31, 39) : Colors.White;
-        _tahoeSurface.TintOpacity = highContrast ? 1 : IsMouseOver && IsEnabled ? 0.14 : 0.10;
+        _tahoeSurface.TintColor = highContrast ? SystemColors.WindowColor : PCL.Core.UI.LiquidGlassMaterial.Tint(dark);
+        _tahoeSurface.TintOpacity = highContrast ? 1 : PCL.Core.UI.LiquidGlassMaterial.Opacity(dark,
+            TahoeThemeManager.IsDesktopBackdropRequested, IsMouseOver && IsEnabled ? 0.14 : 0.10);
         PanButtonVisual.Opacity = _tahoeOriginalOpacity * (IsEnabled || highContrast ? 1 : 0.5);
         _tahoeFocus!.Visibility = IsKeyboardFocusWithin && IsEnabled ? Visibility.Visible : Visibility.Collapsed;
         _tahoeFocus.SetResourceReference(BorderBrushProperty, highContrast ? SystemColors.HighlightBrushKey : "ColorBrush2");

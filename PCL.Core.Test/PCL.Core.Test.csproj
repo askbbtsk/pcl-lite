@@ -60,6 +60,7 @@
     <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassCaptureContracts.cs" Link="UI\LiquidGlassCaptureContracts.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassCapturePlatform.cs" Link="UI\LiquidGlassCapturePlatform.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassD3D11.cs" Link="UI\LiquidGlassD3D11.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassDxgiDuplication.cs" Link="UI\LiquidGlassDxgiDuplication.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassDesktopCapture.cs" Link="UI\LiquidGlassDesktopCapture.cs" />
     <Resource Include="..\Plain Craft Launcher 2\Resources\LiquidGlass\Glass.ps" Link="Resources\LiquidGlass\Glass.ps" />
     <EmbeddedResource Include="..\Plain Craft Launcher 2\Resources\LiquidGlass\Styles.xaml" LogicalName="LiquidGlassStylesSource" />
@@ -74,5 +75,4 @@
   <ItemGroup>
     <None Remove="Net\**" />
   </ItemGroup>
-  <Import Project="..\build\WindowsGraphicsProjection.props" />
 </Project>

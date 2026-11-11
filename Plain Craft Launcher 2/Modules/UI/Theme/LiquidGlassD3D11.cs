@@ -12,7 +12,6 @@ namespace PCL;
 internal static unsafe class LiquidGlassD3D11
 {
     internal static readonly Guid Texture2DId = new("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
-    private static readonly Guid DxgiDeviceId = new("54ec77fa-1377-44e6-8c32-88fd5f44c84c");
 
     internal sealed class Resource(IntPtr pointer) : IDisposable
     {
@@ -52,10 +51,10 @@ internal static unsafe class LiquidGlassD3D11
         public uint RowPitch, SlicePitch;
     }
 
-    public static void CreateDevice(out Resource device, out Resource context, bool software = false)
+    public static void CreateDevice(out Resource device, out Resource context, bool software = false, IntPtr adapter = default)
     {
         uint[] featureLevels = [0xb000, 0xa100]; // 11.0, 10.1; unchanged from the original capture path.
-        int result = D3D11CreateDevice(IntPtr.Zero, software ? 5u : 1u, IntPtr.Zero, 0x20,
+        int result = D3D11CreateDevice(adapter, adapter != IntPtr.Zero ? 0u : software ? 5u : 1u, IntPtr.Zero, 0x20,
             featureLevels, (uint)featureLevels.Length, 7, out IntPtr nativeDevice, out _, out IntPtr nativeContext);
         if (result < 0)
         {
@@ -67,18 +66,8 @@ internal static unsafe class LiquidGlassD3D11
         context = new Resource(nativeContext);
     }
 
-    public static IntPtr CreateWinRtDevice(Resource device)
-    {
-        Marshal.ThrowExceptionForHR(Marshal.QueryInterface(device.Pointer, in DxgiDeviceId, out IntPtr dxgi));
-        try
-        {
-            Marshal.ThrowExceptionForHR(CreateDirect3D11DeviceFromDXGIDevice(dxgi, out IntPtr inspectable));
-            return inspectable; // Caller adopts/releases this reference.
-        }
-        finally { Marshal.Release(dxgi); }
-    }
-
-    public static Resource CreateStagingTexture(Resource device, int width, int height, byte[]? initialPixels = null)
+    public static Resource CreateStagingTexture(Resource device, int width, int height, byte[]? initialPixels = null,
+        bool cpuReadable = true)
     {
         if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
         if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
@@ -87,7 +76,7 @@ internal static unsafe class LiquidGlassD3D11
         var description = new TextureDescription
         {
             Width = (uint)width, Height = (uint)height, MipLevels = 1, ArraySize = 1,
-            Format = 87, SampleCount = 1, Usage = 3, CpuAccessFlags = 0x20000
+            Format = 87, SampleCount = 1, Usage = cpuReadable ? 3u : 0u, CpuAccessFlags = cpuReadable ? 0x20000u : 0u
             // DXGI_FORMAT_B8G8R8A8_UNORM; D3D11_USAGE_STAGING; D3D11_CPU_ACCESS_READ.
         };
         IntPtr instance = device.Pointer, texture = IntPtr.Zero;
@@ -142,6 +131,4 @@ internal static unsafe class LiquidGlassD3D11
         [In] uint[] featureLevels, uint featureLevelCount, uint sdkVersion, out IntPtr device,
         out uint featureLevel, out IntPtr context);
 
-    [DllImport("d3d11.dll", ExactSpelling = true)]
-    private static extern int CreateDirect3D11DeviceFromDXGIDevice(IntPtr device, out IntPtr inspectable);
 }

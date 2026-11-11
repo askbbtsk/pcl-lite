@@ -2,22 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Win32;
-using Windows.Graphics.Capture;
-using Windows.Graphics.DirectX;
-using Windows.Graphics.DirectX.Direct3D11;
-using WinRT;
 using PCL.Core.App;
 using PCL.Core.UI;
-using Rect = System.Windows.Rect;
 
 namespace PCL;
 
-/// <summary>Windows Graphics Capture and D3D11, isolated from the WPF lifecycle.</summary>
-internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITahoeCapturePlatform
+/// <summary>DXGI Desktop Duplication; retains the existing WPF lifecycle compatibility entry.</summary>
+internal sealed class TahoeCapturePlatform(Action<string, Exception?> log, Func<int>? frameRate = null) : ITahoeCapturePlatform
 {
-    public bool IsSupported => OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041) && GraphicsCaptureSession.IsSupported();
+    public bool IsSupported => OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041);
     public event EventHandler DisplaysChanged
     {
         add => SystemEvents.DisplaySettingsChanged += value;
@@ -33,18 +30,15 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
         var monitors = new List<TahoeCaptureMonitor>();
         if (!EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr monitor, IntPtr _, ref NativeRect rect, IntPtr data) =>
         {
-            monitors.Add(new TahoeCaptureMonitor(monitor, new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top)));
+            monitors.Add(new(monitor, new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top)));
             return true;
         }, IntPtr.Zero)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
         return monitors;
     }
 
-    public ITahoeMonitorCapture CreateMonitor(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed)
-    {
-        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
-            throw new PlatformNotSupportedException("Desktop capture requires Windows 10 version 2004 or later.");
-        return new MonitorCapture(monitor, present, failed, log);
-    }
+    public ITahoeMonitorCapture CreateMonitor(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed) =>
+        new MonitorCapture(monitor, present, failed, log,
+            frameRate ?? (() => Config.Preference.TahoeGlass.MaximumFrameRate));
 
     [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
     private delegate bool MonitorEnum(IntPtr monitor, IntPtr dc, ref NativeRect rect, IntPtr data);
@@ -55,195 +49,142 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log) : ITa
     [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetWindowDisplayAffinity(IntPtr hwnd, out uint affinity);
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.19041")]
     private sealed class MonitorCapture : ITahoeMonitorCapture
     {
-        private readonly object _gate = new();
         private readonly Action<TahoeCaptureFrame, Action> _present;
         private readonly Action<Exception> _failed;
-        private LiquidGlassD3D11.Resource? _device;
-        private LiquidGlassD3D11.Resource? _context;
-        private IDirect3DDevice? _winrtDevice;
-        private GraphicsCaptureItem? _item;
-        private Direct3D11CaptureFramePool? _pool;
-        private GraphicsCaptureSession? _session;
-        private LiquidGlassD3D11.Resource? _staging;
-        private int _stagingWidth, _stagingHeight;
+        private readonly Action<string, Exception?> _log;
+        private readonly Func<int> _frameRate;
+        private LiquidGlassD3D11.Resource? _device, _context, _duplication, _desktop, _staging;
         private TahoeCaptureRegion? _region;
         private byte[]? _pixels, _scratch;
-        private Windows.Graphics.SizeInt32 _frameSize;
-        private int _pending, _lastVersion;
+        private int _pending, _closing, _lastVersion = -1;
+        private uint _rotation;
+        private int _sourceWidth, _sourceHeight, _stagingWidth, _stagingHeight;
         private long _lastFrame;
-        private int _closing;
-        private readonly Action<string, Exception?> _log;
 
-        public MonitorCapture(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed, Action<string, Exception?> log)
+        public MonitorCapture(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed,
+            Action<string, Exception?> log, Func<int> frameRate)
         {
             _present = present;
             _failed = failed;
             _log = log;
+            _frameRate = frameRate;
             try
             {
-                LiquidGlassD3D11.CreateDevice(out _device, out _context);
-                IntPtr nativeDevice = LiquidGlassD3D11.CreateWinRtDevice(_device);
-                try { _winrtDevice = MarshalInterface<IDirect3DDevice>.FromAbi(nativeDevice); }
-                finally { Marshal.Release(nativeDevice); }
-                _item = CreateItem(monitor);
-                _frameSize = _item.Size;
-                _item.Closed += ItemClosed;
-                _pool = Direct3D11CaptureFramePool.CreateFreeThreaded(_winrtDevice, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, _item.Size);
-                _session = _pool.CreateCaptureSession(_item);
-                _session.IsCursorCaptureEnabled = false;
-                _pool.FrameArrived += FrameArrived;
-                _session.StartCapture();
+                Initialize(monitor);
+                _ = Task.Factory.StartNew(CaptureLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             }
-            catch { Dispose(); throw; }
+            catch { ReleaseNative(); throw; }
         }
 
-        public void SetRegion(TahoeCaptureRegion region) => System.Threading.Volatile.Write(ref _region, region);
-        private void ItemClosed(GraphicsCaptureItem sender, object args) => ReportFailure(new InvalidOperationException("Capture display was disconnected."));
-
-        private void FrameArrived(Direct3D11CaptureFramePool sender, object args)
+        private void Initialize(IntPtr monitor)
         {
-            lock (_gate)
+            using var factory = LiquidGlassDxgiDuplication.Factory();
+            for (uint adapterIndex = 0; ; adapterIndex++)
             {
-                if (System.Threading.Volatile.Read(ref _closing) != 0) return;
-                try
+                using var adapter = LiquidGlassDxgiDuplication.Adapter(factory, adapterIndex);
+                if (adapter is null) break;
+                for (uint outputIndex = 0; ; outputIndex++)
                 {
-                    using var frame = sender.TryGetNextFrame();
-                    if (frame == null || System.Threading.Volatile.Read(ref _region) is not { } region || System.Threading.Volatile.Read(ref _pending) != 0) return;
-                    if (frame.ContentSize.Width != _frameSize.Width || frame.ContentSize.Height != _frameSize.Height)
-                    {
-                        _frameSize = frame.ContentSize;
-                        frame.Dispose();
-                        sender.Recreate(_winrtDevice!, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, _frameSize);
-                        return;
-                    }
-                    long now = Stopwatch.GetTimestamp();
-                    // Apply the user's cap even during dragging/resizing; geometry changes do not bypass it.
-                    if (!LiquidGlassPerformance.ShouldRender(now - _lastFrame, Stopwatch.Frequency,
-                            LiquidGlassPerformance.NormalizeFrameRate(Config.Preference.TahoeGlass.MaximumFrameRate))) return;
-                    _lastFrame = now;
-                    using var texture = SurfaceTexture(frame.Surface);
-                    var desc = LiquidGlassD3D11.Describe(texture);
-                    if (region.X < 0 || region.Y < 0 || region.X + region.Width > desc.Width || region.Y + region.Height > desc.Height) return;
-                    if (_staging == null || _stagingWidth != region.Width || _stagingHeight != region.Height)
-                    {
-                        _staging?.Dispose();
-                        _staging = LiquidGlassD3D11.CreateStagingTexture(_device!, region.Width, region.Height);
-                        _stagingWidth = region.Width;
-                        _stagingHeight = region.Height;
-                        _pixels = null;
-                        _scratch = null;
-                    }
-                    LiquidGlassD3D11.CopyRegion(_context!, _staging, texture, region.X, region.Y, region.Width, region.Height);
-                    var mapped = LiquidGlassD3D11.MapRead(_context!, _staging);
-                    int stride = region.Width * 4;
-                    byte[] pixels = _scratch ?? new byte[stride * region.Height];
-                    try
-                    {
-                        if (mapped.RowPitch == stride)
-                            Marshal.Copy(mapped.Data, pixels, 0, pixels.Length);
-                        else
-                            for (int y = 0; y < region.Height; y++)
-                                Marshal.Copy(mapped.Data + checked((int)mapped.RowPitch * y), pixels, y * stride, stride);
-                    }
-                    finally { LiquidGlassD3D11.Unmap(_context!, _staging); }
-                    var dirty = TahoeCaptureResources.DirtyRows(pixels, _pixels, region.Width, region.Height, region.Version != _lastVersion);
-                    if (dirty.Height == 0)
-                    {
-                        _scratch = pixels;
-                        return;
-                    }
-                    _scratch = _pixels;
-                    _pixels = pixels;
-                    _lastVersion = region.Version;
-                    System.Threading.Interlocked.Exchange(ref _pending, 1);
-                    if (System.Threading.Volatile.Read(ref _closing) == 0)
-                        _present(new TahoeCaptureFrame(pixels, region, dirty.Y, dirty.Height),
-                            () => System.Threading.Interlocked.Exchange(ref _pending, 0));
+                    using var output = LiquidGlassDxgiDuplication.Output(adapter, outputIndex);
+                    if (output is null) break;
+                    var info = LiquidGlassDxgiDuplication.DescribeOutput(output);
+                    if (info.Monitor != monitor || info.Attached == 0) continue;
+                    LiquidGlassD3D11.CreateDevice(out _device, out _context, adapter: adapter.Pointer);
+                    _duplication = LiquidGlassDxgiDuplication.Duplicate(output, _device);
+                    var desc = LiquidGlassDxgiDuplication.DescribeDuplication(_duplication);
+                    if (desc.Format != 87) throw new NotSupportedException("Desktop duplication requires BGRA8 output.");
+                    _rotation = desc.Rotation;
+                    return;
                 }
-                catch (Exception ex) when (ex is not OutOfMemoryException) { ReportFailure(ex); }
             }
+            throw new InvalidOperationException("No DXGI output matches the requested monitor.");
         }
 
-        private void ReportFailure(Exception error)
-        {
-            if (System.Threading.Volatile.Read(ref _closing) == 0) _failed(error);
-        }
-
+        public void SetRegion(TahoeCaptureRegion region) => Volatile.Write(ref _region, region);
         public void Dispose()
         {
-            if (System.Threading.Interlocked.Exchange(ref _closing, 1) != 0) return;
-            // UI callers only retire this session. A worker drains the GPU callback
-            // before detaching native objects, so moving/hiding a window never waits.
-            System.Threading.ThreadPool.QueueUserWorkItem(_ => ReleaseNative());
+            Interlocked.Exchange(ref _closing, 1);
+        }
+
+        private void CaptureLoop()
+        {
+            try
+            {
+                while (Volatile.Read(ref _closing) == 0)
+                {
+                    var region = Volatile.Read(ref _region);
+                    if (region is null || Volatile.Read(ref _pending) != 0) { Thread.Sleep(8); continue; }
+                    long now = Stopwatch.GetTimestamp();
+                    if (!LiquidGlassPerformance.ShouldRender(now - _lastFrame, Stopwatch.Frequency,
+                        LiquidGlassPerformance.NormalizeFrameRate(_frameRate())))
+                    { Thread.Sleep(1); continue; }
+                    bool acquired = LiquidGlassDxgiDuplication.Acquire(_duplication!, out var texture);
+                    if (acquired)
+                    {
+                        try
+                        {
+                            using (texture)
+                            {
+                                var description = LiquidGlassD3D11.Describe(texture!);
+                                int width = checked((int)description.Width), height = checked((int)description.Height);
+                                if (_desktop is null || width != _sourceWidth || height != _sourceHeight)
+                                {
+                                    _desktop?.Dispose();
+                                    _desktop = LiquidGlassD3D11.CreateStagingTexture(_device!, width, height, cpuReadable: false);
+                                    _sourceWidth = width; _sourceHeight = height;
+                                }
+                                // Frame textures are invalid after ReleaseFrame; cache a GPU copy for stationary desktops.
+                                LiquidGlassD3D11.CopyRegion(_context!, _desktop, texture!, 0, 0, width, height);
+                            }
+                        }
+                        finally { LiquidGlassDxgiDuplication.ReleaseFrame(_duplication!); }
+                    }
+                    if (Volatile.Read(ref _closing) != 0 || _desktop is null || !acquired && region.Version == _lastVersion) continue;
+                    _lastFrame = now;
+                    PresentRegion(region);
+                }
+            }
+            catch (Exception error) when (error is not OutOfMemoryException)
+            {
+                if (Volatile.Read(ref _closing) == 0) _failed(error);
+            }
+            finally { ReleaseNative(); }
+        }
+
+        private void PresentRegion(TahoeCaptureRegion region)
+        {
+            var crop = DesktopDuplicationPixels.SourceCrop(region.X, region.Y, region.Width, region.Height,
+                _sourceWidth, _sourceHeight, _rotation);
+            if (_staging is null || _stagingWidth != crop.Width || _stagingHeight != crop.Height)
+            {
+                _staging?.Dispose();
+                _staging = LiquidGlassD3D11.CreateStagingTexture(_device!, crop.Width, crop.Height);
+                _stagingWidth = crop.Width; _stagingHeight = crop.Height;
+                _pixels = _scratch = null;
+            }
+            LiquidGlassD3D11.CopyRegion(_context!, _staging, _desktop!, crop.X, crop.Y, crop.Width, crop.Height);
+            byte[] pixels = _scratch ?? new byte[checked(region.Width * region.Height * 4)];
+            var mapped = LiquidGlassD3D11.MapRead(_context!, _staging);
+            try { DesktopDuplicationPixels.Read(mapped.Data, checked((int)mapped.RowPitch), pixels, region.Width, region.Height, _rotation); }
+            finally { LiquidGlassD3D11.Unmap(_context!, _staging); }
+            var dirty = TahoeCaptureResources.DirtyRows(pixels, _pixels, region.Width, region.Height, region.Version != _lastVersion);
+            _lastVersion = region.Version;
+            if (dirty.Height == 0) { _scratch = pixels; return; }
+            _scratch = _pixels;
+            _pixels = pixels;
+            Interlocked.Exchange(ref _pending, 1);
+            if (Volatile.Read(ref _closing) == 0)
+                _present(new TahoeCaptureFrame(pixels, region, dirty.Y, dirty.Height), () => Interlocked.Exchange(ref _pending, 0));
         }
 
         private void ReleaseNative()
         {
-            IDisposable?[] resources;
-            lock (_gate)
-            {
-                // Keep Close outside the gate: WGC may wait for its event callback.
-                try { if (_pool != null) _pool.FrameArrived -= FrameArrived; }
-                catch (Exception error) when (error is not OutOfMemoryException) { _log("[Tahoe] Detaching frame observer failed", error); }
-                try { if (_item != null) _item.Closed -= ItemClosed; }
-                catch (Exception error) when (error is not OutOfMemoryException) { _log("[Tahoe] Detaching display observer failed", error); }
-                resources = [_session, _pool, _staging, _context, _device, _winrtDevice];
-                _session = null; _pool = null; _staging = null; _item = null;
-                _context = null; _device = null; _winrtDevice = null; _pixels = _scratch = null;
-            }
-            Exception? releaseError = TahoeCaptureResources.ReleaseAll(resources);
-            if (releaseError != null) _log("[Tahoe] Releasing desktop capture resources failed", releaseError);
+            var error = TahoeCaptureResources.ReleaseAll(_staging, _desktop, _duplication, _context, _device);
+            _staging = _desktop = _duplication = _context = _device = null;
+            _pixels = _scratch = null;
+            if (error != null) _log("[LiquidGlass/DXGI] Releasing desktop capture resources failed", error);
         }
-
-        private static GraphicsCaptureItem CreateItem(IntPtr monitor)
-        {
-            const string runtimeClass = "Windows.Graphics.Capture.GraphicsCaptureItem";
-            Marshal.ThrowExceptionForHR(WindowsCreateString(runtimeClass, runtimeClass.Length, out IntPtr text));
-            IntPtr factory = IntPtr.Zero, item = IntPtr.Zero;
-            try
-            {
-                Guid factoryId = new("3628e81b-3cac-4c60-b7f4-23ce0e0c3356");
-                Marshal.ThrowExceptionForHR(RoGetActivationFactory(text, ref factoryId, out factory));
-                var create = Marshal.GetDelegateForFunctionPointer<CreateMonitor>(Marshal.ReadIntPtr(Marshal.ReadIntPtr(factory), 4 * IntPtr.Size));
-                Guid itemId = new("79c3f95b-31f7-4ec2-a464-632ef5d30760");
-                Marshal.ThrowExceptionForHR(create(factory, monitor, ref itemId, out item));
-                return MarshalInterface<GraphicsCaptureItem>.FromAbi(item);
-            }
-            finally
-            {
-                if (item != IntPtr.Zero) Marshal.Release(item);
-                if (factory != IntPtr.Zero) Marshal.Release(factory);
-                WindowsDeleteString(text);
-            }
-        }
-
-        private static LiquidGlassD3D11.Resource SurfaceTexture(IDirect3DSurface surface)
-        {
-            IntPtr inspectable = MarshalInterface<IDirect3DSurface>.FromManaged(surface);
-            IntPtr access = IntPtr.Zero;
-            try
-            {
-                Guid accessId = new("a9b3d012-3df2-4ee3-b8d1-8695f457d3c1");
-                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(inspectable, in accessId, out access));
-                var get = Marshal.GetDelegateForFunctionPointer<GetInterface>(Marshal.ReadIntPtr(Marshal.ReadIntPtr(access), 3 * IntPtr.Size));
-                Guid textureId = LiquidGlassD3D11.Texture2DId;
-                Marshal.ThrowExceptionForHR(get(access, ref textureId, out IntPtr texture));
-                return new LiquidGlassD3D11.Resource(texture);
-            }
-            finally
-            {
-                if (access != IntPtr.Zero) Marshal.Release(access);
-                Marshal.Release(inspectable);
-            }
-        }
-
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate int CreateMonitor(IntPtr self, IntPtr monitor, ref Guid iid, out IntPtr item);
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate int GetInterface(IntPtr self, ref Guid iid, out IntPtr value);
-        [DllImport("combase.dll", CharSet = CharSet.Unicode)] private static extern int WindowsCreateString(string source, int length, out IntPtr text);
-        [DllImport("combase.dll")] private static extern int WindowsDeleteString(IntPtr text);
-        [DllImport("combase.dll")] private static extern int RoGetActivationFactory(IntPtr text, ref Guid iid, out IntPtr factory);
     }
 }

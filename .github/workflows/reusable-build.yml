@@ -16,7 +16,7 @@ on:
 jobs:
   build:
     name: Build
-    # C#/WinRT's projection compiler is a Windows executable.
+    # Build on Windows so native UI and graphics toolchain changes share the tested platform.
     runs-on: windows-latest
     defaults:
       run:

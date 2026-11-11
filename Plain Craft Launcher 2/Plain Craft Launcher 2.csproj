@@ -3,8 +3,8 @@
         <!-- 旧 WPF UI 尚未完成全量 nullable 流分析迁移；保留注解供 API 使用，避免把数千条历史假阳性混入构建。 -->
         <Nullable>annotations</Nullable>
         <TargetFramework>net10.0-windows</TargetFramework>
-        <!-- Project only the Windows APIs used by desktop capture, rather than shipping
-             the complete Windows SDK .NET projection (~25 MB). Native APIs come from Windows. -->
+        <!-- Desktop capture calls Windows DXGI/D3D11 directly; no WinRT SDK projection. -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <OutputType>WinExe</OutputType>
         <RootNamespace>PCL</RootNamespace>
         <MyType>Custom</MyType>
@@ -136,5 +136,4 @@
         -->
         <EmbeddedResource Include="..\LICENSE" LogicalName="PCL.LICENSE" />
     </ItemGroup>
-    <Import Project="..\build\WindowsGraphicsProjection.props" />
 </Project>

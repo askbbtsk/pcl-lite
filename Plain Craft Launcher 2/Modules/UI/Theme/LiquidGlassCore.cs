@@ -6,7 +6,7 @@ using PCL.Core.App;
 namespace PCL;
 
 /// <summary>
-/// Native optical material. WGC provides desktop pixels to an independent sibling
+/// Native optical material. DXGI provides desktop pixels to an independent sibling
 /// source; the existing shader refracts that source without sampling foreground UI.
 /// </summary>
 public static class LiquidGlassCore
@@ -217,9 +217,9 @@ public static class LiquidGlassCore
     private static void ApplySurface(TahoeGlassSurface surface, bool dark, double opacity)
     {
         surface.BackdropSource = BackdropSource;
-        surface.TintColor = SystemParameters.HighContrast ? SystemColors.WindowColor
-            : dark ? Color.FromRgb(23, 29, 39) : Colors.White;
-        surface.TintOpacity = SystemParameters.HighContrast ? 1 : opacity;
+        surface.TintColor = SystemParameters.HighContrast ? SystemColors.WindowColor : PCL.Core.UI.LiquidGlassMaterial.Tint(dark);
+        surface.TintOpacity = SystemParameters.HighContrast ? 1
+            : PCL.Core.UI.LiquidGlassMaterial.Opacity(dark, IsDesktopBackdropRequested, opacity);
         surface.ForceCompatibility = SystemParameters.HighContrast;
         surface.BlurRadius = Profile.BlurRadius;
         surface.Dispersion = Profile.Dispersion;

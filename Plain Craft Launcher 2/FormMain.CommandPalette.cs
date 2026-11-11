@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.UI.Navigation;
 
@@ -51,6 +52,8 @@ public partial class FormMain
             while (ModInstanceList.mcInstanceListLoader.State == ModBase.LoadState.Loading)
                 await Task.Delay(100, token);
             token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(_paletteLoading, loading) || Palette.Visibility != Visibility.Visible) return;
+
             var selected = ModInstanceList.McMcInstanceSelected;
             var instances = ModInstanceList.mcInstanceList
                 .Where(group => group.Key != McInstanceCardType.Hidden)
@@ -73,19 +76,24 @@ public partial class FormMain
 
             // Capture the selected instance once. A late scan never switches to a newer selection.
             var modsPath = Path.Combine(selected.PathIndie, "mods");
+            var instancePath = selected.PathInstance;
+            var preferredLoader = ModLocalComp.GetPreferredLoader(selected);
             var instanceName = selected.Name;
             var modCategory = Lang.Text("CommandPalette.Mod");
             var modDescription = Lang.Text("CommandPalette.LocateMod", instanceName);
             var disabled = Lang.Text("CommandPalette.Disabled");
-            var mods = await Task.Run(() => ReadPaletteMods(modsPath, modCategory, modDescription, disabled, token), token);
+            var mods = await Task.Run(
+                () => ReadPaletteMods(modsPath, instancePath, preferredLoader, modCategory, modDescription, disabled, token),
+                token);
             token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(_paletteLoading, loading) || Palette.Visibility != Visibility.Visible) return;
             Palette.AddCommands(mods);
             Palette.CompleteLoading();
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            if (!token.IsCancellationRequested)
+            if (!token.IsCancellationRequested && ReferenceEquals(_paletteLoading, loading))
             {
                 Palette.CompleteLoading(Lang.Text("CommandPalette.ScanFailed"));
                 ModBase.Log(ex, "命令面板读取本地目录失败", ModBase.LogLevel.Developer);
@@ -106,67 +114,150 @@ public partial class FormMain
             ModBase.OpenExplorer(instance.PathInstance);
             return;
         }
-        PageInstanceLeft.McInstance = instance;
-        PageChange(PageType.InstanceSetup, PageSubType.VersionOverall);
+
+        var wasAlreadyInInstanceSetup = Equals(pageCurrent, (PageStackData)PageType.InstanceSetup);
+        CommandPaletteSearch.SwitchManagedInstance(
+            instance,
+            wasAlreadyInInstanceSetup,
+            selected => PageInstanceLeft.McInstance = selected,
+            () => PageChange(PageType.InstanceSetup, PageSubType.VersionOverall),
+            () => ModMain.frmInstanceLeft?.RefreshModDisabled(),
+            () => ModMain.frmInstanceOverall?.RefreshPackDetails(),
+            () => PageNameRefresh(PageType.InstanceSetup));
     }
 
-    private static List<PaletteCommand> ReadPaletteMods(string directory, string category,
-        string description, string disabled, CancellationToken token)
+    private static IReadOnlyList<PaletteCommand> ReadPaletteMods(
+        string directory,
+        string instancePath,
+        string? preferredLoader,
+        string category,
+        string description,
+        string disabled,
+        CancellationToken token)
     {
-        var commands = new List<PaletteCommand>();
-        if (!Directory.Exists(directory)) return commands;
-        var options = new EnumerationOptions
+        var previousDefer = false;
+        ModJarInJar.ScanContext? previousScan = null;
+        return CommandPaletteSearch.ScanModFilesWithDeferredNestedArchive(
+            directory,
+            ModLocalComp.LocalCompFile.IsModFile,
+            file =>
+            {
+                var local = new ModLocalComp.LocalCompFile(file) { PreferredLoader = preferredLoader };
+                var fileName = Path.GetFileName(file);
+                var title = fileName;
+                var modId = "";
+                // A malformed or locked mod must not hide the rest of the catalog.
+                try { title = local.Name; modId = local.ModId; }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex) { ModBase.Log(ex, "命令面板跳过不可读取的模组元数据", ModBase.LogLevel.Developer); }
+                var isDisabled = file.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+                                 || file.EndsWith(".old", StringComparison.OrdinalIgnoreCase);
+                return new PaletteCommand(new CommandPaletteEntry("mod:" + file, title,
+                        $"{description} · {fileName}{(isDisabled ? " · " + disabled : "")}", category,
+                        $"{fileName} {modId}"),
+                    () =>
+                    {
+                        if (!File.Exists(file)) throw new FileNotFoundException(fileName);
+                        ModBase.OpenExplorer(file);
+                    });
+            },
+            command => command.Title,
+            () =>
+            {
+                previousDefer = ModLocalComp.DeferJijOnMiss;
+                previousScan = ModLocalComp.JijScanContext;
+                ModJarInJarCache.UseInstance(instancePath);
+                ModLocalComp.DeferJijOnMiss = true;
+                ModLocalComp.JijScanContext = new ModJarInJar.ScanContext(() => token.IsCancellationRequested);
+            },
+            () =>
+            {
+                ModLocalComp.DeferJijOnMiss = previousDefer;
+                ModLocalComp.JijScanContext = previousScan!;
+                ModJarInJarCache.UseInstance(null);
+            },
+            token);
+    }
+
+    private static CommandPalettePageVisibility GetPalettePageVisibility()
+    {
+        var hide = Config.Preference.Hide;
+        return new CommandPalettePageVisibility(
+            HideFunctionSelect: hide.FunctionSelect,
+            HidePageDownload: hide.PageDownload,
+            HidePageSetup: hide.PageSetup,
+            HidePagePlugins: hide.PagePlugins,
+            HideSetupLaunch: hide.SetupLaunch,
+            HideSetupJava: hide.SetupJava,
+            HideSetupUi: hide.SetupUi,
+            HideSetupLauncherLanguage: hide.SetupLauncherLanguage,
+            HideSetupGameManage: hide.SetupGameManage,
+            HideSetupLauncherMisc: hide.SetupLauncherMisc,
+            HideSetupUpdate: hide.SetupUpdate,
+            HideSetupAbout: hide.SetupAbout,
+            HiddenForceShow: PageSetupUI.HiddenForceShow);
+    }
+
+    private static bool IsPalettePageHidden(string id, PageType page, PageSubType sub)
+    {
+        if (PageSetupUI.HiddenForceShow) return false;
+        if (CommandPaletteSearch.IsPageHidden(id, GetPalettePageVisibility())) return true;
+        if (IsNavigationFeatureHidden((int)page)) return true;
+        if (page == PageType.InstanceSelect && Config.Preference.Hide.FunctionSelect) return true;
+        if (page != PageType.Setup) return false;
+        var hide = Config.Preference.Hide;
+        return sub switch
         {
-            RecurseSubdirectories = false,
-            AttributesToSkip = FileAttributes.ReparsePoint | FileAttributes.Directory,
-            IgnoreInaccessible = false
+            PageSubType.SetupLaunch => hide.SetupLaunch,
+            PageSubType.SetupJava => hide.SetupJava,
+            PageSubType.SetupUI => hide.SetupUi,
+            PageSubType.SetupLauncherLanguage => hide.SetupLauncherLanguage,
+            PageSubType.SetupGameManage => hide.SetupGameManage,
+            PageSubType.SetupLauncherMisc => hide.SetupLauncherMisc,
+            PageSubType.SetupUpdate => hide.SetupUpdate,
+            PageSubType.SetupAbout => hide.SetupAbout,
+            PageSubType.SetupFeedback => hide.SetupFeedback,
+            PageSubType.SetupLog => hide.SetupLog,
+            _ => false
         };
-        foreach (var file in Directory.EnumerateFiles(directory, "*", options))
-        {
-            token.ThrowIfCancellationRequested();
-            if (!ModLocalComp.LocalCompFile.IsModFile(file)) continue;
-            var local = new ModLocalComp.LocalCompFile(file);
-            var fileName = Path.GetFileName(file);
-            var title = fileName;
-            var modId = "";
-            // A malformed or locked mod must not hide the rest of the catalog.
-            try { title = local.Name; modId = local.ModId; }
-            catch (Exception ex) { ModBase.Log(ex, "命令面板跳过不可读取的模组元数据", ModBase.LogLevel.Developer); }
-            var isDisabled = file.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
-                             || file.EndsWith(".old", StringComparison.OrdinalIgnoreCase);
-            commands.Add(new PaletteCommand(new CommandPaletteEntry("mod:" + file, title,
-                    $"{description} · {fileName}{(isDisabled ? " · " + disabled : "")}", category,
-                    $"{fileName} {modId}"),
-                () =>
-                {
-                    if (!File.Exists(file)) throw new FileNotFoundException(fileName);
-                    ModBase.OpenExplorer(file);
-                }));
-        }
-        return commands.OrderBy(command => command.Title, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
     private IEnumerable<PaletteCommand> CreatePageCommands()
     {
-        PaletteCommand Page(string id, string titleKey, PageType page, PageSubType sub = PageSubType.Default,
-            string keywords = "", bool setting = false) => new(
-            new CommandPaletteEntry(id, Lang.Text(titleKey), Lang.Text("CommandPalette.OpenPage"),
-                Lang.Text(setting ? "CommandPalette.Setting" : "CommandPalette.Action"), keywords),
-            () => PageChange(page, sub));
+        PaletteCommand? Page(string id, string titleKey, PageType page, PageSubType sub = PageSubType.Default,
+            string keywords = "", bool setting = false)
+        {
+            if (IsPalettePageHidden(id, page, sub)) return null;
+            return new PaletteCommand(
+                new CommandPaletteEntry(id, Lang.Text(titleKey), Lang.Text("CommandPalette.OpenPage"),
+                    Lang.Text(setting ? "CommandPalette.Setting" : "CommandPalette.Action"), keywords),
+                () =>
+                {
+                    if (!IsPalettePageHidden(id, page, sub)) PageChange(page, sub);
+                });
+        }
 
-        yield return Page("launch", "Main.Tab.Launch", PageType.Launch, keywords: "home launch 主页 啟動");
-        yield return Page("instances", "Main.Title.InstanceSelect", PageType.InstanceSelect, keywords: "instances 实例 實例");
-        yield return Page("tasks", "Main.Title.TaskManager", PageType.TaskManager, keywords: "tasks downloads 任务 任務 下载 下載");
-        yield return Page("install", "Download.Left.Minecraft", PageType.Download, PageSubType.DownloadInstall, "install minecraft 安装 安裝");
-        yield return Page("mods", "Download.Left.Mod", PageType.Download, PageSubType.DownloadMod, "download mods 模组 模組");
-        yield return Page("java", "Setup.Left.Item.Java", PageType.Setup, PageSubType.SetupJava, "java runtime jdk 运行时 執行階段", true);
-        yield return Page("launch-settings", "Setup.Left.Item.Launch", PageType.Setup, PageSubType.SetupLaunch, "memory ram jvm 内存 記憶體 启动 啟動 参数 參數", true);
-        yield return Page("appearance", "Setup.Left.Item.Ui", PageType.Setup, PageSubType.SetupUI, "theme wallpaper background glass 主题 主題 壁纸 桌布 背景 玻璃", true);
-        yield return Page("language", "Setup.Language.Title", PageType.Setup, PageSubType.SetupLauncherLanguage, "language locale 语言 語言", true);
-        yield return Page("game-settings", "Setup.Left.Item.GameManage", PageType.Setup, PageSubType.SetupGameManage, "game isolation mods 游戏 遊戲 隔离 隔離 模组 模組", true);
-        yield return Page("misc", "Setup.Left.Item.Misc", PageType.Setup, PageSubType.SetupLauncherMisc, "proxy network mcp 代理 网络 網路", true);
-        yield return Page("update", "Setup.Left.Item.Update", PageType.Setup, PageSubType.SetupUpdate, "update channel 更新 通道", true);
-        yield return Page("about", "Setup.Left.Item.About", PageType.Setup, PageSubType.SetupAbout, "about version 关于 關於 版本", true);
-        yield return Page("plugins", "Main.Tab.Plugins", PageType.Plugins, PageSubType.PluginInstalled, "plugins 插件 外掛");
+        PaletteCommand?[] candidates =
+        [
+            Page("launch", "Main.Tab.Launch", PageType.Launch, keywords: "home launch 主页 啟動"),
+            Page("instances", "Main.Title.InstanceSelect", PageType.InstanceSelect, keywords: "instances 实例 實例"),
+            Page("tasks", "Main.Title.TaskManager", PageType.TaskManager, keywords: "tasks downloads 任务 任務 下载 下載"),
+            Page("install", "Download.Left.Minecraft", PageType.Download, PageSubType.DownloadInstall, "install minecraft 安装 安裝"),
+            Page("mods", "Download.Left.Mod", PageType.Download, PageSubType.DownloadMod, "download mods 模组 模組"),
+            Page("java", "Setup.Left.Item.Java", PageType.Setup, PageSubType.SetupJava, "java runtime jdk 运行时 執行階段", true),
+            Page("launch-settings", "Setup.Left.Item.Launch", PageType.Setup, PageSubType.SetupLaunch, "memory ram jvm 内存 記憶體 启动 啟動 参数 參數", true),
+            Page("appearance", "Setup.Left.Item.Ui", PageType.Setup, PageSubType.SetupUI, "theme wallpaper background glass 主题 主題 壁纸 桌布 背景 玻璃", true),
+            Page("language", "Setup.Language.Title", PageType.Setup, PageSubType.SetupLauncherLanguage, "language locale 语言 語言", true),
+            Page("game-settings", "Setup.Left.Item.GameManage", PageType.Setup, PageSubType.SetupGameManage, "game isolation mods 游戏 遊戲 隔离 隔離 模组 模組", true),
+            Page("misc", "Setup.Left.Item.Misc", PageType.Setup, PageSubType.SetupLauncherMisc, "proxy network mcp 代理 网络 網路", true),
+            Page("update", "Setup.Left.Item.Update", PageType.Setup, PageSubType.SetupUpdate, "update channel 更新 通道", true),
+            Page("about", "Setup.Left.Item.About", PageType.Setup, PageSubType.SetupAbout, "about version 关于 關於 版本", true),
+            Page("plugins", "Main.Tab.Plugins", PageType.Plugins, PageSubType.PluginInstalled, "plugins 插件 外掛")
+        ];
+
+        foreach (var command in candidates)
+        {
+            if (command is not null) yield return command;
+        }
     }
 }

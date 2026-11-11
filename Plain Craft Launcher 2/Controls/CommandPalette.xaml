@@ -6,6 +6,9 @@
              KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle"
              FontFamily="{DynamicResource LaunchFontFamily}" FontSize="14"
              Foreground="{DynamicResource ColorBrush1}">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="ColorBrushSemiTransparent">#01eaf2fe</SolidColorBrush>
+    </UserControl.Resources>
     <Grid Background="#66000000" MouseDown="Backdrop_MouseDown">
         <Border x:Name="Surface" MaxWidth="600" Margin="24" Padding="20" CornerRadius="12"
                 VerticalAlignment="Center" Background="{DynamicResource ColorBrushBackground}">
@@ -17,10 +20,11 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <DockPanel Margin="0,0,0,14">
-                    <Button DockPanel.Dock="Right" Content="Esc" Padding="8,3" Click="Close_Click"
-                            Background="{DynamicResource ColorBrushBackground}" Foreground="{DynamicResource ColorBrush1}"
-                            BorderBrush="{DynamicResource ColorBrushGray4}"
-                            AutomationProperties.Name="{DynamicResource CommandPalette.Close}" />
+                    <local:MyButton x:Name="CloseButton" DockPanel.Dock="Right" Text="Esc"
+                                    Height="30" MinWidth="52" Padding="10,0" VerticalAlignment="Center"
+                                    Click="Close_Click"
+                                    ToolTip="{DynamicResource CommandPalette.Close}"
+                                    AutomationProperties.Name="{DynamicResource CommandPalette.Close}" />
                     <TextBlock Text="{DynamicResource CommandPalette.Title}" FontSize="18" FontWeight="SemiBold"
                                VerticalAlignment="Center" />
                 </DockPanel>
@@ -31,59 +35,13 @@
                                  AutomationProperties.Name="{DynamicResource CommandPalette.Hint}"
                                  TextChanged="Query_TextChanged" />
                 <Grid Grid.Row="2" MinHeight="72">
-                    <ListBox x:Name="Results" BorderThickness="0" Background="Transparent"
-                             Foreground="{DynamicResource ColorBrush1}"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
-                             MouseLeftButtonUp="Results_MouseLeftButtonUp"
-                             AutomationProperties.Name="{DynamicResource CommandPalette.Results}">
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Setter Property="Padding" Value="10,8" />
-                                <Setter Property="Margin" Value="0,2" />
-                                <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ListBoxItem">
-                                            <Border x:Name="Row" Background="Transparent" CornerRadius="5"
-                                                    BorderThickness="1" BorderBrush="Transparent" Padding="{TemplateBinding Padding}">
-                                                <ContentPresenter />
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource ColorBrushGray7}" />
-                                                </Trigger>
-                                                <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource ColorBrush7}" />
-                                                    <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
-                                                </Trigger>
-                                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                                    <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding Description}" TextTrimming="CharacterEllipsis" FontSize="12" Margin="0,4,0,0" />
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="{Binding Category}" Margin="14,0,0,0" VerticalAlignment="Center" FontSize="12" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <ScrollViewer x:Name="ResultsScroll"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Focusable="False"
+                                  AutomationProperties.Name="{DynamicResource CommandPalette.Results}">
+                        <StackPanel x:Name="Results" />
+                    </ScrollViewer>
                     <TextBlock x:Name="Empty" Text="{DynamicResource CommandPalette.Empty}" Visibility="Collapsed"
                                TextWrapping="Wrap" Margin="10,16" VerticalAlignment="Center" />
                 </Grid>

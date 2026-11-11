@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.Minecraft.Instances;
 
@@ -54,10 +53,24 @@ public sealed class VersionInheritanceGuardTests
     public void IndependentReadersAndDiamondParentsDoNotShareActiveChains()
     {
         using var active = VersionInheritanceGuard.Enter(Instance("A"));
-        Task.Run(() =>
+        Exception? failure = null;
+        int ownerThread = Environment.CurrentManagedThreadId;
+        int readerThread = ownerThread;
+        // Waiting on Task.Run can inline its work onto the waiting thread. This test
+        // explicitly verifies ThreadStatic isolation, so require a genuinely distinct thread.
+        var reader = new Thread(() =>
         {
-            using var independent = VersionInheritanceGuard.Enter(Instance("A"));
-        }).GetAwaiter().GetResult();
+            try
+            {
+                readerThread = Environment.CurrentManagedThreadId;
+                using var independent = VersionInheritanceGuard.Enter(Instance("A"));
+            }
+            catch (Exception error) { failure = error; }
+        }) { IsBackground = true };
+        reader.Start();
+        Assert.IsTrue(reader.Join(TimeSpan.FromSeconds(5)), "Independent inheritance reader did not finish.");
+        Assert.AreNotEqual(ownerThread, readerThread);
+        Assert.IsNull(failure);
         using (VersionInheritanceGuard.Enter(Instance("base"))) { }
         using (VersionInheritanceGuard.Enter(Instance("base"))) { }
     }

@@ -127,7 +127,7 @@
                 </Border>
                 </Grid>
                 <local:TahoeGlassSurface x:Name="TahoeWindowGlass" Grid.RowSpan="2" CornerRadius="22" Visibility="Collapsed" />
-                <local:AnimatedBackgroundGrid Grid.Row="0" x:Name="PanTitle" Height="48"
+                <local:LiquidGlassTitleBar Grid.Row="0" x:Name="PanTitle" Height="48"
                                               MouseLeftButtonDown="FormDragMove"
                                               WindowChrome.IsHitTestVisibleInChrome="True"
                                               BackgroundBrush="{DynamicResource ColorBrush3}">
@@ -224,7 +224,7 @@
                                    VerticalAlignment="Center" Margin="47,1,60,0" HorizontalAlignment="Left"
                                    Foreground="White" FontSize="15" />
                     </Grid>
-                </local:AnimatedBackgroundGrid>
+                </local:LiquidGlassTitleBar>
                 <Grid x:Name="PanLeft" Grid.Row="1" HorizontalAlignment="Left" SnapsToDevicePixels="True">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -269,7 +269,7 @@
                             Margin="0,0,0,20"
                             Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="1" />
                 <StackPanel x:Name="PanExtraButtons" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="1" Margin="15">
-                    <local:MyExtraButton x:Name="BtnCommandPalette" HorizontalAlignment="Right" Show="True"
+                    <local:MyExtraButton x:Name="BtnCommandPalette" HorizontalAlignment="Right"
                                          Click="CommandPalette_Click" SvgIcon="lucide/search"
                                          ToolTip="{DynamicResource CommandPalette.ToolTip}"
                                          AutomationProperties.Name="{DynamicResource CommandPalette.Title}" />

@@ -29,7 +29,8 @@ public sealed class LiquidGlassTextRestoreTests
         var source = XDocument.Load(stream);
         XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
-        foreach (var key in new[] { "TahoeSidebarHeadingStyle", "TahoeSidebarPathStyle", "TahoeLaunchSubtitleStyle" })
+        foreach (var key in new[] { "TahoeSidebarHeadingStyle", "TahoeSidebarPathStyle", "TahoeLaunchSubtitleStyle",
+                     "TahoeSettingsCaptionStyle" })
         {
             var styleNode = new XElement(source.Root!.Elements(presentation + "Style")
                 .Single(element => (string?)element.Attribute(xaml + "Key") == key));

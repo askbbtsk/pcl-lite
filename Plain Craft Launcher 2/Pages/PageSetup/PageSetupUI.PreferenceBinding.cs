@@ -42,6 +42,7 @@ public partial class PageSetupUI
             // 启动器
             SliderLauncherOpacity.Value = Config.Preference.Theme.WindowOpacity;
             CheckLauncherLogo.Checked = Config.Preference.ShowStartupLogo;
+            CheckCommandPaletteButton.Checked = Config.Preference.ShowCommandPaletteButton;
             RefreshTopBarCollapsedTabs();
             ComboDarkMode.SelectedIndex = (int)Config.Preference.Theme.ColorMode;
             RefreshCustomTheme();

@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using PCL.Core.App;
+using PCL.Core.App.Configuration;
 using PCL.Core.App.Localization;
 using PCL.Core.UI.Navigation;
 
@@ -13,6 +14,14 @@ public partial class FormMain
 
     private void InitializeCommandPalette()
     {
+        BtnCommandPalette.Show = Config.Preference.ShowCommandPaletteButton;
+        var visibilityObserver = new ConfigObserver(ConfigEvent.Changed,
+            _ => Dispatcher.BeginInvoke(() =>
+            {
+                if (IsLoaded) BtnCommandPalette.Show = Config.Preference.ShowCommandPaletteButton;
+            }));
+        Config.Preference.ShowCommandPaletteButtonConfig.Observe(visibilityObserver);
+        Closed += (_, _) => Config.Preference.ShowCommandPaletteButtonConfig.Unobserve(visibilityObserver);
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key != Key.K || Keyboard.Modifiers != ModifierKeys.Control) return;

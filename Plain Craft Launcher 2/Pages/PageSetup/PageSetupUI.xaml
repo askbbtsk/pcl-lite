@@ -207,6 +207,9 @@
                         </StackPanel>
                         <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.ShowLogo}" Margin="-1,0,0,7" Height="22"
                                           x:Name="CheckLauncherLogo" Tag="UiLauncherLogo" Change="CheckBoxChange" />
+                        <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.ShowSearchButton}" Margin="-1,0,0,7" Height="28"
+                                          x:Name="CheckCommandPaletteButton" Tag="UiShowCommandPaletteButton"
+                                          ToolTip="{DynamicResource Setup.Ui.Basic.ShowSearchButton.ToolTip}" Change="CheckBoxChange" />
                         <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.LockWindow}" Margin="-1,0,0,7" Height="22" x:Name="CheckLockWindowSize"
                                           Tag="UiLockWindowSize" Change="CheckBoxChange" />
                         <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.ShowTriviaHint}" Margin="-1,0,0,7" Height="22"
@@ -268,7 +271,7 @@
                                       Change="LiquidGlassEnabled_Change" />
                     <StackPanel x:Name="PanLiquidGlassSettings" Visibility="Collapsed">
                     <TextBlock Text="{DynamicResource Setup.Ui.Tahoe.Description}"
-                               TextWrapping="Wrap" Opacity="0.8" Margin="0,0,0,6" />
+                               Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,6" />
                     <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Preset}" Margin="0,8,0,6" />
                     <local:MyComboBox x:Name="ComboLiquidGlassPreset" Height="38" MinHeight="38"
                                       HorizontalAlignment="Stretch" VerticalContentAlignment="Center"
@@ -278,7 +281,7 @@
                         <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.Preset.2}" MinHeight="38" />
                         <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.Preset.3}" MinHeight="38" />
                     </local:MyComboBox>
-                    <TextBlock x:Name="TextLiquidGlassCost" TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,12" />
+                    <TextBlock x:Name="TextLiquidGlassCost" Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,8,0,12" />
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.FrameRate}" VerticalAlignment="Center" TextWrapping="Wrap" />
@@ -290,14 +293,14 @@
                                       Height="32" Margin="0,6,0,6"
                                       IsEnabled="{Binding Checked, ElementName=CheckTahoeGlass}"
                                       Change="LiquidGlassDesktop_Change" />
-                    <TextBlock Text="{DynamicResource Setup.Ui.Tahoe.Desktop.Description}"
-                               TextWrapping="Wrap" Opacity="0.8" Margin="0,0,0,6" />
+                    <TextBlock x:Name="TextLiquidGlassDesktopDescription" Text="{DynamicResource Setup.Ui.Tahoe.Desktop.Description}"
+                               Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,6" />
                     <TextBlock Text="{DynamicResource Setup.Ui.Tahoe.Compatibility}"
-                               TextWrapping="Wrap" Opacity="0.65" />
+                               Style="{StaticResource TahoeSettingsCaptionStyle}" />
                     <TextBlock Text="{Binding DesktopStatus, Source={x:Static local:TahoeThemeManager.Appearance}}"
-                               TextWrapping="Wrap" Margin="0,8,0,0" Opacity="0.8" AutomationProperties.LiveSetting="Polite">
+                               TextWrapping="Wrap" Margin="0,8,0,0" AutomationProperties.LiveSetting="Polite">
                         <TextBlock.Style>
-                            <Style TargetType="TextBlock">
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource TahoeSettingsCaptionStyle}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsDesktopRequested, Source={x:Static local:TahoeThemeManager.Appearance}}" Value="True">

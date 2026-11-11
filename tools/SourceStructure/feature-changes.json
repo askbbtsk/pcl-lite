@@ -443,8 +443,8 @@
   "Members": [
     "PCL.PageSetupUI::MethodDeclaration::Reload()"
   ],
-  "Reason": "Tahoe opt-in feature: Reload the two new opt-in appearance controls from local preferences. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
-  "Sha256": "52B41F929B5A69D41ECA8330EC9ADBBF1FDB97576751769D49268E08E224F279"
+  "Reason": "Reload the existing appearance controls and the local floating-search visibility preference. The new checkbox changes only the floating entry; Ctrl+K remains registered.",
+  "Sha256": "FA738AC4AAC8F5B36FE63118FAC5FBBABFFBC2818CCFC968ADA04E5BE7D41467"
 }
 , {
   "SourcePath": "PCL.Core/App/ProjectLinks.cs",

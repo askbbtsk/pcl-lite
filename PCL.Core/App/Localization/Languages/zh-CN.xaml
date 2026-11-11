@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 hotfix-2：修复进入实例设置等子页面后，顶部主导航玻璃栏没有消失、与子页标题重叠的问题；返回主页时正确恢复玻璃栏。包含 hotfix-1 的启动与搜索事件绑定修复。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 正式版：实时桌面折射支持截图和录屏，不再全局排除启动器；修复主题切换后顶部蓝色实底条残留、玻璃说明文字变黑的问题。个性化设置可隐藏右下角搜索按钮，Ctrl+K 保留。包含 1.7.6 两次热修复。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">性能预设</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>
@@ -17,7 +17,7 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">效果最高帧率（30–240 FPS，最右为不限制）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">不限制（可能显著增加功耗）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">是否开启液态玻璃？&#xA;预设：{0}；效果帧率上限：{1}。&#xA;{2}&#xA;会增加 CPU/GPU、内存和电量开销；这些是相对预估，不是设备实测或流畅度保证。默认使用可截图的背景模式。若另行开启实时桌面折射，启动器会从截图和录屏中排除。无需等待，确认后立即生效。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">实时桌面折射通过 DXGI 采集本机显示器画面，持续使用 GPU/CPU，不保存或上传画面，也不使用 WGC 的黄色采集边框。为避免递归，启用期间启动器仍从系统截图和录屏中排除；需要截图时请先关闭此选项。背景不透明度只影响启动器底色和图片/视频，不改变实时桌面、玻璃、文字和徽标。仍要启用吗？</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">实时桌面折射会持续采集启动器背后的桌面画面，增加 GPU/CPU 开销，不保存或上传画面。采样仅排除启动器自身，不再全局阻止截图和录屏，也不使用 WGC 黄色采集边框。拖动或缩放窗口时暂停采样并使用磨砂。背景不透明度只影响底色和图片/视频，不改变实时桌面、玻璃、文字和徽标。仍要启用吗？</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">模组依赖索引</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">为 PCL 已发现的所有 Minecraft 目录中的实例创建索引，包括未选中和隐藏的实例。相同解析环境下的共享模组目录只扫描一次。待机和浏览时不自动补建；下载模组后仍自动更新。</sys:String>
@@ -3237,8 +3237,8 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">桌面采样恢复失败，当前显示静态材质；可重新开启“直接折射桌面”重试。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液态玻璃界面</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">独立的液态玻璃效果，不属于高级材质。默认折射启动器背景，可正常截图；开启前需确认性能开销，下方可调整画质与帧率。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">实时桌面折射（会排除截图）</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">使用 DXGI 实时折射桌面，不产生 WGC 黄色采集边框。上方“背景 / 窗口不透明度”只调节启动器底色和图片/视频，不调节实时桌面采样、玻璃、文字或徽标；深浅色材质跟随启动器主题。为避免递归，采样期间仍排除启动器截图与录屏，关闭此选项后恢复。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">实时桌面折射（支持截图和录屏）</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">通过独立采样窗口获取启动器背后的桌面，采样仅排除启动器自身，不设置全局截图排除，不产生 WGC 黄色采集边框。上方“背景 / 窗口不透明度”只调节底色和图片/视频，不调节实时桌面、玻璃、文字或徽标；深浅色材质跟随主题。拖动或缩放窗口时切换磨砂。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">桌面采样需要 Windows 10 2004 或更高版本。采样不可用时显示静态材质；不支持 Pixel Shader 3.0 时使用模糊材质。</sys:String>
 
     <!-- Setup.Ui.Basic -->
@@ -3272,6 +3272,8 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Window.Size.Custom">自定义</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">不透明度</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">打开启动器时显示 PCL Lite 图标</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton">显示右下角全局搜索按钮</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">关闭后隐藏右下角搜索按钮，仍可按 Ctrl+K 打开全局搜索。立即生效。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在启动游戏时显示"你知道吗"</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">界面上的用户文件夹名打码</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">把界面上路径里 C:\Users\ 后面那一段统一显示成 *****，截图发出去不会带出 Windows 用户名。只影响显示，不会改动任何文件夹或文件。</sys:String>

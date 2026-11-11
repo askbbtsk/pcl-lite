@@ -6,7 +6,7 @@ using PCL.Core.App;
 namespace PCL;
 
 /// <summary>
-/// Native optical material. DXGI provides desktop pixels to an independent sibling
+/// Native optical material. A screenshot-compatible sampler provides pixels to an independent sibling
 /// source; the existing shader refracts that source without sampling foreground UI.
 /// </summary>
 public static partial class LiquidGlassCore
@@ -52,8 +52,11 @@ public static partial class LiquidGlassCore
             {
                 _window = window;
                 AttachInteraction(window);
+                ITahoeCapturePlatform capturePlatform =
+                    new LiquidGlassScreenshotCapturePlatform(() => Config.Preference.TahoeGlass.MaximumFrameRate);
+                LogCapture("[LiquidGlass] CaptureBackend=Magnifier; GlobalCaptureExclusion=False", null);
                 _desktopCapture = new TahoeDesktopCapture(window, window.PanForm, window.TahoeDesktopImage,
-                    window.TransformRotate, window.TransformPos, new TahoeCapturePlatform(LogCapture), LogCapture);
+                    window.TransformRotate, window.TransformPos, capturePlatform, LogCapture);
                 _desktopCapture.StateChanged += OnCaptureStateChanged;
                 window.Closed += OnClosed;
                 window.PanMainLeft.SizeChanged += OnSidebarSizeChanged;
@@ -192,6 +195,7 @@ public static partial class LiquidGlassCore
             if (originalFont is null) window.Resources.Remove("LaunchFontFamily");
             else window.Resources["LaunchFontFamily"] = originalFont;
         }
+        window.PanTitle.SuppressThemeBackground = true;
         window.PanTitle.BackgroundBrush = Brushes.Transparent;
         window.RectLeftBackground.BackgroundBrush = Brushes.Transparent;
         window.ImgTitleGradient.Visibility = Visibility.Hidden;
@@ -248,6 +252,7 @@ public static partial class LiquidGlassCore
         window.TahoeWindowControls.BackdropSource = null;
         window.TahoeWindowGlass.Visibility = Visibility.Collapsed;
         window.TahoeWindowGlass.BackdropSource = null;
+        window.PanTitle.SuppressThemeBackground = false;
         window.PanTitle.SetResourceReference(AnimatedBackgroundGrid.BackgroundBrushProperty, "ColorBrush3");
         window.RectLeftBackground.SetResourceReference(AnimatedBackgroundGrid.BackgroundBrushProperty, "ColorBrushTransparentBackground");
         window.ImgTitleGradient.Visibility = _gradientVisibility;

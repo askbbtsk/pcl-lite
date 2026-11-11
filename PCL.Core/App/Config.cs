@@ -233,6 +233,9 @@ public static partial class Config
         /// </summary>
         [ConfigItem<bool>("UiShowLaunchingHint", true, ConfigSource.Local)] public partial bool ShowLaunchingHint { get; set; }
 
+        /// <summary>显示右下角全局搜索入口；不影响 Ctrl+K 快捷键。</summary>
+        [ConfigItem<bool>("UiShowCommandPaletteButton", true, ConfigSource.Local)] public partial bool ShowCommandPaletteButton { get; set; }
+
         /// <summary>
         /// 标题内容类型。
         /// </summary>

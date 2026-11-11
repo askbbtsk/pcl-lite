@@ -9,6 +9,20 @@
     <SolidColorBrush x:Key="TahoeAccent">#007AFF</SolidColorBrush>
     <SolidColorBrush x:Key="TahoeActionText">#003B7A</SolidColorBrush>
 
+    <Style x:Key="TahoeSettingsCaptionStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushGray1}" />
+        <Setter Property="FontFamily" Value="{DynamicResource LaunchFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="TextTrimming" Value="None" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsEnabled, Source={x:Static local:TahoeThemeManager.Appearance}}" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource TahoeSecondaryText}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="TahoeSidebarSectionStyle" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource ColorBrushTransparentBackground}" />
         <Setter Property="CornerRadius" Value="5" />

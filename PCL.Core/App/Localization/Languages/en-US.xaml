@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 hotfix-2: hides the main navigation glass bar when entering instance settings and other child pages, preventing overlap with the child title. Restores the bar when returning to the main pages. Includes the startup and search binding fixes from hotfix-1.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 stable: live desktop refraction allows screenshots and recording without global capture exclusion. Fixes the solid blue title strip after theme changes and dark glass captions. Personalization can hide the floating search button while keeping Ctrl+K. Includes both 1.7.6 hotfixes.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>
@@ -17,7 +17,7 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">Effect frame cap (30–240 FPS; far right is unlimited)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">Unlimited (may significantly increase power use)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">Enable liquid glass?&#xA;Preset: {0}; effect frame cap: {1}.&#xA;{2}&#xA;This adds CPU/GPU, memory and battery costs. These are relative estimates, not device benchmarks or a smoothness guarantee. Screenshot-friendly background mode is the default. If live desktop refraction is enabled separately, the launcher is excluded from screenshots and recordings. No countdown is required.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction uses DXGI and GPU/CPU resources. Frames are never saved or uploaded, and WGC's yellow capture border is not used. The launcher remains excluded from screenshots and recordings to prevent recursion; turn this option off before taking a screenshot. Background opacity affects only the launcher background color and image/video, not the live desktop, glass, text or logo. Enable anyway?</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction continuously samples the desktop behind the launcher and increases GPU/CPU usage. Frames are never saved or uploaded. Only the sampler excludes the launcher itself; global screenshot and recording exclusion is not used, nor is WGC's yellow capture border. Moving or resizing pauses sampling and uses frosted material. Background opacity affects only the background color and image/video, not the live desktop, glass, text or logo. Enable anyway?</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">Mod dependency index</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">Index every instance in all Minecraft folders discovered by PCL, including unselected and hidden instances. Shared mod folders with the same parser context are scanned once. Idle browsing does not build indexes; mod downloads still update them.</sys:String>
@@ -3237,8 +3237,8 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">Desktop capture could not recover. Showing a static material. Toggle “Refract the desktop directly” to retry.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">Use the Liquid Glass interface</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">Independent from advanced materials. The default launcher-background refraction supports screenshots. Enabling requires performance confirmation; quality and effect frame rate can be adjusted below.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction (excludes screenshots)</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Refract the desktop through DXGI without WGC's yellow capture border. “Background / window opacity” changes only the launcher background color and image/video, not the live desktop, glass, text or logo. Material tint follows the launcher's light/dark theme. The launcher remains excluded from screenshots and recordings to prevent recursion; turning this option off restores visibility.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction (allows screenshots and recording)</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">An independent sampler captures the desktop behind the launcher and excludes the launcher only from its own input. No global capture exclusion or WGC yellow capture border is used. Background / window opacity affects only the background color and image/video, not the live desktop, glass, text or logo. Material tint follows the launcher theme. Moving or resizing uses frosted material.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">Desktop sampling requires Windows 10 version 2004 or later. Unavailable capture uses a static material; devices without Pixel Shader 3.0 use blur.</sys:String>
 
     <!-- Setup.Ui.Basic -->
@@ -3272,6 +3272,8 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Window.Size.Custom">Custom</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">Opacity</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">Display the PCL Lite logo while opening the launcher</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton">Show the global search button in the lower-right corner</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">Hide the floating search button while keeping Ctrl+K available. Takes effect immediately.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">Show "Trivia" when launching the game</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">Mask user folder names in the UI</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">Show the folder name after C:\Users\ as ***** so screenshots do not leak your Windows user name. Display only; no folders or files are changed.</sys:String>

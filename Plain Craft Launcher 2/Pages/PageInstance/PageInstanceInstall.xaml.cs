@@ -100,6 +100,17 @@ public partial class PageInstanceInstall
         if (!RestrictedFeaturePolicy.Check("minecraft-loader-install")) return;
         if (!HasReplacementVersion()) return;
         var changingInstance = PageInstanceLeft.McInstance;
+        string minecraftRoot;
+        try
+        {
+            minecraftRoot = PCL.Core.Minecraft.Instances.InstanceRootContext.Require(
+                changingInstance.PathInstance, ModFolder.mcFolderSelected);
+        }
+        catch (InvalidDataException)
+        {
+            HintService.Hint(Lang.Text("Instance.Migration.ContextChanged"), HintType.Warning);
+            return;
+        }
         // Quilt 实例无法通过安装管线重装/修改（已移除 Quilt 安装支持）
         if (PageInstanceLeft.McInstance.Info.HasQuilt)
         {
@@ -125,21 +136,44 @@ public partial class PageInstanceInstall
                 return;
 
         // Both explicit backup acknowledgements must finish before any instance mutation.
-        if (!ConfirmLoaderBackup(changingInstance) || !IsLoaded
-            || !ReferenceEquals(changingInstance, PageInstanceLeft.McInstance)) return;
         if (_installAction == InstallAction.Modify)
         {
+            if (!ConfirmLoaderBackup(changingInstance) || !IsLoaded
+                || !ReferenceEquals(changingInstance, PageInstanceLeft.McInstance)) return;
             var versionChanged = !string.Equals(changingInstance.Info.VanillaName, _vanillaName, StringComparison.Ordinal);
             var loaderChanged = GetExistingLoader(changingInstance) != _selectedLoaderType;
+            bool? migrateMods = false;
             if (versionChanged || loaderChanged)
             {
-                var migrateMods = AskToMigrateMods(changingInstance);
+                migrateMods = AskToMigrateMods(changingInstance);
                 if (migrateMods is null || !IsLoaded || !ReferenceEquals(changingInstance, PageInstanceLeft.McInstance)) return;
-                InstanceModificationRunner.Start(changingInstance, ModFolder.mcFolderSelected,
-                    BuildModificationRequest(changingInstance), migrateMods.Value,
-                    CheckAutomaticMigrationDependencies.Checked == true);
-                return;
             }
+            // Same-loader build changes need exactly the same staging/validation/rollback as cross-loader changes.
+            var modification = BuildModificationRequest(changingInstance);
+            if (selectedFabricApi?.Equals(_currentFabricApi) == true) modification.fabricApi = null;
+            if (selectedLegacyFabricApi?.Equals(_currentLegacyFabricApi) == true) modification.legacyFabricApi = null;
+            if (selectedOptiFabric?.Equals(_currentOptiFabric) == true) modification.optiFabric = null;
+            var apiReplacements = new List<InstanceModificationRunner.ApiReplacement>();
+            if (modification.fabricApi is not null && _currentFabricApiPath is not null)
+                apiReplacements.Add(new(_currentFabricApiPath, modification.fabricApi));
+            if (modification.legacyFabricApi is not null && _currentLegacyFabricApiPath is not null)
+                apiReplacements.Add(new(_currentLegacyFabricApiPath, modification.legacyFabricApi));
+            if (modification.optiFabric is not null && _currentOptiFabricPath is not null)
+                apiReplacements.Add(new(_currentOptiFabricPath, modification.optiFabric));
+            InstanceModificationRunner.Start(changingInstance, minecraftRoot, modification, migrateMods.Value,
+                CheckAutomaticMigrationDependencies.Checked == true, apiReplacements);
+            return;
+        }
+        if (!IsLoaded || !ReferenceEquals(changingInstance, PageInstanceLeft.McInstance)) return;
+        try
+        {
+            _ = PCL.Core.Minecraft.Instances.InstanceRootContext.Require(
+                changingInstance.PathInstance, ModFolder.mcFolderSelected);
+        }
+        catch (InvalidDataException)
+        {
+            HintService.Hint(Lang.Text("Instance.Migration.ContextChanged"), HintType.Warning);
+            return;
         }
 
         // 删除 LabyMod Neo 文件
@@ -164,7 +198,7 @@ public partial class PageInstanceInstall
         var request = new ModDownloadLib.McInstallRequest
         {
             targetInstanceName = PageInstanceLeft.McInstance.Name,
-            targetInstanceFolder = $@"{ModFolder.mcFolderSelected}versions\{PageInstanceLeft.McInstance.Name}\",
+            targetInstanceFolder = changingInstance.PathInstance,
             minecraftJson = _vanillaData?["url"].ToString(),
             minecraftName = _vanillaName,
             optiFineEntry = selectedOptiFine,

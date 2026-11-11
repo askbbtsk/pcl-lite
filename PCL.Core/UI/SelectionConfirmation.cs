@@ -6,6 +6,12 @@ namespace PCL.Core.UI;
 /// <summary>The same selected indices drive both initial confirmation state and submitted results.</summary>
 public static class SelectionConfirmation
 {
+    public static bool CanConfirm(IReadOnlyCollection<int> selectedIndices, bool allowEmptySelection = false)
+    {
+        ArgumentNullException.ThrowIfNull(selectedIndices);
+        return allowEmptySelection || selectedIndices.Count > 0;
+    }
+
     public static List<int> SelectedIndices(IEnumerable<bool> selections)
     {
         ArgumentNullException.ThrowIfNull(selections);

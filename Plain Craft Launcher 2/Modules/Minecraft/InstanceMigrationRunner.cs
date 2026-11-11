@@ -181,6 +181,7 @@ internal static class InstanceMigrationRunner
 
     internal static void EnsureContext(McInstance source, string minecraftRoot)
     {
+        _ = PCL.Core.Minecraft.Instances.InstanceRootContext.Require(source.PathInstance, minecraftRoot);
         if (!string.Equals(Path.TrimEndingDirectorySeparator(ModFolder.mcFolderSelected), Path.TrimEndingDirectorySeparator(minecraftRoot), StringComparison.OrdinalIgnoreCase))
             throw new IOException(Lang.Text("Instance.Migration.ContextChanged"));
         if (ModLaunch.mcLaunchLoader.State == ModBase.LoadState.Loading)

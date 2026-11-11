@@ -532,7 +532,7 @@ public static partial class ModAnimation
         {
             typeMain = AniType.Color, timeTotal = time, ease = ease ?? new AniEaseLinear(),
             obj = new object[] { obj, prop, res },
-            value = new ModBase.MyColor(System.Windows.Application.Current.FindResource(res)) -
+            value = new ModBase.MyColor(PCL.Core.UI.Animation.ColorAnimationResources.Resolve(obj, res)) -
                     new ModBase.MyColor(obj.GetValue(prop)),
             isAfter = after, timeFinished = -delay, valueLast = new ModBase.MyColor(0d, 0d, 0d, 0d)
         };

@@ -34,6 +34,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
     private Rect _bounds = Rect.Empty;
     private int _version, _attempts;
     private bool _enabled, _excluded, _disposed, _topologyDirty = true;
+    private bool _interactiveMove;
     private DispatcherOperation? _geometryUpdate;
 
     public bool IsActive => HasFrame && _sessions.Count != 0;
@@ -43,6 +44,14 @@ internal sealed class TahoeDesktopCapture : IDisposable
     public long PresentedFrames { get; private set; }
     public long UploadedBytes { get; private set; }
     public event EventHandler? StateChanged;
+
+    public void SetInteractiveMove(bool moving)
+    {
+        _window.Dispatcher.VerifyAccess();
+        if (_disposed || moving == _interactiveMove) return;
+        _interactiveMove = moving;
+        if (_enabled) UpdateGeometry();
+    }
 
     public TahoeDesktopCapture(Window window, FrameworkElement viewport, Image target,
         RotateTransform rotation, TranslateTransform translation, ITahoeCapturePlatform platform,
@@ -128,7 +137,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
     private void UpdateGeometry()
     {
         if (!_enabled || _disposed) return;
-        if (!_window.IsVisible || _window.WindowState == WindowState.Minimized)
+        if (_interactiveMove || !_window.IsVisible || _window.WindowState == WindowState.Minimized)
         {
             _retry.Stop();
             RetireAll();

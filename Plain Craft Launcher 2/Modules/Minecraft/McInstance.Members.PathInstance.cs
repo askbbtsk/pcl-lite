@@ -397,6 +397,7 @@ public partial class McInstance
             {
                 if (field is null)
                 {
+                    using var inheritance = PCL.Core.Minecraft.Instances.VersionInheritanceGuard.Enter(PathInstance);
                     var text = JsonText; // 触发 JsonText 的 Get 事件
                     try
                     {
@@ -453,9 +454,8 @@ public partial class McInstance
                                     : field["inheritsFrom"].ToString();
                                 if (Equals(inheritInstanceName, Name))
                                 {
-                                    ModBase.Log("[Minecraft] 自引用的继承实例：" + Name, ModBase.LogLevel.Debug);
-                                    inheritInstanceName = "";
-                                    break;
+                                    throw new PCL.Core.Minecraft.Instances.VersionInheritanceException(
+                                        Lang.Text("Minecraft.Error.DependencyRecursion", Name));
                                 }
 
                                 Recheck: ;
@@ -471,19 +471,27 @@ public partial class McInstance
                                             inheritInstanceName));
                                     inheritInstanceName = inheritInstance.InheritInstanceName;
                                     // 合并
-                                    inheritInstance.JsonObject.Merge(field);
-                                    field = inheritInstance.JsonObject;
+                                    var inherited = (JsonObject)inheritInstance.JsonObject.DeepClone();
+                                    inherited.Merge(field);
+                                    field = inherited;
                                     goto Recheck;
                                 }
                             }
+                            catch (PCL.Core.Minecraft.Instances.VersionInheritanceException) { throw; }
                             catch (Exception ex)
                             {
                                 ModBase.Log(ex, "合并实例依赖项 JSON 失败（" + (inheritInstanceName ?? "null") + "）");
                             }
                         } while (false);
                     }
+                    catch (PCL.Core.Minecraft.Instances.VersionInheritanceException)
+                    {
+                        field = null;
+                        throw;
+                    }
                     catch (Exception ex)
                     {
+                        field = null;
                         throw new Exception(Lang.Text("Minecraft.Error.InitInstanceJsonFailed", Name ?? "null"), ex);
                     }
                 }

@@ -183,12 +183,12 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceInstall.xaml.cs",
-  "Sha256": "6CC15AE15B1E890C3DF43C001DB3264B00B2A7B5E1475F78EE50F3471B7BEB37",
+    "Sha256": "1FE9DC5932B05B0EA902D85A0248BF8ABEAE12EDA2E8E396B76C7B6CD8CA3604",
   "Members": [
     "PCL.PageInstanceInstall::MethodDeclaration::BtnSelectStart_Click(object sender, MouseButtonEventArgs mouseButtonEventArgs)",
     "PCL.PageInstanceInstall::MethodDeclaration::MinecraftSelected(MyListItem sender, MouseButtonEventArgs e)"
   ],
-  "Reason": "User-requested loader selection unlock and direct version/loader modification, backup acknowledgement with visible monotonic 5-second delay and optional mod migration with 3-second delay. Existing dialog defaults unchanged."
+    "Reason": "User-requested reliability fixes: validate source Minecraft root before mutation, route every Modify including same-loader builds through staged transactions, include explicit API replacements, and keep loader backup countdown separate from Reset. MinecraftSelected keeps its previously reviewed behavior."
 }
 ,
 {
@@ -285,9 +285,9 @@
 }
 , {
   "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/McInstance.Members.PathInstance.cs",
-  "Sha256": "E913C78158117BDADA8194220EE4D8DF13F40A2E25EB6817A24BCEA49A2C37F0",
+  "Sha256": "1DDD408704E1691AB1D6150F038D03426628CB97C6EDB8F364DEA9BD55FC1FD8",
   "Members": ["PCL.McInstance::PropertyDeclaration::JsonObject"],
-  "Reason": "All-folder index discovery must resolve inheritsFrom relative to the instance's own versions directory, matching Check() and preserving the selected global Minecraft root. The former name-only constructor silently used the selected root for other-root instances."
+  "Reason": "Resolve parents relative to the source versions directory; guard the entire recursive getter chain against cycles/depth overflow, propagate the dedicated failure, clear partial JSON on failure and clone parent JSON before merging. Actual shipped-getter integration tests cover cycles, retry and normal inheritance without modifying parent objects."
 }
 , {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageDownload/ModDownloadLib.InstanceInstallCoordinator.cs",
@@ -303,14 +303,14 @@
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Controls/MyMsg/MyMsgSelect.xaml.cs",
-  "Sha256": "360973D25403FBD984DC7E3E0A6E6376EB5EC39F14C49B32E565FE87667EF03F",
+  "Sha256": "695A928165A564D387C7D945A1CDA9E754F94E65A79884EF8769F86466389DD1",
   "Members": [
     "PCL.MyMsgSelect::MethodDeclaration::InitializeSelectionList(object content)",
     "PCL.MyMsgSelect::MethodDeclaration::Load(object sender, EventArgs e)",
     "PCL.MyMsgSelect::MethodDeclaration::Btn1_Click(object sender, MouseButtonEventArgs e)",
     "PCL.MyMsgSelect::MethodDeclaration::_UpdateCheckedState()"
   ],
-  "Reason": "Synchronize the multiselect confirm button after adding controls and on Loaded so preselected migration rows can be confirmed immediately. The same tested index projection drives enabled state and submission; empty/all-unchecked selections remain blocked, single-select behavior is unchanged."
+  "Reason": "Preserve immediate preselection confirmation; a new explicit converter flag allows only opted-in migration previews to confirm an empty list. Existing dialogs keep the default at-least-one rule; cancellation remains null. The same tested selection policy drives enabled state and submission."
 },
 {
   "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.xaml.cs",
@@ -509,5 +509,17 @@
     "PCL.ModBedrockUwp::MethodDeclaration::LaunchEditor()"
   ],
   "Reason": "Observe new actual Minecraft processes after existing UWP/Editor activation paths. UWP does not require a process-owned HWND, since ApplicationFrameHost may own its window. Shell success alone never increments."
+}
+, {
+  "SourcePath": "Plain Craft Launcher 2/Modules/Base/ModAnimation.ViewActions.AniData.cs",
+  "Sha256": "D2EBD5B6892738F4F434CA06455678014CDA0080807BB3A24DA3B66E71C181B3",
+  "Members": ["PCL.ModAnimation::MethodDeclaration::AaColor(FrameworkElement obj, DependencyProperty prop, string res, int time = 400,\n        int delay = 0, AniEase ease = null, bool after = false)"],
+  "Reason": "Resolve animation resource targets from the animated control, honoring plugin/page/window resource scopes like the DynamicResource restored at completion. STA tests cover local, ancestor, window overrides and missing keys."
+}
+, {
+  "SourcePath": "Plain Craft Launcher 2/Modules/ModMain.ViewActions.MyMsgBoxConverter.cs",
+  "Sha256": "2C87516989AFD45BE7A77B16181B2E4643DFCDC2866E0F37966740748F2F4D4A",
+  "Members": ["PCL.ModMain::MethodDeclaration::MyMsgBoxMultiSelect(List<MyListItem> selections, string? title = null,\n        string? button1 = null, string? button2 = \"\", bool isWarn = false)"],
+  "Reason": "Preserve the original wrapper signature, default values and forwarding. Its containing source now adds a separate allowEmptySelection overload and converter flag for migration only; no existing plugin or caller is opted in."
 }
 ]

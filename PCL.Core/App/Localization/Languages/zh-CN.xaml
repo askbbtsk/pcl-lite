@@ -841,7 +841,7 @@
     <sys:String x:Key="Instance.Install.Action.StartReset">开始重置</sys:String>
     <sys:String x:Key="Instance.Install.Error.OperationFailed">实例安装操作失败。请查看错误详情。</sys:String>
     <sys:String x:Key="Instance.Install.NoExtraInstall">无附加安装</sys:String>
-    <sys:String x:Key="Instance.Install.Reset.Message">你正在重置当前实例。&#xA;PCL Lite 将会重新联网下载该实例所需的文件，并重新安装模组加载器（如有）。&#xA;此操作不会丢失你的存档、模组、资源包等。</sys:String>
+    <sys:String x:Key="Instance.Install.Reset.Message">你正在重置当前实例。&#xA;请先备份实例。PCL Lite 将重新联网下载所需文件，并重新安装模组加载器（如有）；实例核心文件会备份到 PCLInstallBackups。&#xA;此操作保留存档、模组和资源包，但手动修改的核心 JSON/JAR 可能被重新安装的内容替换。</sys:String>
     <sys:String x:Key="Instance.Install.Reset.Title">重置此实例</sys:String>
 
     <!-- Instance.Export -->
@@ -3232,6 +3232,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">桌面采样正常，当前设备使用模糊兼容材质。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">桌面采样中断，正在尝试恢复；未就绪区域使用静态材质。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Suspended">桌面采样已暂停；窗口恢复可见后继续。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">移动或调整窗口时使用静态磨砂；松开后恢复实时桌面折射。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">系统不支持桌面采样，当前显示静态材质。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">桌面采样恢复失败，当前显示静态材质；可重新开启“直接折射桌面”重试。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液态玻璃界面</sys:String>

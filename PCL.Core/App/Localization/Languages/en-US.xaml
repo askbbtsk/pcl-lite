@@ -841,7 +841,7 @@
     <sys:String x:Key="Instance.Install.Action.StartReset">Reset</sys:String>
     <sys:String x:Key="Instance.Install.Error.OperationFailed">An instance installation operation failed. See the details below.</sys:String>
     <sys:String x:Key="Instance.Install.NoExtraInstall">No extra installation</sys:String>
-    <sys:String x:Key="Instance.Install.Reset.Message">You are resetting the current instance.&#xA;PCL Lite will re-download the files required for this instance from the internet and reinstall mod loaders (if any).&#xA;This operation will not lose your saves, mods, resource packs, etc.</sys:String>
+    <sys:String x:Key="Instance.Install.Reset.Message">You are resetting the current instance.&#xA;Back up the instance first. PCL Lite will download its required files again and reinstall its loaders; core files are backed up to PCLInstallBackups.&#xA;Saves, mods and resource packs are retained, but manual changes to the core JSON/JAR may be replaced.</sys:String>
     <sys:String x:Key="Instance.Install.Reset.Title">Reset this instance</sys:String>
 
     <!-- Instance.Export -->
@@ -3232,6 +3232,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">Desktop capture is active. This device uses the blur compatibility material.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">Desktop capture was interrupted. Recovering; unavailable areas use a static material.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Suspended">Desktop capture is paused until the window is visible again.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">Using static frosted material while moving or resizing; live desktop refraction resumes afterwards.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">Desktop capture is unsupported. Showing a static material.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">Desktop capture could not recover. Showing a static material. Toggle “Refract the desktop directly” to retry.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">Use the Liquid Glass interface</sys:String>

@@ -80,6 +80,8 @@ public static partial class ModMain
         ///     选择模式：是否允许勾选多个选项
         /// </summary>
         public bool MultiSelect;
+        /// <summary>Explicit opt-in for migration previews; empty selection is distinct from cancellation.</summary>
+        public bool AllowEmptySelection;
 
         /// <summary>
         ///     有多个按钮时，是否给第一个按钮加高亮。
@@ -232,6 +234,9 @@ public static partial class ModMain
         string? button1 = null, string? button2 = "", bool isWarn = false)
 =>MessageNoticeCore.MyMsgBoxMultiSelect(selections, title, button1, button2, isWarn);
 
+    public static List<int>? MyMsgBoxMultiSelect(List<MyListItem> selections, bool allowEmptySelection,
+        string? title = null, string? button1 = null, string? button2 = "", bool isWarn = false)
+        => MessageNoticeCore.MyMsgBoxMultiSelect(selections, allowEmptySelection, title, button1, button2, isWarn);
 
 
     public static void MyMsgBoxTick()

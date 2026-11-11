@@ -148,6 +148,51 @@ public sealed class TahoeDesktopCaptureTests
     }
 
     [STATestMethod]
+    public void InteractiveMoveRetiresLiveSamplingAndRejectsLateFramesUntilExit()
+    {
+        WithCapture((capture, platform, _, image) =>
+        {
+            capture.Apply(true);
+            var previous = platform.Sessions.Last();
+            previous.Present();
+            PumpUntil(() => capture.HasFrame);
+            capture.SetInteractiveMove(true);
+            Assert.AreEqual(TahoeCaptureState.Suspended, capture.State);
+            Assert.IsTrue(previous.Disposed);
+            Assert.IsFalse(capture.HasFrame);
+            Assert.IsNull(image.Source);
+            int created = platform.Creations;
+            capture.SetInteractiveMove(true);
+            previous.Present();
+            PumpFor(TimeSpan.FromMilliseconds(20));
+            Assert.AreEqual(created, platform.Creations);
+            Assert.IsFalse(capture.HasFrame);
+            capture.SetInteractiveMove(false);
+            PumpUntil(() => platform.Creations > created);
+            platform.Sessions.Last().Present();
+            PumpUntil(() => capture.State == TahoeCaptureState.Live);
+            Assert.IsTrue(capture.HasFrame);
+        });
+    }
+
+    [STATestMethod]
+    public void DisablingGlassDuringDragCannotRestartCaptureOnMoveExit()
+    {
+        WithCapture((capture, platform, _, _) =>
+        {
+            capture.Apply(true);
+            capture.SetInteractiveMove(true);
+            capture.Apply(false);
+            int created = platform.Creations;
+            capture.SetInteractiveMove(false);
+            PumpFor(TimeSpan.FromMilliseconds(30));
+            Assert.AreEqual(created, platform.Creations);
+            Assert.AreEqual(TahoeCaptureState.Stopped, capture.State);
+            Assert.AreEqual(0u, platform.Affinity);
+        });
+    }
+
+    [STATestMethod]
     public void UnsupportedCaptureDoesNotExcludeWindowOrCreateSession()
     {
         WithCapture((capture, platform, _, _) =>

@@ -25,10 +25,14 @@ namespace PCL;
 /// <summary>Installs in an owned OS-temp workspace, then switches only explicitly planned live files.</summary>
 internal static class InstanceModificationRunner
 {
+    internal sealed record ApiReplacement(string SourcePath, ModComp.CompFile Target);
+
     internal static void Start(McInstance source, string minecraftRoot, ModDownloadLib.McInstallRequest request, bool migrateMods,
-        bool automaticDependencies = false)
+        bool automaticDependencies = false, IReadOnlyList<ApiReplacement>? apiReplacements = null)
     {
+        minecraftRoot = InstanceRootContext.Require(source.PathInstance, minecraftRoot);
         var instance = source.PathInstance; var game = source.PathIndie;
+        var requestedApis = (apiReplacements ?? []).ToArray();
         var presentation = new OperationTaskPresentation(
             (Lang.Text("Instance.Modification.Stage.Index"), 12),
             (Lang.Text("Instance.Modification.Stage.Dependencies"), 18),
@@ -42,6 +46,8 @@ internal static class InstanceModificationRunner
             var token = task.AbortedToken;
             using var operation = InstanceOperationCoordinator.Acquire(Path.Combine(Paths.SharedLocalData, "InstanceOperations"), minecraftRoot, game);
             InstanceMigrationRunner.EnsureContext(source, minecraftRoot);
+            var previousApis = requestedApis.Select(item =>
+                (item.SourcePath, item.Target, Hash: InstanceModificationTransaction.HashOrMissing(item.SourcePath))).ToArray();
             InstanceModificationTransaction.Recover(instance, game);
             var originalJson = Path.Combine(instance, source.Name + ".json"); var originalJar = Path.Combine(instance, source.Name + ".jar");
             var jsonBefore = InstanceModificationTransaction.HashOrMissing(originalJson);
@@ -70,7 +76,8 @@ internal static class InstanceModificationRunner
                 {
                     preview = InstanceMigrationCatalog.Build(source, request.minecraftName, targetLoader.Value, token,
                         value => presentation.Report(0, value), detail => presentation.Describe(0, detail));
-                    chosen = ChooseMods(preview) ?? throw new OperationCanceledException(token);
+                    chosen = ChooseMods(preview, previousApis.Select(api => api.SourcePath).ToArray())
+                        ?? throw new OperationCanceledException(token);
                 }
                 else if (migrateMods) notices.Add(Lang.Text("Instance.Modification.VanillaMods"));
                 presentation.Begin(1);
@@ -89,6 +96,23 @@ internal static class InstanceModificationRunner
                     request.targetInstanceFolder, task, token, value => presentation.Report(2, value));
                 var replacements = new List<ModificationModReplacement>();
                 var selectedPayloadNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var api in previousApis)
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (api.Hash is null) continue;
+                    var fileName = ModComp.CompFileNameSanitize(api.Target.FileName);
+                    var payload = Path.Combine(stagedMods, fileName);
+                    if (!File.Exists(payload)) throw new IOException(Lang.Text("Instance.Migration.InstallFailed"));
+                    var suffix = InstanceMigrationPlanner.DisabledSuffix(api.SourcePath);
+                    if (suffix.Length > 0)
+                    {
+                        File.Move(payload, payload + suffix);
+                        payload += suffix;
+                        fileName += suffix;
+                    }
+                    replacements.Add(new(api.SourcePath, api.Hash, payload, fileName));
+                    selectedPayloadNames.Add(fileName);
+                }
                 presentation.Begin(3);
                 if (preview is not null && targetLoader is not null)
                 {
@@ -121,7 +145,9 @@ internal static class InstanceModificationRunner
                                 File.Move(copied.DestinationPath!, destination, overwrite: false);
                         }
                         else if (!alreadyStaged) downloads.Add(targetDownload);
-                        replacements.Add(new(item.Source.Path, item.Source.Sha256, destination, item.TargetFileName!));
+                        // An explicitly selected API replacement owns that source; do not replace it twice.
+                        if (!previousApis.Any(api => string.Equals(api.SourcePath, item.Source.Path, StringComparison.OrdinalIgnoreCase)))
+                            replacements.Add(new(item.Source.Path, item.Source.Sha256, destination, item.TargetFileName!));
                         selectedPayloadNames.Add(item.TargetFileName!);
                     }
                     if (downloads.Count > 0)
@@ -219,9 +245,11 @@ internal static class InstanceModificationRunner
             : request.forgeEntry is not null || request.forgeVersion is not null ? MigrationLoader.Forge
             : request.fabricVersion is not null ? MigrationLoader.Fabric : null;
 
-    private static IReadOnlyList<MigrationModPlan>? ChooseMods(InstanceMigrationCatalog.Preview preview)
+    private static IReadOnlyList<MigrationModPlan>? ChooseMods(InstanceMigrationCatalog.Preview preview,
+        IReadOnlyList<string> explicitlyReplacedApis)
     {
-        var applicable = preview.Plan.Mods.Where(item => item.Action != MigrationModAction.NeedsReview).ToArray();
+        var applicable = preview.Plan.Mods.Where(item => item.Action != MigrationModAction.NeedsReview
+            && !explicitlyReplacedApis.Contains(item.Source.Path, StringComparer.OrdinalIgnoreCase)).ToArray();
         if (applicable.Length == 0) return [];
         return ModBase.RunInUiWait(() =>
         {
@@ -231,7 +259,7 @@ internal static class InstanceModificationRunner
                     Height = 44, Type = MyListItem.CheckType.CheckBox };
                 row.SetChecked(true, false, false); return row;
             }).ToList();
-            var selected = ModMain.MyMsgBoxMultiSelect(rows, Lang.Text("Instance.Migration.SelectMods"),
+            var selected = ModMain.MyMsgBoxMultiSelect(rows, allowEmptySelection: true, Lang.Text("Instance.Migration.SelectMods"),
                 Lang.Text("Common.Action.Continue"), Lang.Text("Common.Action.Cancel"));
             return selected?.Where(index => index >= 0 && index < applicable.Length).Select(index => applicable[index]).ToArray();
         });
@@ -243,6 +271,11 @@ internal static class InstanceModificationRunner
         var targetLoader = TargetLoader(request);
         if ((targetLoader == MigrationLoader.Fabric && !installed.Info.HasFabric) || (targetLoader == MigrationLoader.Forge && !installed.Info.HasForge)
             || (targetLoader == MigrationLoader.NeoForge && !installed.Info.HasNeoForge)) throw new IOException(Lang.Text("Instance.Migration.InstallFailed"));
+        if ((request.cleanroomEntry is not null || request.cleanroomVersion is not null) && !installed.Info.HasCleanroom
+            || request.legacyFabricVersion is not null && !installed.Info.HasLegacyFabric
+            || request.liteLoaderEntry is not null && !installed.Info.HasLiteLoader
+            || request.labyModCommitRef is not null && !installed.Info.HasLabyMod)
+            throw new IOException(Lang.Text("Instance.Migration.InstallFailed"));
         var libraries = ModLibrary.McLibListGet(installed, true);
         var report = InstanceEnhancementAnalyzer.Analyze(new()
         {

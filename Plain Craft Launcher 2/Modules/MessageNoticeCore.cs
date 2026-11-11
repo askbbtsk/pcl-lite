@@ -356,6 +356,10 @@ internal static class MessageNoticeCore
     /// <param name="isWarn">是否为警告弹窗，若为 True，弹窗配色和背景会变为红色。</param>
     public static List<int>? MyMsgBoxMultiSelect(List<MyListItem> selections, string? title = null,
         string? button1 = null, string? button2 = "", bool isWarn = false)
+        => MyMsgBoxMultiSelect(selections, false, title, button1, button2, isWarn);
+
+    public static List<int>? MyMsgBoxMultiSelect(List<MyListItem> selections, bool allowEmptySelection,
+        string? title = null, string? button1 = null, string? button2 = "", bool isWarn = false)
     {
         title ??= GetDefaultDialogTitle();
         button1 ??= GetDefaultConfirmText();
@@ -363,7 +367,8 @@ internal static class MessageNoticeCore
         // 将弹窗列入队列
         var converter = new MyMsgBoxConverter
         {
-            Type = MyMsgBoxType.Select, MultiSelect = true, Button1 = button1, Button2 = button2, Content = selections,
+            Type = MyMsgBoxType.Select, MultiSelect = true, AllowEmptySelection = allowEmptySelection,
+            Button1 = button1, Button2 = button2, Content = selections,
             IsWarn = isWarn, Title = title
         };
         WaitingMyMsgBox.Add(converter);

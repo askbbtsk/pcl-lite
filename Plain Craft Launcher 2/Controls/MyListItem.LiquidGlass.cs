@@ -13,6 +13,7 @@ public partial class MyListItem
     private Visibility _originalNavigationCheckVisibility;
     private GridLength _originalNavigationPadding;
     private FontWeight _originalNavigationFontWeight;
+    private Thickness? _originalNavigationActionMargin;
 
     private bool IsNavigationItem()
     {
@@ -109,8 +110,15 @@ public partial class MyListItem
             ? dark ? Color.FromArgb(35, 255, 255, 255) : Color.FromArgb(190, 255, 255, 255)
             : Colors.Transparent);
 
+        if (buttonStack != null)
+        {
+            _originalNavigationActionMargin ??= buttonStack.Margin;
+            var original = _originalNavigationActionMargin.Value;
+            buttonStack.Margin = new Thickness(original.Left, original.Top,
+                PCL.Core.UI.LiquidGlassInteraction.NavigationActionInset(original.Right, true), original.Bottom);
+        }
         double padding = hover && buttonStack != null
-            ? Math.Max(MinPaddingRight, 5 + Buttons.Count() * 25) : MinPaddingRight;
+            ? Math.Max(MinPaddingRight, 18 + Buttons.Count() * 25) : MinPaddingRight;
         if (animate && IsLoaded && SystemParameters.ClientAreaAnimation && ModAnimation.AniControlEnabled == 0)
         {
             var animations = new List<ModAnimation.AniData>
@@ -142,6 +150,9 @@ public partial class MyListItem
         ModAnimation.AniStop("ListItem Color " + Uuid);
         ModAnimation.AniStop("MyListItem Checked " + Uuid);
         _tahoeNavigationChrome!.Visibility = Visibility.Collapsed;
+        if (buttonStack != null && _originalNavigationActionMargin is { } actionMargin)
+            buttonStack.Margin = actionMargin;
+        _originalNavigationActionMargin = null;
         RectBack.Visibility = _originalNavigationHoverVisibility;
         ColumnPaddingLeft.Width = _originalNavigationPadding;
         LabTitle.SetCurrentValue(TextBlock.FontWeightProperty, _originalNavigationFontWeight);

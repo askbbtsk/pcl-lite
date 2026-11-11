@@ -174,7 +174,7 @@ public partial class MyMsgSelect
         {
             var indices = SelectionConfirmation.SelectedIndices(PanSelection.Children.Cast<UIElement>()
                 .Select(child => child is MyListItem { Checked: true }));
-            if (indices.Count == 0)
+            if (!SelectionConfirmation.CanConfirm(indices, myConverter.AllowEmptySelection))
                 return;
             myConverter.IsExited = true;
             myConverter.Result = indices;
@@ -211,8 +211,9 @@ public partial class MyMsgSelect
         // 多选
         if (!myConverter.MultiSelect)
             return;
-        Btn1.IsEnabled = SelectionConfirmation.SelectedIndices(PanSelection.Children.Cast<UIElement>()
-            .Select(child => child is MyListItem { Checked: true })).Count > 0;
+        Btn1.IsEnabled = SelectionConfirmation.CanConfirm(
+            SelectionConfirmation.SelectedIndices(PanSelection.Children.Cast<UIElement>()
+                .Select(child => child is MyListItem { Checked: true })), myConverter.AllowEmptySelection);
     }
 
     private void Drag(object sender, MouseButtonEventArgs e)

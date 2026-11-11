@@ -110,5 +110,27 @@ public sealed class InstanceModificationTests
     }
 
     private IReadOnlyList<ModificationPayload> CorePayload() => [new("original.json", Path.Combine(_stage, "target.json"), Hash(Path.Combine(_instance, "original.json")), true)];
+
+    [TestMethod]
+    public void SameLoaderCoreUpgradeAndApiReplacementAreOneRecoverablePlan()
+    {
+        var api = Path.Combine(_game, "mods", "fabric-api-old.jar");
+        var fresh = Path.Combine(_stage, "fabric-api-new.jar");
+        File.WriteAllText(api, "old-api-bytes");
+        File.WriteAllText(fresh, "new-api-bytes");
+        var plan = InstanceModificationTransaction.Prepare(_instance, _game, CorePayload(),
+            [new(api, Hash(api), fresh, "fabric-api-new.jar")]);
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        Assert.ThrowsExactly<OperationCanceledException>(() =>
+            InstanceModificationTransaction.Apply(_instance, _game, plan, cancelled.Token));
+        Assert.AreEqual("old-api-bytes", File.ReadAllText(api));
+        Assert.AreEqual("original-json", File.ReadAllText(Path.Combine(_instance, "original.json")));
+        InstanceModificationTransaction.Apply(_instance, _game, plan);
+        Assert.AreEqual("old-api-bytes", File.ReadAllText(api + ".disabled"));
+        Assert.AreEqual("new-api-bytes", File.ReadAllText(Path.Combine(_game, "mods", "fabric-api-new.jar")));
+        Assert.AreEqual("target-json", File.ReadAllText(Path.Combine(_instance, "original.json")));
+    }
+
     private static string Hash(string file) => InstanceModificationTransaction.HashOrMissing(file)!;
 }

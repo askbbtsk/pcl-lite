@@ -9,6 +9,16 @@ namespace PCL.Core.Test.UI;
 public sealed class SelectionConfirmationTests
 {
     [TestMethod]
+    public void MigrationCanExplicitlyConfirmZeroSelectionsWithoutChangingOtherDialogs()
+    {
+        var none = SelectionConfirmation.SelectedIndices([false, false]);
+        Assert.IsFalse(SelectionConfirmation.CanConfirm(none));
+        Assert.IsTrue(SelectionConfirmation.CanConfirm(none, allowEmptySelection: true));
+        Assert.IsTrue(SelectionConfirmation.CanConfirm(SelectionConfirmation.SelectedIndices([true, false])));
+        Assert.Throws<ArgumentNullException>(() => SelectionConfirmation.CanConfirm(null!));
+    }
+
+    [TestMethod]
     public void DefaultCheckedMigrationRowsAllowImmediateConfirmationWithoutAnyChangeEvent()
     {
         var selected = SelectionConfirmation.SelectedIndices(Enumerable.Repeat(true, 80));

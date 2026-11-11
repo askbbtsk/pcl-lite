@@ -398,8 +398,8 @@
     "PCL.FormMain::ConstructorDeclaration::.ctor()",
     "PCL.FormMain::MethodDeclaration::FormMain_Loaded()"
   ],
-  "Reason": "Tahoe opt-in feature: Wire rounded host resizing, suppress competing legacy blur and route video looping through desktop-mode pause policy. Reviewed against origin/main; 23 Tahoe regressions and 958 total unit tests pass.",
-  "Sha256": "F78394354724B950517B094B3C37A1BD1CEAB0207EDAF5F194E4733E70D823FD"
+  "Reason": "Tahoe opt-in feature: Wire rounded host resizing, suppress competing legacy blur and route video looping through desktop-mode pause policy. Command palette extension adds only InitializeCommandPalette() immediately after InitializeComponent() in the constructor; the loaded method is unchanged from the Tahoe implementation. Search ranking tests and native WPF interaction/mod-parser smoke checks cover the extension.",
+  "Sha256": "4C337A6EBB9680A3FDED18F75CA583713714DD0BCBF702EDF0F011070AA91538"
 },
 {
   "SourcePath": "Plain Craft Launcher 2/FormMain.FileDropHandling.cs",

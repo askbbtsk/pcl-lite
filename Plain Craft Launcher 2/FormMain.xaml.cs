@@ -67,6 +67,7 @@ public partial class FormMain
         HintWrapper.OnShow += HintService.HintWrapper_OnShow;
         // 加载 UI
         InitializeComponent();
+        InitializeCommandPalette();
         PanBack.SizeChanged += FormMain_SizeChanged;
         RefreshNavigationOverflow();
         PanTitleMain.SizeChanged += PanTitleSelect_SizeChanged;

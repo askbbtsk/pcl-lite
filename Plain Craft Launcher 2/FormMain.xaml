@@ -269,6 +269,10 @@
                             Margin="0,0,0,20"
                             Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="1" />
                 <StackPanel x:Name="PanExtraButtons" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="1" Margin="15">
+                    <local:MyExtraButton x:Name="BtnCommandPalette" HorizontalAlignment="Right" Show="True"
+                                         Click="CommandPalette_Click" SvgIcon="lucide/search"
+                                         ToolTip="{DynamicResource CommandPalette.ToolTip}"
+                                         AutomationProperties.Name="{DynamicResource CommandPalette.Title}" />
                     <local:MyExtraButton x:Name="BtnExtraUpdateRestart" HorizontalAlignment="Right"
                                          Click="BtnExtraUpdateRestart_Click"
                                          VerticalAlignment="Center" ToolTip="{DynamicResource Main.Extra.UpdateRestart.ToolTip}"
@@ -298,6 +302,7 @@
                                          Click="BtnExtraMusic_Click" RightClick="BtnExtraMusic_RightClick"
                                          Visibility="Collapsed" CanRightClick="True" />
                 </StackPanel>
+                <local:CommandPalette x:Name="Palette" Grid.RowSpan="2" Panel.ZIndex="1" />
                 <controls:BlurBorder x:Name="PanMsgBackground" Grid.Row="0" Grid.RowSpan="2" Background="#00000000"
                                      Panel.ZIndex="2" Visibility="Collapsed">
                     <Grid x:Name="PanMsg" Background="#00000000" MouseLeftButtonDown="FormDragMove" />

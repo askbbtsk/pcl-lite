@@ -4229,4 +4229,23 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Instance.Modification.AutoDependencies">自動下載所有必要相依項目</sys:String>
     <sys:String x:Key="Instance.Modification.AutoDependencies.ToolTip">本次修改會自動批次下載相容目標環境的必要前置，不逐項詢問；已選取的相同版本模組不重複下載。不加入可選相依項目，衝突與無相容建置仍會提示。</sys:String>
     <sys:String x:Key="Instance.Modification.DownloadCount">已完成 {0}/{1} 個檔案</sys:String>
+    <sys:String x:Key="CommandPalette.Title">全域搜尋</sys:String>
+    <sys:String x:Key="CommandPalette.ToolTip">全域搜尋（Ctrl+K）</sys:String>
+    <sys:String x:Key="CommandPalette.Hint">搜尋實例、目前實例的模組、設定或操作</sys:String>
+    <sys:String x:Key="CommandPalette.Close">關閉搜尋</sys:String>
+    <sys:String x:Key="CommandPalette.Results">搜尋結果</sys:String>
+    <sys:String x:Key="CommandPalette.Empty">沒有符合的結果，請嘗試實例名稱、模組檔名或設定關鍵字。</sys:String>
+    <sys:String x:Key="CommandPalette.Keys">↑ ↓ 選擇 · Enter 開啟 · Esc 關閉 · 最多顯示 60 項</sys:String>
+    <sys:String x:Key="CommandPalette.Loading">正在讀取本機實例與模組，已有結果可以直接開啟…</sys:String>
+    <sys:String x:Key="CommandPalette.NoInstance">尚未選擇實例；選擇後可搜尋已安裝模組。↑ ↓ 選擇 · Enter 開啟 · Esc 關閉</sys:String>
+    <sys:String x:Key="CommandPalette.ScanFailed">部分本機內容無法讀取，請檢查目錄權限或重新開啟搜尋；已有結果仍可使用。</sys:String>
+    <sys:String x:Key="CommandPalette.Error">無法開啟所選項目，請檢查檔案是否存在後重試。</sys:String>
+    <sys:String x:Key="CommandPalette.OpenInstance">開啟實例管理</sys:String>
+    <sys:String x:Key="CommandPalette.OpenPage">開啟頁面</sys:String>
+    <sys:String x:Key="CommandPalette.LocateMod">在資料夾中定位 · {0}</sys:String>
+    <sys:String x:Key="CommandPalette.Instance">實例</sys:String>
+    <sys:String x:Key="CommandPalette.Mod">已安裝模組</sys:String>
+    <sys:String x:Key="CommandPalette.Setting">設定</sys:String>
+    <sys:String x:Key="CommandPalette.Action">操作</sys:String>
+    <sys:String x:Key="CommandPalette.Disabled">已停用</sys:String>
 </ResourceDictionary>

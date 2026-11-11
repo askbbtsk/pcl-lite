@@ -4229,4 +4229,23 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Instance.Modification.AutoDependencies">Automatically download all required dependencies</sys:String>
     <sys:String x:Key="Instance.Modification.AutoDependencies.ToolTip">Download compatible required dependencies in one batch for this operation without individual prompts. Selected matching mod builds are not downloaded again. Optional dependencies are excluded; conflicts and unavailable builds still require review.</sys:String>
     <sys:String x:Key="Instance.Modification.DownloadCount">{0}/{1} files completed</sys:String>
+    <sys:String x:Key="CommandPalette.Title">Search everywhere</sys:String>
+    <sys:String x:Key="CommandPalette.ToolTip">Search everywhere (Ctrl+K)</sys:String>
+    <sys:String x:Key="CommandPalette.Hint">Search instances, installed mods, settings or actions</sys:String>
+    <sys:String x:Key="CommandPalette.Close">Close search</sys:String>
+    <sys:String x:Key="CommandPalette.Results">Search results</sys:String>
+    <sys:String x:Key="CommandPalette.Empty">No matches. Try an instance name, mod filename or setting keyword.</sys:String>
+    <sys:String x:Key="CommandPalette.Keys">↑ ↓ Select · Enter Open · Esc Close · Up to 60 results</sys:String>
+    <sys:String x:Key="CommandPalette.Loading">Reading local instances and mods. Available results can already be opened…</sys:String>
+    <sys:String x:Key="CommandPalette.NoInstance">Select an instance to search installed mods. ↑ ↓ Select · Enter Open · Esc Close</sys:String>
+    <sys:String x:Key="CommandPalette.ScanFailed">Some local content could not be read. Check folder permissions or reopen search; available results still work.</sys:String>
+    <sys:String x:Key="CommandPalette.Error">Could not open this item. Check that its files still exist and try again.</sys:String>
+    <sys:String x:Key="CommandPalette.OpenInstance">Open instance management</sys:String>
+    <sys:String x:Key="CommandPalette.OpenPage">Open page</sys:String>
+    <sys:String x:Key="CommandPalette.LocateMod">Show in folder · {0}</sys:String>
+    <sys:String x:Key="CommandPalette.Instance">Instance</sys:String>
+    <sys:String x:Key="CommandPalette.Mod">Installed mod</sys:String>
+    <sys:String x:Key="CommandPalette.Setting">Setting</sys:String>
+    <sys:String x:Key="CommandPalette.Action">Action</sys:String>
+    <sys:String x:Key="CommandPalette.Disabled">Disabled</sys:String>
 </ResourceDictionary>

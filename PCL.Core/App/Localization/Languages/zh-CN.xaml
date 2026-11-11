@@ -4232,4 +4232,23 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Instance.Modification.AutoDependencies">自动下载全部必需依赖</sys:String>
     <sys:String x:Key="Instance.Modification.AutoDependencies.ToolTip">本次修改自动批量下载兼容目标环境的必需前置，不逐项询问；已选中的同版本模组不重复下载。不会加入可选依赖，冲突和无兼容构建仍会提示。</sys:String>
     <sys:String x:Key="Instance.Modification.DownloadCount">已完成 {0}/{1} 个文件</sys:String>
+    <sys:String x:Key="CommandPalette.Title">全局搜索</sys:String>
+    <sys:String x:Key="CommandPalette.ToolTip">全局搜索（Ctrl+K）</sys:String>
+    <sys:String x:Key="CommandPalette.Hint">搜索实例、当前实例的模组、设置或操作</sys:String>
+    <sys:String x:Key="CommandPalette.Close">关闭搜索</sys:String>
+    <sys:String x:Key="CommandPalette.Results">搜索结果</sys:String>
+    <sys:String x:Key="CommandPalette.Empty">没有匹配结果，请试试实例名称、模组文件名或设置关键词。</sys:String>
+    <sys:String x:Key="CommandPalette.Keys">↑ ↓ 选择 · Enter 打开 · Esc 关闭 · 最多显示 60 项</sys:String>
+    <sys:String x:Key="CommandPalette.Loading">正在读取本地实例与模组，已有结果可以直接打开…</sys:String>
+    <sys:String x:Key="CommandPalette.NoInstance">尚未选择实例；选择后可搜索已安装模组。↑ ↓ 选择 · Enter 打开 · Esc 关闭</sys:String>
+    <sys:String x:Key="CommandPalette.ScanFailed">部分本地内容无法读取，请检查目录权限或重新打开搜索；已有结果仍可使用。</sys:String>
+    <sys:String x:Key="CommandPalette.Error">无法打开所选项目，请检查文件是否存在后重试。</sys:String>
+    <sys:String x:Key="CommandPalette.OpenInstance">打开实例管理</sys:String>
+    <sys:String x:Key="CommandPalette.OpenPage">打开页面</sys:String>
+    <sys:String x:Key="CommandPalette.LocateMod">在文件夹中定位 · {0}</sys:String>
+    <sys:String x:Key="CommandPalette.Instance">实例</sys:String>
+    <sys:String x:Key="CommandPalette.Mod">已安装模组</sys:String>
+    <sys:String x:Key="CommandPalette.Setting">设置</sys:String>
+    <sys:String x:Key="CommandPalette.Action">操作</sys:String>
+    <sys:String x:Key="CommandPalette.Disabled">已禁用</sys:String>
 </ResourceDictionary>

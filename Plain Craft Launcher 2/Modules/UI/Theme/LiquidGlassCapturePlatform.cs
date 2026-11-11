@@ -62,6 +62,7 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log, Func<
         private uint _rotation;
         private int _sourceWidth, _sourceHeight, _stagingWidth, _stagingHeight;
         private long _lastFrame;
+        public Task Completion { get; }
 
         public MonitorCapture(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed,
             Action<string, Exception?> log, Func<int> frameRate)
@@ -73,7 +74,7 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log, Func<
             try
             {
                 Initialize(monitor);
-                _ = Task.Factory.StartNew(CaptureLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                Completion = Task.Factory.StartNew(CaptureLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             }
             catch { ReleaseNative(); throw; }
         }

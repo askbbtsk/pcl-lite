@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace PCL.Core.Test.UI;
 
 [TestClass]
+[DoNotParallelize]
 public sealed class DxgiDesktopCaptureTests
 {
     [TestMethod]
@@ -48,6 +49,8 @@ public sealed class DxgiDesktopCaptureTests
             Assert.IsNull(failure);
             capture.Dispose();
             capture.Dispose();
+            Assert.IsTrue(capture.Completion.Wait(TimeSpan.FromSeconds(2)),
+                "Native ownership must be released before the same process duplicates this output again.");
         }
     }
 

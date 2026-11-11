@@ -13,6 +13,8 @@ internal sealed record TahoeCaptureFrame(byte[] Pixels, TahoeCaptureRegion Regio
 
 internal interface ITahoeMonitorCapture : IDisposable
 {
+    // UI retirement stays nonblocking. Diagnostics/tests can await actual native ownership release.
+    System.Threading.Tasks.Task Completion => System.Threading.Tasks.Task.CompletedTask;
     // Called on the UI thread. Publishing a region must never wait for GPU work.
     void SetRegion(TahoeCaptureRegion region);
 }

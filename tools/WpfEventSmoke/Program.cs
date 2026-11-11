@@ -71,8 +71,53 @@ internal static class Program
                 keyDown.Invoke(main, [main, new System.Windows.Input.KeyEventArgs(
                     System.Windows.Input.Keyboard.PrimaryDevice, source, 0, key)]);
             Console.WriteLine("Partial-window mouse and keyboard input guards passed.");
+            VerifyNavigationGlass(main);
             return 0;
         }
         finally { application.Shutdown(); }
+    }
+
+    private static void VerifyNavigationGlass(FormMain main)
+    {
+        var navigation = new System.Windows.Controls.Grid();
+        var viewport = new System.Windows.Controls.Grid { Width = 0 };
+        navigation.Children.Add(viewport);
+        var toolbar = new TahoeGlassSurface();
+        var host = new System.Windows.Controls.Grid();
+        host.Children.Add(navigation);
+        host.Children.Add(toolbar);
+        var window = new System.Windows.Window
+        {
+            Content = host, Width = 300, Height = 100, ShowInTaskbar = false,
+            Left = -10000, Top = -10000
+        };
+        const BindingFlags fields = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+        typeof(FormMain).GetField("PanTitleMain", fields)!.SetValue(main, navigation);
+        typeof(FormMain).GetField("PanTitleSelectViewport", fields)!.SetValue(main, viewport);
+        typeof(FormMain).GetField("TahoeToolbar", fields)!.SetValue(main, toolbar);
+        MethodInfo update = typeof(LiquidGlassCore).GetMethod("UpdateTitleGlass",
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+        try
+        {
+            window.Show();
+            // Keep the viewport unlaid out: hiding must work before a new layout pass.
+            foreach (var state in new[]
+            {
+                (System.Windows.Visibility.Visible, true, System.Windows.Visibility.Visible),
+                (System.Windows.Visibility.Visible, false, System.Windows.Visibility.Collapsed),
+                (System.Windows.Visibility.Collapsed, false, System.Windows.Visibility.Collapsed),
+                (System.Windows.Visibility.Collapsed, true, System.Windows.Visibility.Collapsed),
+                (System.Windows.Visibility.Visible, true, System.Windows.Visibility.Visible)
+            })
+            {
+                navigation.Visibility = state.Item1;
+                navigation.IsHitTestVisible = state.Item2;
+                update.Invoke(null, [main]);
+                if (toolbar.Visibility != state.Item3)
+                    throw new InvalidDataException("Navigation glass remained visible during child-page transition or failed to return.");
+            }
+            Console.WriteLine("Navigation glass hides during child-page transitions and returns with main navigation.");
+        }
+        finally { window.Close(); }
     }
 }

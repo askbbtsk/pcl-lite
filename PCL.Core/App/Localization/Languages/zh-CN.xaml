@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 hotfix-1：修复全局搜索按钮事件绑定错误导致主窗口加载失败、启动停滞的问题；修复搜索关闭按钮的同类错误，并防止窗口未初始化时点击或按键引发空引用。保留 1.7.6 的全部功能。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 hotfix-2：修复进入实例设置等子页面后，顶部主导航玻璃栏没有消失、与子页标题重叠的问题；返回主页时正确恢复玻璃栏。包含 hotfix-1 的启动与搜索事件绑定修复。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">性能预设</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>

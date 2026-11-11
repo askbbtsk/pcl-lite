@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 hotfix-1: fixes global search event bindings that prevented the main window from loading and left startup stuck. Also fixes the search close button binding and guards mouse and keyboard input before window initialization. Includes all 1.7.6 features.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 hotfix-2: hides the main navigation glass bar when entering instance settings and other child pages, preventing overlap with the child title. Restores the bar when returning to the main pages. Includes the startup and search binding fixes from hotfix-1.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>

@@ -59,6 +59,8 @@ public static partial class LiquidGlassCore
                 window.PanMainLeft.SizeChanged += OnSidebarSizeChanged;
                 window.PanTitleSelectViewport.SizeChanged += OnTitleSizeChanged;
                 window.PanTitle.SizeChanged += OnTitleSizeChanged;
+                window.PanTitleMain.IsVisibleChanged += OnTitleNavigationChanged;
+                window.PanTitleMain.IsHitTestVisibleChanged += OnTitleNavigationChanged;
                 SystemParameters.StaticPropertyChanged += OnSystemSettingsChanged;
             }
 
@@ -298,8 +300,18 @@ public static partial class LiquidGlassCore
         if (IsEnabled && _window is { } window) UpdateTitleGlass(window);
     }
 
+    private static void OnTitleNavigationChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (IsEnabled && _window is { } window) UpdateTitleGlass(window);
+    }
+
     private static void UpdateTitleGlass(FormMain window)
     {
+        // The main navigation fades out before its layout is collapsed. Its independent
+        // glass surface must leave immediately as well, rather than remain over the child title.
+        bool showNavigation = window.PanTitleMain.IsVisible && window.PanTitleMain.IsHitTestVisible;
+        window.TahoeToolbar.Visibility = showNavigation ? Visibility.Visible : Visibility.Collapsed;
+        if (!showNavigation) return;
         var viewport = window.PanTitleSelectViewport;
         if (!viewport.IsLoaded || viewport.ActualWidth <= 0) return;
         Point origin = viewport.TranslatePoint(new Point(), window.PanTitle);
@@ -333,6 +345,8 @@ public static partial class LiquidGlassCore
             _window.PanMainLeft.SizeChanged -= OnSidebarSizeChanged;
             _window.PanTitleSelectViewport.SizeChanged -= OnTitleSizeChanged;
             _window.PanTitle.SizeChanged -= OnTitleSizeChanged;
+            _window.PanTitleMain.IsVisibleChanged -= OnTitleNavigationChanged;
+            _window.PanTitleMain.IsHitTestVisibleChanged -= OnTitleNavigationChanged;
         }
         OriginalIconThemes.Clear();
         OriginalThemeResources.Clear();

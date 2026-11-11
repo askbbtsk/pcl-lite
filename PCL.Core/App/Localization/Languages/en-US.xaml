@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 stable: Ctrl+K global search; DXGI desktop refraction with frosted material while moving; fixes for circular instance inheritance, transactional same-loader upgrades, empty migration selections and scoped animation colors. Live desktop mode still excludes the launcher from screenshots. See the release notes for details.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 hotfix-1: fixes global search event bindings that prevented the main window from loading and left startup stuck. Also fixes the search close button binding and guards mouse and keyboard input before window initialization. Includes all 1.7.6 features.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>

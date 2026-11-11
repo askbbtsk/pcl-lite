@@ -62,6 +62,18 @@ jobs:
           -p:Configuration="$BUILD_CONFIGURATION" -p:Platform="$BUILD_ARCHITECTURE" \
           -p:DeleteExistingFiles=true -o ./artifact --no-self-contained
 
+      - name: Verify compiled WPF event bindings
+        if: inputs.architecture == 'x64'
+        shell: pwsh
+        env:
+          BUILD_CONFIGURATION: ${{ inputs.configuration }}
+          PCL_WRITE_SECRET: '1'
+          PCL_MS_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          PCL_GITHUB_SHA: ${{ github.sha }}
+        run: |
+          dotnet run --project tools/WpfEventSmoke/WpfEventSmoke.csproj -c $env:BUILD_CONFIGURATION -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Verify compact single-file output
         shell: pwsh
         env:

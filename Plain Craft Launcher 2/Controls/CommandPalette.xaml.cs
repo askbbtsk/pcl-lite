@@ -287,5 +287,5 @@ public partial class CommandPalette : UserControl
         e.Handled = true;
     }
 
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+    private void Close_Click(object sender, MouseButtonEventArgs e) => Close();
 }

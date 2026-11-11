@@ -29,7 +29,7 @@ public partial class FormMain
         Closed += (_, _) => _paletteLoading?.Cancel();
     }
 
-    private void CommandPalette_Click(object sender, EventArgs e) => ToggleCommandPalette();
+    private void CommandPalette_Click(object sender, MouseButtonEventArgs e) => ToggleCommandPalette();
 
     private async void ToggleCommandPalette()
     {

@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 正式版：新增 Ctrl+K 全域搜尋；即時桌面折射改用 DXGI，移動視窗時切換磨砂；修復實例循環繼承、同載入器升級交易、移轉零項選取與主題動畫資源範圍。即時桌面模式仍會排除啟動器截圖，詳見發布說明。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 hotfix-1：修復全域搜尋按鈕事件繫結錯誤導致主視窗載入失敗、啟動停滯的問題；修復搜尋關閉按鈕的同類錯誤，並防止視窗尚未初始化時點擊或按鍵引發空參考。保留 1.7.6 的全部功能。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">效能預設</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>

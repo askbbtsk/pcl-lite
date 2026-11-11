@@ -532,7 +532,7 @@ public partial class FormMain
     // 按键事件
     private void FormMain_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.IsRepeat)
+        if (e.IsRepeat || PanMsg is null || !isWindowLoadFinished)
             return;
         // 调用弹窗：回车选择第一个，Esc 选择最后一个
         if (PanMsg.Children.Count > 0)
@@ -636,10 +636,12 @@ public partial class FormMain
     private void FormMain_MouseDown(object sender, MouseButtonEventArgs e)
     {
         // 鼠标侧键返回上一级
-        if (ModMain.frmMain!.PanMsg.Children.Count > 0 || ModMain.WaitingMyMsgBox.Any())
+        if (e.ChangedButton is not (MouseButton.XButton1 or MouseButton.XButton2))
+            return;
+        // XAML 加载失败或窗口尚未就绪时，不访问未创建的控件和页面。
+        if (!isWindowLoadFinished || PanMsg is null || PanMsg.Children.Count > 0 || ModMain.WaitingMyMsgBox.Any())
             return; // 弹窗中（#5513）
-        if (e.ChangedButton == MouseButton.XButton1 || e.ChangedButton == MouseButton.XButton2)
-            TriggerPageBack();
+        TriggerPageBack();
     }
 
 

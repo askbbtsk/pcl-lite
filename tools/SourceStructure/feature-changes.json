@@ -479,9 +479,13 @@
 }
 , {
   "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
-  "Sha256": "7082CEB367CBD32BA094CED2FE6BF2E47D767B1BA57CB8494370E0B56748C589",
-  "Members": ["PCL.FormMain::MethodDeclaration::IsNavigationFeatureHidden(int id)"],
-  "Reason": "User adds plugin market to existing personalization hide controls. Tab 14 follows the persisted PagePlugins preference and the existing HiddenForceShow override; overflow calculation already consumes this shared visibility predicate."
+  "Sha256": "FB83DA4E50DEA86AD4C46D4B9A3BB66CB1A8C519B17E6D17F7CC9E4F55626D18",
+  "Members": [
+    "PCL.FormMain::MethodDeclaration::IsNavigationFeatureHidden(int id)",
+    "PCL.FormMain::MethodDeclaration::FormMain_MouseDown(object sender, MouseButtonEventArgs e)",
+    "PCL.FormMain::MethodDeclaration::FormMain_KeyDown(object sender, KeyEventArgs e)"
+  ],
+  "Reason": "Keep plugin-market hiding. Guard input until the main window is initialized and ignore ordinary mouse buttons before reading dialog controls, preventing secondary null references after failed XAML loading. Compiled production event and input smoke covers the reported startup failure."
 }
 , {
   "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.ThemesAndHomepage.cs",

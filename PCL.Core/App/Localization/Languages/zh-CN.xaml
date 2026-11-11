@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.5 hotfix-1：精简 LiquidGlass 的 Windows 接口依赖，减小程序体积；修复液态玻璃开启时背景不透明度调低后背景没有变淡的问题，玻璃、文字和徽标保持不变。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.6 正式版：新增 Ctrl+K 全局搜索；实时桌面折射改用 DXGI，移动窗口时切换磨砂；修复实例循环继承、同加载器升级事务、迁移零项选择及主题动画资源作用域。实时桌面模式仍会排除启动器截图，详情见发布说明。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">性能预设</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>

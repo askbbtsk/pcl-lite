@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.IO.Net.Http;
+using PCL.Core.IO.Net.Consent;
 
 namespace PCL.Core.Test.Network;
 
@@ -13,6 +14,7 @@ public class DohConnection
     [TestMethod]
     public async Task TestDohConnection()
     {
+        using var consent = NetworkConsentService.AllowAllForCurrentTest();
         using var client = new HttpClient(new SocketsHttpHandler()
             {
                 ConnectCallback = HostConnectionHandler.Instance.GetConnectionAsync

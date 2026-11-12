@@ -8,6 +8,24 @@
   },
   "licenses": [
     {
+      "name": "BedrockLauncher.Core",
+      "info": "感谢 Round Studio 及其贡献者，为基岩版 GDK 容器解析与解密提供参考和代码来源。",
+      "website": "https://github.com/Round-Studio/BedrockLauncher.Core",
+      "license": "https://github.com/Round-Studio/BedrockLauncher.Core/blob/f262eb7af2e6e11665ef51d9b998c42819ee0bb3/LICENSE"
+    },
+    {
+      "name": "BedrockBoot",
+      "info": "感谢 Round Studio 及其贡献者，为基岩版下载、安装及依赖处理提供参考和代码来源。",
+      "website": "https://github.com/Round-Studio/BedrockBoot",
+      "license": null
+    },
+    {
+      "name": "PCL-Symbio-Edition",
+      "info": "感谢 Hydrogen-Peroxide 及其贡献者，为基岩版功能提供移植参考。",
+      "website": "https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition",
+      "license": null
+    },
+    {
       "name": "JetBrains",
       "info": "无条件感谢 JetBrains，特别感谢 IntelliJ IDEA。",
       "website": "https://www.jetbrains.com/",

@@ -13,7 +13,7 @@ PCL Lite 站在很多人的肩膀上。这份清单列出直接借用了代码�
 ### PCL-Symbio-Edition
 
 - 作者：Hydrogen-Peroxide
-- 许可证：Apache-2.0
+- 许可文件：见对应来源的许可文本。
 - 仓库：<https://github.com/Hydrogen-Peroxide/PCL-Symbio-Edition>
 - 关系：**基岩版（下载 + 安装 + 启动）** 部分移植自此项目。
 
@@ -34,8 +34,19 @@ PCL Lite 站在很多人的肩膀上。这份清单列出直接借用了代码�
   `PCL_BEDROCK_RELEASE_CIK` / `PCL_BEDROCK_PREVIEW_CIK` 注入（见 `docs/BUILD.md`），
   未注入时下载页会明确提示「无法解包」，而不是静默失败。
 
-  依据 Apache-2.0 第 4 条，此移植部分仍受 Apache-2.0 约束；本项目整体许可证不变。
-  Apache-2.0 全文见仓库根目录的 [`LICENSE-APACHE`](../LICENSE-APACHE)。
+  相关来源的版权与许可文本应予保留。
+  Apache-2.0 全文见 [`LICENSE-APACHE`](../LICENSE-APACHE)，供适用的上游代码使用。
+
+### BedrockBoot / BedrockLauncher.Core
+
+- 作者：Round Studio 及相应贡献者。
+- 仓库：<https://github.com/Round-Studio/BedrockLauncher.Core>、
+  <https://github.com/Round-Studio/BedrockBoot>。
+- 感谢上述项目为基岩版下载、安装、容器解析及解密功能提供的参考与代码来源。
+- BedrockLauncher.Core 历史 MIT 版本：
+  [`f262eb7af2e6e11665ef51d9b998c42819ee0bb3`](https://github.com/Round-Studio/BedrockLauncher.Core/tree/f262eb7af2e6e11665ef51d9b998c42819ee0bb3)。
+  `Copyright (c) 2025 Round Studio`；该历史版本的许可全文保留在
+  [`LICENSE-BEDROCKLAUNCHER-MIT`](../LICENSE-BEDROCKLAUNCHER-MIT)。
 
 ## 二、第三方库（NuGet）
 

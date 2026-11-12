@@ -21,6 +21,7 @@ public sealed class ThemeResourceLoader
         ThemeXamlPolicy.ValidateDependencyGraph(package.Files);
         var combined = new ResourceDictionary();
         long decodedPixels = 0;
+        int expandedNodes = 0;
         foreach (string? entry in new[]
         {
             package.Manifest.Entry, dark ? package.Manifest.Dark : package.Manifest.Light,
@@ -28,7 +29,8 @@ public sealed class ThemeResourceLoader
         })
         {
             if (entry is null) continue;
-            var document = Expand(package, ThemeFilePaths.Normalize(entry), new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+            var document = Expand(package, ThemeFilePaths.Normalize(entry),
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase), ref expandedNodes);
             // External images are decoded into a frozen memory object, not held as
             // a file URI; updating/deleting installed themes does not lock the files.
             var assets = new Dictionary<string, ImageSource>();
@@ -89,10 +91,13 @@ public sealed class ThemeResourceLoader
         return combined;
     }
 
-    private static XDocument Expand(ThemePackage package, string path, HashSet<string> stack)
+    private static XDocument Expand(ThemePackage package, string path, HashSet<string> stack, ref int expandedNodes)
     {
         if (!stack.Add(path)) throw new ThemePackageException("Cyclic resource dictionary.", path);
         var document = ThemeXamlPolicy.ReadDocument(package.Files[path], path);
+        expandedNodes += document.Descendants().Count();
+        if (expandedNodes > 48000)
+            throw new ThemePackageException("Expanded theme dictionaries exceed 48000 nodes.", path);
         foreach (var attribute in document.Descendants().Attributes()
                      .Where(attribute => !attribute.IsNamespaceDeclaration
                          && attribute.Name.LocalName is "Source" or "ImageSource"
@@ -119,7 +124,7 @@ public sealed class ThemeResourceLoader
                      .Where(element => element.Attribute("Source") is not null).ToArray())
         {
             string dependency = ThemeFilePaths.Dependency(path, source.Attribute("Source")!.Value);
-            source.ReplaceWith(new XElement(Expand(package, dependency, stack).Root!));
+            source.ReplaceWith(new XElement(Expand(package, dependency, stack, ref expandedNodes).Root!));
         }
         stack.Remove(path);
         return document;

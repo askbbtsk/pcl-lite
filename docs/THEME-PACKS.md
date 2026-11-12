@@ -86,7 +86,7 @@
 - 动画：Double/Color/Thickness/PointAnimation，单次、有限时长，每段最多 30 秒；Storyboard 仅驱动视觉变换/颜色/透明度。Loaded 可触发视觉动画，禁止事件处理程序。
 - 图片用 `Image Source="Images/file.png"` 或 `ImageBrush ImageSource="Images/file.png"`；从快照解码并冻结，不持有主题图片文件句柄。字体使用 `FontFamily="Fonts/file.ttf#Family Name"`，复制到内容寻址的临时字体目录供 WPF 使用，不安装到系统字体库。
 - 不支持任意 XAML：Code、Class、FactoryMethod、Static、ObjectDataProvider、外部程序集、网页/媒体/窗口及远程资源均拒绝。在 WPF 实例化前按正向类型/成员清单检查，不能把 XAML 当作插件脚本使用。
-- 上限：每文件 8 MiB、清单 64 KiB、依赖总计 128 MiB、256 文件、单字典 16000 节点/64 层、整包 24000 节点、字典依赖 32 层；图片单边最多 8192 像素，总解码预算 32M 像素。
+- 上限：每文件 8 MiB、清单 64 KiB、依赖总计 128 MiB、256 文件、单字典 16000 节点/64 层、整包 24000 节点、展开后 48000 节点、字典依赖 32 层；图片单边最多 8192 像素，总解码预算 32M 像素。重复合并字典同样计入展开预算，避免小文件形成指数展开。
 
 完整允许项以 `ThemeXamlPolicy` 中公开维护的正向契约为准。失败提示包含文件、行列及原因。资源、控件模板和模式变体先验证后预览；这不能保证恶意或极端视觉布局在所有显卡上都不会造成性能问题。
 

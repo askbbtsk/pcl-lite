@@ -141,6 +141,26 @@ public sealed class ThemePackageTests
     }
 
     [TestMethod]
+    public async Task RepeatedMergedReferencesCannotExpandExponentially()
+    {
+        string source = Source("""
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Level1.xaml" /><ResourceDictionary Source="Level1.xaml" />
+                <ResourceDictionary Source="Level1.xaml" /><ResourceDictionary Source="Level1.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            """);
+        for (int index = 1; index <= 8; index++)
+        {
+            string content = index == 8 ? "<SolidColorBrush x:Key=\"Leaf\">Red</SolidColorBrush>"
+                : "<ResourceDictionary.MergedDictionaries>" + string.Concat(Enumerable.Repeat(
+                    $"<ResourceDictionary Source=\"Level{index + 1}.xaml\" />", 4)) + "</ResourceDictionary.MergedDictionaries>";
+            File.WriteAllText(Path.Combine(source, $"Level{index}.xaml"), Header + content + "</ResourceDictionary>");
+        }
+        var package = await _service.InspectAsync(source);
+        OnSta(() => Assert.Throws<ThemePackageException>(() => new ThemeResourceLoader().Load(package, false, false)));
+    }
+
+    [TestMethod]
     public void RejectsExecutableTypesEventsRemoteResourcesAndBindingEscapes()
     {
         foreach (string fragment in new[]

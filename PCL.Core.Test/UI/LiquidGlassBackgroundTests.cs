@@ -25,6 +25,59 @@ public sealed class LiquidGlassBackgroundTests
         return XDocument.Load(source);
     }
 
+    [STATestMethod]
+    public void LegacySquareShadowDoesNotShowThroughGlassCornersAndReturnsWhenDisabled()
+    {
+        var source = WindowSource();
+        var node = source.Descendants().SingleOrDefault(element => (string?)element.Attribute(Xaml + "Name") == "PanWindowShadow");
+        Assert.IsNotNull(node, "The eight legacy shadow pieces must have one glass-aware visibility owner.");
+        var copy = new XElement(node);
+        copy.SetAttributeValue(XNamespace.Xmlns + "x", Xaml.NamespaceName);
+        foreach (var trigger in copy.Descendants(Presentation + "DataTrigger"))
+            trigger.SetAttributeValue("Binding", "{Binding IsEnabled}");
+        var shadow = (Grid)XamlReader.Parse(copy.ToString());
+        Assert.AreEqual(8, shadow.Children.Count, "Preserve all normal-mode shadow pieces.");
+        var appearance = new LiquidGlassTextRestoreTests.Appearance();
+        shadow.DataContext = appearance;
+        var host = new Grid { Width = 240, Height = 160 };
+        host.Children.Add(shadow);
+        var window = new Window { Width = 240, Height = 160, Content = host,
+            WindowStyle = WindowStyle.None, ShowInTaskbar = false, ShowActivated = false,
+            Left = -10000, Top = -10000 };
+        byte[] Render()
+        {
+            window.UpdateLayout();
+            var bitmap = new RenderTargetBitmap(240, 160, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(host);
+            var pixels = new byte[240 * 160 * 4];
+            bitmap.CopyPixels(pixels, 240 * 4, 0);
+            return pixels;
+        }
+        try
+        {
+            window.Show();
+            var normal = Render();
+            Assert.IsTrue(normal.Where((_, index) => index % 4 == 3).Any(alpha => alpha > 0));
+            foreach (bool enabled in new[] { true, false, true, false })
+            {
+                appearance.IsEnabled = enabled;
+                var actual = Render();
+                if (enabled)
+                {
+                    Assert.AreEqual(Visibility.Collapsed, shadow.Visibility);
+                    Assert.IsTrue(actual.Where((_, index) => index % 4 == 3).All(alpha => alpha == 0),
+                        "Old rectangular shadow must not paint behind any of the four glass corners.");
+                }
+                else
+                {
+                    Assert.AreEqual(Visibility.Visible, shadow.Visibility);
+                    CollectionAssert.AreEqual(normal, actual, "Normal-mode shadow must restore exactly.");
+                }
+            }
+        }
+        finally { window.Close(); }
+    }
+
     [TestMethod]
     public void ShippedWindowHasOnlyOneThemeBackgroundOwner()
     {

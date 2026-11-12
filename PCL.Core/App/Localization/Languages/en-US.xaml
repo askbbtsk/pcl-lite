@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-1: fixes rectangular fringes outside all four rounded corners during live desktop refraction. The sampling window now follows the actual viewport corner radius and DPI, updating when glass is enabled or the window is resized. Retains screenshots, recording and all 1.7.7 features.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-2: removes the square shadow seams still visible outside glass corners after hotfix-1. Glass mode hides the legacy small-corner shadow and restores it unchanged when disabled. Retains the sampler corner fix, screenshots and recording.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>

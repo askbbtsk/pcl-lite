@@ -56,7 +56,7 @@ internal static class Program
         Console.WriteLine($"Compiled WPF event bindings: {checkedBindings} passed, {failures.Count} failed.");
         if (failures.Count != 0) return 1;
 
-        var application = new System.Windows.Application();
+        var application = new System.Windows.Application { ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown };
         try
         {
             // A failed/partial main-window load must tolerate ordinary input.
@@ -72,9 +72,62 @@ internal static class Program
                     System.Windows.Input.Keyboard.PrimaryDevice, source, 0, key)]);
             Console.WriteLine("Partial-window mouse and keyboard input guards passed.");
             VerifyNavigationGlass(main);
+            VerifyLegacyShadow();
             return 0;
         }
+        catch (Exception error)
+        {
+            Console.Error.WriteLine("::error::Compiled WPF smoke failed: " + error);
+            return 1;
+        }
         finally { application.Shutdown(); }
+    }
+
+    private static void VerifyLegacyShadow()
+    {
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var document = XDocument.Load("Plain Craft Launcher 2/FormMain.xaml");
+        var node = new XElement(document.Descendants().Single(element => (string?)element.Attribute(xaml + "Name") == "PanWindowShadow"));
+        node.SetAttributeValue(XNamespace.Xmlns + "x", xaml.NamespaceName);
+        node.SetAttributeValue(XNamespace.Xmlns + "local", "clr-namespace:PCL;assembly=" + typeof(FormMain).Assembly.GetName().Name);
+        // Keep the actual x:Static binding to TahoeThemeManager.Appearance intact.
+        var shadow = (System.Windows.Controls.Grid)System.Windows.Markup.XamlReader.Parse(node.ToString());
+        var host = new System.Windows.Controls.Grid { Width = 240, Height = 160 };
+        host.Children.Add(shadow);
+        var window = new System.Windows.Window { Content = host, Width = 240, Height = 160,
+            WindowStyle = System.Windows.WindowStyle.None, ShowInTaskbar = false,
+            ShowActivated = false, Left = -10000, Top = -10000 };
+        var appearance = TahoeThemeManager.Appearance;
+        bool original = appearance.IsEnabled;
+        byte[] Render()
+        {
+            window.UpdateLayout();
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(240, 160, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            bitmap.Render(host);
+            var pixels = new byte[240 * 160 * 4]; bitmap.CopyPixels(pixels, 240 * 4, 0);
+            return pixels;
+        }
+        try
+        {
+            appearance.IsEnabled = false;
+            window.Show();
+            var normal = Render();
+            if (!normal.Where((_, index) => index % 4 == 3).Any(alpha => alpha > 0))
+                throw new InvalidDataException("Missing normal window shadow.");
+            for (int iteration = 0; iteration < 3; iteration++)
+            {
+                appearance.IsEnabled = true;
+                var glass = Render();
+                if (shadow.Visibility != System.Windows.Visibility.Collapsed
+                    || glass.Where((_, index) => index % 4 == 3).Any(alpha => alpha != 0))
+                    throw new InvalidDataException("The actual glass state binding left the legacy square shadow visible.");
+                appearance.IsEnabled = false;
+                if (!normal.AsSpan().SequenceEqual(Render()))
+                    throw new InvalidDataException("The normal window shadow failed to restore exactly.");
+            }
+            Console.WriteLine("Actual glass appearance binding: legacy corner shadow absent; normal shadow restored pixel-for-pixel across three toggles.");
+        }
+        finally { appearance.IsEnabled = original; window.Close(); }
     }
 
     private static void VerifyNavigationGlass(FormMain main)

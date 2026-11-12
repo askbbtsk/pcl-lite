@@ -32,6 +32,20 @@
                 <TranslateTransform x:Name="TransformPos" X="0" Y="60" />
             </TransformGroup>
         </Grid.RenderTransform>
+        <!-- These eight shadow pieces were drawn for the normal 6-DIP corner.
+             Glass uses a 22-DIP clip and its own material rim; the old straight
+             strips would otherwise protrude through all four transparent corners. -->
+        <Grid x:Name="PanWindowShadow" IsHitTestVisible="False">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsEnabled, Source={x:Static local:TahoeThemeManager.Appearance}}" Value="True">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
         <Rectangle Stroke="{x:Null}" StrokeThickness="0.0001" IsHitTestVisible="False" Height="10" VerticalAlignment="Top" Margin="16,0">
             <Rectangle.Fill>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -100,6 +114,7 @@
                 </RadialGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
+        </Grid>
         <Border x:Name="PanBack" Margin="10">
             <Border.Clip>
                 <RectangleGeometry x:Name="RectForm" RadiusX="6" RadiusY="6" />

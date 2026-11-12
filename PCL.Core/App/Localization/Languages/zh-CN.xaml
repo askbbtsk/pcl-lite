@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-1：修复实时桌面折射时窗口四个圆角外侧露出矩形毛边的问题。采样辅助窗口跟随实际圆角和 DPI 裁剪，开启玻璃或改变窗口大小时同步更新。保留截图、录屏及 1.7.7 全部功能。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-2：修复 hotfix-1 后圆角外侧仍残留的直角阴影接缝。玻璃模式停用原版小圆角的手工阴影，关闭玻璃后原样恢复；保留采样窗口圆角修复、截图和录屏功能。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">性能预设</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>

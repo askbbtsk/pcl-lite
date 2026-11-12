@@ -17,7 +17,7 @@
 [下载](https://github.com/askbbtsk/pcl-lite/releases) |
 [文档](docs/) |
 [许可证](#-许可证) |
-[提交问题](https://github.com/askbbtsk/pcl-lite/issues/new)
+[提交问题](https://github.com/askbbtsk/pcl-lite/issues/new/choose) | [Issue 指南](docs/ISSUES.md)
 
 </div>
 

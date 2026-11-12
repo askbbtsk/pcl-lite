@@ -17,7 +17,7 @@ Preface: PCL and its guard squad keep saying we "touched the cake", and hand out
 [Download](https://github.com/askbbtsk/pcl-lite/releases) |
 [Documentation](docs/) |
 [License](#-license) |
-[Submit issues](https://github.com/askbbtsk/pcl-lite/issues/new)
+[Submit issues](https://github.com/askbbtsk/pcl-lite/issues/new/choose) | [Issue guide](docs/ISSUES.md)
 
 </div>
 

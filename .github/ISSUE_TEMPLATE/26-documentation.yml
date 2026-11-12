@@ -1,0 +1,19 @@
+name: "文档与翻译问题 / Documentation and translation"
+description: "README、使用文档、插件 SDK 文档或界面翻译错误"
+title: "[Docs] "
+labels: [documentation, needs-triage]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: "问题位置 / Location"
+      placeholder: "文档链接及小节，或启动器版本、语言及页面名称"
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: "原文、问题与建议 / Problem and suggested correction"
+      description: "说明不准确、遗漏或难理解的地方；不知道正确写法也可以反馈。"
+    validations:
+      required: true

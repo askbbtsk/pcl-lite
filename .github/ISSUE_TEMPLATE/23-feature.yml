@@ -1,0 +1,24 @@
+name: "功能建议 / Feature request"
+description: "提出新功能或现有功能的扩展；提交不代表已承诺实现"
+title: "[Feature] "
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: "想解决的问题 / Problem to solve"
+      description: "请描述实际使用场景，以及目前如何处理。"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "建议的行为 / Proposed behavior"
+      description: "希望在哪里操作、输入什么、得到什么结果？可附示意图。"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "替代方案与参考 / Alternatives and references"
+      description: "可选。引用其他项目时请提供链接，避免只写“做成和某软件一样”。"

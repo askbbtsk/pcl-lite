@@ -1,0 +1,23 @@
+name: "使用提问 / Question"
+description: "不知道怎么操作、配置或安装，尚不确定是不是 Bug"
+title: "[Question] "
+labels: [question, needs-triage]
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: "PCL Lite 版本与系统 / Version and OS"
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: "你的问题 / Question"
+      description: "想完成什么？目前卡在哪一步？"
+    validations:
+      required: true
+  - type: textarea
+    id: attempted
+    attributes:
+      label: "已尝试的方法与附件 / Attempts and attachments"
+      description: "可附截图、报错或文档链接，上传前移除敏感信息。"

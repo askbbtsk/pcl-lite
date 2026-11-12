@@ -1,48 +1,46 @@
-name: "Minecraft 崩溃 / Minecraft Crash"
-description: "PCL Lite 提示 “Minecraft 出现错误”，或游戏崩溃 / PCL Lite shows 'Minecraft encountered an error', or Minecraft crashes"
-title: "[C#]: "
-type: "崩溃"
+name: "游戏崩溃或无法启动 / Game crash"
+description: "Java、基岩版或 Lunar 游戏启动失败、异常退出"
+title: "[Crash] "
+labels: [bug, crash, needs-triage]
 body:
-  - type: checkboxes
-    id: "yml-1"
+  - type: input
+    id: launcher
     attributes:
-      label: "检查项 / Checklist"
-      description: "请逐个检查下列项目，并勾选确认 / Please review each item below and check the boxes to confirm."
+      label: "PCL Lite 版本与系统 / Launcher version and OS"
+      placeholder: "完整版本、x64 / ARM64、Windows 版本"
+    validations:
+      required: true
+  - type: dropdown
+    id: edition
+    attributes:
+      label: "游戏类型 / Game type"
       options:
-        - label: "**我已尝试使用 [HMCL](https://hmcl.huangyuhui.net/download) 启动，HMCL 没有出现问题**（如果 HMCL 也无法启动就一般不是 PCL Lite 导致的问题，请 **不要** 提交反馈） / **I have tried launching with [HMCL](https://hmcl.huangyuhui.net/download), and HMCL works without issues**. If HMCL also fails to launch, the problem is usually not caused by PCL Lite, so please **do not** submit feedback."
-          required: true
-        - label: "我已在 [Issues 页面](https://github.com/PCL-Community/PCL-CE/issues?q=is%3Aissue+) 中搜索，确认了这一 Bug 未被提交过 / I have searched the [Issues page](https://github.com/PCL-Community/PCL-CE/issues?q=is%3Aissue+) and confirmed that this bug has not been reported yet."
-          required: true
-        - label: "我确认只是全部选中而没有[仔细确认](https://github.com/PCL-Community/PCL-CE/issues?q=is%3Aissue+)就直接提交了这个 Issue，并且同意这个 Issue 可以直接被关闭 / I confirm that I checked all boxes without carefully reading them, and agree that this issue may be closed directly."
-          required: false
-        - label: "我确认正在使用当前更新分支的最新版 PCL Lite，若不是，此 Issue 可能会被直接关闭（更新方式：启动器 `设置-关于-软件更新` 检查更新，或在 [Releases](https://github.com/PCL-Community/PCL-CE/releases) 页面下载） / I confirm that I am using the latest PCL Lite version on the current update channel. If not, this issue may be closed directly. To update, check for updates in `Settings → About → Updates`, or download the latest version from the [Releases page](https://github.com/PCL-Community/PCL-CE/releases)."
-          required: true
-        - label: "我确认会详细描述我所遇到的问题，并附上日志和截图，而不是随便填点东西敷衍了事。/ I will describe the problem in detail, attach logs and screenshots, and avoid submitting vague or incomplete information."
-          required: true
-  - type: textarea
-    id: "yml-2"
-    attributes:
-      label: "描述 / Description"
-      description: "详细描述具体表现 / Describe the specific behavior in detail."
+        - Java 版
+        - 基岩版
+        - Lunar
     validations:
       required: true
   - type: textarea
-    id: "yml-3"
+    id: instance
     attributes:
-      label: "PCL Lite 错误报告、日志与附件 / PCL Lite Error Report, Logs & Attachments"
-      description: "上传 PCL Lite 提供的错误报告 (在崩溃时选择导出错误报告)。如果没有，请在游戏崩溃后不要关掉启动器，使用 `设置-查看日志-导出日志` 得到日志压缩包并上传 / Upload the error report provided by PCL Lite by choosing to export the error report when the crash occurs. If it is unavailable, do not close the launcher after Minecraft crashes; use `Settings → Logs → Export log` and upload the exported log archive."
-      placeholder: |
-        先点击这个文本框，然后再将文件直接拖拽到文本框中以上传。
-        如果缺少相关错误报告或日志用于分析问题，此 Issue 可能会被直接关闭。
-        Click this text box first, then drag and drop files here to upload.
-        If the required error report or logs are missing, this issue may be closed directly.
+      label: "实例环境 / Instance environment"
+      placeholder: "游戏版本、加载器及版本、Java（如适用）、模组或整合包信息"
     validations:
       required: true
   - type: textarea
-    id: "yml-4"
+    id: failure
     attributes:
-      label: "HMCL 启动脚本 / HMCL Launch Script"
-      description: "在 HMCL 中进入实例列表，点击版本右侧的三个点，选择“生成启动脚本” / In HMCL, open the instance list, click the three dots next to the version, and select `Generate Launch Script`."
-      placeholder: "先点击这个文本框，然后再将文件直接拖拽到文本框中以上传 / Click this text box first, then drag and drop the file here to upload."
+      label: "问题表现与触发步骤 / Failure and steps"
+      description: "启动前、进入游戏中还是退出时发生？最近是否更新过游戏、加载器或模组？"
     validations:
-      required: false
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: "启动器与游戏日志 / Launcher and game logs"
+      description: "可上传导出的全部日志、latest.log、崩溃报告。无法取得时说明原因；不要上传账号令牌。"
+  - type: textarea
+    id: comparison
+    attributes:
+      label: "已尝试的排查 / Checks already tried"
+      description: "可选。无需先安装其他启动器，也不要为了排查删除原实例或存档。"

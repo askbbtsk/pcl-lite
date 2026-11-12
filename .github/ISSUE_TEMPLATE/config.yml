@@ -1,14 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: "不再受理新功能请求 / Feature Requests Are No Longer Accepted"
-    url: "https://github.com/PCL-Community/PCL-CE/issues/new/choose"
-    about: "随着 2.15.x 发布，PCL Lite 即将进入维护阶段，不再新增大型功能，后续更新集中在优化与 Bug 修复。/ With 2.15.x, PCL Lite is entering maintenance and will no longer add large features; updates will focus on improvements and bug fixes."
-  - name: "主页预设反馈 / Homepage Preset Feedback"
-    url: https://github.com/Meloong-Git/PCL/discussions/categories/自定义主页
-    about: "提交与预设的主页（设置 → 个性化 → 主页预设）中的具体内容相关的反馈 / Submit feedback about specific content in homepage presets (Settings → Personalization → Homepage Presets)."
-  - name: "帮助文档反馈 / Help Documentation Feedback"
-    url: https://github.com/PCL-Community/docs.pclc.cc/issues
-    about: "提交与 PCL Lite 帮助文档（独立文档站）中的具体内容相关的反馈 / Submit feedback about specific content in the PCL Lite help documentation on the standalone documentation site."
-  - name: "提问 / 讨论 / Questions / Discussions"
-    url: https://github.com/PCL-Community/PCL-CE/discussions/new
-    about: "想问问或谈谈关于社区版的事情 / Ask questions or discuss topics about the Community Edition."
+  - name: "Issue 提交与分类指南 / Issue guide"
+    url: "https://github.com/askbbtsk/pcl-lite/blob/main/docs/ISSUES.md"
+    about: "模板怎么选、日志怎么提供、维护者如何按标签分类查看。"
+  - name: "搜索已有问题 / Search existing issues"
+    url: "https://github.com/askbbtsk/pcl-lite/issues?q=is%3Aissue"
+    about: "提交前先搜索，同一问题请补充到原 Issue，避免重复。"
+  - name: "下载正式版 / Releases"
+    url: "https://github.com/askbbtsk/pcl-lite/releases"
+    about: "查看发布说明与版本下载；反馈请写明完整版本和架构。"

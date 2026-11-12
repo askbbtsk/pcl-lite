@@ -21,6 +21,7 @@ public partial class PageSetupUI
     public PageSetupUI()
     {
         InitializeComponent();
+        Loaded += InitializeThemePackages;
         CheckHiddenPageSetup.Change += HiddenSetupMain;
         foreach (var check in new[] { CheckHiddenSetupLaunch, CheckHiddenSetupUI,
                      CheckHiddenSetupLauncherLanguage, CheckHiddenSetupGameManage, CheckHiddenLauncherMisc,

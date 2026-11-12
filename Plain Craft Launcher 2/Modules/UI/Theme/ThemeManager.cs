@@ -38,6 +38,7 @@ public static class ThemeManager
             RefreshBackground();
             RefreshAllContextMenuThemes();
             TahoeThemeManager.Refresh();
+            CustomThemeRuntime.Current?.Refresh();
         });
     }
 

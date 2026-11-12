@@ -1,0 +1,10 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="ColorBrush1">#FFF0F4FB</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray1">#FFD0D8E7</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray2">#FFADBBD0</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushBackground">#FF202735</SolidColorBrush>
+    <SolidColorBrush x:Key="Pcl.Theme.Surface">#FF283346</SolidColorBrush>
+    <SolidColorBrush x:Key="Pcl.Theme.Surface.Hover">#FF364B68</SolidColorBrush>
+    <SolidColorBrush x:Key="Pcl.Theme.Border">#806A85AA</SolidColorBrush>
+</ResourceDictionary>

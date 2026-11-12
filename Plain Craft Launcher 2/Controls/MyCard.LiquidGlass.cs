@@ -35,7 +35,7 @@ public partial class MyCard
 
     private void ApplyTahoeCard()
     {
-        if (TahoeThemeManager.IsEnabled)
+        if (TahoeThemeManager.IsEnabled && !ThemeControlRegistry.HasTemplate(this))
         {
             if (!_tahoeCardApplied)
             {

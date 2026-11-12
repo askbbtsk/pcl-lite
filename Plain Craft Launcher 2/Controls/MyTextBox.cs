@@ -79,8 +79,7 @@ public partial class MyTextBox : TextBox
         get
         {
             if (Template is null) return null;
-            if (field is null) field = (TextBlock)Template.FindName("labWrong", this);
-            return field;
+            return Template.FindName("labWrong", this) as TextBlock;
         }
     }
 
@@ -89,8 +88,7 @@ public partial class MyTextBox : TextBox
         get
         {
             if (Template is null) return null;
-            if (field is null) field = (TextBlock)Template.FindName("labHint", this);
-            return field;
+            return Template.FindName("labHint", this) as TextBlock;
         }
     }
 
@@ -132,7 +130,7 @@ public partial class MyTextBox : TextBox
     public override void OnApplyTemplate()
     {
         base.OnApplyTemplate();
-        if (string.IsNullOrEmpty(HintText) || !string.IsNullOrEmpty(labHint.Text))
+        if (string.IsNullOrEmpty(HintText) || labHint is null || !string.IsNullOrEmpty(labHint.Text))
             return;
         UpdateHintText();
     }

@@ -39,7 +39,7 @@ public partial class MyTextBox
     {
         // Editable combo boxes own the surrounding field surface.
         if (TemplatedParent is MyComboBox) return false;
-        if (!TahoeThemeManager.IsEnabled)
+        if (!TahoeThemeManager.IsEnabled || ThemeControlRegistry.HasTemplate(this))
         {
             if (_tahoeTextBoxApplied)
             {

@@ -35,7 +35,7 @@ public partial class MyListItem
                 rect.SetResourceReference(Border.BorderBrushProperty, "ColorBrush6");
                 SetColumnSpan(rect, 999);
                 SetRowSpan(rect, 999);
-                Children.Insert(0, rect);
+                (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Insert(0, rect);
                 _RectBack = rect;
                 // <!--<Border x:Name = "RectBack" CornerRadius="3" RenderTransformOrigin="0.5,0.5" SnapsToDevicePixels="True" 
                 // IsHitTestVisible = "False" Opacity="0" BorderThickness="1" 
@@ -66,7 +66,7 @@ public partial class MyListItem
             };
             SetColumn(newStack, 3);
             SetRow(newStack, 2);
-            PanBack.Children.Add(newStack);
+            (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Add(newStack);
             field = newStack;
             return field;
         }
@@ -132,7 +132,7 @@ public partial class MyListItem
                 };
                 SetColumn(lab, 4);
                 SetRow(lab, 2);
-                PanBack.Children.Add(lab);
+                (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Add(lab);
                 field = lab;
                 // <TextBlock Grid.Row="2" SnapsToDevicePixels="False" UseLayoutRounding="False" HorizontalAlignment="Left" x:Name = "LabInfo" IsHitTestVisible="False" Grid.Column="2" 
                 // TextTrimming = "CharacterEllipsis" Visibility="Collapsed" FontSize="12" Foreground="{StaticResource ColorBrushGray2}" Margin="4,0,0,0" />
@@ -162,7 +162,7 @@ public partial class MyListItem
             // 没有特殊按钮，移除原 Stack
             if (buttonStack is not null)
             {
-                Children.Remove(buttonStack);
+                (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Remove(buttonStack);
                 buttonStack = null;
             }
 
@@ -191,7 +191,7 @@ public partial class MyListItem
                         Btn.UseLayoutRounding = false;
                         SetColumnSpan(Btn, 10);
                         SetRowSpan(Btn, 10);
-                        Children.Add(Btn);
+                        (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Add(Btn);
                         buttonStack = Btn;
                     }
 
@@ -219,7 +219,7 @@ public partial class MyListItem
                         ((StackPanel)buttonStack).Children.Add(Btn);
                     }
 
-                    Children.Add(buttonStack);
+                    (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Add(buttonStack);
                     break;
                 }
             }
@@ -315,7 +315,7 @@ public partial class MyListItem
     {
         // 删除旧 Logo
         if (pathLogo is not null)
-            Children.Remove(pathLogo);
+            (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Remove(pathLogo);
         pathLogo = null;
         _canvasClipHandlerAdded = false; // 旧 Canvas 上的 SizeChanged 钩子随旧控件一起丢了
 
@@ -402,7 +402,7 @@ public partial class MyListItem
             SetColumn(pathLogo, 2);
             SetRowSpan(pathLogo, 4);
             OnSizeChanged(); // 设置边距
-            Children.Add(pathLogo);
+            (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Add(pathLogo);
             ApplyLogoCornerRadius(); // 圆角可能在 Logo 之前就设好了，这里补一次
             // 图标的点击事件
             if (LogoClickable)
@@ -453,7 +453,7 @@ public partial class MyListItem
                 // 移除竖条控件
                 if (rectCheck is not null)
                 {
-                    Children.Remove(rectCheck);
+                    (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Remove(rectCheck);
                     rectCheck = null;
                 }
 
@@ -475,7 +475,7 @@ public partial class MyListItem
                 };
                 rectCheck.SetResourceReference(Border.BackgroundProperty, "ColorBrush3");
                 SetRowSpan(rectCheck, 4);
-                Children.Add(rectCheck);
+                (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Add(rectCheck);
             }
         }
     }

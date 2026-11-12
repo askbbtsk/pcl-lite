@@ -21,7 +21,7 @@ public partial class MyRadioButton
 
     private void ApplyTahoeChrome()
     {
-        if (TahoeThemeManager.IsEnabled)
+        if (TahoeThemeManager.IsEnabled && !ThemeControlRegistry.HasTemplate(this))
         {
             if (!_tahoeChromeApplied)
             {

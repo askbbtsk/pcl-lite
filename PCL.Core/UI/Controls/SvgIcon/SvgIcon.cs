@@ -141,6 +141,19 @@ public class SvgIcon : FrameworkElement
     {
         base.OnRender(drawingContext);
 
+        if (!SystemParameters.HighContrast && TryFindResource("Pcl.Theme.Icon." + Icon) is Geometry replacement
+            && !replacement.Bounds.IsEmpty && replacement.Bounds.Width > 0 && replacement.Bounds.Height > 0)
+        {
+            Rect bounds = replacement.Bounds;
+            var targetRect = _CalculateTargetRect(bounds.Size, RenderSize, Stretch);
+            drawingContext.PushTransform(new TranslateTransform(targetRect.X, targetRect.Y));
+            drawingContext.PushTransform(new ScaleTransform(targetRect.Width / bounds.Width, targetRect.Height / bounds.Height));
+            drawingContext.PushTransform(new TranslateTransform(-bounds.X, -bounds.Y));
+            drawingContext.DrawGeometry(IconBrush, null, replacement);
+            drawingContext.Pop(); drawingContext.Pop(); drawingContext.Pop();
+            return;
+        }
+
         var model = _GetModel();
         if (model is null || model.Elements.Count == 0 || RenderSize.Width <= 0D || RenderSize.Height <= 0D)
             return;

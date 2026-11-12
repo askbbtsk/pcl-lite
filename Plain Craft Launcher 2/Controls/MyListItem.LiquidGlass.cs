@@ -55,7 +55,7 @@ public partial class MyListItem
 
     private bool RefreshTahoeNavigation(bool animate)
     {
-        if (!_isTahoeNavigationItem || !TahoeThemeManager.IsEnabled)
+        if (!_isTahoeNavigationItem || !TahoeThemeManager.IsEnabled || ThemeControlRegistry.HasTemplate(this))
         {
             RestoreNavigationChrome();
             return false;
@@ -78,11 +78,11 @@ public partial class MyListItem
                 UseLayoutRounding = false,
                 SnapsToDevicePixels = false
             };
-            if (!Children.Contains(_tahoeNavigationChrome))
+            if (!(ThemeControlRegistry.ContentGrid(this) ?? this).Children.Contains(_tahoeNavigationChrome))
             {
                 SetColumnSpan(_tahoeNavigationChrome, 999);
                 SetRowSpan(_tahoeNavigationChrome, 999);
-                Children.Insert(0, _tahoeNavigationChrome);
+                (ThemeControlRegistry.ContentGrid(this) ?? this).Children.Insert(0, _tahoeNavigationChrome);
             }
             RectBack.Visibility = Visibility.Collapsed;
             if (rectCheck != null) rectCheck.Visibility = Visibility.Collapsed;

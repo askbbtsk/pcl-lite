@@ -92,6 +92,13 @@ public partial class MyComboBox : ComboBox
 
     public override void OnApplyTemplate()
     {
+        if (textBox is not null)
+        {
+            textBox.RemoveHandler(LostFocusEvent, new RoutedEventHandler(ThemeTextBoxLostFocus));
+            textBox.changedEventList.Remove(ThemeTextBoxChanged);
+            _Text = textBox.Text;
+            textBox = null;
+        }
         base.OnApplyTemplate();
         RefreshTahoeComboChrome();
         if (!IsEditable)
@@ -99,8 +106,8 @@ public partial class MyComboBox : ComboBox
         try
         {
             textBox = (MyTextBox)Template.FindName("PART_EditableTextBox", this);
-            textBox.AddHandler(LostFocusEvent, new RoutedEventHandler((_, _) => RefreshColor()));
-            textBox.changedEventList.Add((sender, e) => TextChanged?.Invoke(sender, (TextChangedEventArgs)e));
+            textBox.AddHandler(LostFocusEvent, new RoutedEventHandler(ThemeTextBoxLostFocus));
+            textBox.changedEventList.Add(ThemeTextBoxChanged);
             textBox.Tag = Tag; // 有时需要用文本框的 Tag 来写入设置
             if (string.IsNullOrEmpty(Text))
                 textBox.Text = _Text;
@@ -119,6 +126,10 @@ public partial class MyComboBox : ComboBox
                 userSummary: Lang.Text("Application.Control.Error.OperationFailed"));
         }
     }
+
+    private void ThemeTextBoxLostFocus(object sender, RoutedEventArgs args) => RefreshColor();
+    private void ThemeTextBoxChanged(object sender, RoutedEventArgs args) =>
+        TextChanged?.Invoke(sender, (TextChangedEventArgs)args);
 
     private void MyComboBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {

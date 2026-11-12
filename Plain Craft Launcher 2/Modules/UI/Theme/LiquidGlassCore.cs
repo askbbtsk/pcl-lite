@@ -26,11 +26,13 @@ public static partial class LiquidGlassCore
 
     public static TahoeAppearance Appearance { get; } = new();
     public static bool IsEnabled => PCL.Core.UI.LiquidGlassPerformance.IsEnabled(
-        Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent);
+        Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent)
+        && CustomThemeRuntime.AllowsGlass;
     public static bool IsDesktopBackdropActive => IsEnabled && _desktopCapture?.IsActive == true;
     public static bool IsDesktopBackdropRequested => PCL.Core.UI.LiquidGlassPerformance.ShouldCaptureDesktop(
         Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent,
-        Config.Preference.TahoeGlass.UseDesktopBackdrop, Config.Preference.TahoeGlass.DesktopCaptureConsent);
+        Config.Preference.TahoeGlass.UseDesktopBackdrop, Config.Preference.TahoeGlass.DesktopCaptureConsent)
+        && CustomThemeRuntime.AllowsGlass;
     public static FrameworkElement? BackdropSource => IsEnabled &&
         (!IsDesktopBackdropRequested || _desktopCapture?.HasFrame == true)
             ? IsDesktopBackdropRequested ? _window?.TahoeDesktopImage : _window?.TahoeBackdrop : null;
@@ -302,6 +304,8 @@ public static partial class LiquidGlassCore
 
     private static void SetResource(FormMain window, string key, object value)
     {
+        if (!SystemParameters.HighContrast && CustomThemeRuntime.Current?.FindOverride(key) is { } themeValue)
+            value = themeValue;
         if (!OriginalThemeResources.ContainsKey(key))
             OriginalThemeResources[key] = window.Resources.Contains(key) ? window.Resources[key] : null;
         window.Resources[key] = value;

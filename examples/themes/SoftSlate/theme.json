@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "pcl.soft-slate",
+  "name": "Soft Slate / 柔和石板",
+  "author": "PCL Lite",
+  "version": "1.0.0",
+  "description": "A complete editable visual-contract example with light, dark and glass variants.",
+  "launcherVersion": ">=1.7.7 <2.0.0",
+  "entry": "Theme.xaml",
+  "light": "Light.xaml",
+  "dark": "Dark.xaml",
+  "supportsGlass": true,
+  "glass": "Glass.xaml"
+}

@@ -24,7 +24,7 @@ public partial class MyComboBox
 
     private bool RefreshTahoeComboChrome()
     {
-        if (!TahoeThemeManager.IsEnabled)
+        if (!TahoeThemeManager.IsEnabled || ThemeControlRegistry.HasTemplate(this))
         {
             if (_tahoeComboApplied && Template?.FindName("border", this) is Border original)
             {

@@ -81,7 +81,7 @@ public partial class MyButton
 
     private void ApplyTahoeButtonTheme()
     {
-        var enabled = TahoeThemeManager.IsEnabled;
+        var enabled = TahoeThemeManager.IsEnabled && !ThemeControlRegistry.HasTemplate(this);
         if (!enabled && !_tahoeApplied) return;
         if (enabled && !_tahoeApplied)
         {

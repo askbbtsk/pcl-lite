@@ -1,0 +1,106 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:local="clr-namespace:PCL;assembly=Plain Craft Launcher 2"
+                    xmlns:theme="clr-namespace:PCL.Core.UI.Theme;assembly=PCL.Core">
+    <FontFamily x:Key="LaunchFontFamily">Segoe UI, Microsoft YaHei UI</FontFamily>
+    <sys:Double x:Key="Pcl.Theme.FontSize">14</sys:Double>
+    <CornerRadius x:Key="Pcl.Theme.Button.CornerRadius">12</CornerRadius>
+    <Thickness x:Key="Pcl.Theme.Button.Padding">8,4</Thickness>
+    <CornerRadius x:Key="Pcl.Theme.Card.CornerRadius">16</CornerRadius>
+    <Thickness x:Key="Pcl.Theme.Card.Padding">0</Thickness>
+    <SolidColorBrush x:Key="Pcl.Theme.Surface">#FFF3F6FC</SolidColorBrush>
+    <SolidColorBrush x:Key="Pcl.Theme.Surface.Hover">#FFE2EBFA</SolidColorBrush>
+    <SolidColorBrush x:Key="Pcl.Theme.Border">#40556884</SolidColorBrush>
+
+    <!-- Host content retains text, icons, actions and input. Custom visuals wrap it. -->
+    <ControlTemplate x:Key="Pcl.Theme.Template.Button" TargetType="{x:Type theme:ThemePresenter}">
+        <Border x:Name="Chrome" CornerRadius="{TemplateBinding CornerRadius}"
+                BorderThickness="1" BorderBrush="{DynamicResource Pcl.Theme.Border}"
+                Background="{DynamicResource Pcl.Theme.Surface}" Padding="{TemplateBinding Padding}">
+            <ContentPresenter Content="{TemplateBinding Content}" />
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource Pcl.Theme.Surface.Hover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Opacity" Value="0.7" /></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Opacity" Value="0.45" /></Trigger>
+            <Trigger Property="IsDanger" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="Red" /></Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Pcl.Theme.Template.Card" TargetType="{x:Type theme:ThemePresenter}">
+        <Border CornerRadius="{TemplateBinding CornerRadius}" Background="{DynamicResource Pcl.Theme.Surface}"
+                BorderBrush="{DynamicResource Pcl.Theme.Border}" BorderThickness="1">
+            <Border.Effect><DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.12" /></Border.Effect>
+            <ContentPresenter Content="{TemplateBinding Content}" />
+        </Border>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Pcl.Theme.Template.Navigation" TargetType="{x:Type theme:ThemePresenter}">
+        <Border x:Name="Chrome" CornerRadius="12" Background="Transparent" Padding="4,2">
+            <ContentPresenter Content="{TemplateBinding Content}" />
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource Pcl.Theme.Surface.Hover}" /></Trigger>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource Pcl.Theme.Surface}" /></Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Pcl.Theme.Template.CheckBox" TargetType="{x:Type theme:ThemePresenter}">
+        <Border CornerRadius="8" Background="{DynamicResource Pcl.Theme.Surface}" Padding="4,5">
+            <ContentPresenter Content="{TemplateBinding Content}" />
+        </Border>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Pcl.Theme.Template.ListItem" TargetType="{x:Type theme:ThemePresenter}">
+        <Border CornerRadius="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Pcl.Theme.Border}">
+            <ContentPresenter Content="{TemplateBinding Content}" />
+        </Border>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Pcl.Theme.Template.Hint" TargetType="{x:Type theme:ThemePresenter}">
+        <Border CornerRadius="10" Padding="6" Background="{DynamicResource Pcl.Theme.Surface}">
+            <ContentPresenter Content="{TemplateBinding Content}" />
+        </Border>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Pcl.Theme.Template.TextBox" TargetType="TextBox">
+        <Grid>
+            <Border CornerRadius="10" BorderThickness="1" BorderBrush="{TemplateBinding BorderBrush}"
+                    Background="{DynamicResource Pcl.Theme.Surface}" Padding="{TemplateBinding Padding}">
+                <ScrollViewer x:Name="PART_ContentHost" />
+            </Border>
+            <TextBlock x:Name="labHint" IsHitTestVisible="False" Margin="12,0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource ColorBrushGray2}" />
+            <TextBlock x:Name="labWrong" IsHitTestVisible="False" Visibility="Collapsed" Height="0"
+                       Foreground="Red" VerticalAlignment="Bottom" />
+        </Grid>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Pcl.Theme.Template.ComboBox" TargetType="ComboBox">
+        <Grid>
+            <Border CornerRadius="10" Background="{DynamicResource Pcl.Theme.Surface}"
+                    BorderThickness="1" BorderBrush="{TemplateBinding Foreground}">
+                <Grid Margin="10,0,28,0">
+                    <ContentPresenter x:Name="PART_Content" Content="{TemplateBinding SelectionBoxItem}"
+                                      VerticalAlignment="Center" IsHitTestVisible="False" />
+                    <local:MyTextBox x:Name="PART_EditableTextBox" Visibility="Collapsed" Background="Transparent"
+                                    BorderThickness="0" VerticalContentAlignment="Center" />
+                </Grid>
+            </Border>
+            <Path Data="M0,0 L5,5 10,0" Stroke="{DynamicResource ColorBrush1}" StrokeThickness="1.5"
+                  Width="10" Height="6" HorizontalAlignment="Right" Margin="0,0,10,0"
+                  VerticalAlignment="Center" IsHitTestVisible="False" />
+            <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
+                   AllowsTransparency="True" Focusable="False">
+                <Grid x:Name="PanPopup" MinWidth="120">
+                    <Border Background="{DynamicResource Pcl.Theme.Surface}" BorderBrush="{DynamicResource Pcl.Theme.Border}"
+                            BorderThickness="1" CornerRadius="10" Padding="4">
+                        <ScrollViewer MaxHeight="300"><ItemsPresenter /></ScrollViewer>
+                    </Border>
+                </Grid>
+            </Popup>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsEditable" Value="True">
+                <Setter TargetName="PART_Content" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+</ResourceDictionary>

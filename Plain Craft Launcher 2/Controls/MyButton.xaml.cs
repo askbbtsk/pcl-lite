@@ -122,6 +122,11 @@ public partial class MyButton
     {
         try
         {
+            if (ThemeControlRegistry.HasTemplate(this))
+            {
+                PanFore.SetResourceReference(BorderBrushProperty, GetBorderBrushResourceKey());
+                return;
+            }
             if (_tahoeApplied)
             {
                 RefreshTahoeButtonAppearance();

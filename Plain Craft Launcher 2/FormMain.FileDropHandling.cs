@@ -154,6 +154,8 @@ public partial class FormMain
     {
         ModBase.RunInNewThread(() =>
         {
+            var dropped = filePathList.ToArray();
+            if (TryInstallDroppedTheme(dropped)) return;
             var filePath = filePathList.First();
             ModBase.Log("[System] 接受文件拖拽：" + filePath + (filePathList.Any() ? $" 等 {filePathList.Count()} 个文件" : ""),
                 ModBase.LogLevel.Developer);

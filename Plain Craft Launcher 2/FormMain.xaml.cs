@@ -126,6 +126,7 @@ public partial class FormMain
 
     private void FormMain_Loaded() // (sender As Object, e As RoutedEventArgs) Handles Me.Loaded
     {
+        _ = CustomThemeRuntime.InitializeAsync(this);
         FormMain_SizeChanged();
         ModBase.applicationStartTick = TimeUtils.GetTimeTick();
         ModBase.frmHandle = new WindowInteropHelper(this).Handle;

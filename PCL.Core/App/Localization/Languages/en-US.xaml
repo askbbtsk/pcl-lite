@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-3: adjustable glass frosting and edge refraction, with live desktop sampling during movement. Fixes personal settings synchronization, Java version checks, instance renaming and inheritance, modpack updates and mod migration. Improves Lunar token refresh, HTTP caching, update fallback and control states. See GitHub release notes for details.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-4: reverts the DWM glass-frame change from hotfix-3 that caused a persistent white border around the window. Restores the original window-frame behavior while retaining adjustable glass frosting, refraction and live sampling during movement. See GitHub release notes.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>

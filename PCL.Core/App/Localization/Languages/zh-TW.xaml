@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-3：新增液態玻璃磨砂度與邊緣折射滑桿，拖曳時持續更新桌面取樣。修復個人設定同步、Java 版本判斷、實例重新命名與繼承合併、整合包更新及模組遷移問題；改善 Lunar 續期、網路快取、更新來源回退與控制項狀態。詳細變更見 GitHub 發布說明。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-4：撤回 hotfix-3 中造成視窗外圈常駐白邊的 DWM 玻璃框架設定，還原原有視窗邊框行為。保留可調玻璃磨砂、折射及拖曳取樣修復。詳見 GitHub 發布說明。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">效能預設</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>

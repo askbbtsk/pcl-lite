@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Shell;
 using PCL.Core.App;
 
 namespace PCL;
@@ -20,7 +19,6 @@ public static partial class LiquidGlassCore
     private static Visibility _windowShadowVisibility;
     private static string? _lastDiagnostics;
     private static Geometry? _originalSidebarClip;
-    private static Thickness _originalGlassFrameThickness;
     private static TahoeDesktopCapture? _desktopCapture;
     private static readonly Dictionary<MyIconButton, MyIconButton.Themes> OriginalIconThemes = new();
     private static readonly Dictionary<string, object?> OriginalThemeResources = new();
@@ -148,18 +146,12 @@ public static partial class LiquidGlassCore
         _radiusX = window.RectForm.RadiusX;
         _radiusY = window.RectForm.RadiusY;
         _originalSidebarClip = window.PanMainLeft.Clip;
-        _originalGlassFrameThickness = WindowChrome.GetWindowChrome(window)?.GlassFrameThickness ?? new Thickness(0);
         OriginalIconThemes.Clear();
         foreach (var icon in TitleIcons(window)) OriginalIconThemes[icon] = icon.Theme;
     }
 
     private static void Apply(FormMain window)
     {
-        // Keep WindowChrome's own state consistent with the transparent DWM frame.
-        // Otherwise its resize updates restore a zero-width frame and expose black
-        // HWND pixels outside PanBack's inset, rounded WPF clip.
-        WindowChrome.GetWindowChrome(window)?.SetCurrentValue(
-            WindowChrome.GlassFrameThicknessProperty, new Thickness(-1));
         bool dark = ThemeManager.IsDarkMode;
         var foreground = new SolidColorBrush(SystemParameters.HighContrast ? SystemColors.WindowTextColor
             : dark ? Color.FromRgb(244, 246, 251) : Color.FromRgb(29, 35, 44));
@@ -254,8 +246,6 @@ public static partial class LiquidGlassCore
 
     private static void Restore(FormMain window)
     {
-        WindowChrome.GetWindowChrome(window)?.SetCurrentValue(
-            WindowChrome.GlassFrameThicknessProperty, _originalGlassFrameThickness);
         _desktopCapture?.Apply(false);
         window.TahoeBackdrop.Visibility = Visibility.Visible;
         window.TahoeWallpaperHost.Visibility = Visibility.Visible;

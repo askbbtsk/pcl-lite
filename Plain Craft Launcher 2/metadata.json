@@ -3,8 +3,8 @@
   "version": {
     "base": "1.7.7",
     "upstream": "2.12.1",
-    "suffix": "hotfix-3",
-    "code": 101
+    "suffix": "hotfix-4",
+    "code": 102
   },
   "licenses": [
     {

@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="docs/assets/icon-256.png" alt="PCL Lite" width="128" height="128" />
+
 # PCL Lite
 
 前言：pcl 和它的護衛隊天天說動了蛋糕，順手扣帽子，我想知道 pcl 這個帽子工廠和烘焙店是有仇嗎 怎麼帽子工廠天天動蛋糕？

@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="docs/assets/icon-256.png" alt="PCL Lite" width="128" height="128" />
+
 # PCL Lite
 
 Preface: PCL and its guard squad keep saying we "touched the cake", and hand out labels while they're at it. I'd like to know — does this hat factory have some grudge against the bakery? How come the hat factory is the one always touching the cake?

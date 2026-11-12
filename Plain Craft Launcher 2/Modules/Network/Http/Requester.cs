@@ -129,6 +129,10 @@ public static class Requester
         finally
         {
             if(!param.RequireContent) response?.Dispose();
+            // Supplied HttpContent belongs to the caller and may be reused by
+            // this method's retry/fallback loop. Dispose only content we created.
+            if (ReferenceEquals(request.Content, param.Content))
+                request.Content = null;
             request.Dispose();
         }
     }
@@ -156,7 +160,8 @@ public static class Requester
     {
         try
         {
-            var result = new Ping().Send(ip);
+            using var ping = new Ping();
+            var result = ping.Send(ip);
             return result.Status == IPStatus.Success ? (int)result.RoundtripTime : -1;
         }
         catch

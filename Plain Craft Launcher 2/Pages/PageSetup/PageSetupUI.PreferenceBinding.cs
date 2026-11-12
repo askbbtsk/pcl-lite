@@ -361,32 +361,7 @@ public partial class PageSetupUI
 
             // 视频加载异常处理
 
-            EventHandler<ExceptionRoutedEventArgs> videoHandler = (sender, e) =>
-            {
-                var videoEx = e.ErrorException;
-                var videoAddress = ModMain.frmMain.VideoBack.Source.ToString();
-                if (ModMain.frmMain.VideoBack.Source is not null)
-                {
-                    ModVideoBack.VideoStop();
-
-                    if (videoEx.Message.Contains("0xC00D109B"))
-                        ModBase.Log(
-                            $"""
-                             刷新背景内容失败，该视频文件可能并非 H.264（AVC）格式。
-                             你可以尝试使用视频转码工具打开视频文件并设定目标格式为 H.264（AVC），然后转码该视频。
-                             文件：{videoAddress}
-                             """,
-                            ModBase.LogLevel.Msgbox,
-                            userSummary: Lang.Text("Setup.Ui.Error.BackgroundVideoUnsupported"));
-                    else
-                        ModBase.Log(
-                            videoEx,
-                            $"刷新背景内容失败（{videoAddress}）",
-                            ModBase.LogLevel.Msgbox,
-                            userSummary: Lang.Text("Setup.Ui.Error.OperationFailed"));
-                }
-            };
-            ModMain.frmMain.VideoBack.MediaFailed -= videoHandler;
+            ModMain.frmMain.VideoBack.MediaFailed -= BackgroundVideoFailed;
             ModVideoBack.GamingStateChanged -= ModVideoBack.OnGamingStateChanged;
             ModVideoBack.ForcePlayChanged -= ModVideoBack.OnForcePlayChanged;
             ModVideoBack.GamingStateChanged += ModVideoBack.OnGamingStateChanged;
@@ -435,7 +410,7 @@ public partial class PageSetupUI
                     {
                         try
                         {
-                            ModMain.frmMain.VideoBack.MediaFailed += videoHandler;
+                            ModMain.frmMain.VideoBack.MediaFailed += BackgroundVideoFailed;
                             ModBase.Log(ex, "[UI] 加载背景图片失败" + address);
                             if (ModBase.modeDebug)
                                 HintService.Hint(Lang.Text("Setup.Ui.Background.ImageLoadFailed", address));

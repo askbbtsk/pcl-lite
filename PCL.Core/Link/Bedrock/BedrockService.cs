@@ -259,7 +259,15 @@ public static class BedrockService
         {
             try
             {
-                if (Process.GetProcessesByName(name).Length > 0) return true;
+                var processes = Process.GetProcessesByName(name);
+                try
+                {
+                    if (processes.Length > 0) return true;
+                }
+                finally
+                {
+                    foreach (var process in processes) process.Dispose();
+                }
             }
             catch (Exception)
             {

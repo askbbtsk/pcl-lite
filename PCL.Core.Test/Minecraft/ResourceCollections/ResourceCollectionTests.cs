@@ -180,6 +180,37 @@ public sealed class ResourceCollectionTests
         Assert.AreEqual(ResourceCopyFailure.Linked, report.Items[0].Failure);
     }
 
+    [TestMethod]
+    public void ReviewedTargetNameDoesNotTouchAnUnrelatedSourceNameInTheDestination()
+    {
+        var source = CreateArchive("source/old.jar.disabled", "payload");
+        var target = Path.Combine(_root, "target");
+        Directory.CreateDirectory(target);
+        var collision = Path.Combine(target, "old.jar.disabled");
+        File.WriteAllText(collision, "another-selected-mod");
+        var copied = ResourceCollectionCopyService.CopyAs(source, target, "new.jar.disabled");
+        Assert.AreEqual(ResourceCopyStatus.Copied, copied.Items.Single().Status);
+        Assert.AreEqual("another-selected-mod", File.ReadAllText(collision));
+        CollectionAssert.AreEqual(File.ReadAllBytes(source), File.ReadAllBytes(Path.Combine(target, "new.jar.disabled")));
+        Assert.IsFalse(File.Exists(Path.Combine(target, "new.jar")));
+        var again = ResourceCollectionCopyService.CopyAs(source, target, "new.jar.disabled");
+        Assert.AreEqual(ResourceCopyStatus.AlreadyPresent, again.Items.Single().Status);
+        File.WriteAllText(Path.Combine(target, "new.jar.disabled"), "player-edit");
+        var conflict = ResourceCollectionCopyService.CopyAs(source, target, "new.jar.disabled");
+        Assert.AreEqual(ResourceCopyFailure.NameConflict, conflict.Items.Single().Failure);
+        Assert.AreEqual("player-edit", File.ReadAllText(Path.Combine(target, "new.jar.disabled")));
+    }
+
+    [TestMethod]
+    public void ReviewedTargetNameRejectsTraversalBeforeCreatingAnyDestination()
+    {
+        var source = CreateArchive("source/mod.jar", "payload");
+        var target = Path.Combine(_root, "not-created");
+        Assert.ThrowsExactly<ArgumentException>(() => ResourceCollectionCopyService.CopyAs(source, target, "../escape.jar"));
+        Assert.IsFalse(Directory.Exists(target));
+        Assert.IsFalse(File.Exists(Path.Combine(_root, "escape.jar")));
+    }
+
     private string CreateArchive(string relative, string content)
     {
         var path = Path.Combine(_root, relative.Replace('/', Path.DirectorySeparatorChar));

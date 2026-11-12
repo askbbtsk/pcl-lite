@@ -39,10 +39,11 @@ public class UpdatesWrapperModel : IUpdateSource
 
     public bool RefreshCache(bool force = false)
     {
+        _versionSource = null;
         foreach (var item in _sources)
             try
             {
-                item.RefreshCache(force);
+                if (!item.RefreshCache(force)) continue;
                 _versionSource = item;
                 break;
             }
@@ -57,11 +58,11 @@ public class UpdatesWrapperModel : IUpdateSource
     public VersionDataModel GetLatestVersion(UpdateChannel channel, UpdateArch arch)
     {
         _lastSourceError = null;
-
+        var attempted = new HashSet<IUpdateSource>();
         foreach (var item in _sources)
             try
             {
-                if (_versionSource is not null)
+                if (_versionSource is not null && attempted.Add(_versionSource))
                     try
                     {
                         return _versionSource.GetLatestVersion(channel, arch);
@@ -70,8 +71,10 @@ public class UpdatesWrapperModel : IUpdateSource
                     {
                         _lastSourceError = ex;
                         ModBase.Log(ex, $"[Update] 缓存的版本源 {_versionSource.SourceName} 不可用");
+                        _versionSource = null;
                     }
 
+                if (!attempted.Add(item)) continue;
                 var ret = item.GetLatestVersion(channel, arch);
                 _versionSource = item;
                 return ret;
@@ -89,11 +92,11 @@ public class UpdatesWrapperModel : IUpdateSource
     public bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)
     {
         _lastSourceError = null;
-
+        var attempted = new HashSet<IUpdateSource>();
         foreach (var item in _sources)
             try
             {
-                if (_versionSource is not null)
+                if (_versionSource is not null && attempted.Add(_versionSource))
                     try
                     {
                         return _versionSource.IsLatest(channel, arch, currentVersion, currentVersionCode);
@@ -102,8 +105,10 @@ public class UpdatesWrapperModel : IUpdateSource
                     {
                         _lastSourceError = ex;
                         ModBase.Log(ex, $"[Update] 缓存的版本源 {_versionSource.SourceName} 不可用");
+                        _versionSource = null;
                     }
 
+                if (!attempted.Add(item)) continue;
                 var ret = item.IsLatest(channel, arch, currentVersion, currentVersionCode);
                 _versionSource = item;
                 return ret;
@@ -120,10 +125,11 @@ public class UpdatesWrapperModel : IUpdateSource
 
     public VersionAnnouncementDataModel GetAnnouncementList()
     {
+        var attempted = new HashSet<IUpdateSource>();
         foreach (var item in _sources)
             try
             {
-                if (_announcementSource is not null)
+                if (_announcementSource is not null && attempted.Add(_announcementSource))
                     try
                     {
                         return _announcementSource.GetAnnouncementList();
@@ -131,8 +137,10 @@ public class UpdatesWrapperModel : IUpdateSource
                     catch (Exception ex)
                     {
                         ModBase.Log(ex, $"[Update] 缓存的公告源 {_announcementSource.SourceName} 不可用");
+                        _announcementSource = null;
                     }
 
+                if (!attempted.Add(item)) continue;
                 var ret = item.GetAnnouncementList();
                 _announcementSource = item;
                 return ret;
@@ -149,11 +157,11 @@ public class UpdatesWrapperModel : IUpdateSource
     public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
     {
         _lastSourceError = null;
-
+        var attempted = new HashSet<IUpdateSource>();
         foreach (var item in _sources)
             try
             {
-                if (_versionSource is not null)
+                if (_versionSource is not null && attempted.Add(_versionSource))
                     try
                     {
                         return _versionSource.GetDownloadLoader(channel, arch, output);
@@ -162,8 +170,10 @@ public class UpdatesWrapperModel : IUpdateSource
                     {
                         _lastSourceError = ex;
                         ModBase.Log(ex, $"[Update] 缓存的版本源 {_versionSource.SourceName} 不可用");
+                        _versionSource = null;
                     }
 
+                if (!attempted.Add(item)) continue;
                 var ret = item.GetDownloadLoader(channel, arch, output);
                 _versionSource = item;
                 return ret;

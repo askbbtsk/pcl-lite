@@ -10,6 +10,7 @@ using Ae.Dns.Protocol;
 using Ae.Dns.Protocol.Enums;
 using Ae.Dns.Protocol.Records;
 using PCL.Core.IO.Net.Http;
+using PCL.Core.IO.Net.Consent;
 using PCL.Core.Logging;
 
 namespace PCL.Core.IO.Net.Dns;
@@ -51,6 +52,10 @@ public class DnsQuery : IDisposable
 
     public async Task<DnsMessage?> QueryAsync(string host, DnsQueryType qType, CancellationToken cts = default)
     {
+        // DoH uses its own non-recursive transport, so it must explicitly enter
+        // the same consent flow as the normal HttpClient pipeline.
+        if (!await NetworkConsentService.EnsureAsync(NetworkPurpose.DnsResolve, cts).ConfigureAwait(false))
+            return null;
         try
         {
             return await _resolver.Query(DnsQueryFactory.CreateQuery(host, qType), cts);

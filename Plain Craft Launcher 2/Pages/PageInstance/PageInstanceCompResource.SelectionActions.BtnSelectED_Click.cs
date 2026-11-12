@@ -405,10 +405,7 @@ public partial class PageInstanceCompResource
             var loader =
                 new ModLoader.LoaderCombo<IEnumerable<ModLocalComp.LocalCompFile>>(
                     Lang.Text("Instance.Resource.Update.Task.Title", PageInstanceLeft.McInstance.Name), installLoaders);
-            var pathMods = PageInstanceLeft.McInstance.PathIndie +
-                           (PageInstanceLeft.McInstance.Info.HasLabyMod
-                               ? Path.Combine("labymod-neo", "fabric", PageInstanceLeft.McInstance.Info.VanillaName)
-                               : "") + ModLocalComp.GetPathNameByCompType(currentCompType) + @"\";
+            var pathMods = ModLocalComp.GetResourceDirectory(PageInstanceLeft.McInstance, currentCompType);
             loader.OnStateChanged = _ =>
             {
                 // 结果提示

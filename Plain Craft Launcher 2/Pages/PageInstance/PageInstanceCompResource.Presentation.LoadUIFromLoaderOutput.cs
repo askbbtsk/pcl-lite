@@ -89,10 +89,7 @@ public partial class PageInstanceCompResource
             CaptureLoaderCompatibilityContext();
             // 修改缓存
             modItems.Clear();
-            var rootPath = PageInstanceLeft.McInstance.PathIndie +
-                           (PageInstanceLeft.McInstance.Info.HasLabyMod
-                               ? Path.Combine("labymod-neo", "fabric", PageInstanceLeft.McInstance.Info.VanillaName)
-                               : "") + ModLocalComp.GetPathNameByCompType(currentCompType) + @"\";
+            var rootPath = ModLocalComp.GetResourceDirectory(PageInstanceLeft.McInstance, currentCompType);
             rootPath = Path.GetFullPath(rootPath.TrimEnd('\\'));
 
             var itemsToShow = ModLocalComp.compResourceListLoader.output.Where(item =>

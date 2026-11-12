@@ -677,11 +677,11 @@ public partial class PageSetupUI
     {
         if (!user)
             return;
-        var conf = Config.Preference.Hide;
         // 判断是否全部勾选
-        var allChecked = conf.SetupLaunch && conf.SetupUi && conf.SetupLauncherLanguage && conf.SetupJava &&
-                         conf.SetupUpdate && conf.SetupAbout && conf.SetupFeedback &&
-                         conf.SetupLog && conf.SetupLauncherMisc && conf.SetupGameManage;
+        var allChecked = new[] { CheckHiddenSetupLaunch, CheckHiddenSetupUI,
+            CheckHiddenSetupLauncherLanguage, CheckHiddenSetupJava, CheckHiddenSetupUpdate,
+            CheckHiddenSetupAbout, CheckHiddenSetupFeedback, CheckHiddenSetupLog,
+            CheckHiddenLauncherMisc, CheckHiddenSetupGameManage }.All(check => check.Checked == true);
         CheckHiddenPageSetup.Checked = allChecked;
     }
 
@@ -700,8 +700,7 @@ public partial class PageSetupUI
     {
         if (!user)
             return;
-        var conf = Config.Preference.Hide;
-        var allChecked = conf.ToolsTest;
+        var allChecked = CheckHiddenToolsTest.Checked == true;
         CheckHiddenPageTools.Checked = allChecked;
     }
 

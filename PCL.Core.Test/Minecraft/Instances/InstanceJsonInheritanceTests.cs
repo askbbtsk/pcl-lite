@@ -16,6 +16,15 @@ namespace PCL.Core.Test.Minecraft.Instances;
 [TestClass]
 public sealed class InstanceJsonInheritanceTests
 {
+    // Reuse a small reference set instead of repeatedly pinning every runtime/
+    // WPF dependency into Roslyn's unmanaged metadata allocations per test.
+    private static readonly Lazy<MetadataReference[]> References = new(() =>
+        ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
+            .Where(path => new[] { "System.Private.CoreLib.dll", "System.Runtime.dll", "System.Collections.dll",
+                "System.Linq.dll", "System.Text.Json.dll", "System.Memory.dll" }
+                .Contains(Path.GetFileName(path), StringComparer.OrdinalIgnoreCase))
+            .Append(typeof(VersionInheritanceGuard).Assembly.Location).Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(path => MetadataReference.CreateFromFile(path)).ToArray<MetadataReference>());
     private string _root = null!;
     private AssemblyLoadContext _context = null!;
     private Type _instance = null!;
@@ -69,11 +78,8 @@ public sealed class InstanceJsonInheritanceTests
                 public static string Text(string key, params object[] args) => key + ": " + string.Join(", ", args);
             }
             """;
-        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
-            .Append(typeof(VersionInheritanceGuard).Assembly.Location).Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(path => MetadataReference.CreateFromFile(path));
         var compilation = CSharpCompilation.Create("InstanceJsonGetter_" + Guid.NewGuid().ToString("N"),
-            [CSharpSyntaxTree.ParseText(stub, new CSharpParseOptions(LanguageVersion.Preview))], references,
+            [CSharpSyntaxTree.ParseText(stub, new CSharpParseOptions(LanguageVersion.Preview))], References.Value,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
         using var output = new MemoryStream();
         var result = compilation.Emit(output);
@@ -135,6 +141,21 @@ public sealed class InstanceJsonInheritanceTests
         var parentInstance = constructed[Path.Combine(_root, "base") + Path.DirectorySeparatorChar]!;
         Assert.AreEqual("base", Resolve(parentInstance)["id"]!.ToString(), "Merging a child must not mutate the parent's in-memory JSON.");
         Assert.AreEqual(parent, File.ReadAllText(Path.Combine(_root, "base", "base.json")));
+    }
+
+    [TestMethod]
+    public void MultiLevelInheritanceIncludesEachAncestorsArraysExactlyOnce()
+    {
+        Write("base", """{"id":"base","libraries":[{"name":"base-lib"}],"arguments":{"game":["base-arg"]}}""");
+        Write("middle", """{"id":"middle","inheritsFrom":"base","libraries":[{"name":"middle-lib"}],"arguments":{"game":["middle-arg"]}}""");
+        Write("child", """{"id":"child","inheritsFrom":"middle","libraries":[{"name":"child-lib"}],"arguments":{"game":["child-arg"]}}""");
+        var result = Resolve(Create("child"));
+        CollectionAssert.AreEqual(new[] { "base-lib", "middle-lib", "child-lib" },
+            result["libraries"]!.AsArray().Select(value => value!["name"]!.ToString()).ToArray());
+        CollectionAssert.AreEqual(new[] { "base-arg", "middle-arg", "child-arg" },
+            result["arguments"]!["game"]!.AsArray().Select(value => value!.ToString()).ToArray());
+        var constructed = (System.Collections.IDictionary)_instance.GetField("Created")!.GetValue(null)!;
+        Assert.AreEqual(3, constructed.Count, "Each ancestor must be parsed only once.");
     }
 
     [TestCleanup]

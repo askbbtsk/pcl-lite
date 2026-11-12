@@ -13,6 +13,10 @@ internal sealed record TahoeCaptureRegion(int X, int Y, int Width, int Height,
     // Device-pixel radii of the launcher's actual viewport clip, not its HWND border.
     public double RadiusX { get; init; }
     public double RadiusY { get; init; }
+    // Measured on the UI thread with the region; never infer this from an old
+    // screen position and a newer HWND position on the capture worker.
+    public int? WindowOffsetX { get; init; }
+    public int? WindowOffsetY { get; init; }
 }
 internal sealed record TahoeCaptureFrame(byte[] Pixels, TahoeCaptureRegion Region, int DirtyY, int DirtyHeight);
 
@@ -22,11 +26,13 @@ internal interface ITahoeMonitorCapture : IDisposable
     System.Threading.Tasks.Task Completion => System.Threading.Tasks.Task.CompletedTask;
     // Called on the UI thread. Publishing a region must never wait for GPU work.
     void SetRegion(TahoeCaptureRegion region);
+    void SetInteractiveMove(bool moving) { }
 }
 
 internal interface ITahoeCapturePlatform
 {
     bool IsSupported { get; }
+    bool SupportsLiveMove => false;
     bool TryExcludeWindow(IntPtr window, out uint originalAffinity);
     bool RestoreWindow(IntPtr window, uint affinity);
     IReadOnlyList<TahoeCaptureMonitor> GetMonitors();
@@ -36,6 +42,20 @@ internal interface ITahoeCapturePlatform
 
 internal static class TahoeCaptureResources
 {
+    public static (int X, int Y) DesktopOrigin(TahoeCaptureRegion region, int monitorX, int monitorY,
+        int windowX, int windowY) =>
+        (region.WindowOffsetX is int x ? checked(windowX + x) : checked(monitorX + region.X),
+         region.WindowOffsetY is int y ? checked(windowY + y) : checked(monitorY + region.Y));
+
+    public static int FrameRateDuringMove(int configured, bool moving)
+    {
+        int normalized = configured == 0 ? 0 : Math.Clamp(configured, 30, 240);
+        return moving ? normalized == 0 ? 60 : Math.Min(normalized, 60) : normalized;
+    }
+
+    public static bool RequiresNewBuffer(TahoeCaptureRegion? previous, TahoeCaptureRegion next) =>
+        previous is null || previous.Width != next.Width || previous.Height != next.Height;
+
     /// <summary>Attempt every release, even when a native Close operation fails.</summary>
     public static Exception? ReleaseAll(params IDisposable?[] resources)
     {

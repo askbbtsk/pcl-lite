@@ -21,6 +21,18 @@ public partial class PageSetupUI
     public PageSetupUI()
     {
         InitializeComponent();
+        CheckHiddenPageSetup.Change += HiddenSetupMain;
+        foreach (var check in new[] { CheckHiddenSetupLaunch, CheckHiddenSetupUI,
+                     CheckHiddenSetupLauncherLanguage, CheckHiddenSetupGameManage, CheckHiddenLauncherMisc,
+                     CheckHiddenSetupJava, CheckHiddenSetupUpdate, CheckHiddenSetupAbout,
+                     CheckHiddenSetupFeedback, CheckHiddenSetupLog })
+            check.Change += HiddenSetupSub;
+        CheckHiddenPageTools.Change += HiddenToolsMain;
+        CheckHiddenToolsTest.Change += HiddenToolsSub;
+        foreach (var check in new[] { CheckHiddenPageDownload, CheckHiddenPageBedrock, CheckHiddenPageLunar,
+                     CheckHiddenPagePlugins, CheckHiddenPageSetup, CheckHiddenPageTools,
+                     CheckHiddenFunctionSelect, CheckHiddenFunctionModUpdate, CheckHiddenFunctionHidden })
+            check.Change += HiddenHint;
         Loaded += PageSetupUI_Loaded;
         Loaded += (_, _) => HiddenRefresh();
     }

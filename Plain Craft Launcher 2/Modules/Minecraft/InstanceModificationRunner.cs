@@ -84,7 +84,8 @@ internal static class InstanceModificationRunner
                 var prepared = preview is null ? new ModificationDependencyCoordinator.Prepared([], [], [])
                     : ModificationDependencyCoordinator.Prepare(preview, chosen, request.minecraftName,
                         targetLoader!.Value, stagedMods, token, value => presentation.Report(1, value),
-                        detail => presentation.Describe(1, detail), automaticDependencies);
+                        detail => presentation.Describe(1, detail), automaticDependencies,
+                        new[] { request.fabricApi, request.legacyFabricApi }.OfType<ModComp.CompFile>().ToArray());
                 notices.AddRange(prepared.Notices);
                 // Do not install or download target mods until all selected roots have been reviewed.
                 token.ThrowIfCancellationRequested();
@@ -136,13 +137,11 @@ internal static class InstanceModificationRunner
                         }
                         if (!alreadyStaged && item.Action == MigrationModAction.CopyVerifiedLocal)
                         {
-                            var copy = ResourceCollectionCopyService.Copy([item.Source.Path], stagedMods, token);
+                            var copy = ResourceCollectionCopyService.CopyAs(item.Source.Path, stagedMods, item.TargetFileName!, token);
                             if (copy.Cancelled) throw new OperationCanceledException(token);
                             var copied = copy.Items.Single();
                             if (copied.Status is not (ResourceCopyStatus.Copied or ResourceCopyStatus.AlreadyPresent))
                                 throw new IOException(copied.Error);
-                            if (!string.Equals(copied.DestinationPath, destination, StringComparison.OrdinalIgnoreCase))
-                                File.Move(copied.DestinationPath!, destination, overwrite: false);
                         }
                         else if (!alreadyStaged) downloads.Add(targetDownload);
                         // An explicitly selected API replacement owns that source; do not replace it twice.

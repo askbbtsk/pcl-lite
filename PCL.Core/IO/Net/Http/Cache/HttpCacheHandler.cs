@@ -1,8 +1,9 @@
 using PCL.Core.IO.Storage.Cache;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,14 +24,22 @@ public class HttpCacheHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var uri = request.RequestUri?.ToString();
-        if (string.IsNullOrEmpty(uri))
+        // The cache is URI-keyed: bodies, credentials, byte ranges and Vary cannot
+        // safely share an entry. Conditional requests belong to the caller.
+        if (string.IsNullOrEmpty(uri) || request.Method != HttpMethod.Get ||
+            request.Headers.Authorization is not null || request.Headers.Range is not null ||
+            request.Headers.Contains("Cookie") || request.Headers.IfNoneMatch.Count != 0 ||
+            request.Headers.IfModifiedSince is not null || request.Headers.Pragma.Count != 0 ||
+            request.Headers.CacheControl is not null)
         {
             return await base.SendAsync(request, ct).ConfigureAwait(false);
         }
 
         // seek cache
-        var cacheKey = CacheKeys.ApiResponse("http", uri);
-        var cached = await _cacheService.GetAsync<byte[]>(cacheKey, ct).ConfigureAwait(false);
+        // Separate namespace: old entries contain only bytes and may contain an
+        // HTTP error body previously reconstructed as 200 OK.
+        var cacheKey = CacheKeys.ApiResponse("http-v2", uri);
+        var cached = await _cacheService.GetAsync<CachedResponse>(cacheKey, ct).ConfigureAwait(false);
         if (cached.Found)
         {
             var cachedResponse = _DeserializeResponse(cached.Value!);
@@ -39,59 +48,34 @@ public class HttpCacheHandler : DelegatingHandler
             return cachedResponse;
         }
 
-        // seek metadata
-        var metaKey = CacheKeys.ApiResponseMeta("http", uri);
-        var metaCached = await _cacheService.GetAsync<HttpCacheMetadata>(metaKey, ct).ConfigureAwait(false);
-        if (metaCached.Found)
-        {
-            if (metaCached.Value!.ETag is not null)
-            {
-                request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(metaCached.Value!.ETag));
-            }
-
-            if (metaCached.Value!.LastModified is not null)
-            {
-                request.Headers.IfModifiedSince = DateTimeOffset.Parse(metaCached.Value!.LastModified);
-            }
-        }
-
         // send request
         var response = await base.SendAsync(request, ct).ConfigureAwait(false);
-        if (response.Headers.CacheControl?.NoStore ?? false)
+        if (response.StatusCode != HttpStatusCode.OK ||
+            response.Headers.CacheControl is { NoStore: true } or { NoCache: true } or { Private: true } ||
+            response.Headers.Vary.Count != 0 || response.Headers.Contains("Set-Cookie"))
         {
             return response;
-        }
-
-        // not modified, return cached response if exists
-        if (response.StatusCode is HttpStatusCode.NotModified)
-        {
-            var reCached = await _cacheService.GetAsync<byte[]>(cacheKey, ct).ConfigureAwait(false);
-            if (reCached.Found)
-            {
-                var cachedResponse = _DeserializeResponse(reCached.Value!);
-                cachedResponse.Headers.Add("X-Cache-Hit", "HIT");
-                cachedResponse.RequestMessage = request;
-                return cachedResponse;
-            }
         }
 
         // cache response
         var body = await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
         var ttl = _ComputeTtl(response);
 
-        await _cacheService.SetAsync(cacheKey, body, new CachePolicy
+        if (ttl <= TimeSpan.Zero) return response;
+        await _cacheService.SetAsync(cacheKey, new CachedResponse
+        {
+            Body = body,
+            StatusCode = (int)response.StatusCode,
+            ReasonPhrase = response.ReasonPhrase,
+            Version = response.Version.ToString(),
+            Headers = response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray()),
+            ContentHeaders = response.Content.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
+        }, new CachePolicy
         {
             AbsoluteExpiration = ttl,
             Group = "http",
             Tags = "http-response"
         }, ct).ConfigureAwait(false);
-
-        await _cacheService.SetAsync(metaKey, new HttpCacheMetadata
-        {
-            ETag = response.Headers.ETag?.Tag,
-            LastModified = response.Content.Headers.LastModified?.ToString("O"),
-            StatusCode = (int)response.StatusCode
-        }, CachePolicy.NeverExpire, ct).ConfigureAwait(false);
 
         // not matched, return original response
         response.Headers.Add("X-Cache-Hit", "MISS");
@@ -114,11 +98,28 @@ public class HttpCacheHandler : DelegatingHandler
         return TimeSpan.FromMinutes(5);
     }
 
-    private static HttpResponseMessage _DeserializeResponse(byte[] data)
+    public sealed record CachedResponse
     {
-        return new HttpResponseMessage(HttpStatusCode.OK)
+        public byte[] Body { get; init; } = [];
+        public int StatusCode { get; init; } = 200;
+        public string? ReasonPhrase { get; init; }
+        public string Version { get; init; } = "1.1";
+        public Dictionary<string, string[]> Headers { get; init; } = [];
+        public Dictionary<string, string[]> ContentHeaders { get; init; } = [];
+    }
+
+    private static HttpResponseMessage _DeserializeResponse(CachedResponse data)
+    {
+        var response = new HttpResponseMessage((HttpStatusCode)data.StatusCode)
         {
-            Content = new ByteArrayContent(data)
+            Content = new ByteArrayContent(data.Body),
+            ReasonPhrase = data.ReasonPhrase,
+            Version = Version.Parse(data.Version)
         };
+        foreach (var header in data.Headers)
+            response.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        foreach (var header in data.ContentHeaders)
+            response.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        return response;
     }
 }

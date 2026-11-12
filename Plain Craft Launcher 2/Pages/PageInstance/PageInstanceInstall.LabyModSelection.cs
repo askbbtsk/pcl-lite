@@ -115,10 +115,11 @@ public partial class PageInstanceInstall
     public void LabyMod_Selected(MyListItem sender, EventArgs e)
     {
         SelectModLoader(ModLoaderType.LabyMod);
-        selectedLabyModChannel = ((dynamic)sender.Tag)("channel").ToString();
-        selectedLabyModCommitRef = ((dynamic)sender.Tag)("commitReference").ToString();
+        var selection = (JsonObject)sender.Tag;
+        selectedLabyModChannel = selection["channel"].ToString();
+        selectedLabyModCommitRef = selection["commitReference"].ToString();
         selectedLabyModVersion =
-            ((dynamic)sender.Tag)("version").ToString() + (selectedLabyModChannel == "snapshot" ? " " + Lang.Text("Download.Version.Type.Snapshot") : " " + Lang.Text("Download.Version.Type.Stable"));
+            selection["version"].ToString() + (selectedLabyModChannel == "snapshot" ? " " + Lang.Text("Download.Version.Type.Snapshot") : " " + Lang.Text("Download.Version.Type.Stable"));
         CardLabyMod.IsSwapped = true;
         ReloadSelected();
     }

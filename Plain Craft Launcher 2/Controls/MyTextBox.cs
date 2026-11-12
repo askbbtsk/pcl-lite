@@ -382,7 +382,7 @@ public partial class MyTextBox : TextBox
     {
         if (RefreshTahoeTextBoxChrome()) return;
         var newColor = IsEnabled ? ThemeManager.colorGray1 : ThemeManager.colorGray4;
-        if (((SolidColorBrush)Foreground).Color.R == newColor.r)
+        if (Foreground is SolidColorBrush current && current.Color == (Color)newColor)
             return;
         if (IsLoaded && ModAnimation.AniControlEnabled == 0 && !string.IsNullOrEmpty(Text))
         {

@@ -288,7 +288,8 @@ public static class ModJava
             case object _ when preference is UseRelativePath:
             {
                 var m = (UseRelativePath)preference;
-                if (!Files.IsPathWithinDirectory(m.RelativePath, Basics.ExecutableDirectory))
+                var resolvedPath = Path.GetFullPath(Path.Combine(Basics.ExecutableDirectory, m.RelativePath));
+                if (!Files.IsPathWithinDirectory(resolvedPath, Basics.ExecutableDirectory))
                     preference = new UseGlobalPreference();
 
                 break;

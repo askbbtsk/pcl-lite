@@ -84,7 +84,7 @@ public partial class FormMain
             }
 
             // Capture the selected instance once. A late scan never switches to a newer selection.
-            var modsPath = Path.Combine(selected.PathIndie, "mods");
+            var modsPath = ModLocalComp.GetResourceDirectory(selected, ModComp.CompType.Mod);
             var instancePath = selected.PathInstance;
             var preferredLoader = ModLocalComp.GetPreferredLoader(selected);
             var instanceName = selected.Name;

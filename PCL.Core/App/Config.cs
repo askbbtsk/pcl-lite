@@ -540,6 +540,8 @@ public static partial class Config
             [ConfigItem<bool>("UiTahoeDesktopBackdrop", false, ConfigSource.Local)] public partial bool UseDesktopBackdrop { get; set; }
             [ConfigItem<int>("UiLiquidGlassPreset", 1, ConfigSource.Local)] public partial int PerformancePreset { get; set; }
             [ConfigItem<int>("UiLiquidGlassFrameRate", 60, ConfigSource.Local)] public partial int MaximumFrameRate { get; set; }
+            [ConfigItem<int>("UiLiquidGlassFrost", 8, ConfigSource.Local)] public partial int FrostRadius { get; set; }
+            [ConfigItem<int>("UiLiquidGlassRefraction", 5, ConfigSource.Local)] public partial int RefractionStrength { get; set; }
             // Fresh opt-in is required even for settings left by earlier experimental builds.
             [ConfigItem<bool>("UiLiquidGlassConsent", false, ConfigSource.Local)] public partial bool PerformanceConsent { get; set; }
             [ConfigItem<bool>("UiLiquidGlassDesktopConsent", false, ConfigSource.Local)] public partial bool DesktopCaptureConsent { get; set; }

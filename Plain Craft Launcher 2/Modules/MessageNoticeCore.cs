@@ -65,7 +65,7 @@ internal static class MessageNoticeCore
         {
             Type = MyMsgBoxType.Text, Button1 = button1, Button2 = button2, Button3 = button3, Text = caption,
             IsWarn = isWarn, Title = title, HighLight = highLight, ForceWait = true, Button1Action = button1Action,
-            Button2Action = button2Action, Button3Action = button3Action
+            Button2Action = button2Action, Button3Action = button3Action, ModalLifetimeOwnedByCaller = true
         };
         WaitingMyMsgBox.Add(converter);
         if (ModBase.RunInUi())
@@ -118,6 +118,7 @@ internal static class MessageNoticeCore
                 try
                 {
                     frmMain.DragStop();
+                    converter.ModalLifetimeOwnedByCaller = true;
                     ComponentDispatcher.PushModal();
                     Dispatcher.PushFrame(converter.WaitFrame);
                 }
@@ -162,7 +163,7 @@ internal static class MessageNoticeCore
         {
             Type = MyMsgBoxType.Markdown, Button1 = button1, Button2 = button2, Button3 = button3, Text = caption,
             IsWarn = isWarn, Title = title, HighLight = highLight, ForceWait = true, Button1Action = button1Action,
-            Button2Action = button2Action, Button3Action = button3Action
+            Button2Action = button2Action, Button3Action = button3Action, ModalLifetimeOwnedByCaller = true
         };
         WaitingMyMsgBox.Add(converter);
         if (ModBase.RunInUi())
@@ -215,6 +216,7 @@ internal static class MessageNoticeCore
                 try
                 {
                     frmMain.DragStop();
+                    converter.ModalLifetimeOwnedByCaller = true;
                     ComponentDispatcher.PushModal();
                     Dispatcher.PushFrame(converter.WaitFrame);
                 }
@@ -257,7 +259,8 @@ internal static class MessageNoticeCore
         {
             Text = text, HintText = hintText, Type = MyMsgBoxType.Input,
             ValidateRules = validateRules ?? [], Button1 = button1, Button2 = button2,
-            Content = defaultInput, IsWarn = isWarn, Title = title, Multiline = multiline
+            Content = defaultInput, IsWarn = isWarn, Title = title, Multiline = multiline,
+            ModalLifetimeOwnedByCaller = true
         };
         WaitingMyMsgBox.Add(converter);
         // 虽然我也不知道这是啥但是能用就成了 :)
@@ -289,7 +292,8 @@ internal static class MessageNoticeCore
             Button2 = GetDefaultCancelText(),
             AuthServerDefault = defaultServer,
             AuthServerPresets = presets,
-            ForceWait = true
+            ForceWait = true,
+            ModalLifetimeOwnedByCaller = true
         };
         WaitingMyMsgBox.Add(converter);
         try
@@ -324,7 +328,7 @@ internal static class MessageNoticeCore
         var converter = new MyMsgBoxConverter
         {
             Type = MyMsgBoxType.Select, Button1 = button1, Button2 = button2, Content = selections, IsWarn = isWarn,
-            Title = title
+            Title = title, ModalLifetimeOwnedByCaller = true
         };
         WaitingMyMsgBox.Add(converter);
         // 虽然我也不知道这是啥但是能用就成了 :)
@@ -369,7 +373,7 @@ internal static class MessageNoticeCore
         {
             Type = MyMsgBoxType.Select, MultiSelect = true, AllowEmptySelection = allowEmptySelection,
             Button1 = button1, Button2 = button2, Content = selections,
-            IsWarn = isWarn, Title = title
+            IsWarn = isWarn, Title = title, ModalLifetimeOwnedByCaller = true
         };
         WaitingMyMsgBox.Add(converter);
         // 虽然我也不知道这是啥但是能用就成了 :)

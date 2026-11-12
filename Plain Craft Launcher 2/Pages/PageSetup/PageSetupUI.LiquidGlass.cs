@@ -21,6 +21,12 @@ public partial class PageSetupUI
                 FrameRateLabel(LiquidGlassPerformance.FrameRateFromSlider((int)value)));
             SliderLiquidGlassFrameRate.Value = LiquidGlassPerformance.SliderFromFrameRate(Config.Preference.TahoeGlass.MaximumFrameRate);
             TextLiquidGlassFrameRate.Text = FrameRateLabel(Config.Preference.TahoeGlass.MaximumFrameRate);
+            SliderLiquidGlassFrost.Value = LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
+            SliderLiquidGlassFrost.getHintText = new Func<object, object>(value => ((int)value) + " DIP");
+            TextLiquidGlassFrost.Text = SliderLiquidGlassFrost.Value + " DIP";
+            SliderLiquidGlassRefraction.Value = LiquidGlassMaterial.RefractionSetting(Config.Preference.TahoeGlass.RefractionStrength) - 5;
+            SliderLiquidGlassRefraction.getHintText = new Func<object, object>(value => (((int)value) + 5) * 20 + "%");
+            TextLiquidGlassRefraction.Text = (SliderLiquidGlassRefraction.Value + 5) * 20 + "%";
             TextLiquidGlassCost.Text = Lang.Text("Setup.Ui.LiquidGlass.Cost."
                 + LiquidGlassPerformance.NormalizePreset(Config.Preference.TahoeGlass.PerformancePreset));
         }
@@ -29,6 +35,22 @@ public partial class PageSetupUI
 
     private static string FrameRateLabel(int fps) => fps == 0
         ? Lang.Text("Setup.Ui.LiquidGlass.Unlimited") : LiquidGlassPerformance.NormalizeFrameRate(fps) + " FPS";
+
+    private void LiquidGlassFrost_Changed(object sender, bool user)
+    {
+        if (_liquidGlassBinding || ModAnimation.AniControlEnabled != 0) return;
+        Config.Preference.TahoeGlass.FrostRadius = LiquidGlassMaterial.FrostRadius(SliderLiquidGlassFrost.Value);
+        TextLiquidGlassFrost.Text = Config.Preference.TahoeGlass.FrostRadius + " DIP";
+        LiquidGlassCore.Refresh();
+    }
+
+    private void LiquidGlassRefraction_Changed(object sender, bool user)
+    {
+        if (_liquidGlassBinding || ModAnimation.AniControlEnabled != 0) return;
+        Config.Preference.TahoeGlass.RefractionStrength = LiquidGlassMaterial.RefractionSetting(SliderLiquidGlassRefraction.Value + 5);
+        TextLiquidGlassRefraction.Text = Config.Preference.TahoeGlass.RefractionStrength * 20 + "%";
+        LiquidGlassCore.Refresh();
+    }
 
     private void LiquidGlassEnabled_Change(object sender, bool user)
     {

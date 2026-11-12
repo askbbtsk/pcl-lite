@@ -48,10 +48,7 @@ public partial class PageInstanceCompResource
             // 如果当前在子文件夹中，则打开当前子文件夹；否则打开根目录
             if (string.IsNullOrEmpty(CurrentFolderPath))
                 // 打开根目录
-                compFilePath = PageInstanceLeft.McInstance.PathIndie +
-                               (PageInstanceLeft.McInstance.Info.HasLabyMod
-                                   ? Path.Combine("labymod-neo", "fabric", PageInstanceLeft.McInstance.Info.VanillaName)
-                                   : "") + ModLocalComp.GetPathNameByCompType(currentCompType) + @"\";
+                compFilePath = ModLocalComp.GetResourceDirectory(PageInstanceLeft.McInstance, currentCompType);
             else
                 // 打开当前子文件夹
                 compFilePath = CurrentFolderPath.EndsWith(@"\") ? CurrentFolderPath : CurrentFolderPath + @"\";
@@ -259,10 +256,7 @@ public partial class PageInstanceCompResource
                 validExtensions = new[] { "jar", "litemod", "disabled", "old" };
                 compTypeName = "Mod";
                 if (string.IsNullOrEmpty(targetFolderPath))
-                    compFolder = targetInstance.PathIndie +
-                                 (targetInstance.Info.HasLabyMod
-                                     ? Path.Combine("labymod-neo", "fabric", targetInstance.Info.VanillaName)
-                                     : "") + @"mods\";
+                    compFolder = ModLocalComp.GetResourceDirectory(targetInstance, ModComp.CompType.Mod);
                 else
                     compFolder = targetFolderPath;
 

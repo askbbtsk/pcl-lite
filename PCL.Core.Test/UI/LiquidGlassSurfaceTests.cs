@@ -16,6 +16,59 @@ namespace PCL.Core.Test.UI;
 public sealed class TahoeGlassSurfaceTests
 {
     [STATestMethod]
+    public void FrostUsesSmoothGaussianInsteadOfSeparatedShaderSamplesAndReleasesItsSource()
+    {
+        WithWindow((_, _, backdrop, surface) =>
+        {
+            surface.BlurRadius = 0;
+            surface.RefractionStrength = 0;
+            surface.TintOpacity = 0;
+            surface.HighlightStrength = 0;
+            var tile = new DrawingGroup();
+            tile.Children.Add(new GeometryDrawing(Brushes.Black, null, new RectangleGeometry(new Rect(0, 0, 8, 8))));
+            tile.Children.Add(new GeometryDrawing(Brushes.White, null, new RectangleGeometry(new Rect(4, 0, 4, 8))));
+            backdrop.Background = new DrawingBrush(tile) { TileMode = TileMode.Tile, ViewportUnits = BrushMappingMode.Absolute,
+                Viewport = new Rect(0, 0, 8, 8), Stretch = Stretch.Fill };
+            surface.ForceCompatibility = true;
+            double Contrast(int frost)
+            {
+                surface.FrostRadius = frost;
+                surface.RefreshSampling();
+                DrainDispatcher();
+                var image = new System.Windows.Media.Imaging.RenderTargetBitmap(180, 60, 96, 96,
+                    System.Windows.Media.PixelFormats.Pbgra32);
+                var visual = new DrawingVisual();
+                using (var drawing = visual.RenderOpen())
+                    drawing.DrawRectangle(new VisualBrush(surface) { Stretch = Stretch.Fill }, null, new Rect(0, 0, 180, 60));
+                image.Render(visual);
+                var pixels = new byte[180 * 60 * 4]; image.CopyPixels(pixels, 180 * 4, 0);
+                double sum = 0;
+                for (int x = 30; x < 149; x++)
+                    sum += Math.Abs(pixels[(30 * 180 + x) * 4] - pixels[(30 * 180 + x + 1) * 4]);
+                return sum / 119;
+            }
+            double clear = Contrast(0), frosted = Contrast(8);
+            Assert.IsTrue(clear > 20, $"The clear material must retain the stripe detail: {clear}, frosted: {frosted}, state: {surface.RenderStatus}");
+            Assert.IsTrue(frosted < clear * .35, $"Frost must smooth the source: {clear} -> {frosted}");
+            surface.ForceCompatibility = false;
+            surface.RefreshSampling();
+            DrainDispatcher();
+            if (surface.IsRefractionActive)
+            {
+                Assert.IsNotNull(ReadField<System.Windows.Shapes.Rectangle?>(surface, "_frostSource"));
+                surface.FrostRadius = 0;
+                surface.RefreshSampling();
+                Assert.IsNull(ReadField<System.Windows.Shapes.Rectangle?>(surface, "_frostSource"));
+                surface.FrostRadius = 8;
+                surface.RefreshSampling();
+            }
+            surface.BackdropSource = null;
+            Assert.IsNull(ReadField<VisualBrush?>(surface, "_frostInput"));
+            Assert.IsNull(ReadField<System.Windows.Shapes.Rectangle?>(surface, "_frostSource"));
+        });
+    }
+
+    [STATestMethod]
     public void OffscreenGlassStopsWritingMaterialAndAllowsDispatcherIdle()
     {
         WithWindow((window, _, _, surface) =>

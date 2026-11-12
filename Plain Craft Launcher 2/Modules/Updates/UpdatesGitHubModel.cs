@@ -350,7 +350,8 @@ public class UpdatesGitHubModel : IUpdateSource
     public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
     {
         var loaders = new List<ModLoader.LoaderBase>();
-        var tempPath = $@"{ModBase.pathTemp}Cache\Update\Download\";
+        var tempDirectory = $@"{ModBase.pathTemp}Cache\Update\Download\";
+        var tempPath = "";
 
         loaders.Add(new ModLoader.LoaderTask<int, List<DownloadFile>>(
             Lang.Text("Update.Task.GetVersionInfo"), load =>
@@ -372,7 +373,7 @@ public class UpdatesGitHubModel : IUpdateSource
                 if (!url.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                     throw new UpdateSourceException("更新附件不是已签名的 exe，已拒绝安装。");
                 var fileName = url[(url.LastIndexOf('/') + 1)..];
-                tempPath += fileName;
+                tempPath = System.IO.Path.Combine(tempDirectory, fileName);
 
                 var signatureUrl = _TryGetSignatureUrl(assets, url);
 
@@ -491,7 +492,7 @@ public class UpdatesGitHubModel : IUpdateSource
     }
 
     /// <summary>
-    /// 在附件里挑一个可执行文件。优先匹配架构关键字，其次优先 zip。
+    /// 在附件里挑选更新流程可验证的 EXE，优先匹配架构。
     /// </summary>
     private static string _PickAsset(JsonArray assets, UpdateArch arch)
     {
@@ -500,21 +501,10 @@ public class UpdatesGitHubModel : IUpdateSource
             .Select(x => x["browser_download_url"]?.GetValue<string>())
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Select(x => x!)
-            .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
-                        x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
             .ToList();
-
-        if (candidates.Count == 0)
-            throw new UpdateSourceException("这个 Release 的附件里没有 .zip 或 .exe。");
-
         var archKey = arch == UpdateArch.arm64 ? "arm64" : "x64";
-        var matched = candidates.FirstOrDefault(x =>
-            x.Contains(archKey, StringComparison.OrdinalIgnoreCase));
-        if (matched is not null) return matched;
-
-        // 没标架构就优先用 zip（里面装着 exe），再退到任意一个
-        return candidates.FirstOrDefault(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-               ?? candidates[0];
+        return PCL.Core.App.Updates.UpdateExecutableAssetSelector.Pick(candidates, arch == UpdateArch.arm64)
+               ?? throw new UpdateSourceException($"这个 Release 没有 {archKey} 架构的 .exe。");
     }
 
     private static void _ApplyDownloaded(string path, string output)

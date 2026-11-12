@@ -19,6 +19,14 @@ public static partial class ModLocalComp
     public static string GetPathNameByCompType(CompType theType)
 =>ResourceFolderNames.GetPathNameByCompType(theType);
 
+    /// <summary>LabyMod relocates Fabric mods only; resource packs and shaders retain their ordinary game directories.</summary>
+    public static string GetResourceDirectory(McInstance instance, CompType type)
+    {
+        var directory = type == CompType.Mod && instance.Info.HasLabyMod
+            ? Path.Combine(instance.PathIndie, "labymod-neo", "fabric", instance.Info.VanillaName, "mods")
+            : Path.Combine(instance.PathIndie, GetPathNameByCompType(type));
+        return Path.TrimEndingDirectorySeparator(directory) + Path.DirectorySeparatorChar;
+    }
 
     /// <summary>
     ///     通过文件名关键字和 Mod ID 比如 <c>fabric</c> <c>api</c> 和 <c>fabric-api</c> 来获取给定实例 mods 目录中某个 Mod 的
@@ -43,7 +51,7 @@ public static partial class ModLocalComp
     {
         if (!instance.Modable)
             return null; // 跳过不可安装 Mod 实例
-        var modFolder = $"{instance.PathInstance}mods";
+        var modFolder = GetResourceDirectory(instance, CompType.Mod);
         if (!Directory.Exists(modFolder))
             return null; // 确保 mods 目录存在
         foreach (var file in Directory.EnumerateFiles(modFolder, $"*{mainKeyword}*"))

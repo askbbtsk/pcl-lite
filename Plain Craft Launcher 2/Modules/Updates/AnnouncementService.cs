@@ -28,21 +28,25 @@ public static class AnnouncementService
         {
             foreach (var item in showAnnounce)
             {
+                var first = item.Btn1;
+                var second = item.Btn2;
+                // Primary buttons are always visible. A missing first action
+                // therefore becomes the close action rather than an empty button.
                 ModMain.MyMsgBox(item.Detail, item.Title,
-                    item.Btn1 is null ? "" : item.Btn1.Text,
-                    item.Btn2 is null ? "" : item.Btn2.Text,
-                    Lang.Text("Common.Action.Close"),
-                    button1Action: () =>
+                    first is null ? Lang.Text("Common.Action.Close") : first.Text,
+                    second?.Text ?? "",
+                    first is null ? "" : Lang.Text("Common.Action.Close"),
+                    button1Action: first is null ? null : () =>
                     {
                         if (EventTypeMapper.TryParse(
-                                item.Btn1.Command, out var eventType))
-                            CustomEvent.Raise(eventType, item.Btn1.CommandParameter);
+                                first.Command, out var eventType))
+                            CustomEvent.Raise(eventType, first.CommandParameter);
                     },
-                    button2Action: () =>
+                    button2Action: second is null ? null : () =>
                     {
                         if (EventTypeMapper.TryParse(
-                                item.Btn2.Command, out var eventType))
-                            CustomEvent.Raise(eventType, item.Btn2.CommandParameter);
+                                second.Command, out var eventType))
+                            CustomEvent.Raise(eventType, second.CommandParameter);
                     });
             }
         });

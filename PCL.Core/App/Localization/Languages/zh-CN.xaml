@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-2：修复 hotfix-1 后圆角外侧仍残留的直角阴影接缝。玻璃模式停用原版小圆角的手工阴影，关闭玻璃后原样恢复；保留采样窗口圆角修复、截图和录屏功能。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-3：新增液态玻璃磨砂度与边缘折射滑块，拖动时继续更新桌面采样。修复个人设置同步、Java 版本判断、实例改名与继承合并、整合包更新及模组迁移中的问题；改进 Lunar 续期、网络缓存、更新源回退与控件状态。详细变更见 GitHub 发布说明。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">性能预设</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>
@@ -15,9 +15,13 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">高画质：2 DIP 模糊、0.20 色散、按压动效，默认 90 FPS。预计负载较高，高分屏或多屏下尤其明显。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">极致：3 DIP 模糊、0.30 色散、增强高光和按压动效，默认 120 FPS。预计负载最高，可能增加功耗、温度和卡顿。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">效果最高帧率（30–240 FPS，最右为不限制）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost">玻璃磨砂度</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction">边缘折射强度</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">100% 为当前效果，也是默认值和最小值。向右增强边缘折射，最高 300%，不改变文字或图标；独立于磨砂度和性能预设保存。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 为通透玻璃，向右增加柔和高斯模糊，只影响玻璃背景，不影响文字和图标。默认 8 DIP；更高数值会增加图形开销，且独立于性能预设保存。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">不限制（可能显著增加功耗）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">是否开启液态玻璃？&#xA;预设：{0}；效果帧率上限：{1}。&#xA;{2}&#xA;会增加 CPU/GPU、内存和电量开销；这些是相对预估，不是设备实测或流畅度保证。默认使用可截图的背景模式。若另行开启实时桌面折射，启动器会从截图和录屏中排除。无需等待，确认后立即生效。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">实时桌面折射会持续采集启动器背后的桌面画面，增加 GPU/CPU 开销，不保存或上传画面。采样仅排除启动器自身，不再全局阻止截图和录屏，也不使用 WGC 黄色采集边框。拖动或缩放窗口时暂停采样并使用磨砂。背景不透明度只影响底色和图片/视频，不改变实时桌面、玻璃、文字和徽标。仍要启用吗？</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">实时桌面折射会持续采集启动器背后的桌面画面，增加 GPU/CPU 开销，不保存或上传画面。采样仅排除启动器自身，不阻止截图和录屏，也不使用 WGC 黄色采集边框。拖动时保留玻璃和实时更新，采样上限为 60 FPS。背景不透明度只影响底色和图片/视频，不改变实时桌面、玻璃、文字和徽标。仍要启用吗？</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">模组依赖索引</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">为 PCL 已发现的所有 Minecraft 目录中的实例创建索引，包括未选中和隐藏的实例。相同解析环境下的共享模组目录只扫描一次。待机和浏览时不自动补建；下载模组后仍自动更新。</sys:String>
@@ -3232,13 +3236,13 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">桌面采样正常，当前设备使用模糊兼容材质。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">桌面采样中断，正在尝试恢复；未就绪区域使用静态材质。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Suspended">桌面采样已暂停；窗口恢复可见后继续。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">移动或调整窗口时使用静态磨砂；松开后恢复实时桌面折射。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">移动或调整窗口中：保留玻璃与实时采样，采样最高 60 FPS。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">系统不支持桌面采样，当前显示静态材质。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">桌面采样恢复失败，当前显示静态材质；可重新开启“直接折射桌面”重试。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液态玻璃界面</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">独立的液态玻璃效果，不属于高级材质。默认折射启动器背景，可正常截图；开启前需确认性能开销，下方可调整画质与帧率。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop">实时桌面折射（支持截图和录屏）</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">通过独立采样窗口获取启动器背后的桌面，采样仅排除启动器自身，不设置全局截图排除，不产生 WGC 黄色采集边框。上方“背景 / 窗口不透明度”只调节底色和图片/视频，不调节实时桌面、玻璃、文字或徽标；深浅色材质跟随主题。拖动或缩放窗口时切换磨砂。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">通过独立采样窗口获取启动器背后的桌面，采样仅排除启动器自身，不设置全局截图排除，不产生 WGC 黄色采集边框。上方“背景 / 窗口不透明度”只调节底色和图片/视频，不调节实时桌面、玻璃、文字或徽标；深浅色材质跟随主题。拖动时保留玻璃，后台持续采样，最高 60 FPS。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">桌面采样需要 Windows 10 2004 或更高版本。采样不可用时显示静态材质；不支持 Pixel Shader 3.0 时使用模糊材质。</sys:String>
 
     <!-- Setup.Ui.Basic -->

@@ -18,7 +18,7 @@ public static partial class ModLaunch
             var request = new PersonalOptionsMemoryRequest(instance.PathInstance, instance.PathIndie,
                 Path.Combine(Paths.SharedData, "Minecraft", "PersonalOptions", "profile.json"),
                 Config.Launch.RememberInstanceControls, categories,
-                instance.Info.vanilla >= new Version(1, 13), instance.Info.vanilla >= new Version(1, 16));
+                instance.Info.vanilla >= new Version(13, 0), instance.Info.vanilla >= new Version(16, 0));
             return InstancePersonalOptionsMemory.Prepare(request, ReviewPersonalOptions,
                 () => IsOptionsDirectoryInUse(instance.PathIndie, null),
                 detail => ModBase.Log("[PersonalOptions] " + detail, ModBase.LogLevel.Hint));

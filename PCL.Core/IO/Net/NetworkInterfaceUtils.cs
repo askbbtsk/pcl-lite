@@ -25,8 +25,10 @@ public static class NetworkInterfaceUtils
 
     public static IPv6Status GetIPv6Status()
     {
+        var result = IPv6Status.Unavailable;
         foreach (var iface in GetAvailableInterface())
         {
+            if (iface.OperationalStatus != OperationalStatus.Up) continue;
             var ipv6Addresses = iface.GetIPProperties().UnicastAddresses
                 .Where(addr => addr.Address.AddressFamily == AddressFamily.InterNetworkV6)
                 .Select(addr => addr.Address)
@@ -34,7 +36,7 @@ public static class NetworkInterfaceUtils
 
             if (ipv6Addresses.Length == 0)
             {
-                return IPv6Status.Unavailable;
+                continue;
             }
 
             foreach (var ip in ipv6Addresses)
@@ -45,13 +47,13 @@ public static class NetworkInterfaceUtils
                 }
                 if (_IsUniqueLocalIPv6(ip))
                 {
-                    return IPv6Status.RFC4193;
+                    result = IPv6Status.RFC4193;
                 }
             }
 
         }
 
-        return IPv6Status.Unknown;
+        return result;
     }
 
     private static bool _IsVirtualInterface(NetworkInterface iface)

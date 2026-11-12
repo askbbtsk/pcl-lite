@@ -19,7 +19,8 @@ internal static class ModificationDependencyCoordinator
 
     internal static Prepared Prepare(InstanceMigrationCatalog.Preview preview, IReadOnlyList<MigrationModPlan> chosen,
         string targetMinecraftVersion, MigrationLoader targetLoader, string stageModsDirectory, CancellationToken token,
-        Action<double>? progress = null, Action<string>? activity = null, bool automaticDependencies = false)
+        Action<double>? progress = null, Action<string>? activity = null, bool automaticDependencies = false,
+        IReadOnlyList<ModComp.CompFile>? installerFiles = null)
     {
         var loader = targetLoader.ToString();
         var projects = new Dictionary<string, IReadOnlyList<ModificationDependencyFile>>(StringComparer.Ordinal);
@@ -74,6 +75,17 @@ internal static class ModificationDependencyCoordinator
             projects[key] = result; return result;
         }
         var roots = new List<ModificationDependencyRoot>();
+        // Installer-selected APIs are already committed to the install stage.
+        // Include their exact platform/file identity in the same dependency graph
+        // before resolving consumers, so "latest API" cannot be selected again.
+        foreach (var installed in installerFiles ?? [])
+        {
+            var platform = installed.FromCurseForge ? "CurseForge" : "Modrinth";
+            var file = GetFiles(platform, installed.ProjectId).FirstOrDefault(value => value.FileId == installed.Id);
+            if (file is null || !string.Equals(file.Hash, installed.Hash, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Cannot verify the installer-selected API: " + installed.FileName);
+            roots.Add(new("@installer:" + ModificationDependencyPlanner.FileKey(file), file, false));
+        }
         var inspected = 0;
         foreach (var item in chosen)
         {

@@ -18,6 +18,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
 {
     private IntPtr _window;
     public bool IsSupported => Environment.Is64BitProcess && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041);
+    public bool SupportsLiveMove => true;
     public event EventHandler DisplaysChanged
     {
         add => SystemEvents.DisplaySettingsChanged += value;
@@ -48,7 +49,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
         private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Task _predecessor;
         private TahoeCaptureRegion? _region;
-        private int _closing, _pending;
+        private int _closing, _pending, _moving;
         public Task Completion => _completion.Task;
 
         public Capture(IntPtr window, int x, int y, Func<int> frameRate,
@@ -66,6 +67,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
             thread.Start();
         }
         public void SetRegion(TahoeCaptureRegion region) => Volatile.Write(ref _region, region);
+        public void SetInteractiveMove(bool moving) => Volatile.Write(ref _moving, moving ? 1 : 0);
         public void Dispose() => Interlocked.Exchange(ref _closing, 1);
 
         private void Run()
@@ -95,6 +97,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
                 byte[]? previous = null, scratch = null;
                 long last = 0;
                 int warmup = 0;
+                double radiusX = -1, radiusY = -1;
                 while (Volatile.Read(ref _closing) == 0 && IsWindow(_window))
                 {
                     while (PeekMessage(out var message, IntPtr.Zero, 0, 0, 1))
@@ -110,12 +113,21 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
                         continue;
                     }
                     long now = Stopwatch.GetTimestamp();
-                    int fps = _frameRate();
+                    int fps = TahoeCaptureResources.FrameRateDuringMove(_frameRate(), Volatile.Read(ref _moving) != 0);
                     if (fps != 0 && now - last < Stopwatch.Frequency / (double)Math.Clamp(fps, 30, 240))
                     { Thread.Sleep(1); continue; }
                     last = now;
                     int x = checked(_originX + region.X), y = checked(_originY + region.Y);
-                    if (current != region)
+                    bool resized = TahoeCaptureResources.RequiresNewBuffer(current, region);
+                    if (GetWindowRect(_window, out var livePosition))
+                    {
+                        // Also follow programmatic moves. The viewport inset was
+                        // measured alongside the region, so a delayed frame cannot
+                        // turn it negative and expose the helper outside the window.
+                        (x, y) = TahoeCaptureResources.DesktopOrigin(region, _originX, _originY,
+                            livePosition.Left, livePosition.Top);
+                    }
+                    if (resized)
                     {
                         if (bitmap != IntPtr.Zero)
                         {
@@ -133,9 +145,14 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
                         if (oldBitmap == IntPtr.Zero || oldBitmap == new IntPtr(-1)) throw new Win32Exception();
                         if (!SetWindowPos(magnifier, IntPtr.Zero, 0, 0, region.Width, region.Height, 0x0014))
                             throw new Win32Exception();
-                        SetHelperShape(host, region);
-                        current = region; previous = scratch = null; warmup = 0;
+                        previous = scratch = null; warmup = 0;
                     }
+                    if (resized || radiusX != region.RadiusX || radiusY != region.RadiusY)
+                    {
+                        SetHelperShape(host, region);
+                        radiusX = region.RadiusX; radiusY = region.RadiusY;
+                    }
+                    current = region;
                     // The helper must remain composited, immediately behind the launcher.
                     // A fully offscreen helper stops updating on this Windows build.
                     if (!SetWindowPos(host, _window, x, y, region.Width, region.Height, 0x0050))
@@ -210,6 +227,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
     [DllImport("user32.dll")] private static extern bool IsWindow(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr hwnd);
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd,out RectNative bounds);
     [DllImport("user32.dll", SetLastError=true)] private static extern bool GetWindowDisplayAffinity(IntPtr hwnd,out uint affinity);
     [DllImport("user32.dll")] private static extern int GetSystemMetrics(int index);
     [DllImport("user32.dll", SetLastError=true)] private static extern bool PrintWindow(IntPtr hwnd,IntPtr dc,uint flags);

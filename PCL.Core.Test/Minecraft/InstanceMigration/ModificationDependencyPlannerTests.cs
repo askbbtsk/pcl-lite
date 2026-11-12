@@ -56,6 +56,19 @@ public sealed class ModificationDependencyPlannerTests
         Assert.AreEqual(1, queries);
     }
 
+    [TestMethod]
+    public void InstallerSelectedApiSatisfiesAllConsumersWithoutSelectingAnotherBuild()
+    {
+        var api = File("fabric-api", "installer-selected");
+        var mod = File("consumer", "v1", Ref("fabric-api"));
+        var result = ModificationDependencyPlanner.Plan([
+            Root("@installer:api", api), Root("consumer.jar", mod)
+        ], Minecraft, Loader, (_, _) => throw new InvalidOperationException("Must use the installer's exact API version."));
+        Assert.AreEqual(2, result.AcceptedSources.Count);
+        Assert.AreEqual(0, result.Downloads.Count);
+        Assert.AreEqual(0, result.Rejected.Count);
+    }
+
     private const string Minecraft = "26.2";
     private const string Loader = "NeoForge";
     private const string Platform = "Modrinth";

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -245,6 +246,31 @@ public sealed class InstancePersonalOptionsMemoryTests
         }
         Assert.IsNull(InstancePersonalOptionsMemory.Prepare(Request(),
             _ => throw new InvalidOperationException("A running owner must prevent this preview."), () => false));
+    }
+
+    [TestMethod]
+    public void InvalidPersistedOwnerCanBeRepairedOnlyWhenNoPotentialJavaGameIsRunning()
+    {
+        var marker = Path.Combine(_game, "PCL", "Enhancements", "options-session.lock");
+        Directory.CreateDirectory(Path.GetDirectoryName(marker)!);
+        foreach (var content in new[] { "not-a-pid", new string('x', 129), "0:-1" })
+        {
+            File.WriteAllText(marker, content);
+            using var session = InstancePersonalOptionsMemory.Prepare(Request(), _ => PersonalOptionsApplyChoice.Skip, () => false);
+            var java = Process.GetProcessesByName("java").Concat(Process.GetProcessesByName("javaw")).ToArray();
+            try
+            {
+                if (java.Length == 0)
+                {
+                    Assert.IsNotNull(session, "An invalid marker must not permanently disable synchronization.");
+                }
+                else
+                {
+                    Assert.IsNull(session, "An unidentifiable owner must not override a potential surviving game.");
+                }
+            }
+            finally { foreach (var process in java) process.Dispose(); }
+        }
     }
 
     [TestMethod]

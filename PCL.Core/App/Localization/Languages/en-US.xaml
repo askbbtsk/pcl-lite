@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-2: removes the square shadow seams still visible outside glass corners after hotfix-1. Glass mode hides the legacy small-corner shadow and restores it unchanged when disabled. Retains the sampler corner fix, screenshots and recording.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-3: adjustable glass frosting and edge refraction, with live desktop sampling during movement. Fixes personal settings synchronization, Java version checks, instance renaming and inheritance, modpack updates and mod migration. Improves Lunar token refresh, HTTP caching, update fallback and control states. See GitHub release notes for details.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>
@@ -15,9 +15,13 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">High: 2 DIP blur, 0.20 dispersion and press animation, 90 FPS by default. Expected higher load, especially at high resolution or across monitors.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">Ultra: 3 DIP blur, 0.30 dispersion, stronger highlights and press animation, 120 FPS by default. Expected highest load; power use, heat and stutter may increase.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">Effect frame cap (30–240 FPS; far right is unlimited)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost">Glass frosting</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction">Edge refraction strength</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">100% preserves the current effect and is both the default and minimum. Move right for stronger edge refraction, up to 300%, without changing text or icons. Saved independently of frosting and performance presets.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 keeps glass clear; move right for soft Gaussian blur on the glass background only. Text and icons remain sharp. Default: 8 DIP. Higher values increase graphics cost; this setting is independent of performance presets.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">Unlimited (may significantly increase power use)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">Enable liquid glass?&#xA;Preset: {0}; effect frame cap: {1}.&#xA;{2}&#xA;This adds CPU/GPU, memory and battery costs. These are relative estimates, not device benchmarks or a smoothness guarantee. Screenshot-friendly background mode is the default. If live desktop refraction is enabled separately, the launcher is excluded from screenshots and recordings. No countdown is required.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction continuously samples the desktop behind the launcher and increases GPU/CPU usage. Frames are never saved or uploaded. Only the sampler excludes the launcher itself; global screenshot and recording exclusion is not used, nor is WGC's yellow capture border. Moving or resizing pauses sampling and uses frosted material. Background opacity affects only the background color and image/video, not the live desktop, glass, text or logo. Enable anyway?</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction continuously samples the desktop behind the launcher and increases GPU/CPU usage. Frames are never saved or uploaded. Only the sampler excludes the launcher itself; screenshots and recording remain available and WGC's yellow capture border is not used. Moving keeps glass and live updates, with sampling capped at 60 FPS. Background opacity affects only the background color and image/video, not the live desktop, glass, text or logo. Enable anyway?</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">Mod dependency index</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">Index every instance in all Minecraft folders discovered by PCL, including unselected and hidden instances. Shared mod folders with the same parser context are scanned once. Idle browsing does not build indexes; mod downloads still update them.</sys:String>
@@ -3232,13 +3236,13 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">Desktop capture is active. This device uses the blur compatibility material.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">Desktop capture was interrupted. Recovering; unavailable areas use a static material.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Suspended">Desktop capture is paused until the window is visible again.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">Using static frosted material while moving or resizing; live desktop refraction resumes afterwards.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">Moving or resizing: glass and live sampling remain active, capped at 60 FPS.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">Desktop capture is unsupported. Showing a static material.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">Desktop capture could not recover. Showing a static material. Toggle “Refract the desktop directly” to retry.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">Use the Liquid Glass interface</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">Independent from advanced materials. The default launcher-background refraction supports screenshots. Enabling requires performance confirmation; quality and effect frame rate can be adjusted below.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction (allows screenshots and recording)</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">An independent sampler captures the desktop behind the launcher and excludes the launcher only from its own input. No global capture exclusion or WGC yellow capture border is used. Background / window opacity affects only the background color and image/video, not the live desktop, glass, text or logo. Material tint follows the launcher theme. Moving or resizing uses frosted material.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">An independent sampler captures the desktop behind the launcher and excludes the launcher only from its own input. No global capture exclusion or WGC yellow capture border is used. Background / window opacity affects only the background color and image/video, not the live desktop, glass, text or logo. Material tint follows the launcher theme. Moving keeps glass and background sampling active at up to 60 FPS.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">Desktop sampling requires Windows 10 version 2004 or later. Unavailable capture uses a static material; devices without Pixel Shader 3.0 use blur.</sys:String>
 
     <!-- Setup.Ui.Basic -->

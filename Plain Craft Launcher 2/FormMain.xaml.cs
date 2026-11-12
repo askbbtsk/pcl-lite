@@ -176,7 +176,9 @@ public partial class FormMain
         ModAnimation.AniStart(new[]
         {
             ModAnimation.AaCode(() => ModAnimation.AniControlEnabled -= 1, 50),
-            ModAnimation.AaOpacity(this, Config.Preference.Theme.WindowOpacity / 1000d + 0.4d, 250, 100),
+            ModAnimation.AaOpacity(this,
+                PCL.Core.UI.LiquidGlassComposition.WindowOpacity(Config.Preference.TahoeGlass.IsEnabled,
+                    Config.Preference.Theme.WindowOpacity) - Opacity, 250, 100),
             ModAnimation.AaDouble(i => TransformPos.Y += (double)i, -TransformPos.Y, 600,
                 100, new ModAnimation.AniEaseOutBack(ModAnimation.AniEasePower.Weak)),
             ModAnimation.AaDouble(i => TransformRotate.Angle += (double)i,

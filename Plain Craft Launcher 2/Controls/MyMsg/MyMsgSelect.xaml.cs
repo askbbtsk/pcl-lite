@@ -145,7 +145,7 @@ public partial class MyMsgSelect
     {
         // 结束线程阻塞
         myConverter.WaitFrame.Continue = false;
-        ComponentDispatcher.PopModal();
+        if (!myConverter.ModalLifetimeOwnedByCaller) ComponentDispatcher.PopModal();
         // 动画
         ModAnimation.AniStart(new[]
         {

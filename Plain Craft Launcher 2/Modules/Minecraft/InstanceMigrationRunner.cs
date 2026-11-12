@@ -60,14 +60,12 @@ internal static class InstanceMigrationRunner
                     if (File.Exists(destination) || Directory.Exists(destination)) throw new IOException(Lang.Text("Instance.Migration.TargetConflict", item.TargetFileName));
                     if (item.Action == MigrationModAction.CopyVerifiedLocal)
                     {
-                        var copied = ResourceCollectionCopyService.Copy([item.Source.Path], mods, cancellation);
+                        var copied = ResourceCollectionCopyService.CopyAs(item.Source.Path, mods, item.TargetFileName!, cancellation);
                         if (copied.Cancelled) throw new OperationCanceledException(cancellation);
                         var file = copied.Items.Single();
                         if (file.Status is not (ResourceCopyStatus.Copied or ResourceCopyStatus.AlreadyPresent)
                             || !string.Equals(file.Sha256, item.Source.Sha256, StringComparison.OrdinalIgnoreCase))
                             throw new IOException(Lang.Text("Instance.Migration.SourceChanged", Path.GetFileName(item.Source.Path)));
-                        if (!string.Equals(file.DestinationPath, destination, StringComparison.OrdinalIgnoreCase))
-                            File.Move(file.DestinationPath!, destination, overwrite: false);
                     }
                     else
                     {

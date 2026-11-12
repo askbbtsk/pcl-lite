@@ -156,6 +156,10 @@ public static partial class ModLaunch
 
         // 更新 options.txt
         var setupFileAddress = Path.Combine(ModInstanceList.McMcInstanceSelected.PathIndie, "options.txt");
+        // Minecraft and personal-options sync write this file outside the INI cache.
+        // Refresh before any ReadIni/WriteIni in this launch, otherwise changing one
+        // launch option could flush an older session's complete options.txt.
+        ModBase.IniClearCache(setupFileAddress);
 
         // 辅助切换游戏语言
         if (Config.Tool.AutoChangeLanguage)
@@ -166,9 +170,9 @@ public static partial class ModLaunch
                 var yosbrFileAddress = Path.Combine(ModInstanceList.McMcInstanceSelected.PathIndie, "config", "yosbr", "options.txt");
                 if (File.Exists(yosbrFileAddress))
                 {
-                    McLaunchLog("将修改 Yosbr Mod 中的 options.txt");
-                    setupFileAddress = yosbrFileAddress;
-                    ModBase.WriteIni(setupFileAddress, "lang", "none"); // 忽略默认语言
+                    McLaunchLog("从 Yosbr 模板初始化 options.txt，保留模板原文件");
+                    File.Copy(yosbrFileAddress, setupFileAddress, overwrite: false);
+                    ModBase.IniClearCache(setupFileAddress);
                 }
             }
 

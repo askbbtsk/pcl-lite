@@ -16,6 +16,41 @@ namespace PCL.Core.Test.UI;
 public sealed class TahoeDesktopCaptureTests
 {
     [STATestMethod]
+    public void LiveMoveKeepsSessionBitmapAndNewFramesInsteadOfFreezingTheLastImage()
+    {
+        WithCapture((capture, platform, window, image) =>
+        {
+            platform.SupportsLiveMove = true;
+            capture.Apply(true);
+            var session = platform.Sessions.Single();
+            session.Present(11);
+            PumpUntil(() => capture.HasFrame);
+            var bitmap = image.Source;
+            capture.SetInteractiveMove(true);
+            Assert.IsTrue(session.Moving);
+            Assert.IsFalse(session.Disposed);
+            Assert.AreEqual(TahoeCaptureState.Live, capture.State);
+            for (byte value = 20; value < 25; value++)
+            {
+                int version = session.Region!.Version;
+                window.Left += 2;
+                PumpFor(TimeSpan.FromMilliseconds(8));
+                Assert.AreEqual(version, session.Region.Version, "Position-only moves must not reject pending frame versions.");
+                session.Present(value);
+                int expected = value - 18;
+                PumpUntil(() => session.Completed >= expected);
+                Assert.AreSame(bitmap, image.Source, "Moving must not recreate a same-sized bitmap.");
+                var pixels = new byte[4];
+                ((WriteableBitmap)image.Source!).CopyPixels(new Int32Rect(0, 0, 1, 1), pixels, 4, 0);
+                Assert.AreEqual(value, pixels[0], "Fresh frames must remain visible while moving.");
+            }
+            capture.SetInteractiveMove(false);
+            Assert.IsFalse(session.Moving);
+            Assert.AreEqual(1, platform.Creations);
+        });
+    }
+
+    [STATestMethod]
     public void SamplerReceivesTheViewportClipRadiiInDevicePixels()
     {
         WithCapture((capture, platform, window, _) =>
@@ -405,6 +440,7 @@ public sealed class TahoeDesktopCaptureTests
     private sealed class FakePlatform : ITahoeCapturePlatform
     {
         public bool IsSupported { get; set; } = true;
+        public bool SupportsLiveMove { get; set; }
         public bool FailCreation { get; set; }
         public int Creations { get; private set; }
         public uint Affinity { get; private set; }
@@ -441,6 +477,8 @@ public sealed class TahoeDesktopCaptureTests
 
     private sealed class FakeSession(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed) : ITahoeMonitorCapture
     {
+        public bool Moving { get; private set; }
+        public void SetInteractiveMove(bool moving) => Moving = moving;
         public IntPtr Monitor { get; } = monitor;
         public TahoeCaptureRegion? Region { get; private set; }
         public bool Disposed { get; private set; }

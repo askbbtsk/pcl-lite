@@ -18,6 +18,21 @@ public static class ResourceCollectionCopyService
 
     public static ResourceCopyReport Copy(IReadOnlyList<string> selectedSources, string destinationDirectory,
         CancellationToken cancellationToken = default, IProgress<ResourceCopyItem>? progress = null)
+        => CopyCore(selectedSources, destinationDirectory, cancellationToken, progress, null);
+
+    /// <summary>Copies directly to the reviewed target name, without exposing the source filename in the destination.</summary>
+    public static ResourceCopyReport CopyAs(string source, string destinationDirectory, string destinationFileName,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(destinationFileName) || Path.GetFileName(destinationFileName) != destinationFileName
+            || destinationFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
+            || destinationFileName is "." or "..")
+            throw new ArgumentException("A destination must be one plain filename.", nameof(destinationFileName));
+        return CopyCore([source], destinationDirectory, cancellationToken, null, destinationFileName);
+    }
+
+    private static ResourceCopyReport CopyCore(IReadOnlyList<string> selectedSources, string destinationDirectory,
+        CancellationToken cancellationToken, IProgress<ResourceCopyItem>? progress, string? destinationFileName)
     {
         ArgumentNullException.ThrowIfNull(selectedSources);
         if (selectedSources.Count > 10000) throw new ArgumentException("Too many selected source files.", nameof(selectedSources));
@@ -50,7 +65,7 @@ public static class ResourceCollectionCopyService
             {
                 if (cancellationToken.IsCancellationRequested) return CancelRemaining(selectedSources, index, results);
                 ResourceCopyItem item;
-                try { item = CopyOne(selectedSources[index], destination, cancellationToken); }
+                try { item = CopyOne(selectedSources[index], destination, cancellationToken, destinationFileName); }
                 catch (OperationCanceledException) { return CancelRemaining(selectedSources, index, results); }
                 results.Add(item);
                 progress?.Report(item);
@@ -59,7 +74,7 @@ public static class ResourceCollectionCopyService
         return new(results, cancellationToken.IsCancellationRequested);
     }
 
-    private static ResourceCopyItem CopyOne(string source, string destination, CancellationToken token)
+    private static ResourceCopyItem CopyOne(string source, string destination, CancellationToken token, string? destinationFileName)
     {
         string? target = null;
         string? temporary = null;
@@ -73,7 +88,7 @@ public static class ResourceCollectionCopyService
             if (!ResourceCollectionPaths.IsSupported(fullSource))
                 return Failed(source, null, ResourceCopyFailure.Unsupported, "Only JAR, ZIP or LiteMod files and their disabled variants can be copied.");
             fullSource = ResourceCollectionPaths.ExpandLongName(fullSource, out _);
-            target = Path.Combine(destination, Path.GetFileName(fullSource));
+            target = Path.Combine(destination, destinationFileName ?? Path.GetFileName(fullSource));
             ResourceCollectionPaths.RejectLinks(target);
             // Denies regular writes, deletes and renames for the duration of capture + verified commit.
             using var input = new FileStream(fullSource, FileMode.Open, FileAccess.Read, FileShare.Read);

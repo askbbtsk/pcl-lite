@@ -344,6 +344,7 @@ public partial class PageInstanceServer : MyPageRight
     private void UpdateServerUi()
     {
         PanServers.Children.Clear();
+        serverCardList.Clear();
 
         RefreshTip();
 

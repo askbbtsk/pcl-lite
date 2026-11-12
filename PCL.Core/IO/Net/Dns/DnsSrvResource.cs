@@ -15,8 +15,26 @@ public class DnsSrvResource : IDnsResource
 
     public void WriteBytes(Memory<byte> bytes, ref int offset)
     {
-        // 6 Bytes for priority, weight, port and 2 bytes for length
-        var buf = bytes.Span[offset..];
+        if (Priority is < 0 or > ushort.MaxValue || Weight is < 0 or > ushort.MaxValue ||
+            Port is < 0 or > ushort.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(Port), "SRV fields must fit unsigned 16-bit values.");
+        var segments = Target.TrimEnd('.').Length == 0
+            ? Array.Empty<string>() : Target.TrimEnd('.').Split('.');
+        var encoded = new List<byte[]>();
+        var required = 7; // priority, weight, port, terminating root label
+        foreach (var segment in segments)
+        {
+            var label = Encoding.UTF8.GetBytes(segment);
+            if (label.Length is 0 or > 63)
+                throw new ArgumentException("Invalid DNS label length.", nameof(Target));
+            encoded.Add(label);
+            required += label.Length + 1;
+        }
+        if (required - 6 > 255)
+            throw new ArgumentException("DNS target exceeds 255 bytes.", nameof(Target));
+        if (offset < 0 || bytes.Length - offset < required)
+            throw new ArgumentException("Insufficient space for DNS SRV resource.", nameof(bytes));
+        var buf = bytes.Span;
         BinaryPrimitives.WriteUInt16BigEndian(buf[offset..(offset + 2)], (ushort)Priority);
         offset += 2;
         BinaryPrimitives.WriteUInt16BigEndian(buf[offset..(offset + 2)], (ushort)Weight);
@@ -24,15 +42,15 @@ public class DnsSrvResource : IDnsResource
         BinaryPrimitives.WriteUInt16BigEndian(buf[offset..(offset + 2)], (ushort)Port);
         offset += 2;
         // target string
-        foreach (var seg in Target.Split('.'))
+        foreach (var segBuf in encoded)
         {
-            var segBuf = Encoding.UTF8.GetBytes(seg);
             var segLength = (byte)segBuf.Length;
             buf[offset] = segLength;
             offset++;
             segBuf.CopyTo(buf[offset..]);
             offset += segBuf.Length;
         }
+        buf[offset++] = 0;
     }
 
     public void ReadBytes(ReadOnlyMemory<byte> bytes, ref int offset, int length)

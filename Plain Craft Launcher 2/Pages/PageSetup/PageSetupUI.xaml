@@ -284,6 +284,24 @@
                     <TextBlock x:Name="TextLiquidGlassCost" Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,8,0,12" />
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Frost}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock x:Name="TextLiquidGlassFrost" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    </Grid>
+                    <local:MySlider x:Name="SliderLiquidGlassFrost" MaxValue="24" ValueByKey="1" Height="32"
+                                    Change="LiquidGlassFrost_Changed" Margin="0,0,0,6" />
+                    <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Frost.Hint}"
+                               Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,12" />
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Refraction}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock x:Name="TextLiquidGlassRefraction" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    </Grid>
+                    <local:MySlider x:Name="SliderLiquidGlassRefraction" MaxValue="10" ValueByKey="1" Height="32"
+                                    Change="LiquidGlassRefraction_Changed" Margin="0,0,0,6" />
+                    <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Refraction.Hint}"
+                               Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,12" />
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.FrameRate}" VerticalAlignment="Center" TextWrapping="Wrap" />
                         <TextBlock x:Name="TextLiquidGlassFrameRate" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" />
                     </Grid>

@@ -23,8 +23,9 @@ public readonly record struct LunarUuid(ulong High, ulong Low)
         var text = value.Replace("-", "");
         if (text.Length != 32) return default;
 
-        var high = ulong.Parse(text[..16], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-        var low = ulong.Parse(text[16..], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+        if (!ulong.TryParse(text.AsSpan(0, 16), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var high) ||
+            !ulong.TryParse(text.AsSpan(16, 16), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var low))
+            return default;
         return new LunarUuid(high, low);
     }
 

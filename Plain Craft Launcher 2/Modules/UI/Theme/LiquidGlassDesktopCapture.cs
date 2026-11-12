@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -52,6 +53,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
         _window.Dispatcher.VerifyAccess();
         if (_disposed || moving == _interactiveMove) return;
         _interactiveMove = moving;
+        foreach (var session in _sessions.Values) session.Capture?.SetInteractiveMove(moving);
         if (_enabled) UpdateGeometry();
     }
 
@@ -139,7 +141,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
     private void UpdateGeometry()
     {
         if (!_enabled || _disposed) return;
-        if (_interactiveMove || !_window.IsVisible || _window.WindowState == WindowState.Minimized)
+        if ((_interactiveMove && !_platform.SupportsLiveMove) || !_window.IsVisible || _window.WindowState == WindowState.Minimized)
         {
             _retry.Stop();
             RetireAll();
@@ -171,6 +173,11 @@ internal sealed class TahoeDesktopCapture : IDisposable
             var radii = clip is null ? new Size() : new Size(
                 Math.Max(0, clip.RadiusX * (end.X - origin.X) / _viewport.ActualWidth),
                 Math.Max(0, clip.RadiusY * (end.Y - origin.Y) / _viewport.ActualHeight));
+            // The live backend follows HWND coordinates on its worker. Position-only
+            // updates during dragging must not invalidate in-flight frame versions:
+            // otherwise the dispatcher can reject every fresh frame in a continuous move.
+            if (_interactiveMove && _platform.SupportsLiveMove && bounds.Size == _bounds.Size
+                && radii == _cornerRadii && !_topologyDirty && _sessions.Count != 0) return;
             if (bounds == _bounds && radii == _cornerRadii && !_topologyDirty && _sessions.Count != 0) return;
             if (_retry.IsEnabled) return;
             if (State == TahoeCaptureState.Failed && bounds == _bounds && !_topologyDirty) return;
@@ -180,6 +187,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
             _topologyDirty = false;
             int version = ++_version;
             int width = checked((int)bounds.Width), height = checked((int)bounds.Height);
+            bool hasWindowBounds = GetWindowRect(_handle, out var nativeBounds);
             if (_bitmap == null || _bitmap.PixelWidth != width || _bitmap.PixelHeight != height)
                 _bitmap = NewBitmap(width, height);
 
@@ -211,6 +219,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
                     {
                         session.Capture = _platform.CreateMonitor(monitor.Handle,
                             (frame, completed) => Present(session, frame, completed), error => Failed(session, error));
+                        session.Capture.SetInteractiveMove(_interactiveMove);
                     }
                     catch
                     {
@@ -220,7 +229,11 @@ internal sealed class TahoeDesktopCapture : IDisposable
                 }
                 session.Capture!.SetRegion(new TahoeCaptureRegion((int)(area.X - monitor.Bounds.X), (int)(area.Y - monitor.Bounds.Y),
                     (int)area.Width, (int)area.Height, (int)(area.X - bounds.X), (int)(area.Y - bounds.Y), version)
-                { RadiusX = radii.Width, RadiusY = radii.Height });
+                {
+                    RadiusX = radii.Width, RadiusY = radii.Height,
+                    WindowOffsetX = hasWindowBounds ? checked((int)area.X - nativeBounds.Left) : null,
+                    WindowOffsetY = hasWindowBounds ? checked((int)area.Y - nativeBounds.Top) : null
+                });
             }
             foreach (IntPtr monitor in _sessions.Keys.Where(key => !needed.Contains(key)).ToArray())
             {
@@ -445,4 +458,10 @@ internal sealed class TahoeDesktopCapture : IDisposable
         public ITahoeMonitorCapture? Capture { get; set; }
         public bool HasFrame { get; set; }
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeBounds { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr window, out NativeBounds bounds);
 }

@@ -60,13 +60,13 @@ public sealed class PersonalOptionsFileCoordinator : IDisposable
     private bool HasRunningOwner()
     {
         if (_lease.Length == 0) return false;
-        if (_lease.Length > 128) return true;
+        if (_lease.Length > 128) return HasPotentialUntrackedGame();
         var bytes = new byte[(int)_lease.Length];
         _lease.Position = 0;
         _lease.ReadExactly(bytes);
         var parts = Encoding.ASCII.GetString(bytes).Split(':');
         if (parts.Length != 2 || !int.TryParse(parts[0], out var pid) || pid <= 0
-            || !long.TryParse(parts[1], out var startTicks) || startTicks <= 0) return true;
+            || !long.TryParse(parts[1], out var startTicks) || startTicks <= 0) return HasPotentialUntrackedGame();
         try
         {
             using var process = Process.GetProcessById(pid);
@@ -75,6 +75,30 @@ public sealed class PersonalOptionsFileCoordinator : IDisposable
         catch (ArgumentException) { return false; }
         catch (InvalidOperationException) { return false; }
         catch (System.ComponentModel.Win32Exception) { return true; }
+    }
+
+    private static bool HasPotentialUntrackedGame()
+    {
+        // A malformed marker has no reliable PID identity. It may be repaired
+        // only when no Java process could still be using these options after
+        // its launcher exited; valid PID/start-time markers keep their precise check.
+        foreach (var name in new[] { "java", "javaw" })
+        {
+            Process[] processes;
+            try { processes = Process.GetProcessesByName(name); }
+            catch { return true; }
+            var running = false;
+            foreach (var process in processes)
+            {
+                using (process)
+                {
+                    try { running |= !process.HasExited; }
+                    catch { running = true; }
+                }
+            }
+            if (running) return true;
+        }
+        return false;
     }
 
     internal static IDisposable? TryAcquireProfile(string path)

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Ae.Dns.Protocol.Enums;
 using Ae.Dns.Protocol.Records;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PCL.Core.IO.Net.Consent;
 using PCL.Core.IO.Net.Dns;
 
 namespace PCL.Core.Test.Network;
@@ -16,6 +17,7 @@ public class DoHQueryTest
     [TestMethod]
     public async Task TestIpQuery()
     {
+        using var consent = NetworkConsentService.AllowAllForCurrentTest();
         var query = DnsQuery.Instance;
         var addr = await query.QueryForIpAsync("cloudflare.com", TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(addr);
@@ -26,6 +28,7 @@ public class DoHQueryTest
     [TestMethod]
     public async Task TestSrvQuery()
     {
+        using var consent = NetworkConsentService.AllowAllForCurrentTest();
         // 原来的 _minecraft._tcp.mc.hdeda6e85.nyat.app 已不再发布 SRV（查询返回 0 条）；
         // 换成 hypixel 的 SRV（长期稳定），测的只是「SRV 查询 + 解析」本身
         var query = DnsQuery.Instance;

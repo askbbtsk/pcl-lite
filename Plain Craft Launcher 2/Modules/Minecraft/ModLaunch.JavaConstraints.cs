@@ -122,26 +122,26 @@ public static partial class ModLaunch
             {
                 // 1.13 - 1.14：Java 8 - 10
                 minVer = new Version(1, 8, 0, 0) > minVer ? new Version(1, 8, 0, 0) : minVer;
-                maxVer = new Version(1, 10, 999, 999) < maxVer ? new Version(1, 10, 999, 999) : maxVer;
+                maxVer = new Version(10, 0, 999, 999) < maxVer ? new Version(10, 0, 999, 999) : maxVer;
             }
             else if (instance.Info.vanilla.Major == 15)
             {
                 // 1.15：Java 8 - 15
                 minVer = new Version(1, 8, 0, 0) > minVer ? new Version(1, 8, 0, 0) : minVer;
-                maxVer = new Version(1, 15, 999, 999) < maxVer ? new Version(1, 15, 999, 999) : maxVer;
+                maxVer = new Version(15, 0, 999, 999) < maxVer ? new Version(15, 0, 999, 999) : maxVer;
             }
             else if (McVersionComparer.CompareVersionGe(instance.Info.Forge, "34.0.0") &&
                      McVersionComparer.CompareVersionGe("36.2.25", instance.Info.Forge))
             {
                 // 1.16，Forge 34.X ~ 36.2.25：最高 Java 8u321
-                maxVer = new Version(1, 8, 0, 320) < maxVer ? new Version(1, 8, 0, 321) : maxVer;
+                maxVer = new Version(1, 8, 0, 321) < maxVer ? new Version(1, 8, 0, 321) : maxVer;
             }
             else if (instance.Info.vanilla.Major >= 18 &&
                      instance.Info.vanilla.Major < 19 &&
                      instance.Info.HasOptiFine) // #305
             {
                 // 1.18：若安装了 OptiFine，最高 Java 18
-                maxVer = new Version(1, 18, 999, 999) < maxVer ? new Version(1, 18, 999, 999) : maxVer;
+                maxVer = new Version(18, 0, 999, 999) < maxVer ? new Version(18, 0, 999, 999) : maxVer;
             }
         }
 

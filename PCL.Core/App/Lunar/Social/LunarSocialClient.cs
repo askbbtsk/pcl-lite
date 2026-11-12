@@ -32,6 +32,8 @@ public sealed class LunarSocialClient : IAsyncDisposable
     private readonly object _pendingLock = new();
     private readonly List<LunarFriend> _friends = [];
     private readonly CancellationTokenSource _lifetime = new();
+    private readonly object _disposeLock = new();
+    private Task? _disposeTask;
 
     private ClientWebSocket? _socket;
     private Task? _receiveLoop;
@@ -474,27 +476,47 @@ public sealed class LunarSocialClient : IAsyncDisposable
 
     #endregion
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-#if NET8_0_OR_GREATER
-        await _lifetime.CancelAsync().ConfigureAwait(false);
-#else
-        _lifetime.Cancel();
-#endif
-        await DisconnectAsync().ConfigureAwait(false);
-        _lifetime.Dispose();
-        _writeGate.Dispose();
+        lock (_disposeLock)
+            return new ValueTask(_disposeTask ??= DisposeCoreAsync());
+    }
 
-        if (_receiveLoop is not null)
+    private async Task DisposeCoreAsync()
+    {
+        // Publish the shared task before callbacks from DisconnectAsync can re-enter disposal.
+        await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+        try
         {
+#if NET8_0_OR_GREATER
+            await _lifetime.CancelAsync().ConfigureAwait(false);
+#else
+            _lifetime.Cancel();
+#endif
             try
             {
-                await _receiveLoop.ConfigureAwait(false);
+                await DisconnectAsync().ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
+            finally
             {
-                // 收包循环本来就要退出
+                if (_receiveLoop is not null)
+                {
+                    try
+                    {
+                        await _receiveLoop.ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
+                    {
+                        // 收包循环本来就要退出
+                    }
+                }
             }
+        }
+        finally
+        {
+            // The receive loop can still dispatch work using these objects until it exits.
+            _lifetime.Dispose();
+            _writeGate.Dispose();
         }
     }
 }

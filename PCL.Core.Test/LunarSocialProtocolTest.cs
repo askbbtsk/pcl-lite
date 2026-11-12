@@ -41,6 +41,9 @@ public class LunarSocialProtocolTest
         Assert.IsTrue(LunarUuid.Parse("not-a-uuid").IsEmpty);
         Assert.IsTrue(LunarUuid.Parse("").IsEmpty);
         Assert.IsTrue(LunarUuid.Parse(null).IsEmpty);
+        Assert.IsTrue(LunarUuid.Parse(new string('g', 32)).IsEmpty);
+        Assert.IsTrue(LunarUuid.Parse("ca7514be86d64f29be39850f3cad12fg").IsEmpty);
+        Assert.IsTrue(LunarUuid.Parse(" ca7514be86d64f29be39850f3cad12f").IsEmpty);
     }
 
     [TestMethod]

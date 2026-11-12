@@ -123,7 +123,7 @@ public partial class MyMsgMarkdown
         // 结束线程阻塞
         if (myConverter.ForceWait || !string.IsNullOrEmpty(myConverter.Button2))
             myConverter.WaitFrame.Continue = false;
-        ComponentDispatcher.PopModal();
+        if (!myConverter.ModalLifetimeOwnedByCaller) ComponentDispatcher.PopModal();
         // 动画
         ModAnimation.AniStart(new[]
         {

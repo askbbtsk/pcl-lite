@@ -482,6 +482,10 @@ public static class ModBedrockUwp
                     {
                         ModBase.Log($"[Bedrock] 结束进程 {name} 失败: {ex.Message}", ModBase.LogLevel.Normal);
                     }
+                    finally
+                    {
+                        process.Dispose();
+                    }
                 }
             }
             catch (Exception ex)

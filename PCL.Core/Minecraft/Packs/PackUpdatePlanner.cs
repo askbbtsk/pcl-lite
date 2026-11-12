@@ -282,7 +282,9 @@ public static class PackUpdatePlanner
             var localHash = exists ? HashFile(destination) : null;
             var replacedTrackedAuthor = exists
                 && oldFiles.TryGetValue(next.Path.Replace('\\', '/'), out var oldAtDestination)
-                && !oldMatched.Contains(oldAtDestination.Path)
+                && (!oldMatched.Contains(oldAtDestination.Path)
+                    || actions.Any(action => action.Kind == PackUpdateActionKind.RemoveAuthorFile
+                        && PathEquals(action.DestinationPath, next.Path)))
                 && HashEquals(localHash, oldAtDestination.Sha256);
             if (exists && !replacedTrackedAuthor && GetChoice(choices, next.Path, next.Path) != PackFileChoice.UseAuthor)
             {
@@ -300,6 +302,16 @@ public static class PackUpdatePlanner
             actions.Add(Install(next, GetPayload(payloadPaths, next.Path), PackFileOwnership.PersonalAdded, null,
                 "New author file.", localHash));
         }
+
+        // A rename/removal and a new author file may deliberately reuse the same
+        // path. The replacement already journals the original file; a separate
+        // removal would duplicate that destination and invalidate the transaction.
+        var replacedPaths = actions.Where(action => action.Kind is PackUpdateActionKind.InstallAuthorFile
+                or PackUpdateActionKind.UpdateAuthorFile)
+            .Select(action => action.DestinationPath.Replace('\\', '/'))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        actions.RemoveAll(action => action.Kind == PackUpdateActionKind.RemoveAuthorFile
+            && replacedPaths.Contains(action.DestinationPath.Replace('\\', '/')));
 
         return new PackUpdatePlan
         {

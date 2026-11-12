@@ -494,6 +494,39 @@ public sealed class PackUpdatePlannerTest
         Assert.AreEqual(0, diffs.Count);
     }
 
+    [TestMethod]
+    public void RenamedAuthorFileCanReuseItsOldPathForANewProject()
+    {
+        var game = Path.Combine(_root, "game");
+        Write(Path.Combine(game, "mods", "old.jar"), "old-project");
+        var renamed = Path.Combine(_stage, "renamed.jar");
+        var replacement = Path.Combine(_stage, "replacement.jar");
+        Write(renamed, "new-project-build");
+        Write(replacement, "unrelated-new-project");
+        var plan = PackUpdatePlanner.Build(game,
+            Baseline(Entry("mods/old.jar", "old-project", "project:old")),
+            Baseline(Entry("mods/renamed.jar", "new-project-build", "project:old"),
+                Entry("mods/old.jar", "unrelated-new-project", "project:new")),
+            new Dictionary<string, string> { ["mods/renamed.jar"] = renamed, ["mods/old.jar"] = replacement });
+        Assert.AreEqual(2, plan.Actions.Count(action => action.Kind is not PackUpdateActionKind.PreservePersonalFile));
+        PackUpdateTransaction.Apply(plan);
+        Assert.AreEqual("new-project-build", File.ReadAllText(Path.Combine(game, "mods", "renamed.jar")));
+        Assert.AreEqual("unrelated-new-project", File.ReadAllText(Path.Combine(game, "mods", "old.jar")));
+    }
+
+    [TestMethod]
+    public void AuthorRemovalAndNewIdentityAtSamePathUseOneJournaledReplacement()
+    {
+        var game = Path.Combine(_root, "game");
+        Write(Path.Combine(game, "mods", "shared.jar"), "old");
+        var payload = Path.Combine(_stage, "shared.jar");
+        Write(payload, "new");
+        var plan = PackUpdatePlanner.Build(game, Baseline(Entry("mods/shared.jar", "old", "old:project")),
+            Baseline(Entry("mods/shared.jar", "new", "new:project")), new Dictionary<string, string> { ["mods/shared.jar"] = payload });
+        PackUpdateTransaction.Apply(plan);
+        Assert.AreEqual("new", File.ReadAllText(Path.Combine(game, "mods", "shared.jar")));
+    }
+
     private static PackBaseline Baseline(params PackFileEntry[] files)
         => new() { Files = files.ToDictionary(static file => file.Path, StringComparer.OrdinalIgnoreCase) };
     private static PackFileEntry Entry(string path, string content, string identity)

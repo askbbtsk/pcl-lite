@@ -9,6 +9,7 @@ public partial class MyMsgText
 {
     private ConfirmationDelayPolicy? _confirmationDelay;
     private DispatcherTimer? _confirmationTimer;
+    private bool _confirmationReady;
 
     private void InitializeConfirmationDelay()
     {
@@ -46,7 +47,15 @@ public partial class MyMsgText
         var ready = _confirmationDelay.CanConfirm && !myConverter.IsExited;
         Btn1.IsEnabled = ready;
         Btn1.Text = ready ? myConverter.Button1 : myConverter.Button1 + " (" + _confirmationDelay.RemainingSeconds + ")";
-        if (ready) _confirmationTimer?.Stop();
+        if (ready)
+        {
+            _confirmationTimer?.Stop();
+            // The cancel button is a safe initial focus while counting down. Restore the
+            // normal primary action once, but do not steal focus from another window.
+            if (!_confirmationReady && IsKeyboardFocusWithin && Btn2.IsKeyboardFocusWithin)
+                Btn1.Focus();
+            _confirmationReady = true;
+        }
     }
 
     private bool CanAcceptPrimaryConfirmation()

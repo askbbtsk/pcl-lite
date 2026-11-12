@@ -200,7 +200,12 @@ public class HostConnectionHandler
             await socket.ConnectAsync(ip, port, cancellationToken).ConfigureAwait(false);
             return new NetworkStream(socket, ownsSocket: true);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException)
+        {
+            socket.Dispose();
+            throw;
+        }
+        catch (Exception ex)
         {
             socket.Dispose();
             throw new HttpRequestException($"Connection to {ip}:{port} failed", ex);

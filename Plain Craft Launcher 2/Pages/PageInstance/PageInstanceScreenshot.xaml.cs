@@ -123,41 +123,43 @@ public partial class PageInstanceScreenshot : IRefreshable
     private async Task ListAppendAsync(int count = 20, int offset = -1)
     {
         _AppendLock = true;
-        if (offset == -1)
+        try
         {
-            if (_Offset * count > fileList.Count)
-                return;
-            offset = _Offset + 1;
-            _Offset += 1;
-        }
-        else
-        {
-            _Offset = offset;
-        }
-
-        if (count * offset > fileList.Count)
-            return;
-        for (int j = count * offset, loopTo = count * (offset + 1) - 1; j <= loopTo; j++)
-        {
-            if (j >= fileList.Count)
-                break;
-            var i = fileList.ElementAt(j);
-            try
+            if (offset == -1)
             {
-                if (!File.Exists(i))
-                    continue; // 文件在加载途中消失了
-                if (File.GetAttributes(i).HasFlag(FileAttributes.Hidden))
-                    continue; // 隐藏文件
-                if (new FileInfo(i).Length == 0L)
-                    continue; // 空文件
-                var myCard = new MyCard
+                if (_Offset * count > fileList.Count)
+                    return;
+                offset = _Offset + 1;
+                _Offset += 1;
+            }
+            else
+            {
+                _Offset = offset;
+            }
+
+            if (count * offset > fileList.Count)
+                return;
+            for (int j = count * offset, loopTo = count * (offset + 1) - 1; j <= loopTo; j++)
+            {
+                if (j >= fileList.Count)
+                    break;
+                var i = fileList.ElementAt(j);
+                try
                 {
-                    Margin = new Thickness(7),
-                    Tag = i,
-                    ToolTip = i.Replace(screenshotPath, "") // 适配高清截图模组
-                };
-                var grid = new Grid();
-                myCard.Children.Add(grid);
+                    if (!File.Exists(i))
+                        continue; // 文件在加载途中消失了
+                    if (File.GetAttributes(i).HasFlag(FileAttributes.Hidden))
+                        continue; // 隐藏文件
+                    if (new FileInfo(i).Length == 0L)
+                        continue; // 空文件
+                    var myCard = new MyCard
+                    {
+                        Margin = new Thickness(7),
+                        Tag = i,
+                        ToolTip = i.Replace(screenshotPath, "") // 适配高清截图模组
+                    };
+                    var grid = new Grid();
+                    myCard.Children.Add(grid);
 
                 grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(9d) });
                 grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(120d) });
@@ -240,17 +242,20 @@ public partial class PageInstanceScreenshot : IRefreshable
                 };
                 btnCopy.Click += (s, ev) => BtnCopy_Click((MyIconTextButton)s, ev);
                 stackPanel.Children.Add(btnCopy);
-                PanList.Children.Add(myCard);
-                myCard.Opacity = 0d;
-                ModAnimation.AniStart(new[] { ModAnimation.AaOpacity(myCard, 1d, 200) });
-            }
-            catch (Exception ex)
-            {
-                ModBase.Log(ex, $"[Screenshot] 创建 {i} 截图预览失败，图像可能损坏");
+                    PanList.Children.Add(myCard);
+                    myCard.Opacity = 0d;
+                    ModAnimation.AniStart(new[] { ModAnimation.AaOpacity(myCard, 1d, 200) });
+                }
+                catch (Exception ex)
+                {
+                    ModBase.Log(ex, $"[Screenshot] 创建 {i} 截图预览失败，图像可能损坏");
+                }
             }
         }
-
-        _AppendLock = false;
+        finally
+        {
+            _AppendLock = false;
+        }
     }
 
     private void RemoveItem(string path)

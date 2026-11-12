@@ -218,8 +218,7 @@ public static class LunarAccountStore
                 account["accessTokenExpiresAt"] =
                     value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
 
-            if (!string.IsNullOrWhiteSpace(refreshToken) &&
-                string.IsNullOrWhiteSpace(account["refreshToken"]?.GetValue<string>()))
+            if (!string.IsNullOrWhiteSpace(refreshToken))
                 account["refreshToken"] = refreshToken;
 
             var temporary = path + ".pcltmp";

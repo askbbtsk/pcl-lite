@@ -458,23 +458,17 @@ public partial class McInstance
                                         Lang.Text("Minecraft.Error.DependencyRecursion", Name));
                                 }
 
-                                Recheck: ;
-
                                 if (!Equals(inheritInstanceName, ""))
                                 {
                                     var inheritInstance = new McInstance(Path.Combine(
                                         ModBase.GetPathFromFullPath(PathInstance), inheritInstanceName?.ToString() ?? ""));
-                                    // 继续循环
-                                    if (Equals(inheritInstance.InheritInstanceName,
-                                            inheritInstanceName))
-                                        throw new Exception(Lang.Text("Minecraft.Error.DependencyRecursion",
-                                            inheritInstanceName));
-                                    inheritInstanceName = inheritInstance.InheritInstanceName;
-                                    // 合并
+                                    // The parent's getter resolves its entire inheritance chain.
+                                    // Merge that effective parent exactly once; walking its ancestors
+                                    // again duplicates append-only arrays such as libraries/arguments.
+                                    // VersionInheritanceGuard protects the recursive getter chain.
                                     var inherited = (JsonObject)inheritInstance.JsonObject.DeepClone();
                                     inherited.Merge(field);
                                     field = inherited;
-                                    goto Recheck;
                                 }
                             }
                             catch (PCL.Core.Minecraft.Instances.VersionInheritanceException) { throw; }

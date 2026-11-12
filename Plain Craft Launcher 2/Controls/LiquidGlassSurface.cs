@@ -23,6 +23,7 @@ public sealed class TahoeGlassSurface : Grid
     public static readonly DependencyProperty CornerRadiusProperty = Numeric(nameof(CornerRadius), 24, 0, 4096);
     public static readonly DependencyProperty RefractionStrengthProperty = Numeric(nameof(RefractionStrength), .05, 0, .15);
     public static readonly DependencyProperty BlurRadiusProperty = Numeric(nameof(BlurRadius), 2, 0, 32);
+    public static readonly DependencyProperty FrostRadiusProperty = Numeric(nameof(FrostRadius), 0, 0, 24);
     public static readonly DependencyProperty TintOpacityProperty = Numeric(nameof(TintOpacity), .10, 0, 1);
     public static readonly DependencyProperty HighlightStrengthProperty = Numeric(nameof(HighlightStrength), .65, 0, 1);
     public static readonly DependencyProperty DispersionProperty = Numeric(nameof(Dispersion), .20, 0, 1);
@@ -55,6 +56,8 @@ public sealed class TahoeGlassSurface : Grid
     private FrameworkElement? _subscribedSource;
     private TahoeGlassEffect? _shader;
     private VisualBrush? _backdrop, _compatibilityBackdrop;
+    private VisualBrush? _frostInput;
+    private Rectangle? _frostSource;
     private Matrix _lastMatrix;
     private Size _lastSourceSize, _lastPanelSize;
     private DpiScale _lastDpi;
@@ -85,6 +88,7 @@ public sealed class TahoeGlassSurface : Grid
     /// <summary>Full-source UV coefficient f from the video. The default is 0.05.</summary>
     public double RefractionStrength { get => (double)GetValue(RefractionStrengthProperty); set => SetValue(RefractionStrengthProperty, value); }
     public double BlurRadius { get => (double)GetValue(BlurRadiusProperty); set => SetValue(BlurRadiusProperty, value); }
+    public double FrostRadius { get => (double)GetValue(FrostRadiusProperty); set => SetValue(FrostRadiusProperty, value); }
     public Color TintColor { get => (Color)GetValue(TintColorProperty); set => SetValue(TintColorProperty, value); }
     public double TintOpacity { get => (double)GetValue(TintOpacityProperty); set => SetValue(TintOpacityProperty, value); }
     public double HighlightStrength { get => (double)GetValue(HighlightStrengthProperty); set => SetValue(HighlightStrengthProperty, value); }
@@ -307,7 +311,7 @@ public sealed class TahoeGlassSurface : Grid
         _lastSourceValid = true;
         UpdateChrome(size, radius);
 
-        Rect crop = TahoeGlassMath.SamplingBounds(matrix, size, sourceSize, RefractionStrength, BlurRadius);
+        Rect crop = TahoeGlassMath.SamplingBounds(matrix, size, sourceSize, RefractionStrength, Math.Max(BlurRadius, FrostRadius));
         if (crop.IsEmpty || crop.Width < .001 || crop.Height < .001)
         {
             SetStaticMaterial(size, radius);
@@ -334,7 +338,31 @@ public sealed class TahoeGlassSurface : Grid
             {
                 ViewboxUnits = BrushMappingMode.Absolute, Stretch = Stretch.Fill, TileMode = TileMode.None
             };
-            _backdrop.Viewbox = crop;
+            if (FrostRadius > 0)
+            {
+                // Blur a control-free, padded crop before refraction. A real Gaussian
+                // kernel avoids the separated nine-tap copies produced by large shader offsets.
+                _frostInput ??= new VisualBrush(BackdropSource)
+                { ViewboxUnits = BrushMappingMode.Absolute, Stretch = Stretch.Fill };
+                _frostInput.Viewbox = crop;
+                _frostSource ??= new Rectangle();
+                _frostSource.Width = crop.Width;
+                _frostSource.Height = crop.Height;
+                _frostSource.Fill = _frostInput;
+                if (_frostSource.Effect is not BlurEffect blur || blur.Radius != FrostRadius)
+                    _frostSource.Effect = new BlurEffect { Radius = FrostRadius,
+                        KernelType = KernelType.Gaussian, RenderingBias = RenderingBias.Performance };
+                _frostSource.Measure(crop.Size);
+                _frostSource.Arrange(new Rect(crop.Size));
+                _backdrop.Visual = _frostSource;
+                _backdrop.Viewbox = new Rect(crop.Size);
+            }
+            else
+            {
+                ReleaseFrost();
+                _backdrop.Visual = BackdropSource;
+                _backdrop.Viewbox = crop;
+            }
             _shader!.Backdrop = _backdrop;
             _shader.Size = new Point4D(size.Width, size.Height, radius, 1 / Math.Max(dpi.DpiScaleX, dpi.DpiScaleY));
             _shader.Origin = new Point4D((matrix.OffsetX - crop.X) / crop.Width, (matrix.OffsetY - crop.Y) / crop.Height,
@@ -350,12 +378,14 @@ public sealed class TahoeGlassSurface : Grid
         }
         else
         {
+            ReleaseFrost();
             _shader?.ClearValue(TahoeGlassEffect.BackdropProperty);
             if (_backdrop != null) _backdrop.Visual = null;
             _backdrop = null;
             // Capture surrounding pixels before blurring. Clip the material host afterwards,
             // so blur taps and the outer shadow are not cut at the rounded perimeter.
-            double padding = BlurRadius * 3 + 2;
+            double effectiveBlur = Math.Max(BlurRadius, FrostRadius);
+            double padding = effectiveBlur * 3 + 2;
             Matrix sourceToSurface = matrix;
             sourceToSurface.Invert();
             sourceToSurface.Translate(padding, padding);
@@ -369,7 +399,7 @@ public sealed class TahoeGlassSurface : Grid
             _compatibilityBackdrop.Transform = new MatrixTransform(sourceToSurface);
             _surface.Margin = new Thickness(-padding);
             _surface.Fill = _compatibilityBackdrop;
-            _surface.Effect = BlurRadius > 0 ? new BlurEffect { Radius = BlurRadius, RenderingBias = RenderingBias.Performance } : null;
+            _surface.Effect = effectiveBlur > 0 ? new BlurEffect { Radius = effectiveBlur, RenderingBias = RenderingBias.Performance } : null;
         }
         SetValue(IsRefractionActivePropertyKey, useShader);
         _dirty = false;
@@ -423,11 +453,20 @@ public sealed class TahoeGlassSurface : Grid
 
     private void ReleaseBrushes()
     {
+        ReleaseFrost();
         if (_backdrop != null) _backdrop.Visual = null;
         if (_compatibilityBackdrop != null) _compatibilityBackdrop.Visual = null;
         _backdrop = _compatibilityBackdrop = null;
         // Shader samplers accept only visual/image/cache brushes (or ImplicitInput).
         // A transparent SolidColorBrush is still invalid and throws during unload.
         _shader?.ClearValue(TahoeGlassEffect.BackdropProperty);
+    }
+
+    private void ReleaseFrost()
+    {
+        if (_frostInput != null) _frostInput.Visual = null;
+        if (_frostSource != null) { _frostSource.Fill = null; _frostSource.Effect = null; }
+        _frostInput = null;
+        _frostSource = null;
     }
 }

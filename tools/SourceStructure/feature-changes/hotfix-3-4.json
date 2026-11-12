@@ -1,0 +1,11 @@
+[
+  {
+    "SourcePath": "PCL.Core/IO/Net/Consent/NetworkConsentService.cs",
+    "Sha256": "589BFE2ADC7B2771B8452FC1358A721530CCEFC8104AB4DAC7CD49F19BBE8698",
+    "Members": [
+      "PCL.Core.IO.Net.Consent.NetworkConsentService::MethodDeclaration::IsAllowed(NetworkPurpose purpose)",
+      "PCL.Core.IO.Net.Consent.NetworkConsentService::MethodDeclaration::EnsureAsync(NetworkPurpose purpose, CancellationToken ct = default)"
+    ],
+    "Reason": "Lite hotfix-3 scopes explicit test network consent to the current asynchronous test flow; runtime product consent remains unchanged."
+  }
+]

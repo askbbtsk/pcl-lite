@@ -85,7 +85,7 @@ public partial class MyMsgAuthServer
     private void _Close()
     {
         _converter.WaitFrame.Continue = false;
-        ComponentDispatcher.PopModal();
+        if (!_converter.ModalLifetimeOwnedByCaller) ComponentDispatcher.PopModal();
         ModAnimation.AniStart(new[]
         {
             ModAnimation.AaCode(() =>

@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 // Read-only source analysis. Patch generation writes to stdout; only Codex applies patches.
 internal static partial class Program
 {
-    private const string Baseline = "93808e4f";
+    private const string Baseline = "e0ee6ea2";
     private static CSharpParseOptions ParseOptions = new(LanguageVersion.Preview,
         preprocessorSymbols: new[] { "DEBUG", "TRACE" });
     private static string Repository = Directory.GetCurrentDirectory();
@@ -30,6 +30,7 @@ internal static partial class Program
                 "extract" => Extract(args[1], args[2], args.Skip(3).ToArray()),
                 "types" => SeparateTypes(args[1]),
                 "verify" => VerifyConfiguration(args.Skip(1).FirstOrDefault() ?? "DEBUG"),
+                "reviewed-draft" => ReviewedFeatureDraft(),
                 "report" => Report(args.Contains("--complete", StringComparer.Ordinal)),
                 _ => throw new ArgumentException("Unknown command."),
             };
@@ -188,14 +189,14 @@ internal static partial class Program
         var relocationPath = Path.Combine("tools", "SourceStructure", "relocations.json");
         var relocations = File.Exists(relocationPath) ? JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(relocationPath))! : new();
         foreach (var pair in old.Members)
-            if (!current.Members.TryGetValue(pair.Key, out var value)) errors.Add("Missing member: " + pair.Key);
+            if (!current.Members.TryGetValue(pair.Key, out var value))
+            {
+                if (!IsReviewedFeatureRemoval(pair.Key, current)) errors.Add("Missing member: " + pair.Key);
+            }
             else if (pair.Value != value && !IsApprovedChange(pair.Key, pair.Value, value)
                      && !IsReviewedFeatureChange(pair.Key, current))
             {
-                if (!relocations.TryGetValue(pair.Key, out var service) || !old.Methods.TryGetValue(pair.Key, out var method)
-                    || Tokens(Forward(method, service.Split('.').Last())) != value
-                    || !current.Methods.TryGetValue((service.Contains('.') ? service : "PCL." + service) + pair.Key[pair.Key.IndexOf("::", StringComparison.Ordinal)..], out var implementation)
-                    || Tokens(Implementation(method)) != Tokens(implementation))
+                if (!IsValidRelocation(pair.Key, value, relocations, old, current))
                     errors.Add("Changed member: " + pair.Key);
             }
         foreach (var pair in old.Initializers)
@@ -205,6 +206,17 @@ internal static partial class Program
         foreach (var error in errors) Console.Error.WriteLine(error);
         Console.WriteLine($"Compared {old.Members.Count} existing type/member contracts with baseline {Baseline}; {errors.Count} differences.");
         return errors.Count == 0 ? 0 : 1;
+    }
+
+    private static bool IsValidRelocation(string key, string newTokens,
+        IReadOnlyDictionary<string, string> relocations, Observations baseline, Observations current)
+    {
+        if (!relocations.TryGetValue(key, out var service) || !baseline.Methods.TryGetValue(key, out var method)
+            || Tokens(Forward(method, service.Split('.').Last())) != newTokens
+            || !current.Methods.TryGetValue((service.Contains('.') ? service : "PCL." + service)
+                + key[key.IndexOf("::", StringComparison.Ordinal)..], out var implementation)
+            || Tokens(Implementation(method)) != Tokens(implementation)) return false;
+        return true;
     }
 
     private static int VerifyConfiguration(string configuration)

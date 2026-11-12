@@ -57,10 +57,7 @@ public partial class PageInstanceCompResource
         }
 
         res.loaders = requireLoaders;
-        res.compPath = PageInstanceLeft.McInstance.PathIndie +
-                       (PageInstanceLeft.McInstance.Info.HasLabyMod
-                           ? Path.Combine("labymod-neo", "fabric", PageInstanceLeft.McInstance.Info.VanillaName)
-                           : "") + ModLocalComp.GetPathNameByCompType(currentCompType) + @"\";
+        res.compPath = ModLocalComp.GetResourceDirectory(PageInstanceLeft.McInstance, currentCompType);
         res.compType = currentCompType;
         return res;
     }
@@ -205,10 +202,7 @@ public partial class PageInstanceCompResource
         string loadPath;
         if (string.IsNullOrEmpty(CurrentFolderPath))
             // 加载根目录
-            loadPath = PageInstanceLeft.McInstance.PathIndie +
-                       (PageInstanceLeft.McInstance.Info.HasLabyMod
-                           ? Path.Combine("labymod-neo", "fabric", PageInstanceLeft.McInstance.Info.VanillaName)
-                           : "") + ModLocalComp.GetPathNameByCompType(currentCompType) + @"\";
+            loadPath = ModLocalComp.GetResourceDirectory(PageInstanceLeft.McInstance, currentCompType);
         else
             // 加载当前文件夹
             loadPath = CurrentFolderPath;

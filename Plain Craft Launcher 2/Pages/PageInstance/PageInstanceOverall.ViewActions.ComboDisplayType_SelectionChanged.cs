@@ -121,16 +121,18 @@ public partial class PageInstanceOverall
             // 确认输入的新名称
             var oldName = PageInstanceLeft.McInstance.Name;
             var oldPath = PageInstanceLeft.McInstance.PathInstance;
+            var versionsPath = Directory.GetParent(Path.TrimEndingDirectorySeparator(oldPath))!.FullName;
+            var minecraftPath = Directory.GetParent(versionsPath)!.FullName + Path.DirectorySeparatorChar;
             // 修改此部分的同时修改快速安装的实例名检测*
             var newName = ModMain.MyMsgBoxInput(Lang.Text("Instance.Overall.Name.EditTitle"), "", oldName,
-                [new FolderNameValidator(ModFolder.mcFolderSelected + "versions", ignoreCase: false)]);
+                [new FolderNameValidator(versionsPath, ignoreCase: false)]);
             if (string.IsNullOrWhiteSpace(newName))
                 return;
-            var newPath = Path.Combine(ModFolder.mcFolderSelected, "versions", newName);
+            var newPath = Path.Combine(versionsPath, newName);
             // 获取临时中间名，以防止仅修改大小写的重命名失败
-            var tempName = newName + "_temp";
-            var tempPath = Path.Combine(ModFolder.mcFolderSelected, "versions", tempName);
-            var isCaseChangedOnly = (newName.ToLower() ?? "") == (oldName.ToLower() ?? "");
+            var tempName = ".pcl-rename-" + Guid.NewGuid().ToString("N");
+            var tempPath = Path.Combine(versionsPath, tempName);
+            var isCaseChangedOnly = string.Equals(newName, oldName, StringComparison.OrdinalIgnoreCase);
             // 重新加载实例 Json 信息，避免 HMCL 项被合并
             JsonObject jsonObject;
             try
@@ -155,8 +157,9 @@ public partial class PageInstanceOverall
             {
                 if (isCaseChangedOnly)
                 {
-                    FileSystem.RenameDirectory(Path.Combine(newPath, $"{oldName}-natives"), $"{oldName}natives_temp");
-                    FileSystem.RenameDirectory(Path.Combine(newPath, $"{oldName}-natives_temp"), $"{newName}-natives");
+                    var temporaryNatives = ".pcl-natives-" + Guid.NewGuid().ToString("N");
+                    FileSystem.RenameDirectory(Path.Combine(newPath, $"{oldName}-natives"), temporaryNatives);
+                    FileSystem.RenameDirectory(Path.Combine(newPath, temporaryNatives), $"{newName}-natives");
                 }
                 else
                 {
@@ -169,8 +172,9 @@ public partial class PageInstanceOverall
             {
                 if (isCaseChangedOnly)
                 {
-                    FileSystem.RenameFile(Path.Combine(newPath, $"{oldName}.jar"), $"{oldName}_temp.jar");
-                    FileSystem.RenameFile(Path.Combine(newPath, $"{oldName}_temp.jar"), $"{newName}.jar");
+                    var temporaryJar = ".pcl-rename-" + Guid.NewGuid().ToString("N") + ".jar";
+                    FileSystem.RenameFile(Path.Combine(newPath, $"{oldName}.jar"), temporaryJar);
+                    FileSystem.RenameFile(Path.Combine(newPath, temporaryJar), $"{newName}.jar");
                 }
                 else
                 {
@@ -182,10 +186,12 @@ public partial class PageInstanceOverall
             // 替换实例设置文件中的路径
             if (File.Exists(Path.Combine(newPath, "PCL", "Setup.ini")))
                 ModBase.WriteFile(Path.Combine(newPath, "PCL", "Setup.ini"),
-                    ModBase.ReadFile(Path.Combine(newPath, "PCL", "Setup.ini")).Replace(oldPath, newPath));
+                    ModBase.ReadFile(Path.Combine(newPath, "PCL", "Setup.ini")).Replace(oldPath,
+                        newPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+            ModBase.IniClearCache(Path.Combine(newPath, "PCL", "Setup.ini"));
             // 更改已选中的实例
-            if ((ModBase.ReadIni(ModFolder.mcFolderSelected + "PCL.ini", "Version") ?? "") == (oldName ?? ""))
-                ModBase.WriteIni(ModFolder.mcFolderSelected + "PCL.ini", "Version", newName);
+            if ((ModBase.ReadIni(minecraftPath + "PCL.ini", "Version") ?? "") == (oldName ?? ""))
+                ModBase.WriteIni(minecraftPath + "PCL.ini", "Version", newName);
             // 写入实例 Json，并删除旧的 Json
             try
             {
@@ -201,12 +207,12 @@ public partial class PageInstanceOverall
 
             // 刷新与提示
             HintService.Hint(Lang.Text("Instance.Overall.Name.RenameSuccess"), HintType.Success);
-            PageInstanceLeft.McInstance = new McInstance(newName).Load();
+            PageInstanceLeft.McInstance = new McInstance(newPath).Load();
             if (ModInstanceList.McMcInstanceSelected is not null &&
                 ModInstanceList.McMcInstanceSelected.Equals(PageInstanceLeft.McInstance))
-                ModBase.WriteIni(ModFolder.mcFolderSelected + "PCL.ini", "Version", newName);
+                ModBase.WriteIni(minecraftPath + "PCL.ini", "Version", newName);
             Reload();
-            ModLoader.LoaderFolderRun(ModInstanceList.mcInstanceListLoader, ModFolder.mcFolderSelected,
+            ModLoader.LoaderFolderRun(ModInstanceList.mcInstanceListLoader, minecraftPath,
                 ModLoader.LoaderFolderRunType.ForceRun, 1, @"versions\");
         }
         catch (Exception ex)

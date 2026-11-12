@@ -40,6 +40,24 @@ public static class NetworkConsentService
     private static readonly SemaphoreSlim _gate = new(1, 1);
 
     private static volatile bool _allowAllForSession;
+    private static readonly AsyncLocal<bool> _testAllowAll = new();
+
+    /// <summary>
+    /// Explicit, async-flow-scoped network consent for integration tests only.
+    /// Runtime application flows must use persisted or user-granted consent.
+    /// </summary>
+    internal static IDisposable AllowAllForCurrentTest()
+    {
+        bool previous = _testAllowAll.Value;
+        _testAllowAll.Value = true;
+        return new DelegateDisposable(() => _testAllowAll.Value = previous);
+    }
+
+    private sealed class DelegateDisposable(Action dispose) : IDisposable
+    {
+        private Action? _dispose = dispose;
+        public void Dispose() => Interlocked.Exchange(ref _dispose, null)?.Invoke();
+    }
 
     /// <summary>隐私模式：不弹窗，直接拒绝所有未永久授权的用途。</summary>
     public static bool PrivacyMode => Config.System.PrivacyMode;
@@ -66,7 +84,7 @@ public static class NetworkConsentService
     /// <summary>查询某用途当前是否已授权（不触发询问）。</summary>
     public static bool IsAllowed(NetworkPurpose purpose)
     {
-        if (AllowAll) return true;
+        if (_testAllowAll.Value || AllowAll) return true;
         if (_session.TryGetValue(purpose, out var decided)) return decided;
         var info = NetworkPurposeCatalog.ByPurpose(purpose);
         return info is not null && _IsPersistedAllowed(info.Id);
@@ -75,7 +93,7 @@ public static class NetworkConsentService
     /// <summary>确认某用途是否已授权，必要时询问用户。</summary>
     public static async Task<bool> EnsureAsync(NetworkPurpose purpose, CancellationToken ct = default)
     {
-        if (AllowAll) return true;
+        if (_testAllowAll.Value || AllowAll) return true;
         if (_session.TryGetValue(purpose, out var decided)) return decided;
 
         var info = NetworkPurposeCatalog.ByPurpose(purpose);

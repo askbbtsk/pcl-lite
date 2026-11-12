@@ -65,6 +65,8 @@ public partial class PageInstanceSaves : IRefreshable
         worldPath = PageInstanceLeft.McInstance.PathIndie + @"saves\";
         if (!Directory.Exists(worldPath))
             Directory.CreateDirectory(worldPath);
+        // Unloaded disposes the watcher even when the cached page is reused.
+        SetupFileSystemWatcher();
         Reload();
 
         // 非重复加载部分
@@ -74,7 +76,6 @@ public partial class PageInstanceSaves : IRefreshable
         CheckQuickPlay();
 
         // 初始化文件系统监视器和排序按钮
-        SetupFileSystemWatcher();
         BtnSort.Click += BtnSortClick;
         SetSortMethod(_currentSortMethod);
     }

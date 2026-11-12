@@ -267,7 +267,7 @@ public partial class MyIconButton
                     animations.Add(ModAnimation.AaColor(
                         Path,
                         Shape.FillProperty,
-                        whiteNormalColor,
+                        whiteNormalColor - Path.Fill,
                         animationColorOut));
 
                 animations.Add(ModAnimation.AaColor(

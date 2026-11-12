@@ -20,6 +20,7 @@ public static partial class LiquidGlassCore
     private static string? _lastDiagnostics;
     private static Geometry? _originalSidebarClip;
     private static TahoeDesktopCapture? _desktopCapture;
+    private static LiquidGlassWindowClip? _windowClip;
     private static readonly Dictionary<MyIconButton, MyIconButton.Themes> OriginalIconThemes = new();
     private static readonly Dictionary<string, object?> OriginalThemeResources = new();
 
@@ -53,6 +54,8 @@ public static partial class LiquidGlassCore
             {
                 _window = window;
                 AttachInteraction(window);
+                _windowClip = new LiquidGlassWindowClip(window, window.PanForm, window.RectForm,
+                    error => LogCapture("[LiquidGlass] Native window clipping failed", error));
                 ITahoeCapturePlatform capturePlatform =
                     new LiquidGlassScreenshotCapturePlatform(() => Config.Preference.TahoeGlass.MaximumFrameRate);
                 LogCapture("[LiquidGlass] CaptureBackend=Magnifier; GlobalCaptureExclusion=False", null);
@@ -207,6 +210,7 @@ public static partial class LiquidGlassCore
         window.RectLeftShadow.Opacity = 0;
         window.PanWindowShadow.Visibility = Visibility.Collapsed;
         window.RectForm.RadiusX = window.RectForm.RadiusY = 22;
+        _windowClip?.SetEnabled(true);
         UpdateSidebarClip(window);
 
         ApplySurface(window.TahoeToolbar, dark, .10);
@@ -246,6 +250,7 @@ public static partial class LiquidGlassCore
 
     private static void Restore(FormMain window)
     {
+        _windowClip?.SetEnabled(false);
         _desktopCapture?.Apply(false);
         window.TahoeBackdrop.Visibility = Visibility.Visible;
         window.TahoeWallpaperHost.Visibility = Visibility.Visible;
@@ -349,6 +354,8 @@ public static partial class LiquidGlassCore
 
     private static void OnClosed(object? sender, EventArgs e)
     {
+        _windowClip?.Dispose();
+        _windowClip = null;
         DetachInteraction();
         SystemParameters.StaticPropertyChanged -= OnSystemSettingsChanged;
         if (_window is not null)

@@ -1,0 +1,42 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/CommandPalette.xaml.cs",
+    "Sha256": "99A8383D8067DDC47D6004299C2B26161E6366A22CA0FC8B06780CC8377D9A09",
+    "Members": [
+      "PCL.CommandPalette::ConstructorDeclaration::.ctor()"
+    ],
+    "Reason": "Hotfix-6 preserves text/IME KeyDown routing instead of consuming all bubbling keys. Compiled WPF smoke exercises the production keyboard wiring without showing a window."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+    "Sha256": "C9E9C11E7BA1C97553CE5639AD4CEFB8C7976D0405BDE7FFA0945C0E89BEB31A",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::FormMain_KeyDown(object sender, KeyEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::_SizeWndProc(nint hWnd, int msg, nint wParam, nint lParam, ref bool handled)"
+    ],
+    "Reason": "Hotfix-6 suspends main-window shortcuts while the palette is visible and keeps glass resize hit bands inside the visible 10-DIP inset. Other native message handling remains intact."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
+    "Sha256": "2E33715B6976068B96CADE84E2EED9C1E4034701537AF06F8EC7898FAFF4389E",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ConnectSocialAsync()",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory, long launchSession)"
+    ],
+    "Reason": "Retains hotfix-5 friend-system naming and locked-native messages; hotfix-6 identifies native-memory fatal output for localized exit guidance. No automatic resource-pack or memory-setting modifications."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
+    "Sha256": "97EA3A66BA8E3F48333F718D2CA6D6FBD9BFB3B61139175EB44D7E5EC323F46F",
+    "Members": [
+      "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::ApplySurface(TahoeGlassSurface surface, bool dark, double opacity)",
+      "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::OnClosed(object? sender, EventArgs e)",
+      "PCL.LiquidGlassCore::MethodDeclaration::Refresh()",
+      "PCL.LiquidGlassCore::MethodDeclaration::Restore(FormMain window)",
+      "PCL.LiquidGlassCore::PropertyDeclaration::BackdropSource"
+    ],
+    "Reason": "Retains prior reviewed glass behavior; hotfix-6 attaches and retires native content-outline clipping alongside glass lifecycle. Hidden HWND regression tests cover DPI, corners, transforms, resize region replacement and restoration."
+  }
+]

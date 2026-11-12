@@ -44,16 +44,21 @@ public partial class CommandPalette : UserControl
         InitializeComponent();
         Query.Loaded += (_, _) =>
         {
-            if (Query.Template.FindName("labHint", Query) is TextBlock hint)
+            if (Query.Template?.FindName("labHint", Query) is TextBlock hint)
             {
                 hint.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrush1");
                 hint.Opacity = 0.8;
             }
         };
         SizeChanged += (_, _) => Surface.MaxHeight = Math.Max(180, ActualHeight - 48);
-        PreviewKeyDown += HandleKey;
-        // Consume bubbling shortcuts after the input/list controls have processed them.
-        KeyDown += (_, e) => e.Handled = true;
+        ConfigureKeyboardInput(this, HandleKey);
+    }
+
+    internal static void ConfigureKeyboardInput(UIElement scope, KeyEventHandler handleNavigation)
+    {
+        scope.PreviewKeyDown += handleNavigation;
+        // Leave ordinary keys unhandled: WPF creates TextInput/IME input after
+        // KeyDown routing. The main window suppresses its shortcuts while open.
     }
 
     public void Open(IEnumerable<PaletteCommand> commands)

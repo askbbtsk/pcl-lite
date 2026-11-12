@@ -75,8 +75,10 @@ public partial class FormMain
 
         // 真实像素尺寸的 offset
         var dpi = VisualTreeHelper.GetDpi(this);
-        var offsetPxX = offsetWpf * dpi.DpiScaleX;
-        var offsetPxY = offsetWpf * dpi.DpiScaleY;
+        // Glass clips the unused 10-DIP HWND margin. Keep the resize band
+        // inside the visible edge instead of the now-clipped outer margin.
+        var offsetPxX = (LiquidGlassCore.IsEnabled ? 10 : offsetWpf) * dpi.DpiScaleX;
+        var offsetPxY = (LiquidGlassCore.IsEnabled ? 10 : offsetWpf) * dpi.DpiScaleY;
         var hitWidthPxX = hitWidthWpf * dpi.DpiScaleX;
         var hitWidthPxY = hitWidthWpf * dpi.DpiScaleY;
 
@@ -532,6 +534,7 @@ public partial class FormMain
     // 按键事件
     private void FormMain_KeyDown(object sender, KeyEventArgs e)
     {
+        if (Palette?.Visibility == Visibility.Visible) return;
         if (e.IsRepeat || PanMsg is null || !isWindowLoadFinished)
             return;
         // 调用弹窗：回车选择第一个，Esc 选择最后一个

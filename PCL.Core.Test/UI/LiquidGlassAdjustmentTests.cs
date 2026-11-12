@@ -30,14 +30,14 @@ public sealed class LiquidGlassAdjustmentTests
     }
 
     [TestMethod]
-    public void DragCapPreservesLowerCapsAndNormalCapReturnsAfterMoving()
+    public void DragUsesTheConfiguredFrameRateIncludingUnlimited()
     {
-        Assert.AreEqual(60, TahoeCaptureResources.FrameRateDuringMove(0, true));
+        Assert.AreEqual(0, TahoeCaptureResources.FrameRateDuringMove(0, true));
         Assert.AreEqual(0, TahoeCaptureResources.FrameRateDuringMove(0, false));
         foreach (int configured in new[] { int.MinValue, 30, 45, 60, 120, 240, int.MaxValue })
         {
             int normal = System.Math.Clamp(configured, 30, 240);
-            Assert.AreEqual(System.Math.Min(normal, 60), TahoeCaptureResources.FrameRateDuringMove(configured, true));
+            Assert.AreEqual(normal, TahoeCaptureResources.FrameRateDuringMove(configured, true));
             Assert.AreEqual(normal, TahoeCaptureResources.FrameRateDuringMove(configured, false));
         }
     }

@@ -363,6 +363,8 @@ public static partial class ModLunar
                     StatusText = forcedExit ? Lang.Text("Lunar.Status.Stopped")
                         : exitCode == 0 ? Lang.Text("Lunar.Status.Exited") : Lang.Text("Lunar.Status.Crashed", exitCode);
                     DetailText = forcedExit || exitCode == 0 ? "" : Lang.Text("Lunar.Status.CrashedDesc");
+                    if (!forcedExit && exitCode != 0 && PCL.Core.App.Lunar.LunarCrashDiagnostics.IsNativeMemoryFailure(tail))
+                        DetailText = Lang.Text("Lunar.Status.NativeMemoryFailure");
                     // Publish availability only after final state is complete. No UI callbacks under the gate.
                     _isBusy = false;
                 });

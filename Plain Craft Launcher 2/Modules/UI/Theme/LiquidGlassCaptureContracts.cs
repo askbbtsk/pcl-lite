@@ -50,7 +50,7 @@ internal static class TahoeCaptureResources
     public static int FrameRateDuringMove(int configured, bool moving)
     {
         int normalized = configured == 0 ? 0 : Math.Clamp(configured, 30, 240);
-        return moving ? normalized == 0 ? 60 : Math.Min(normalized, 60) : normalized;
+        return normalized;
     }
 
     public static bool RequiresNewBuffer(TahoeCaptureRegion? previous, TahoeCaptureRegion next) =>

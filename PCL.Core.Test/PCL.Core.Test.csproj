@@ -64,6 +64,7 @@
     <Compile Include="..\Plain Craft Launcher 2\Controls\LiquidGlassSurface.cs" Link="UI\LiquidGlassSurface.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Controls\LiquidGlassEffect.cs" Link="UI\LiquidGlassEffect.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassCaptureContracts.cs" Link="UI\LiquidGlassCaptureContracts.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassWindowClip.cs" Link="UI\LiquidGlassWindowClip.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassCapturePlatform.cs" Link="UI\LiquidGlassCapturePlatform.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassScreenshotCapturePlatform.cs" Link="UI\LiquidGlassScreenshotCapturePlatform.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Modules\UI\Theme\LiquidGlassD3D11.cs" Link="UI\LiquidGlassD3D11.cs" />

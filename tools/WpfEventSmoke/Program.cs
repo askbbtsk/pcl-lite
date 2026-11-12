@@ -9,7 +9,7 @@ using PCL;
 internal static class Program
 {
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
         XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
         var assembly = typeof(FormMain).Assembly;
@@ -66,11 +66,14 @@ internal static class Program
                 mouseDown.Invoke(main, [main, new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, button)]);
             var keyDown = typeof(FormMain).GetMethod("FormMain_KeyDown", BindingFlags.Instance | BindingFlags.NonPublic)!;
             using var source = new System.Windows.Interop.HwndSource(
-                new System.Windows.Interop.HwndSourceParameters { Width = 1, Height = 1 });
+                new System.Windows.Interop.HwndSourceParameters
+                { Width = 1, Height = 1, WindowStyle = unchecked((int)0x80000000) });
             foreach (var key in new[] { System.Windows.Input.Key.Enter, System.Windows.Input.Key.Escape, System.Windows.Input.Key.F12 })
                 keyDown.Invoke(main, [main, new System.Windows.Input.KeyEventArgs(
                     System.Windows.Input.Keyboard.PrimaryDevice, source, 0, key)]);
             Console.WriteLine("Partial-window mouse and keyboard input guards passed.");
+            VerifyPaletteInput(source);
+            if (args is ["--input-only"]) return 0;
             VerifyNavigationGlass(main);
             VerifyLegacyShadow();
             return 0;
@@ -81,6 +84,44 @@ internal static class Program
             return 1;
         }
         finally { application.Shutdown(); }
+    }
+
+    private static void VerifyPaletteInput(System.Windows.Interop.HwndSource source)
+    {
+        // Use the production keyboard wiring with WPF's actual routed input.
+        // Avoid configuration/game startup and never show or activate a window.
+        var query = new System.Windows.Controls.TextBox();
+        var palette = new System.Windows.Controls.UserControl { Content = query };
+        typeof(CommandPalette).GetMethod("ConfigureKeyboardInput", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [palette, new System.Windows.Input.KeyEventHandler((_, _) => { })]);
+        source.RootVisual = palette;
+        bool handledByTextBox = false;
+        query.AddHandler(System.Windows.Input.Keyboard.KeyDownEvent,
+            new System.Windows.Input.KeyEventHandler((_, input) => handledByTextBox = input.Handled), true);
+        foreach (var key in new[]
+        {
+            System.Windows.Input.Key.A, System.Windows.Input.Key.Space,
+            System.Windows.Input.Key.Back, System.Windows.Input.Key.Delete,
+            System.Windows.Input.Key.Left, System.Windows.Input.Key.Right,
+            System.Windows.Input.Key.ImeProcessed, System.Windows.Input.Key.DeadCharProcessed
+        })
+        {
+            var input = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice, source, 0,
+                key is System.Windows.Input.Key.ImeProcessed or System.Windows.Input.Key.DeadCharProcessed
+                    ? System.Windows.Input.Key.A : key)
+            { RoutedEvent = System.Windows.Input.Keyboard.KeyDownEvent };
+            if (key is System.Windows.Input.Key.ImeProcessed or System.Windows.Input.Key.DeadCharProcessed)
+                typeof(System.Windows.Input.KeyEventArgs).GetMethod(
+                    key == System.Windows.Input.Key.ImeProcessed ? "MarkImeProcessed" : "MarkDeadCharProcessed",
+                    BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(input, null);
+            handledByTextBox = false;
+            query.RaiseEvent(input);
+            if (!handledByTextBox && input.Handled)
+                throw new InvalidDataException($"Palette swallowed {key} before text composition.");
+        }
+        source.RootVisual = null;
+        Console.WriteLine("Production palette keyboard wiring: routed text/IME keys remain available to WPF composition.");
     }
 
     private static void VerifyLegacyShadow()

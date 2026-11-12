@@ -133,6 +133,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
                         if (oldBitmap == IntPtr.Zero || oldBitmap == new IntPtr(-1)) throw new Win32Exception();
                         if (!SetWindowPos(magnifier, IntPtr.Zero, 0, 0, region.Width, region.Height, 0x0014))
                             throw new Win32Exception();
+                        SetHelperShape(host, region);
                         current = region; previous = scratch = null; warmup = 0;
                     }
                     // The helper must remain composited, immediately behind the launcher.
@@ -171,6 +172,25 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
                 _completion.TrySetResult();
             }
         }
+
+        private static void SetHelperShape(IntPtr host, TahoeCaptureRegion region)
+        {
+            // The sampler is composited directly behind PanForm. Its rectangular HWND
+            // used to show through all four transparent corners. Keep native drawing
+            // inside the real WPF clip, with a pixel inset for its antialiased edge.
+            bool rounded = region.RadiusX > 0 && region.RadiusY > 0;
+            int inset = rounded && region.Width > 2 && region.Height > 2 ? 1 : 0;
+            int diameterX = checked((int)Math.Ceiling(Math.Min(region.Width, region.RadiusX * 2)));
+            int diameterY = checked((int)Math.Ceiling(Math.Min(region.Height, region.RadiusY * 2)));
+            IntPtr shape = CreateRoundRectRgn(inset, inset, region.Width - inset, region.Height - inset,
+                rounded ? diameterX : 0, rounded ? diameterY : 0);
+            if (shape == IntPtr.Zero) throw new Win32Exception();
+            // Successful SetWindowRgn transfers HRGN ownership to Windows.
+            if (SetWindowRgn(host, shape, true) != 0) return;
+            int error = Marshal.GetLastWin32Error();
+            DeleteObject(shape);
+            throw new Win32Exception(error);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)] private struct Matrix { public float M00,M01,M02,M10,M11,M12,M20,M21,M22; }
@@ -193,10 +213,12 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
     [DllImport("user32.dll", SetLastError=true)] private static extern bool GetWindowDisplayAffinity(IntPtr hwnd,out uint affinity);
     [DllImport("user32.dll")] private static extern int GetSystemMetrics(int index);
     [DllImport("user32.dll", SetLastError=true)] private static extern bool PrintWindow(IntPtr hwnd,IntPtr dc,uint flags);
+    [DllImport("user32.dll", SetLastError=true)] private static extern int SetWindowRgn(IntPtr hwnd,IntPtr region,bool redraw);
     [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern bool PeekMessage(out Message message,IntPtr hwnd,uint minimum,uint maximum,uint remove);
     [DllImport("user32.dll")] private static extern bool TranslateMessage(ref Message message);
     [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern IntPtr DispatchMessage(ref Message message);
     [DllImport("gdi32.dll", SetLastError=true)] private static extern IntPtr CreateCompatibleDC(IntPtr dc);
+    [DllImport("gdi32.dll", SetLastError=true)] private static extern IntPtr CreateRoundRectRgn(int left,int top,int right,int bottom,int widthEllipse,int heightEllipse);
     [DllImport("gdi32.dll", SetLastError=true)] private static extern IntPtr CreateDIBSection(IntPtr dc,ref BitmapInfo info,uint usage,out IntPtr bits,IntPtr section,uint offset);
     [DllImport("gdi32.dll")] private static extern IntPtr SelectObject(IntPtr dc,IntPtr obj);
     [DllImport("gdi32.dll")] private static extern bool DeleteObject(IntPtr obj);

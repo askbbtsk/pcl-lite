@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 正式版：即時桌面折射支援截圖與錄影，不再全域排除啟動器；修復切換主題後頂部藍色實底列殘留、玻璃說明文字變黑的問題。個人化設定可隱藏右下角搜尋按鈕，保留 Ctrl+K。包含 1.7.6 兩次熱修復。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-1：修復即時桌面折射時視窗四個圓角外側露出矩形毛邊的問題。取樣輔助視窗跟隨實際圓角與 DPI 裁剪，開啟玻璃或改變視窗大小時同步更新。保留截圖、錄影及 1.7.7 全部功能。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">效能預設</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>

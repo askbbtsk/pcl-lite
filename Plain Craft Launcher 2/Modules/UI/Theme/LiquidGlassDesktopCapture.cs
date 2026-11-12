@@ -32,6 +32,8 @@ internal sealed class TahoeDesktopCapture : IDisposable
     private uint _originalAffinity;
     private WriteableBitmap? _bitmap;
     private Rect _bounds = Rect.Empty;
+    private Size _cornerRadii;
+    private RectangleGeometry? _observedClip;
     private int _version, _attempts;
     private bool _enabled, _excluded, _disposed, _topologyDirty = true;
     private bool _interactiveMove;
@@ -158,11 +160,23 @@ internal sealed class TahoeDesktopCapture : IDisposable
             Point end = _viewport.PointToScreen(new Point(_viewport.ActualWidth, _viewport.ActualHeight));
             var bounds = new Rect(Math.Floor(origin.X), Math.Floor(origin.Y),
                 Math.Max(1, Math.Ceiling(end.X) - Math.Floor(origin.X)), Math.Max(1, Math.Ceiling(end.Y) - Math.Floor(origin.Y)));
-            if (bounds == _bounds && !_topologyDirty && _sessions.Count != 0) return;
+            var clip = _viewport.Clip as RectangleGeometry
+                ?? (VisualTreeHelper.GetParent(_viewport) as UIElement)?.Clip as RectangleGeometry;
+            if (!ReferenceEquals(clip, _observedClip))
+            {
+                if (_observedClip is not null) _observedClip.Changed -= GeometryChanged;
+                _observedClip = clip;
+                if (clip is not null) clip.Changed += GeometryChanged;
+            }
+            var radii = clip is null ? new Size() : new Size(
+                Math.Max(0, clip.RadiusX * (end.X - origin.X) / _viewport.ActualWidth),
+                Math.Max(0, clip.RadiusY * (end.Y - origin.Y) / _viewport.ActualHeight));
+            if (bounds == _bounds && radii == _cornerRadii && !_topologyDirty && _sessions.Count != 0) return;
             if (_retry.IsEnabled) return;
             if (State == TahoeCaptureState.Failed && bounds == _bounds && !_topologyDirty) return;
             if (bounds != _bounds) _attempts = 0;
             _bounds = bounds;
+            _cornerRadii = radii;
             _topologyDirty = false;
             int version = ++_version;
             int width = checked((int)bounds.Width), height = checked((int)bounds.Height);
@@ -205,7 +219,8 @@ internal sealed class TahoeDesktopCapture : IDisposable
                     }
                 }
                 session.Capture!.SetRegion(new TahoeCaptureRegion((int)(area.X - monitor.Bounds.X), (int)(area.Y - monitor.Bounds.Y),
-                    (int)area.Width, (int)area.Height, (int)(area.X - bounds.X), (int)(area.Y - bounds.Y), version));
+                    (int)area.Width, (int)area.Height, (int)(area.X - bounds.X), (int)(area.Y - bounds.Y), version)
+                { RadiusX = radii.Width, RadiusY = radii.Height });
             }
             foreach (IntPtr monitor in _sessions.Keys.Where(key => !needed.Contains(key)).ToArray())
             {
@@ -388,6 +403,8 @@ internal sealed class TahoeDesktopCapture : IDisposable
 
     private void Stop()
     {
+        if (_observedClip is not null) _observedClip.Changed -= GeometryChanged;
+        _observedClip = null;
         _retry.Stop();
         _geometryUpdate?.Abort();
         _geometryUpdate = null;

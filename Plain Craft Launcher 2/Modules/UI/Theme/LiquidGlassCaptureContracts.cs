@@ -8,7 +8,12 @@ internal enum TahoeCaptureState { Stopped, Starting, Live, Recovering, Suspended
 
 internal sealed record TahoeCaptureMonitor(IntPtr Handle, Rect Bounds);
 internal sealed record TahoeCaptureRegion(int X, int Y, int Width, int Height,
-    int DestinationX, int DestinationY, int Version);
+    int DestinationX, int DestinationY, int Version)
+{
+    // Device-pixel radii of the launcher's actual viewport clip, not its HWND border.
+    public double RadiusX { get; init; }
+    public double RadiusY { get; init; }
+}
 internal sealed record TahoeCaptureFrame(byte[] Pixels, TahoeCaptureRegion Region, int DirtyY, int DirtyHeight);
 
 internal interface ITahoeMonitorCapture : IDisposable

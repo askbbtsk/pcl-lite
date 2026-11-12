@@ -16,6 +16,55 @@ namespace PCL.Core.Test.UI;
 public sealed class TahoeDesktopCaptureTests
 {
     [STATestMethod]
+    public void SamplerReceivesTheViewportClipRadiiInDevicePixels()
+    {
+        WithCapture((capture, platform, window, _) =>
+        {
+            var viewport = (Grid)window.Content;
+            var clip = new RectangleGeometry(new Rect(viewport.RenderSize), 6, 6);
+            viewport.Clip = clip;
+            capture.Apply(true);
+            var dpi = VisualTreeHelper.GetDpi(viewport);
+            // FormMain changes its clip after starting capture when enabling glass.
+            // No resize or move is required to update the helper's native shape.
+            clip.RadiusX = 22;
+            clip.RadiusY = 17;
+            PumpUntil(() => Math.Abs(platform.Sessions.Single().Region!.RadiusX - 22 * dpi.DpiScaleX) < 0.001);
+            var region = platform.Sessions.Single().Region!;
+            Assert.AreEqual(22 * dpi.DpiScaleX, region.RadiusX, 0.001);
+            Assert.AreEqual(17 * dpi.DpiScaleY, region.RadiusY, 0.001);
+            capture.Apply(false);
+            clip.RadiusX = 30;
+            PumpFor(TimeSpan.FromMilliseconds(10));
+            Assert.AreEqual(TahoeCaptureState.Stopped, capture.State);
+            Assert.AreEqual(1, platform.Creations, "A retired clip observer must not restart capture.");
+        });
+    }
+
+    [STATestMethod]
+    public void SamplerReadsTheParentClipUsedByTheMainWindowAndDefaultsToRectangular()
+    {
+        WithCapture((capture, platform, window, _) =>
+        {
+            var viewport = (Grid)window.Content;
+            window.Content = null;
+            var parent = new Border { Child = viewport,
+                Clip = new RectangleGeometry(new Rect(viewport.RenderSize), 22, 22) };
+            window.Content = parent;
+            window.UpdateLayout();
+            PumpFor(TimeSpan.FromMilliseconds(10));
+            capture.Apply(true);
+            var dpi = VisualTreeHelper.GetDpi(viewport);
+            Assert.AreEqual(22 * dpi.DpiScaleX, platform.Sessions.Single().Region!.RadiusX, 0.001);
+            capture.Apply(false);
+            parent.Clip = null;
+            capture.Apply(true);
+            Assert.AreEqual(0d, platform.Sessions.Last().Region!.RadiusX);
+            Assert.AreEqual(0d, platform.Sessions.Last().Region!.RadiusY);
+        });
+    }
+
+    [STATestMethod]
     public void RetiredErrorsAndFramesCannotAffectReplacementSession()
     {
         WithCapture((capture, platform, _, image) =>

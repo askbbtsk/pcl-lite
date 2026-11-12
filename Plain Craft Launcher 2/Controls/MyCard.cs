@@ -357,6 +357,7 @@ public partial class MyCard : AnimatedBackgroundGrid
             if (field == value)
                 return;
             field = value;
+            ThemeControlRegistry.RefreshState(this);
             if (SwapControl is null)
                 return;
 

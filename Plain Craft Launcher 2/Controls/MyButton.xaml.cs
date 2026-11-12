@@ -125,6 +125,7 @@ public partial class MyButton
             if (ThemeControlRegistry.HasTemplate(this))
             {
                 PanFore.SetResourceReference(BorderBrushProperty, GetBorderBrushResourceKey());
+                ThemeControlRegistry.RefreshState(this);
                 return;
             }
             if (_tahoeApplied)

@@ -13,7 +13,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.xaml.cs",
-    "Sha256": "E5B65B0252A050C222B6B709811D061794F67A40DFF08D7391D21404AD583665",
+    "Sha256": "703E963C33972FF3F07480E321B757ACEC10318DABB1686E2CC8A19C4E5970CA",
     "Members": ["PCL.MyButton::MethodDeclaration::RefreshColor(object obj = null, object e = null)"],
     "Reason": "Do not run legacy border animations over a custom visual template. Existing button input and click ownership remain intact."
   },
@@ -25,10 +25,11 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyCard.cs",
-    "Sha256": "CB6CDD72627AFA9863E6ADD93FAF5DC052250FDA6575F6A5DA73F56B76BC3D68",
+    "Sha256": "40A8EDFF9AB68A221AA2E0DA4C07973D06ED311C7F330130A12B627D1C351657",
     "Members": [
       "PCL.MyCard::MethodDeclaration::MyCard_MouseEnter(object sender, MouseEventArgs e)",
-      "PCL.MyCard::MethodDeclaration::MyCard_MouseLeave(object sender, MouseEventArgs e)"
+      "PCL.MyCard::MethodDeclaration::MyCard_MouseLeave(object sender, MouseEventArgs e)",
+      "PCL.MyCard::PropertyDeclaration::IsSwapped"
     ],
     "Reason": "Suppress legacy shadow animation only while a custom card template owns chrome; child collection and folding logic are unchanged."
   },
@@ -68,6 +69,12 @@
     "Sha256": "732492A783C13E7D42DF8487B06AAE8C3AC018CF9A9414C2AFBDC86358D722C2",
     "Members": ["PCL.MyRadioButton::MethodDeclaration::ApplyTahoeChrome()"],
     "Reason": "Custom navigation chrome takes priority without changing selection/click behavior."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyRadioButton.xaml.cs",
+    "Sha256": "213BF2BE29C70AA37A43A4986A2D2E6B517177269D3A1909DF1A1C801FC55B30",
+    "Members": ["PCL.MyRadioButton::MethodDeclaration::SetChecked(bool value, bool raiseByMouse, bool anime)"],
+    "Reason": "Publish both select and deselect visual state to the theme presenter, including programmatic changes. Existing selection/events are retained."
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyTextBox.LiquidGlass.cs",

@@ -46,6 +46,10 @@ internal static class ThemeControlRegistry
         Entries.TryGetValue(element, out var entry) ? entry.ContentGrid : null;
     public static object? Resource(string key, object? fallback = null) =>
         _window?.PanForm.TryFindResource(key) ?? fallback;
+    public static void RefreshState(FrameworkElement element)
+    {
+        if (Entries.TryGetValue(element, out var entry)) entry.UpdateState();
+    }
 
     private static void OnLoaded(object sender, RoutedEventArgs args)
     {
@@ -383,6 +387,7 @@ internal static class ThemeControlRegistry
         private IEnumerable<DependencyProperty> StateProperties()
         {
             if (Host is MyButton) yield return MyButton.TextProperty;
+            if (Host is MyRadioButton) yield return MyRadioButton.TextProperty;
             if (Host is MyCard) yield return MyCard.TitleProperty;
             if (Host is MyListItem) { yield return MyListItem.TitleProperty; yield return MyListItem.InfoProperty; }
             if (Host is MyCheckBox) yield return MyCheckBox.CheckedProperty;
@@ -405,7 +410,7 @@ internal static class ThemeControlRegistry
             if (_presenter is not null) _presenter.IsPressed = Host.IsMouseOver && Mouse.LeftButton == MouseButtonState.Pressed;
             UpdateState();
         }
-        private void UpdateState()
+        public void UpdateState()
         {
             if (_presenter is null) return;
             _presenter.IsEnabled = Host.IsEnabled;
@@ -415,7 +420,8 @@ internal static class ThemeControlRegistry
             _presenter.Title = Host switch
             {
                 MyButton button => button.Text, MyCard titleCard => titleCard.Title, MyListItem item => item.Title,
-                MyRadioBox radio => radio.Text, MyCheckBox check => check.Text, _ => ""
+                MyRadioBox radio => radio.Text, MyCheckBox check => check.Text,
+                MyRadioButton navigation => navigation.Text, _ => ""
             };
             _presenter.Description = Host is MyListItem list ? list.Info : "";
             _presenter.IsChecked = Host switch

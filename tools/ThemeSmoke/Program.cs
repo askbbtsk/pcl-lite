@@ -54,6 +54,7 @@ internal static class Program
                 CheckCardRoundTrip(registry, form, layer);
                 CheckComboBoxRoundTrip(registry, form, layer);
                 CheckSelectionAndListRoundTrips(registry, form);
+                CheckProgrammaticPresentationState(registry, form);
             }
             finally
             {
@@ -159,6 +160,7 @@ internal static class Program
             if (!original.SequenceEqual(card.Children.Cast<UIElement>()))
                 throw new InvalidDataException("Card theme altered its public child collection.");
             card.Title = "Updated " + iteration;
+            card.IsSwapped = iteration % 2 == 0;
             if (card.MainTextBlock.Text != card.Title) throw new InvalidDataException("Card title no longer updates.");
             Invoke(entry, "Restore");
         }
@@ -254,6 +256,39 @@ internal static class Program
         foreach (string field in new[] { "_sharedConfigProvider", "_sharedEncryptedConfigProvider", "_localConfigProvider", "_instanceConfigProvider" })
             service.GetField(field, PrivateStatic)!.SetValue(null, new MemoryStorage());
         service.GetField("_isProvidersInitialized", PrivateStatic)!.SetValue(null, true);
+    }
+    private static void CheckProgrammaticPresentationState(Type registry, Grid form)
+    {
+        var attach = registry.GetMethod("Attach", PrivateStatic)!;
+        var button = new MyButton { Text = "State" };
+        form.Children.Add(button);
+        attach.Invoke(null, [button]);
+        var presenter = (ThemePresenter)button.Child;
+        button.ColorType = MyButton.ColorState.Red;
+        if (!presenter.IsDanger) throw new InvalidDataException("Programmatic danger state did not reach the visual template.");
+        button.ColorType = MyButton.ColorState.Normal;
+        if (presenter.IsDanger) throw new InvalidDataException("Danger state did not clear.");
+        var card = new MyCard { Title = "State" };
+        form.Children.Add(card);
+        attach.Invoke(null, [card]);
+        var cardPresenter = (ThemePresenter)card.BorderChild;
+        card.IsSwapped = true;
+        if (cardPresenter.IsExpanded) throw new InvalidDataException("Programmatic card collapse did not reach the visual template.");
+        card.IsSwapped = false;
+        if (!cardPresenter.IsExpanded) throw new InvalidDataException("Programmatic card expansion did not reach the visual template.");
+        var navigation = new MyRadioButton { Text = "Navigation" };
+        var otherNavigation = new MyRadioButton { Text = "Other" };
+        form.Children.Add(navigation);
+        form.Children.Add(otherNavigation);
+        attach.Invoke(null, [navigation]);
+        var navigationPresenter = (ThemePresenter)navigation.Child;
+        navigation.SetChecked(true, false, false);
+        if (!navigationPresenter.IsChecked) throw new InvalidDataException("Navigation selection did not reach its theme.");
+        // The existing radio group requires one selected item; choose a sibling
+        // rather than incorrectly expecting an empty group to be permitted.
+        otherNavigation.SetChecked(true, false, false);
+        if (navigationPresenter.IsChecked) throw new InvalidDataException("Navigation deselection did not reach its theme.");
+        Console.WriteLine("Programmatic danger/collapse/expand/select/deselect state updates reach theme presenters.");
     }
     private sealed class MemoryStorage : ConfigStorage
     {

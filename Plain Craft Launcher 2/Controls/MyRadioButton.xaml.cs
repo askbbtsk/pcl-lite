@@ -270,6 +270,7 @@ public partial class MyRadioButton
             if (!isChanged)
                 return;
             RefreshColor(null, anime);
+            ThemeControlRegistry.RefreshState(this);
 
             // 触发事件
             if (Checked)

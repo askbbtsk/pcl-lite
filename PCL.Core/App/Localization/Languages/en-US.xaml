@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-4: reverts the DWM glass-frame change from hotfix-3 that caused a persistent white border around the window. Restores the original window-frame behavior while retaining adjustable glass frosting, refraction and live sampling during movement. See GitHub release notes.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-5: fixes Lunar launch failures when native-library updates try to overwrite DLLs still in use by a game. Identical files are now skipped by hash; only changed files are replaced. If a file remains locked, PCL shows a friendly close-the-game-and-retry message instead of the raw exception stack.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>
@@ -3985,6 +3985,7 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Lunar.Status.VanillaPending">Downloading vanilla {0} dependencies…</sys:String>
     <sys:String x:Key="Lunar.Status.VanillaPendingDesc">Downloading into {0} (about 100–200 MB); no window during this is normal</sys:String>
     <sys:String x:Key="Lunar.Status.Failed">Launch failed</sys:String>
+    <sys:String x:Key="Lunar.Error.NativesInUse">Native libraries are in use by a running game and could not be replaced. Close the Lunar / Minecraft game and retry. Files: {0}</sys:String>
     <sys:String x:Key="Lunar.Hint.Stalled">No window appeared and the vanilla files stopped growing — it may be stuck downloading dependencies (which ignore the system proxy). Retry after configuring a proxy.</sys:String>
     <sys:String x:Key="Lunar.Hint.SessionExpired">The session for {0} expired and cannot be renewed — the game will show Invalid session. Sign in with this account on the main page first.</sys:String>
     <sys:String x:Key="Bedrock.Download.Err.Delisted">{0} is no longer in Microsoft's download service (not a network problem). Pick a newer version or a GDK package.</sys:String>

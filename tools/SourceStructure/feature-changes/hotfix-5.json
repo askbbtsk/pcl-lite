@@ -1,0 +1,19 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarClientService.LaunchMetadataAndArtifacts.cs",
+    "Sha256": "2E0646AE274396A148E9D927B32E496FE41A3608B141020E233310A4B3631BC2",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarClientService::MethodDeclaration::ExtractNativesAsync(\n        LunarLaunchData data,\n        string cacheDirectory,\n        string nativesDirectory,\n        CancellationToken cancellationToken = default)"
+    ],
+    "Reason": "Lite hotfix-5 native extraction compares destination hashes, stages changes, skips identical files and reports locked changed DLLs without raw user-facing exception details. Dedicated locked-file/retry tests."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
+    "Sha256": "C2D8CD229BC967F418894F55B516431AE2FE1D3D4243A2726324A1B9309A6EC1",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ConnectSocialAsync()",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory, long launchSession)"
+    ],
+    "Reason": "Lite hotfix-5 provides a localized close-game-and-retry dialog for Lunar native files that cannot be replaced, and clarifies the connected friend-system status."
+  }
+]

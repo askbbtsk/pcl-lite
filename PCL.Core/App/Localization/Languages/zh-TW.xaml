@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-4：撤回 hotfix-3 中造成視窗外圈常駐白邊的 DWM 玻璃框架設定，還原原有視窗邊框行為。保留可調玻璃磨砂、折射及拖曳取樣修復。詳見 GitHub 發布說明。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-5：修復 Lunar 更新原生程式庫時，覆寫遭遊戲占用的 DLL 而導致啟動失敗。現在依檔案雜湊跳過相同內容，只取代有變更的檔案；若檔案仍遭占用，會提示關閉相關遊戲後重試，不再顯示原始例外堆疊。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">效能預設</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>
@@ -3926,6 +3926,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Lunar.Status.VanillaPending">正在下載原版 {0} 的依賴…</sys:String>
     <sys:String x:Key="Lunar.Status.VanillaPendingDesc">下載到 {0}（約 100–200 MB），期間沒有視窗是正常的</sys:String>
     <sys:String x:Key="Lunar.Status.Failed">啟動失敗</sys:String>
+    <sys:String x:Key="Lunar.Error.NativesInUse">原生程式庫檔案遭正在執行的遊戲占用，無法取代。請先關閉該 Lunar / Minecraft 遊戲，再重試。檔案：{0}</sys:String>
     <sys:String x:Key="Lunar.Hint.Stalled">一直沒有視窗，原版依賴也不再變大，可能卡在下載依賴（它不走系統代理）。設定好代理後重試。</sys:String>
     <sys:String x:Key="Lunar.Hint.SessionExpired">{0} 的工作階段已過期，無法自動續期 —— 遊戲內會顯示 Invalid session。請先在主頁面登入這個帳號。</sys:String>
     <sys:String x:Key="Bedrock.Download.Err.Delisted">{0} 已經不在微軟的下載服務裡了（不是網路問題）。換更新的版本，或選 GDK 包。</sys:String>

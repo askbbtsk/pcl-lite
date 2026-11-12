@@ -681,6 +681,7 @@ public static partial class LunarClientService
         Directory.CreateDirectory(nativesDirectory);
 
         var failures = new ConcurrentBag<string>();
+        var unavailableNatives = new ConcurrentBag<string>();
 
         foreach (var artifact in data.NativesArtifacts)
         {
@@ -692,7 +693,12 @@ public static partial class LunarClientService
                 if (!await IsUpToDateAsync(archive, artifact.Sha1, cancellationToken).ConfigureAwait(false))
                     await DownloadAsync(artifact.Url, archive, cancellationToken).ConfigureAwait(false);
 
-                ZipFile.ExtractToDirectory(archive, nativesDirectory, overwriteFiles: true);
+                await LunarNativeArchiveExtractor.ExtractChangedFilesAsync(archive, nativesDirectory, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (LunarNativeFilesUnavailableException ex)
+            {
+                foreach (var path in ex.Files) unavailableNatives.Add(path);
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException
                                            or TaskCanceledException or InvalidDataException)
@@ -700,6 +706,12 @@ public static partial class LunarClientService
                 failures.Add($"{artifact.Name}（{ex.Message}）");
             }
         }
+
+        if (!unavailableNatives.IsEmpty)
+            throw new LunarNativeFilesUnavailableException(unavailableNatives
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
 
         ThrowIfAnyFailed(failures, "原生库");
     }

@@ -55,6 +55,7 @@ internal static class Program
                 CheckComboBoxRoundTrip(registry, form, layer);
                 CheckSelectionAndListRoundTrips(registry, form);
                 CheckProgrammaticPresentationState(registry, form);
+                CheckRootResourceRestoration(registry, main, form, runtime, layer);
             }
             finally
             {
@@ -256,6 +257,35 @@ internal static class Program
         foreach (string field in new[] { "_sharedConfigProvider", "_sharedEncryptedConfigProvider", "_localConfigProvider", "_instanceConfigProvider" })
             service.GetField(field, PrivateStatic)!.SetValue(null, new MemoryStorage());
         service.GetField("_isProvidersInitialized", PrivateStatic)!.SetValue(null, true);
+    }
+    private static void CheckRootResourceRestoration(Type registry, FormMain main, Grid form,
+        CustomThemeRuntime runtime, ResourceDictionary layer)
+    {
+        var background = new Border { Background = Brushes.White };
+        typeof(FormMain).GetField("LauncherBackgroundLayer", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .SetValue(main, background);
+        var oldMain = ModMain.frmMain;
+        ModMain.frmMain = main;
+        try
+        {
+            registry.GetMethod("Refresh", BindingFlags.Static | BindingFlags.Public)!.Invoke(null, null);
+            if (form.ReadLocalValue(System.Windows.Documents.TextElement.FontFamilyProperty) == DependencyProperty.UnsetValue)
+                throw new InvalidDataException("Theme font was not applied to the root.");
+            // Simulate a user changing normal appearance preferences while a
+            // custom package is active. Restoring must not revive a stale brush.
+            Config.Preference.Background.BackgroundColorful = false;
+            System.Windows.Application.Current.Resources["ColorBrushBackground"] = Brushes.LimeGreen;
+            typeof(CustomThemeRuntime).GetField("_active", PrivateInstance)!.SetValue(runtime, null);
+            typeof(CustomThemeRuntime).GetField("_layer", PrivateInstance)!.SetValue(runtime, null);
+            form.Resources.MergedDictionaries.Remove(layer);
+            registry.GetMethod("Refresh", BindingFlags.Static | BindingFlags.Public)!.Invoke(null, null);
+            if (form.ReadLocalValue(System.Windows.Documents.TextElement.FontFamilyProperty) != DependencyProperty.UnsetValue)
+                throw new InvalidDataException("Restoring a theme left a stale local font override.");
+            if (background.Background != Brushes.LimeGreen)
+                throw new InvalidDataException("Restoring a theme ignored the user's current background preference.");
+        }
+        finally { ModMain.frmMain = oldMain; }
+        Console.WriteLine("Restoring built-in appearance clears theme inheritance overrides and uses current user background settings.");
     }
     private static void CheckProgrammaticPresentationState(Type registry, Grid form)
     {

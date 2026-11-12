@@ -6,7 +6,7 @@
   "author": "PCL Lite",
   "version": "1.0.0",
   "description": "A complete editable visual-contract example with light, dark and glass variants.",
-  "launcherVersion": ">=1.7.7 <2.0.0",
+  "launcherVersion": ">=1.7.7-0 <2.0.0",
   "entry": "Theme.xaml",
   "light": "Light.xaml",
   "dark": "Dark.xaml",

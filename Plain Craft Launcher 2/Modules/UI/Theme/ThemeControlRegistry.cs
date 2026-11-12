@@ -112,8 +112,8 @@ internal static class ThemeControlRegistry
     }
 
     private static readonly Dictionary<DependencyProperty, object> RootOriginal = [];
+    private static readonly Dictionary<DependencyProperty, object> RootLocal = [];
     private static bool _backgroundApplied;
-    private static Brush? _backgroundOriginal;
     private static void ApplyRootResources()
     {
         if (_window is null) return;
@@ -125,7 +125,19 @@ internal static class ThemeControlRegistry
         })
         {
             if (!RootOriginal.ContainsKey(setting.Item2))
+            {
                 RootOriginal[setting.Item2] = _window.PanForm.GetValue(setting.Item2);
+                RootLocal[setting.Item2] = _window.PanForm.ReadLocalValue(setting.Item2);
+            }
+            if (CustomThemeRuntime.Current?.ActiveTheme is null || SystemParameters.HighContrast)
+            {
+                if (RootLocal[setting.Item2] == DependencyProperty.UnsetValue)
+                    _window.PanForm.ClearValue(setting.Item2);
+                else _window.PanForm.SetCurrentValue(setting.Item2, RootOriginal[setting.Item2]);
+                if (SystemParameters.HighContrast && setting.Item2 == TextElement.ForegroundProperty)
+                    _window.PanForm.SetCurrentValue(setting.Item2, SystemColors.WindowTextBrush);
+                continue;
+            }
             object value = CustomThemeRuntime.Current?.ActiveTheme is not null && !SystemParameters.HighContrast
                 ? Resource(setting.Item1, RootOriginal[setting.Item2])! : RootOriginal[setting.Item2];
             if (SystemParameters.HighContrast && setting.Item2 == TextElement.ForegroundProperty)
@@ -136,15 +148,15 @@ internal static class ThemeControlRegistry
             ? CustomThemeRuntime.Current?.FindOverride("ColorBrushBackground") as Brush : null;
         if (background is not null)
         {
-            if (!_backgroundApplied) _backgroundOriginal = _window.LauncherBackgroundLayer.Background;
             _window.LauncherBackgroundLayer.SetCurrentValue(Border.BackgroundProperty, background);
             _backgroundApplied = true;
         }
         else if (_backgroundApplied)
         {
-            _window.LauncherBackgroundLayer.SetCurrentValue(Border.BackgroundProperty, _backgroundOriginal);
             _backgroundApplied = false;
-            _backgroundOriginal = null;
+            // Recompute from the user's current settings, including changes made
+            // while a package was active, rather than restoring a stale brush.
+            ThemeManager.RefreshBackground();
         }
     }
 
@@ -159,8 +171,8 @@ internal static class ThemeControlRegistry
             }
         Active.Clear();
         RootOriginal.Clear();
+        RootLocal.Clear();
         _backgroundApplied = false;
-        _backgroundOriginal = null;
         if (ReferenceEquals(window, _window)) _window = null;
     }
 

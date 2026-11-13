@@ -52,6 +52,9 @@ public static partial class LiquidGlassCore
         Config.Preference.TahoeGlass.EdgeSharpness, 90, 100) / 100d;
     public static double TintScale => PCL.Core.UI.LiquidGlassPerformance.Adjustment(
         Config.Preference.TahoeGlass.TintScale, 100, 100) / 100d;
+    public static int RefractionPercent => PCL.Core.UI.LiquidGlassMaterial.ResolveRefractionPercent(
+        Config.Preference.TahoeGlass.RefractionPercent, Config.Preference.TahoeGlass.RefractionStrength);
+    public static double RefractionStrength => PCL.Core.UI.LiquidGlassMaterial.RefractionFromPercent(RefractionPercent);
 
     public static void Refresh()
     {
@@ -118,7 +121,7 @@ public static partial class LiquidGlassCore
                 {
                     surface.BlurRadius = Profile.BlurRadius;
                     surface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
-                    surface.RefractionStrength = PCL.Core.UI.LiquidGlassMaterial.RefractionStrength(Config.Preference.TahoeGlass.RefractionStrength);
+                    surface.RefractionStrength = RefractionStrength;
                     surface.Dispersion = Profile.Dispersion;
                     surface.HighlightStrength = Profile.Highlight;
                     surface.IsDarkMode = darkNow;
@@ -272,7 +275,7 @@ public static partial class LiquidGlassCore
         surface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
         surface.Dispersion = Profile.Dispersion;
         surface.HighlightStrength = Profile.Highlight;
-        surface.RefractionStrength = PCL.Core.UI.LiquidGlassMaterial.RefractionStrength(Config.Preference.TahoeGlass.RefractionStrength);
+        surface.RefractionStrength = RefractionStrength;
         surface.Visibility = Visibility.Visible;
         surface.RefreshSampling();
     }

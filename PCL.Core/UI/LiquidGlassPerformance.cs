@@ -26,6 +26,12 @@ public static class LiquidGlassPerformance
         Math.Clamp(configured == -1 ? fallback : configured, 0, maximum);
     public static int SamplingFrameRate(int configured, int animationFrameRate) =>
         NormalizeFrameRate(configured == -1 ? animationFrameRate : configured);
+    public static (int Width, int Height) SamplingSize(int width, int height, int quality)
+    {
+        if (width < 1 || height < 1) throw new ArgumentOutOfRangeException(nameof(width));
+        var scale = Math.Clamp(quality, 25, 100) / 100d;
+        return (Math.Max(1, (int)Math.Ceiling(width * scale)), Math.Max(1, (int)Math.Ceiling(height * scale)));
+    }
     public static LiquidGlassProfile ResolveProfile(int preset, int frameRate, int blur,
         int dispersion, int highlight, int motion)
     {

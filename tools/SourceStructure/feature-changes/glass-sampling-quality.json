@@ -1,0 +1,23 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassDesktopCapture.cs",
+    "Sha256": "3F2089021F637E9D014E077900C02234F8936B67D7EBAFD7FB009D437A5D15C9",
+    "Members": [
+      "PCL.TahoeDesktopCapture::MethodDeclaration::Present(Session session, TahoeCaptureFrame frame, Action completed)",
+      "PCL.TahoeDesktopCapture::MethodDeclaration::SetInteractiveMove(bool moving)",
+      "PCL.TahoeDesktopCapture::MethodDeclaration::UpdateGeometry()"
+    ],
+    "Reason": "Retain prior move/session contracts; accept a reduced-resolution full-viewport payload without changing physical coordinates, validate viewport coverage, reallocate only on resolution changes and upload full first frames. Synthetic capture regression covers downscale, reuse and restoring native resolution."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassScreenshotCapturePlatform.cs",
+    "Sha256": "6FCB24536B1EE271509480A98F291C6E9F34E33B062805B6FD52366D7D1E748D",
+    "Members": [
+      "PCL.LiquidGlassScreenshotCapturePlatform+Capture::MethodDeclaration::Run()"
+    ],
+    "RemovedMembers": [
+      "PCL.LiquidGlassScreenshotCapturePlatform+Capture::FieldDeclaration::_closing,_pending"
+    ],
+    "Reason": "Retain prior native sampler movement and retirement behavior; downscale sampled frames on worker with HALFTONE GDI, recycle resolution-specific buffers and release all GDI handles. Full quality retains native pixel resolution; original capture area and screenshot inclusion are unchanged."
+  }
+]

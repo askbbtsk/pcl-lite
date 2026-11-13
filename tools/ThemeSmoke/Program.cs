@@ -163,12 +163,26 @@ internal static class Program
         var slider = (MySlider)page.FindName("SliderLiquidGlassRefraction");
         slider.Value = 0;
         typeof(PageSetupUI).GetMethod("LiquidGlassRefraction_Changed", PrivateInstance)!.Invoke(page, [slider, true]);
-        if (config.RefractionStrength != 0 || config.BlurRadius != 3)
+        if (config.RefractionPercent != 0 || config.BlurRadius != 3)
             throw new InvalidDataException("Zero refraction must be accepted without resetting other tuning.");
-        slider.Value = 10;
+        slider.Value = 137;
         typeof(PageSetupUI).GetMethod("LiquidGlassRefraction_Changed", PrivateInstance)!.Invoke(page, [slider, true]);
-        if (config.RefractionStrength != 10)
+        if (config.RefractionPercent != 137 || Math.Abs(LiquidGlassCore.RefractionStrength - .0685) > 1e-9)
+            throw new InvalidDataException("The refraction control must support exact 1% steps.");
+        slider.Value = 200;
+        typeof(PageSetupUI).GetMethod("LiquidGlassRefraction_Changed", PrivateInstance)!.Invoke(page, [slider, true]);
+        if (config.RefractionPercent != 200)
             throw new InvalidDataException("The refraction control must reach 200%.");
+        var card = (MySlider)page.FindName("SliderLiquidGlassCard");
+        card.Value = 37;
+        typeof(PageSetupUI).GetMethod("LiquidGlassOptics_Changed", PrivateInstance)!.Invoke(page, [card, true]);
+        if (config.CardOpacity != 37)
+            throw new InvalidDataException("Card tint must be independently adjustable.");
+        var quality = (MySlider)page.FindName("SliderLiquidGlassQuality");
+        quality.Value = 25;
+        typeof(PageSetupUI).GetMethod("LiquidGlassOptics_Changed", PrivateInstance)!.Invoke(page, [quality, true]);
+        if (config.SamplingQuality != 50 || config.CardOpacity != 37)
+            throw new InvalidDataException("Sampling quality must not overwrite card tint.");
         var sampling = (MySlider)page.FindName("SliderLiquidGlassSampling");
         sampling.Value = 0;
         typeof(PageSetupUI).GetMethod("LiquidGlassSampling_Changed", PrivateInstance)!.Invoke(page, [sampling, true]);
@@ -179,6 +193,19 @@ internal static class Program
         if (((MyComboBox)reopened.FindName("ComboLiquidGlassPreset")).SelectedIndex != 4 ||
             ((MySlider)reopened.FindName("SliderLiquidGlassSampling")).Value != 0)
             throw new InvalidDataException("Reopening settings must retain custom tuning.");
+        var oldTheme = Config.Preference.Theme.ThemeSelected;
+        var oldGlass = config.IsEnabled;
+        var oldDesktop = config.UseDesktopBackdrop;
+        var oldConsent = config.PerformanceConsent;
+        var oldDesktopConsent = config.DesktopCaptureConsent;
+        typeof(PageSetupUI).GetMethod("ApplyGlassRecommendation", PrivateInstance)!.Invoke(page, [1]);
+        if (config.RefractionPercent != 100 || config.FrostRadius != 8 || config.BlurRadius != 1 ||
+            config.CardOpacity != -1 || config.SamplingQuality != 100 ||
+            config.MaximumFrameRate != 60 || config.SamplingFrameRate != 60 ||
+            config.IsEnabled != oldGlass || config.UseDesktopBackdrop != oldDesktop ||
+            config.PerformanceConsent != oldConsent || config.DesktopCaptureConsent != oldDesktopConsent ||
+            Config.Preference.Theme.ThemeSelected != oldTheme)
+            throw new InvalidDataException("Restoring glass parameters must preserve switches, consent and theme.");
         Console.WriteLine("Glass settings: Custom option, inherited-value preservation, 0–200% refraction and independent sampling passed.");
     }
 

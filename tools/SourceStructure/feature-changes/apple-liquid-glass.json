@@ -21,7 +21,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.LiquidGlass.cs",
-    "Sha256": "E2800BA12F7FD0F8811BA87611B4BA085CAEDEC4065599E4ADB6003EF1527E17",
+    "Sha256": "E53B8EB38DBA79A2CBA17A98AE872A2694938E72AF77618231C12D223BB3D425",
     "Members": [
       "PCL.MyButton::MethodDeclaration::ApplyTahoeButtonTheme()",
       "PCL.MyButton::MethodDeclaration::RefreshTahoeButtonAppearance()"
@@ -30,7 +30,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyCard.LiquidGlass.cs",
-    "Sha256": "A29D451B2D193D1097A9AEB91E2200FA7BEE2A16F7771E45E8587BA100944FE1",
+    "Sha256": "F724E8DD5EB28958B30FC722F58FF9BB3D3A97A849DBD45DAC4EF4E7DE8DDFA1",
     "Members": [
       "PCL.MyCard::MethodDeclaration::ApplyTahoeCard()",
       "PCL.MyCard::MethodDeclaration::TahoeContentBrush()"
@@ -82,7 +82,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
-    "Sha256": "1936F944D799DE9C24657DBE97C5149F7C04AFF0B3E9BF13FF211BD23DC7B1E4",
+    "Sha256": "87990FC5E540EB2980FB2E726695D253DDC9D518B5150BDEA828E332BC2EAC0E",
     "Members": [
       "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
       "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",

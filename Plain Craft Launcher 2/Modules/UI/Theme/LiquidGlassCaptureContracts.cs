@@ -18,7 +18,13 @@ internal sealed record TahoeCaptureRegion(int X, int Y, int Width, int Height,
     public int? WindowOffsetX { get; init; }
     public int? WindowOffsetY { get; init; }
 }
-internal sealed record TahoeCaptureFrame(byte[] Pixels, TahoeCaptureRegion Region, int DirtyY, int DirtyHeight);
+internal sealed record TahoeCaptureFrame(byte[] Pixels, TahoeCaptureRegion Region, int DirtyY, int DirtyHeight)
+{
+    // Optional reduced-resolution full-viewport sample. Region always retains
+    // physical desktop coordinates; only the image payload changes resolution.
+    public int SampleWidth { get; init; }
+    public int SampleHeight { get; init; }
+}
 
 internal interface ITahoeMonitorCapture : IDisposable
 {

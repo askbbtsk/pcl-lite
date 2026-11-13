@@ -1,3 +1,4 @@
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.UI;
 
@@ -27,6 +28,39 @@ public sealed class LiquidGlassAdjustmentTests
         Assert.AreEqual(24, LiquidGlassMaterial.FrostRadius(int.MaxValue));
         for (int radius = 0; radius <= 24; radius++)
             Assert.AreEqual(radius, LiquidGlassMaterial.FrostRadius(radius));
+    }
+
+    [TestMethod]
+    public void ExactPercentSupportsEveryStepAndPreservesLegacyDefaults()
+    {
+        Assert.AreEqual(100, LiquidGlassMaterial.ResolveRefractionPercent(-1, 5));
+        Assert.AreEqual(200, LiquidGlassMaterial.ResolveRefractionPercent(-1, 15));
+        for (var percent = 0; percent <= 200; percent++)
+        {
+            Assert.AreEqual(percent, LiquidGlassMaterial.ResolveRefractionPercent(percent, 5));
+            Assert.AreEqual(percent / 2000d, LiquidGlassMaterial.RefractionFromPercent(percent), 1e-12);
+        }
+        Assert.AreEqual(0, LiquidGlassMaterial.ResolveRefractionPercent(int.MinValue, 5));
+        Assert.AreEqual(200, LiquidGlassMaterial.ResolveRefractionPercent(int.MaxValue, 5));
+    }
+
+    [TestMethod]
+    public void CardTintControlsOnlyOpacityAndPreservesLegacyColor()
+    {
+        var original = System.Windows.Media.Color.FromArgb(196, 30, 40, 50);
+        Assert.AreEqual(original, LiquidGlassMaterial.CardTint(original, -1));
+        Assert.AreEqual(0, LiquidGlassMaterial.CardTint(original, 0).A);
+        Assert.AreEqual(255, LiquidGlassMaterial.CardTint(original, 100).A);
+        for (var percent = 0; percent <= 100; percent++)
+        {
+            var color = LiquidGlassMaterial.CardTint(original, percent);
+            Assert.AreEqual(original.R, color.R);
+            Assert.AreEqual(original.G, color.G);
+            Assert.AreEqual(original.B, color.B);
+            Assert.AreEqual((byte)Math.Round(percent * 2.55), color.A);
+        }
+        Assert.AreEqual(77, LiquidGlassMaterial.CardOpacityPercent(-1, true));
+        Assert.AreEqual(80, LiquidGlassMaterial.CardOpacityPercent(-1, false));
     }
 
     [TestMethod]

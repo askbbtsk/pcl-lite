@@ -297,7 +297,7 @@
                         <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Refraction}" VerticalAlignment="Center" TextWrapping="Wrap" />
                         <TextBlock x:Name="TextLiquidGlassRefraction" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" />
                     </Grid>
-                    <local:MySlider x:Name="SliderLiquidGlassRefraction" MaxValue="10" ValueByKey="1" Height="38"
+                    <local:MySlider x:Name="SliderLiquidGlassRefraction" MaxValue="200" ValueByKey="1" Height="38"
                                     Change="LiquidGlassRefraction_Changed" Margin="0,0,0,6" />
                     <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Refraction.Hint}"
                                Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,12" />
@@ -316,6 +316,13 @@
                     <local:MySlider x:Name="SliderLiquidGlassSampling" MaxValue="211" ValueByKey="1"
                                     Height="38" Change="LiquidGlassSampling_Changed" Margin="0,0,0,8" />
                     <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Sampling.Hint}" Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,12" />
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Quality}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock x:Name="TextLiquidGlassQuality" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    </Grid>
+                    <local:MySlider x:Name="SliderLiquidGlassQuality" Tag="Quality" MaxValue="75" ValueByKey="1" Height="38" Change="LiquidGlassOptics_Changed" Margin="0,0,0,6" />
+                    <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Quality.Hint}" Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,12" />
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.Blur}" VerticalAlignment="Center" TextWrapping="Wrap" />
@@ -352,8 +359,18 @@
                         <TextBlock x:Name="TextLiquidGlassTint" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" />
                     </Grid>
                     <local:MySlider x:Name="SliderLiquidGlassTint" Tag="Tint" MaxValue="100" ValueByKey="1" Height="38" Change="LiquidGlassOptics_Changed" Margin="0,0,0,12" />
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.CardOpacity}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock x:Name="TextLiquidGlassCard" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    </Grid>
+                    <local:MySlider x:Name="SliderLiquidGlassCard" Tag="Card" MaxValue="100" ValueByKey="1" Height="38" Change="LiquidGlassOptics_Changed" Margin="0,0,0,6" />
+                    <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.CardOpacity.Hint}" Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,12" />
                     <local:MyCheckBox x:Name="CheckLiquidGlassMotion" Text="{DynamicResource Setup.Ui.LiquidGlass.Motion}"
                                       Height="38" Margin="0,0,0,8" Change="LiquidGlassMotion_Changed" />
+                    <local:MyButton x:Name="BtnLiquidGlassReset" Text="{DynamicResource Setup.Ui.LiquidGlass.Reset}"
+                                    Height="38" MinHeight="38" MinWidth="180" HorizontalAlignment="Left"
+                                    Padding="16,0" Margin="0,4,0,12" Click="LiquidGlassReset_Click" />
                     <local:MyCheckBox x:Name="CheckTahoeDesktop" Text="{DynamicResource Setup.Ui.Tahoe.Desktop}"
                                       Height="32" Margin="0,6,0,6"
                                       IsEnabled="{Binding Checked, ElementName=CheckTahoeGlass}"

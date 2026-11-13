@@ -216,7 +216,7 @@ public partial class MyButton
         _tahoeSurface.EdgeSharpness = LiquidGlassCore.EdgeSharpness;
         _tahoeSurface.BlurRadius = LiquidGlassCore.Profile.BlurRadius;
         _tahoeSurface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
-        _tahoeSurface.RefractionStrength = PCL.Core.UI.LiquidGlassMaterial.RefractionStrength(Config.Preference.TahoeGlass.RefractionStrength);
+        _tahoeSurface.RefractionStrength = LiquidGlassCore.RefractionStrength;
         _tahoeSurface.Dispersion = LiquidGlassCore.Profile.Dispersion;
         _tahoeSurface.HighlightStrength = LiquidGlassCore.Profile.Highlight;
         _tahoeSurface.TintColor = highContrast ? SystemColors.WindowColor : palette.ButtonTint;

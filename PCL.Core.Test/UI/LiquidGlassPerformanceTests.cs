@@ -64,6 +64,23 @@ public sealed class LiquidGlassPerformanceTests
     }
 
     [TestMethod]
+    public void SamplingQualityScalesRealDimensionsAndBoundsInvalidSettings()
+    {
+        Assert.AreEqual((1920, 1080), LiquidGlassPerformance.SamplingSize(1920, 1080, 100));
+        Assert.AreEqual((960, 540), LiquidGlassPerformance.SamplingSize(1920, 1080, 50));
+        Assert.AreEqual((480, 270), LiquidGlassPerformance.SamplingSize(1920, 1080, 25));
+        Assert.AreEqual((480, 270), LiquidGlassPerformance.SamplingSize(1920, 1080, int.MinValue));
+        Assert.AreEqual((1920, 1080), LiquidGlassPerformance.SamplingSize(1920, 1080, int.MaxValue));
+        Assert.AreEqual((1, 1), LiquidGlassPerformance.SamplingSize(1, 1, 25));
+        for (var quality = 25; quality <= 100; quality++)
+        {
+            var size = LiquidGlassPerformance.SamplingSize(901, 551, quality);
+            Assert.IsTrue(size.Width >= 1 && size.Width <= 901 && size.Height >= 1 && size.Height <= 551);
+        }
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => LiquidGlassPerformance.SamplingSize(0, 10, 100));
+    }
+
+    [TestMethod]
     public void OldSettingsInheritThePreviousPresetWithoutResettingFrameRate()
     {
         for (var preset = 0; preset < 4; preset++)

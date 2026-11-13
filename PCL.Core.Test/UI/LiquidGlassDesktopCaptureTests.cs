@@ -324,6 +324,33 @@ public sealed class TahoeDesktopCaptureTests
         Assert.AreEqual((0, 10), TahoeCaptureResources.DirtyRows(next, previous, 8, 10, true));
     }
 
+    [STATestMethod]
+    public void ReducedSamplesChangeImageResolutionWithoutChangingViewportAndRestoreNativeQuality()
+    {
+        WithCapture((capture, platform, _, image) =>
+        {
+            capture.Apply(true);
+            var session = platform.Sessions.Single();
+            var region = session.Region!;
+            var size = PCL.Core.UI.LiquidGlassPerformance.SamplingSize(region.Width, region.Height, 50);
+            var pixels = session.PresentReduced(size.Width, size.Height, 31);
+            PumpUntil(() => capture.PresentedFrames == 1);
+            var bitmap = (BitmapSource)image.Source;
+            Assert.AreEqual(size.Width, bitmap.PixelWidth);
+            Assert.AreEqual(size.Height, bitmap.PixelHeight);
+            Assert.AreEqual(region, session.Region, "Quality must not change physical capture coordinates.");
+            Assert.AreEqual(pixels.Length, capture.UploadedBytes);
+            session.PresentReduced(size.Width, size.Height, 63);
+            PumpUntil(() => capture.PresentedFrames == 2);
+            Assert.AreSame(bitmap, image.Source, "Same quality must reuse its image.");
+            session.Present(81);
+            PumpUntil(() => capture.PresentedFrames == 3);
+            Assert.AreEqual(region.Width, ((BitmapSource)image.Source).PixelWidth);
+            Assert.AreEqual(region.Height, ((BitmapSource)image.Source).PixelHeight);
+            Assert.AreEqual(1, platform.Creations, "Quality changes must not restart capture.");
+        });
+    }
+
     [TestMethod]
     public void EveryNativeResourceIsReleasedEvenWhenMultipleCloseCallsFail()
     {
@@ -495,6 +522,14 @@ public sealed class TahoeDesktopCaptureTests
         }
         public void Present(byte[] pixels, int dirtyY, int dirtyHeight) =>
             present(new TahoeCaptureFrame(pixels, Region!, dirtyY, dirtyHeight), () => Completed++);
+        public byte[] PresentReduced(int width, int height, byte fill)
+        {
+            var pixels = new byte[width * height * 4];
+            Array.Fill(pixels, fill);
+            present(new TahoeCaptureFrame(pixels, Region!, 0, height)
+                { SampleWidth = width, SampleHeight = height }, () => Completed++);
+            return pixels;
+        }
         public void Dispose()
         {
             Disposed = true;

@@ -4293,4 +4293,10 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Sharpness">邊緣清晰度（0–100%）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">玻璃染色比例（0–100%，不影響背景透明度）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">啟用按鈕按壓與跟隨動效</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Reset">還原玻璃預設參數</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">確定還原液態玻璃的預設參數嗎？&#10;&#10;將還原均衡建議參數，包括 100% 折射、8 DIP 磨砂、1 DIP 基礎模糊、60 FPS 動效與桌面取樣率、預設色散、高光、漫反射、邊緣清晰度、染色比例及按鈕動效。&#10;&#10;僅修改玻璃參數；玻璃開關、桌面折射開關與授權記錄維持目前狀態。帳號、主題、背景、實例與其他啟動器設定皆不改變。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity">卡片染色／不透明度（0–100%）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">僅調整卡片半透明底色：0% 為透明，100% 為不透明。文字、圖示、玻璃染色及視窗背景不受影響；高對比模式仍使用系統實色。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality">桌面取樣品質（25–100% 解析度）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">依原始寬高比例縮小桌面取樣影像，100% 為原始解析度，50% 為寬高各一半、像素數四分之一。降低可減少影像傳輸與上傳量，細節也會減少；Windows 擷取仍保留原尺寸中間影像。僅影響即時桌面，不影響文字、按鈕動效或取樣影格率。</sys:String>
 </ResourceDictionary>

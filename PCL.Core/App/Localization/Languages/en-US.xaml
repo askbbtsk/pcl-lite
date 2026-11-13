@@ -4293,4 +4293,10 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Setup.Ui.LiquidGlass.Sharpness">Edge sharpness (0–100%)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">Glass tint scale (0–100%; separate from background opacity)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">Enable button press and follow animations</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Reset">Restore glass defaults</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">Restore the default liquid glass parameters?&#10;&#10;This restores the Balanced recommendation: 100% refraction, 8 DIP frosting, 1 DIP base blur, 60 FPS animation and desktop sampling, and default dispersion, highlights, diffuse lighting, edge sharpness, tint and button motion.&#10;&#10;Only glass parameters change. Glass and desktop-refraction switches and consent remain unchanged. Accounts, themes, backgrounds, instances and all other launcher settings remain unchanged.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity">Card tint / opacity (0–100%)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">Changes only the card surface: 0% is transparent and 100% is opaque. Text, icons, glass tint and window background are unchanged. High-contrast mode retains solid system colors.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality">Desktop sampling quality (25–100% resolution)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">Scales desktop sample dimensions proportionally. 100% keeps native resolution; 50% halves width and height, yielding one quarter of the pixels. Lower values reduce frame transfer and upload size with less detail; Windows capture still retains a full-size intermediate. Only affects live desktop detail, not text, animation or capture rate.</sys:String>
 </ResourceDictionary>

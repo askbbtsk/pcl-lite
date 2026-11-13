@@ -546,14 +546,19 @@ public static partial class Config
             [ConfigItem<int>("UiLiquidGlassFrameRate", 60, ConfigSource.Local)] public partial int MaximumFrameRate { get; set; }
             [ConfigItem<int>("UiLiquidGlassFrost", 8, ConfigSource.Local)] public partial int FrostRadius { get; set; }
             [ConfigItem<int>("UiLiquidGlassRefraction", 5, ConfigSource.Local)] public partial int RefractionStrength { get; set; }
+            /// <summary>-1 reads the legacy 20%-step value; otherwise stores exact 0–200%.</summary>
+            [ConfigItem<int>("UiLiquidGlassRefractionPercent", -1, ConfigSource.Local)] public partial int RefractionPercent { get; set; }
             // -1 inherits the old preset once; manually tuned values are never overwritten by refresh.
             [ConfigItem<int>("UiLiquidGlassSamplingFrameRate", -1, ConfigSource.Local)] public partial int SamplingFrameRate { get; set; }
+            [ConfigItem<int>("UiLiquidGlassSamplingQuality", 100, ConfigSource.Local)] public partial int SamplingQuality { get; set; }
             [ConfigItem<int>("UiLiquidGlassBlurRadius", -1, ConfigSource.Local)] public partial int BlurRadius { get; set; }
             [ConfigItem<int>("UiLiquidGlassDispersion", -1, ConfigSource.Local)] public partial int Dispersion { get; set; }
             [ConfigItem<int>("UiLiquidGlassHighlight", -1, ConfigSource.Local)] public partial int Highlight { get; set; }
             [ConfigItem<int>("UiLiquidGlassDiffuse", -1, ConfigSource.Local)] public partial int Diffuse { get; set; }
             [ConfigItem<int>("UiLiquidGlassEdgeSharpness", -1, ConfigSource.Local)] public partial int EdgeSharpness { get; set; }
             [ConfigItem<int>("UiLiquidGlassTintScale", 100, ConfigSource.Local)] public partial int TintScale { get; set; }
+            /// <summary>-1 keeps the original light/dark card opacity until explicitly changed.</summary>
+            [ConfigItem<int>("UiLiquidGlassCardOpacity", -1, ConfigSource.Local)] public partial int CardOpacity { get; set; }
             [ConfigItem<int>("UiLiquidGlassMotion", -1, ConfigSource.Local)] public partial int Motion { get; set; }
             // Fresh opt-in is required even for settings left by earlier experimental builds.
             [ConfigItem<bool>("UiLiquidGlassConsent", false, ConfigSource.Local)] public partial bool PerformanceConsent { get; set; }

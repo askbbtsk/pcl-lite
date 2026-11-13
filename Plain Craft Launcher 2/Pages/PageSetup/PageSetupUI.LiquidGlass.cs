@@ -24,13 +24,17 @@ public partial class PageSetupUI
             SliderLiquidGlassFrost.Value = LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
             SliderLiquidGlassFrost.getHintText = new Func<object, object>(value => ((int)value) + " DIP");
             TextLiquidGlassFrost.Text = SliderLiquidGlassFrost.Value + " DIP";
-            SliderLiquidGlassRefraction.Value = LiquidGlassMaterial.RefractionSetting(Config.Preference.TahoeGlass.RefractionStrength);
-            SliderLiquidGlassRefraction.getHintText = new Func<object, object>(value => ((int)value) * 20 + "%");
-            TextLiquidGlassRefraction.Text = SliderLiquidGlassRefraction.Value * 20 + "%";
+            SliderLiquidGlassRefraction.Value = LiquidGlassCore.RefractionPercent;
+            SliderLiquidGlassRefraction.getHintText = new Func<object, object>(value => value + "%");
+            TextLiquidGlassRefraction.Text = SliderLiquidGlassRefraction.Value + "%";
             SliderLiquidGlassSampling.getHintText = new Func<object, object>(value =>
                 FrameRateLabel(LiquidGlassPerformance.FrameRateFromSlider((int)value)));
             SliderLiquidGlassSampling.Value = LiquidGlassPerformance.SliderFromFrameRate(LiquidGlassCore.SamplingFrameRate);
             TextLiquidGlassSampling.Text = FrameRateLabel(LiquidGlassCore.SamplingFrameRate);
+            BindGlassSlider(SliderLiquidGlassQuality, TextLiquidGlassQuality,
+                Math.Clamp(Config.Preference.TahoeGlass.SamplingQuality, 25, 100) - 25, "%");
+            SliderLiquidGlassQuality.getHintText = new Func<object, object>(value => ((int)value + 25) + "%");
+            TextLiquidGlassQuality.Text = (SliderLiquidGlassQuality.Value + 25) + "%";
             var profile = LiquidGlassCore.Profile;
             BindGlassSlider(SliderLiquidGlassBlur, TextLiquidGlassBlur, (int)profile.BlurRadius, " DIP");
             BindGlassSlider(SliderLiquidGlassDispersion, TextLiquidGlassDispersion, (int)Math.Round(profile.Dispersion * 100), "%");
@@ -38,6 +42,8 @@ public partial class PageSetupUI
             BindGlassSlider(SliderLiquidGlassDiffuse, TextLiquidGlassDiffuse, (int)Math.Round(LiquidGlassCore.DiffuseStrength * 100), "%");
             BindGlassSlider(SliderLiquidGlassSharpness, TextLiquidGlassSharpness, (int)Math.Round(LiquidGlassCore.EdgeSharpness * 100), "%");
             BindGlassSlider(SliderLiquidGlassTint, TextLiquidGlassTint, (int)Math.Round(LiquidGlassCore.TintScale * 100), "%");
+            BindGlassSlider(SliderLiquidGlassCard, TextLiquidGlassCard,
+                LiquidGlassMaterial.CardOpacityPercent(Config.Preference.TahoeGlass.CardOpacity, ThemeManager.IsDarkMode), "%");
             CheckLiquidGlassMotion.Checked = profile.Motion;
             TextLiquidGlassCost.Text = Lang.Text("Setup.Ui.LiquidGlass.Cost."
                 + LiquidGlassPerformance.NormalizePreset(Config.Preference.TahoeGlass.PerformancePreset));
@@ -89,8 +95,8 @@ public partial class PageSetupUI
     {
         if (_liquidGlassBinding || ModAnimation.AniControlEnabled != 0) return;
         UseCustomGlassSettings();
-        Config.Preference.TahoeGlass.RefractionStrength = LiquidGlassMaterial.RefractionSetting(SliderLiquidGlassRefraction.Value);
-        TextLiquidGlassRefraction.Text = Config.Preference.TahoeGlass.RefractionStrength * 20 + "%";
+        Config.Preference.TahoeGlass.RefractionPercent = Math.Clamp(SliderLiquidGlassRefraction.Value, 0, 200);
+        TextLiquidGlassRefraction.Text = Config.Preference.TahoeGlass.RefractionPercent + "%";
         LiquidGlassCore.Refresh();
     }
 
@@ -148,22 +154,38 @@ public partial class PageSetupUI
             UseCustomGlassSettings();
             return;
         }
+        ApplyGlassRecommendation(preset);
+    }
+
+    private void ApplyGlassRecommendation(int preset)
+    {
         var profile = LiquidGlassPerformance.GetProfile(preset);
         var config = Config.Preference.TahoeGlass;
         config.PerformancePreset = preset;
         config.MaximumFrameRate = profile.FrameRate;
         config.SamplingFrameRate = profile.FrameRate;
+        config.SamplingQuality = preset switch { 0 => 50, 1 => 100, _ => 100 };
         config.BlurRadius = (int)profile.BlurRadius;
         config.FrostRadius = preset == 0 ? 0 : 8;
         config.RefractionStrength = 5;
+        config.RefractionPercent = 100;
         config.Dispersion = (int)Math.Round(profile.Dispersion * 100);
         config.Highlight = (int)Math.Round(profile.Highlight * 100);
         config.Diffuse = ThemeManager.IsDarkMode ? 14 : 17;
         config.EdgeSharpness = 90;
         config.TintScale = 100;
+        config.CardOpacity = -1;
         config.Motion = profile.Motion ? 1 : 0;
         RefreshLiquidGlassSettings();
         LiquidGlassCore.Refresh();
+    }
+
+    private void LiquidGlassReset_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (ModMain.MyMsgBox(Lang.Text("Setup.Ui.LiquidGlass.Reset.Confirm"),
+                Lang.Text("Setup.Ui.LiquidGlass.Reset"), Lang.Text("Common.Action.Confirm"),
+                Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
+        ApplyGlassRecommendation(1);
     }
 
     private void LiquidGlassFrameRate_Changed(object sender, bool user)
@@ -197,6 +219,8 @@ public partial class PageSetupUI
             case "Diffuse": config.Diffuse = slider.Value; break;
             case "Sharpness": config.EdgeSharpness = slider.Value; break;
             case "Tint": config.TintScale = slider.Value; break;
+            case "Card": config.CardOpacity = slider.Value; break;
+            case "Quality": config.SamplingQuality = slider.Value + 25; break;
         }
         RefreshLiquidGlassSettings();
         LiquidGlassCore.Refresh();

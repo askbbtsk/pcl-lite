@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using PCL.Core.App;
 
 namespace PCL;
 
@@ -89,5 +90,6 @@ public partial class MyCard
 
     private SolidColorBrush TahoeContentBrush() => TahoeIsFlat ? Brushes.Transparent
         : SystemParameters.HighContrast ? SystemColors.WindowBrush
-        : new SolidColorBrush(LiquidGlassCore.CurrentPalette.CardSurface);
+        : new SolidColorBrush(PCL.Core.UI.LiquidGlassMaterial.CardTint(
+            LiquidGlassCore.CurrentPalette.CardSurface, Config.Preference.TahoeGlass.CardOpacity));
 }

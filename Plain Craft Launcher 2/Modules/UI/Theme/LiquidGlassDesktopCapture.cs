@@ -285,8 +285,22 @@ internal sealed class TahoeDesktopCapture : IDisposable
             {
                 TahoeCaptureRegion region = frame.Region;
                 if (!IsCurrent(session) || region.Version != _version || _bitmap == null) return;
-                int stride = checked(region.Width * 4);
-                _bitmap.WritePixels(new Int32Rect(region.DestinationX, region.DestinationY + frame.DirtyY, region.Width, frame.DirtyHeight),
+                int width = frame.SampleWidth > 0 ? frame.SampleWidth : region.Width;
+                int height = frame.SampleHeight > 0 ? frame.SampleHeight : region.Height;
+                bool fullViewport = region.DestinationX == 0 && region.DestinationY == 0 &&
+                    region.Width == (int)_bounds.Width && region.Height == (int)_bounds.Height;
+                if ((width != region.Width || height != region.Height) && !fullViewport)
+                    throw new InvalidOperationException("Reduced samples must cover the whole viewport.");
+                int bitmapWidth = fullViewport ? width : checked((int)_bounds.Width);
+                int bitmapHeight = fullViewport ? height : checked((int)_bounds.Height);
+                if (_bitmap.PixelWidth != bitmapWidth || _bitmap.PixelHeight != bitmapHeight)
+                {
+                    _bitmap = NewBitmap(bitmapWidth, bitmapHeight);
+                    // A resized payload must supply the complete image, not stale dirty rows.
+                    frame = frame with { DirtyY = 0, DirtyHeight = height };
+                }
+                int stride = checked(width * 4);
+                _bitmap.WritePixels(new Int32Rect(region.DestinationX, region.DestinationY + frame.DirtyY, width, frame.DirtyHeight),
                     frame.Pixels, stride, checked(frame.DirtyY * stride));
                 _target.Source = _bitmap;
                 UploadedBytes += (long)stride * frame.DirtyHeight;

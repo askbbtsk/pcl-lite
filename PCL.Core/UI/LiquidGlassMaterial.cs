@@ -47,6 +47,14 @@ public static class LiquidGlassMaterial
     public static int FrostRadius(int configured) => Math.Clamp(configured, 0, 24);
     public static int RefractionSetting(int configured) => Math.Clamp(configured, 0, 10);
     public static double RefractionStrength(int configured) => RefractionSetting(configured) / 100d;
+    public static int ResolveRefractionPercent(int percent, int legacySetting) =>
+        percent == -1 ? RefractionSetting(legacySetting) * 20 : Math.Clamp(percent, 0, 200);
+    public static double RefractionFromPercent(int percent) => Math.Clamp(percent, 0, 200) / 2000d;
+    public static int CardOpacityPercent(int configured, bool dark) =>
+        configured == -1 ? dark ? 77 : 80 : Math.Clamp(configured, 0, 100);
+    public static Color CardTint(Color original, int configured) => configured == -1 ? original :
+        Color.FromArgb((byte)Math.Round(Math.Clamp(configured, 0, 100) * 2.55),
+            original.R, original.G, original.B);
     public static Color Tint(bool dark) => dark ? Color.FromRgb(23, 29, 39) : Colors.White;
     public static double Opacity(bool dark, bool desktop, double original) =>
         desktop ? Math.Max(original, dark ? .55 : .65) : original;

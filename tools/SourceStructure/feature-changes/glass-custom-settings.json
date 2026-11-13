@@ -1,7 +1,7 @@
 [
   {
     "SourcePath": "PCL.Core/UI/LiquidGlassPerformance.cs",
-    "Sha256": "7C7854E0D4FA0A8DD676E4D5EDDB02BE87A234405A0A29C7B29E77226B78F996",
+    "Sha256": "AB574AA4B3FABB51E343B4805FE776B73935701A9668E59A2570828143299FA0",
     "Members": [
       "PCL.Core.UI.LiquidGlassPerformance::MethodDeclaration::NormalizePreset(int preset)"
     ],
@@ -25,7 +25,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.LiquidGlass.cs",
-    "Sha256": "8CD22B07FE859A27E44AD4C9CD02AC5F92BB59FFBA0E7DADB095C8CF82D2255F",
+    "Sha256": "88975E850B1ED2825B39F7E9B925ABB37F53BE283768F7EB5EB5FEC5FB4AD04B",
     "Members": [
       "PCL.PageSetupUI::MethodDeclaration::LiquidGlassDesktop_Change(object sender, bool user)",
       "PCL.PageSetupUI::MethodDeclaration::LiquidGlassFrameRate_Changed(object sender, bool user)",

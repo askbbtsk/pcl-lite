@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Win32;
+using PCL.Core.App;
+using PCL.Core.UI;
 
 namespace PCL;
 
@@ -74,6 +76,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
         {
             IntPtr host = IntPtr.Zero, magnifier = IntPtr.Zero, dc = IntPtr.Zero;
             IntPtr bitmap = IntPtr.Zero, oldBitmap = IntPtr.Zero, bits = IntPtr.Zero;
+            IntPtr sampleDc = IntPtr.Zero, sampleBitmap = IntPtr.Zero, oldSampleBitmap = IntPtr.Zero, sampleBits = IntPtr.Zero;
             bool initialized = false;
             try
             {
@@ -93,6 +96,9 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
                 if (!MagSetWindowTransform(magnifier, ref transform)) throw new Win32Exception();
                 dc = CreateCompatibleDC(IntPtr.Zero);
                 if (dc == IntPtr.Zero) throw new Win32Exception();
+                sampleDc = CreateCompatibleDC(IntPtr.Zero);
+                if (sampleDc == IntPtr.Zero) throw new Win32Exception();
+                int sampleWidth = 0, sampleHeight = 0;
                 TahoeCaptureRegion? current = null;
                 byte[]? previous = null, scratch = null;
                 long last = 0;
@@ -163,14 +169,46 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
                     // Give the compositor time to honor the initial exclusion filter.
                     if (++warmup < 3 || Volatile.Read(ref _pending) != 0) continue;
                     if (!PrintWindow(host, dc, 2)) throw new Win32Exception();
-                    byte[] pixels = scratch ?? new byte[checked(region.Width * region.Height * 4)];
-                    Marshal.Copy(bits, pixels, 0, pixels.Length);
+                    var sampleSize = LiquidGlassPerformance.SamplingSize(region.Width, region.Height,
+                        Config.Preference.TahoeGlass.SamplingQuality);
+                    if (sampleWidth != sampleSize.Width || sampleHeight != sampleSize.Height ||
+                        sampleBitmap == IntPtr.Zero && (sampleSize.Width != region.Width || sampleSize.Height != region.Height))
+                    {
+                        if (sampleBitmap != IntPtr.Zero)
+                        {
+                            SelectObject(sampleDc, oldSampleBitmap);
+                            DeleteObject(sampleBitmap);
+                            sampleBitmap = sampleBits = IntPtr.Zero;
+                        }
+                        sampleWidth = sampleSize.Width; sampleHeight = sampleSize.Height;
+                        if (sampleWidth != region.Width || sampleHeight != region.Height)
+                        {
+                            var sampleInfo = new BitmapInfo { Size = 40, Width = sampleWidth, Height = -sampleHeight, Planes = 1, BitCount = 32 };
+                            sampleBitmap = CreateDIBSection(sampleDc, ref sampleInfo, 0, out sampleBits, IntPtr.Zero, 0);
+                            if (sampleBitmap == IntPtr.Zero || sampleBits == IntPtr.Zero) throw new Win32Exception();
+                            oldSampleBitmap = SelectObject(sampleDc, sampleBitmap);
+                            if (oldSampleBitmap == IntPtr.Zero || oldSampleBitmap == new IntPtr(-1)) throw new Win32Exception();
+                        }
+                        previous = scratch = null;
+                    }
+                    var sourceBits = bits;
+                    if (sampleWidth != region.Width || sampleHeight != region.Height)
+                    {
+                        if (SetStretchBltMode(sampleDc, 4) == 0 ||
+                            !SetBrushOrgEx(sampleDc, 0, 0, IntPtr.Zero) ||
+                            !StretchBlt(sampleDc, 0, 0, sampleWidth, sampleHeight, dc, 0, 0, region.Width, region.Height, 0x00CC0020))
+                            throw new Win32Exception();
+                        sourceBits = sampleBits;
+                    }
+                    byte[] pixels = scratch ?? new byte[checked(sampleWidth * sampleHeight * 4)];
+                    Marshal.Copy(sourceBits, pixels, 0, pixels.Length);
                     for (int index = 3; index < pixels.Length; index += 4) pixels[index] = 255;
-                    var dirty = TahoeCaptureResources.DirtyRows(pixels, previous, region.Width, region.Height, false);
+                    var dirty = TahoeCaptureResources.DirtyRows(pixels, previous, sampleWidth, sampleHeight, false);
                     if (dirty.Height == 0) { scratch = pixels; continue; }
                     scratch = previous; previous = pixels;
                     Interlocked.Exchange(ref _pending, 1);
-                    _present(new TahoeCaptureFrame(pixels, region, dirty.Y, dirty.Height),
+                    _present(new TahoeCaptureFrame(pixels, region, dirty.Y, dirty.Height)
+                        { SampleWidth = sampleWidth, SampleHeight = sampleHeight },
                         () => Interlocked.Exchange(ref _pending, 0));
                 }
             }
@@ -182,6 +220,8 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
             {
                 if (host != IntPtr.Zero) ShowWindow(host, 0);
                 if (bitmap != IntPtr.Zero) { SelectObject(dc, oldBitmap); DeleteObject(bitmap); }
+                if (sampleBitmap != IntPtr.Zero) { SelectObject(sampleDc, oldSampleBitmap); DeleteObject(sampleBitmap); }
+                if (sampleDc != IntPtr.Zero) DeleteDC(sampleDc);
                 if (dc != IntPtr.Zero) DeleteDC(dc);
                 if (magnifier != IntPtr.Zero) DestroyWindow(magnifier);
                 if (host != IntPtr.Zero) DestroyWindow(host);
@@ -241,4 +281,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
     [DllImport("gdi32.dll")] private static extern IntPtr SelectObject(IntPtr dc,IntPtr obj);
     [DllImport("gdi32.dll")] private static extern bool DeleteObject(IntPtr obj);
     [DllImport("gdi32.dll")] private static extern bool DeleteDC(IntPtr dc);
+    [DllImport("gdi32.dll", SetLastError=true)] private static extern int SetStretchBltMode(IntPtr dc,int mode);
+    [DllImport("gdi32.dll", SetLastError=true)] private static extern bool SetBrushOrgEx(IntPtr dc,int x,int y,IntPtr previous);
+    [DllImport("gdi32.dll", SetLastError=true)] private static extern bool StretchBlt(IntPtr dest,int x,int y,int width,int height,IntPtr source,int sourceX,int sourceY,int sourceWidth,int sourceHeight,uint operation);
 }

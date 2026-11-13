@@ -1,4 +1,6 @@
 using System;
+using PCL.Core.App.Essentials;
+using PCL.Core.UI;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -318,7 +320,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
                     SetState(TahoeCaptureState.Live, firstFrame);
                 else if (firstFrame) StateChanged?.Invoke(this, EventArgs.Empty);
             }
-            catch (Exception error) when (error is not OutOfMemoryException) { Failed(session, error); }
+            catch (Exception error) { Failed(session, error); }
             finally { completed(); }
         });
         operation.Aborted += (_, _) => completed();
@@ -331,6 +333,15 @@ internal sealed class TahoeDesktopCapture : IDisposable
         {
             // Session identity prevents late errors from stopping its replacement.
             if (!IsCurrent(session)) return;
+            if (LiquidGlassFailureRecovery.IsGraphicsResourceFailure(error))
+            {
+                if (ApplicationService.RecoverUnhandledException?.Invoke(error) == true) return;
+                // Do not retry allocations forever when the graphics subsystem
+                // is exhausted. If recovery was unavailable, let the UI boundary
+                // perform its existing fatal handling.
+                Stop();
+                throw error;
+            }
             _sessions.Remove(session.Monitor);
             Release(session.Capture);
             ++_version;

@@ -212,7 +212,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
                         () => Interlocked.Exchange(ref _pending, 0));
                 }
             }
-            catch (Exception error) when (error is not OutOfMemoryException)
+            catch (Exception error)
             {
                 if (Volatile.Read(ref _closing) == 0) _failed(error);
             }

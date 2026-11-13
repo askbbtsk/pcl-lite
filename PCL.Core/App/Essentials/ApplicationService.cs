@@ -11,13 +11,19 @@ namespace PCL.Core.App.Essentials;
 public sealed partial class ApplicationService
 {
     public static Func<Application>? Loading { private get; set; }
+    /// <summary>Optional host-owned recovery; false preserves normal fatal handling.</summary>
+    public static Func<Exception, bool>? RecoverUnhandledException { get; set; }
 
     [LifecycleStart]
     private static void _Start()
     {
         Context.Debug("正在初始化 WPF 应用程序容器");
         var app = Loading!.Invoke();
-        app.DispatcherUnhandledException += (_, e) => Lifecycle.OnException(e.Exception);
+        app.DispatcherUnhandledException += (_, e) =>
+        {
+            if (RecoverUnhandledException?.Invoke(e.Exception) == true) { e.Handled = true; return; }
+            Lifecycle.OnException(e.Exception);
+        };
         app.Startup += (_, _) => Lifecycle.OnLoading();
         Lifecycle.CurrentApplication = app;
         Loading = null;

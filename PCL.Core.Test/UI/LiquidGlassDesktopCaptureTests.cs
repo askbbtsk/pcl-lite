@@ -351,6 +351,39 @@ public sealed class TahoeDesktopCaptureTests
         });
     }
 
+    [STATestMethod]
+    public void OomStopsCaptureThroughRecoveryInsteadOfRestartingTheSampler()
+    {
+        WithCapture((capture, platform, _, image) =>
+        {
+            var previous = PCL.Core.App.Essentials.ApplicationService.RecoverUnhandledException;
+            var recoveries = 0;
+            PCL.Core.App.Essentials.ApplicationService.RecoverUnhandledException = error =>
+            {
+                Assert.IsInstanceOfType<OutOfMemoryException>(error);
+                recoveries++;
+                capture.Apply(false);
+                return true;
+            };
+            try
+            {
+                capture.Apply(true);
+                var session = platform.Sessions.Single();
+                session.Present();
+                PumpUntil(() => capture.HasFrame);
+                session.Fail(new OutOfMemoryException("Synthetic allocation failure; no real memory exhaustion"));
+                PumpUntil(() => recoveries == 1);
+                Assert.IsTrue(session.Disposed);
+                Assert.IsFalse(capture.HasFrame);
+                Assert.IsNull(image.Source);
+                Assert.AreEqual(TahoeCaptureState.Stopped, capture.State);
+                PumpFor(TimeSpan.FromMilliseconds(30));
+                Assert.AreEqual(1, platform.Creations);
+            }
+            finally { PCL.Core.App.Essentials.ApplicationService.RecoverUnhandledException = previous; }
+        });
+    }
+
     [TestMethod]
     public void EveryNativeResourceIsReleasedEvenWhenMultipleCloseCallsFail()
     {
@@ -513,6 +546,7 @@ public sealed class TahoeDesktopCaptureTests
         public int Completed { get; private set; }
         public void SetRegion(TahoeCaptureRegion region) => Region = region;
         public void Fail() => failed(new InvalidOperationException("Injected retired-session failure."));
+        public void Fail(Exception error) => failed(error);
         public byte[] Present(byte fill = 33)
         {
             byte[] pixels = new byte[Region!.Width * Region.Height * 4];

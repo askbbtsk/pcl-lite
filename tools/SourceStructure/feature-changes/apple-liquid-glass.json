@@ -84,7 +84,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
-    "Sha256": "6A34B871FA1AB58E14964DB18F687E41EECA4D7F6ADCA336E17D4AD1B9732051",
+    "Sha256": "54B4994320C1DB3943EF9889CDAF6AE5A49D3DE9DB973AF8D9F43EAF8C2669FC",
     "Members": [
       "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
       "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",

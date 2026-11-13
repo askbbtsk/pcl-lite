@@ -1,8 +1,9 @@
 [
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassDesktopCapture.cs",
-    "Sha256": "3F2089021F637E9D014E077900C02234F8936B67D7EBAFD7FB009D437A5D15C9",
+    "Sha256": "C814F65646A6A3B8FB33F4A6DD8D3D348CB05F4479CF61271F712769D08B2ECF",
     "Members": [
+      "PCL.TahoeDesktopCapture::MethodDeclaration::Failed(Session session, Exception error)",
       "PCL.TahoeDesktopCapture::MethodDeclaration::Present(Session session, TahoeCaptureFrame frame, Action completed)",
       "PCL.TahoeDesktopCapture::MethodDeclaration::SetInteractiveMove(bool moving)",
       "PCL.TahoeDesktopCapture::MethodDeclaration::UpdateGeometry()"
@@ -11,7 +12,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassScreenshotCapturePlatform.cs",
-    "Sha256": "6FCB24536B1EE271509480A98F291C6E9F34E33B062805B6FD52366D7D1E748D",
+    "Sha256": "810C62F5DB9FF0BAA1942FD4D2636897740CEA8A27EF04F2787623BD28C6EFF9",
     "Members": [
       "PCL.LiquidGlassScreenshotCapturePlatform+Capture::MethodDeclaration::Run()"
     ],

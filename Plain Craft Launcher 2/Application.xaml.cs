@@ -22,6 +22,7 @@ public partial class Application
 {
     public Application()
     {
+        ApplicationService.RecoverUnhandledException = LiquidGlassCore.TryRecoverGraphicsFailure;
         // 注册生命周期事件
         Lifecycle.When(LifecycleState.Loaded, _ApplicationStartup);
         Lifecycle.When(LifecycleState.WindowCreated, _ShowEnvironmentWarning);
@@ -160,6 +161,7 @@ public partial class Application
      */
     private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        if (LiquidGlassCore.TryRecoverGraphicsFailure(e.Exception)) { e.Handled = true; return; }
         try
         {
             e.Handled = true;

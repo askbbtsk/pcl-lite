@@ -1,0 +1,29 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Essentials/ApplicationService.cs",
+    "Sha256": "7493CA999718C1A63B41C2E17E0CAC4D28407C018DA254C85F38B40C3CF3DDF0",
+    "Members": [
+      "PCL.Core.App.Essentials.ApplicationService::MethodDeclaration::_Start()"
+    ],
+    "Reason": "Allow the host to acknowledge a successfully recovered optional-glass exception before invoking fatal lifecycle handling. With no recovery delegate or a false result, preserve the original path."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Application.xaml.cs",
+    "Sha256": "2FFFDAE38C380B9833985462A809F9B82DC3F0E6EF8D1447BB4E37F883283D9E",
+    "Members": [
+      "PCL.Application::ConstructorDeclaration::.ctor()",
+      "PCL.Application::MethodDeclaration::Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)"
+    ],
+    "Reason": "Register one bounded glass failure recovery and respect it in both WPF dispatcher subscribers; unrelated exceptions and unsuccessful recovery preserve existing diagnostics."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.FailureRecovery.cs",
+    "Sha256": "A96B7CCC754B96D06D704241FF290F568D24E3ABAD8B16903BC293206801E12C",
+    "Members": [],
+    "RemovedMembers": [
+      "PCL.LiquidGlassCore::MethodDeclaration::ApplySurface(TahoeGlassSurface surface, bool dark, double opacity)",
+      "PCL.LiquidGlassCore::MethodDeclaration::SetBrush(FormMain window, string key, string color)"
+    ],
+    "Reason": "Retain the reviewed palette-aware replacements of old overloads. The new partial owns exception-triggered disable/release only: no thresholds, no proactive memory polling and no unrelated setting changes."
+  }
+]

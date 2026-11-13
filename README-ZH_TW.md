@@ -113,6 +113,7 @@ PCL Lite 始終建議使用最新版本的作業系統以獲得最佳體驗。
 <img width="310" height="148" alt="社群截圖 1" src="https://github.com/user-attachments/assets/7c488eee-59e9-44db-ac34-24b9517a85f9" />
 <img width="568" height="493" alt="社群截圖 2" src="https://github.com/user-attachments/assets/2b8f0450-159f-4ed4-ac45-0db5e393a257" />
 <img width="1119" height="396" alt="社群截圖 3" src="https://github.com/user-attachments/assets/7e1e1995-95b8-4e67-b768-2de20cbb8445" />
+<img width="510" height="200" alt="社群截圖 10" src="https://github.com/user-attachments/assets/85e5450f-9c24-4a6e-913d-0cab53fb36ed" />
 <img width="412" height="468" alt="社群截圖 4" src="https://github.com/user-attachments/assets/f17ad58c-6d0d-4ac0-a1fe-f3b75bfb2632" />
 
 <img width="349" height="126" alt="社群截圖 5" src="https://github.com/user-attachments/assets/5007fd73-cb3b-402e-8792-d6c06cdc26bb" />
@@ -121,6 +122,9 @@ PCL Lite 始終建議使用最新版本的作業系統以獲得最佳體驗。
 <img width="362" height="357" alt="社群截圖 7" src="https://github.com/user-attachments/assets/def76e03-e62a-4bf3-9a85-0415defa0ee0" />
 <img width="412" height="468" alt="社群截圖 8" src="https://github.com/user-attachments/assets/4efdfe1c-dbe7-4c8b-8120-3a16cddc3a5e" />
 <img width="616" height="413" alt="社群截圖 9" src="https://github.com/user-attachments/assets/617a72ae-9575-4b8e-b33f-23d82a20ac5e" />
+
+<img width="563" height="128" alt="社群截圖 11" src="https://github.com/user-attachments/assets/54813ecd-6620-4f06-b494-52d0f325fdcd" />
+我不知道阿 Q 姓趙！
 
 ## Star History
 

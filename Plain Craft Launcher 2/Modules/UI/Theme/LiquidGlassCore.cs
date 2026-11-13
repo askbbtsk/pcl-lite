@@ -30,12 +30,12 @@ public static partial class LiquidGlassCore
     public static PCL.Core.UI.LiquidGlassThemePalette CurrentPalette => _palette;
     public static bool IsEnabled => PCL.Core.UI.LiquidGlassPerformance.IsEnabled(
         Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent)
-        && CustomThemeRuntime.AllowsGlass;
+        && CustomThemeRuntime.AllowsGlass && !_disabledAfterFailure;
     public static bool IsDesktopBackdropActive => IsEnabled && _desktopCapture?.IsActive == true;
     public static bool IsDesktopBackdropRequested => PCL.Core.UI.LiquidGlassPerformance.ShouldCaptureDesktop(
         Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent,
         Config.Preference.TahoeGlass.UseDesktopBackdrop, Config.Preference.TahoeGlass.DesktopCaptureConsent)
-        && CustomThemeRuntime.AllowsGlass;
+        && CustomThemeRuntime.AllowsGlass && !_disabledAfterFailure;
     public static FrameworkElement? BackdropSource => IsEnabled &&
         (!IsDesktopBackdropRequested || _desktopCapture?.HasFrame == true)
             ? IsDesktopBackdropRequested ? _window?.TahoeDesktopImage : _window?.TahoeBackdrop : null;

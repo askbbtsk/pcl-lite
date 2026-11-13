@@ -264,7 +264,7 @@
                     </StackPanel>
                 </Grid>
             </local:MyCard>
-            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Setup.Ui.Tahoe.Title}">
+            <local:MyCard x:Name="CardLiquidGlass" Margin="0,0,0,15" Title="{DynamicResource Setup.Ui.Tahoe.Title}">
                 <StackPanel Margin="25,40,25,15">
                     <local:MyCheckBox x:Name="CheckTahoeGlass" Text="{DynamicResource Setup.Ui.Tahoe.Enable}"
                                       Height="32" Margin="0,0,0,8"

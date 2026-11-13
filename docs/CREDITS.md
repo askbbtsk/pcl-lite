@@ -10,12 +10,11 @@ PCL Lite 站在很多人的肩膀上。这份清单列出直接借用了代码�
 ### PCL（Plain Craft Launcher）
 
 
-### BedrockBoot / BedrockLauncher.Core
+### BedrockLauncher.Core
 
 - 作者：Round Studio 及相应贡献者。
-- 仓库：<https://github.com/Round-Studio/BedrockLauncher.Core>、
-  <https://github.com/Round-Studio/BedrockBoot>。
-- 感谢上述项目为基岩版下载、安装、容器解析及解密功能提供的参考与代码来源。
+- 仓库：<https://github.com/Round-Studio/BedrockLauncher.Core>。
+- 感谢该 Core 项目为基岩版 GDK 容器解析及解密功能提供的参考与代码来源。
 - BedrockLauncher.Core 历史 MIT 版本：
   [`f262eb7af2e6e11665ef51d9b998c42819ee0bb3`](https://github.com/Round-Studio/BedrockLauncher.Core/tree/f262eb7af2e6e11665ef51d9b998c42819ee0bb3)。
   `Copyright (c) 2025 Round Studio`；该历史版本的许可全文保留在

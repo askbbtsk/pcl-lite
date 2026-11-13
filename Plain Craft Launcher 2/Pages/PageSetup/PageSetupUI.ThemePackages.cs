@@ -61,11 +61,18 @@ public partial class PageSetupUI
         body.Children.Add(_themePackageInfo);
         body.Children.Add(buttons);
         card.Children.Add(body);
-        PanMain.Children.Insert(0, card);
+        InsertThemePackagesCard(PanMain, CardLiquidGlass, card);
         _themePackages.SelectionChanged += ThemePackageSelectionChanged;
         runtime.Changed += OnThemePackagesChanged;
         Unloaded += ThemePackagesUnloaded;
         await RefreshThemePackagesAsync();
+    }
+
+    internal static void InsertThemePackagesCard(Panel parent, UIElement liquidGlassCard, UIElement themeCard)
+    {
+        int index = parent.Children.IndexOf(liquidGlassCard);
+        if (index < 0) throw new InvalidOperationException("The liquid glass settings card is missing.");
+        parent.Children.Insert(index + 1, themeCard);
     }
 
     private static TextBlock ThemeText(string key)

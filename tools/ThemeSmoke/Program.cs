@@ -31,10 +31,20 @@ internal static class Program
             var application = new System.Windows.Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             LoadBuiltInResources(application);
             CheckLearningExampleExport();
+            CheckThemeSettingsPlacement();
             var source = System.IO.Path.GetFullPath("examples/themes/SoftSlate");
             var service = new ThemePackageService(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pcl-theme-smoke"),
                 System.IO.Path.GetTempPath());
             var package = Task.Run(() => service.InspectAsync(source)).GetAwaiter().GetResult();
+            string archivePath = Path.Combine(Path.GetTempPath(), "pcl-soft-slate-" + Guid.NewGuid().ToString("N") + ".zip");
+            try
+            {
+                System.IO.Compression.ZipFile.CreateFromDirectory(source, archivePath);
+                var archived = Task.Run(() => service.InspectAsync(archivePath)).GetAwaiter().GetResult();
+                if (archived.ContentHash != package.ContentHash)
+                    throw new InvalidDataException("The test theme ZIP differs from its directory package.");
+            }
+            finally { if (File.Exists(archivePath)) File.Delete(archivePath); }
             var layer = new ThemeResourceLoader().Load(package, false, false);
             var assembly = typeof(FormMain).Assembly;
             Type registry = assembly.GetType("PCL.ThemeControlRegistry", true)!;
@@ -94,6 +104,29 @@ internal static class Program
                 && !element.Name.NamespaceName.Contains(";assembly=", StringComparison.Ordinal))
                 element.Name = XName.Get(element.Name.LocalName, element.Name.NamespaceName + ";assembly=Plain Craft Launcher 2");
         application.Resources = (ResourceDictionary)System.Windows.Markup.XamlReader.Parse(dictionary.ToString());
+    }
+
+    private static void CheckThemeSettingsPlacement()
+    {
+        var parent = new StackPanel();
+        var basic = new Border();
+        var glass = new Border();
+        var next = new Border();
+        var themes = new Border();
+        parent.Children.Add(basic);
+        parent.Children.Add(glass);
+        parent.Children.Add(next);
+        typeof(PageSetupUI).GetMethod("InsertThemePackagesCard", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [parent, glass, themes]);
+        if (parent.Children.Count != 4 || parent.Children[0] != basic || parent.Children[1] != glass
+            || parent.Children[2] != themes || parent.Children[3] != next)
+            throw new InvalidDataException("Theme package settings must appear immediately below liquid glass.");
+        var page = XDocument.Load("Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.xaml");
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        if (!page.Descendants().Any(element => (string?)element.Attribute(xaml + "Name") == "CardLiquidGlass"
+                && (string?)element.Attribute("Title") == "{DynamicResource Setup.Ui.Tahoe.Title}"))
+            throw new InvalidDataException("The actual settings XAML must name the liquid glass anchor.");
+        Console.WriteLine("Theme package settings insert immediately below the actual liquid glass card.");
     }
 
     private static void CheckLearningExampleExport()

@@ -9,6 +9,8 @@
 Preface: PCL and its guard squad keep saying we "touched the cake", and hand out labels while they're at it. I'd like to know — does this hat factory have some grudge against the bakery? How come the hat factory is the one always touching the cake?
 [A mysterious article, courtesy of cubk](https://github.com/askbbtsk/pcl-lite/blob/main/readmedlc.md)
 
+<img src="https://repobeats.axiom.co/api/embed/9eeaaa6c831dc44bdc2f264bc4126460aceb8518.svg" alt="PCL Lite repository activity" title="Repobeats repository activity" width="100%" />
+
 [![Stars](https://img.shields.io/github/stars/askbbtsk/pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/askbbtsk/pcl-lite/stargazers)
 [![Release](https://img.shields.io/github/v/release/askbbtsk/pcl-lite?include_prereleases&label=release&logo=github&style=for-the-badge)](https://github.com/askbbtsk/pcl-lite/releases)
 [![Downloads](https://img.shields.io/github/downloads/askbbtsk/pcl-lite/total?style=for-the-badge&logo=github&labelColor=444444&color=1F883D)](https://github.com/askbbtsk/pcl-lite/releases)
@@ -109,6 +111,20 @@ Reference: https://zhuanlan.zhihu.com/p/347828430
 
 Thanks to this person.
 Postscript: Longmao, you dumbass — can you please stop milking money out of themes?
+
+## Funny Area
+
+<img width="310" height="148" alt="Community screenshot 1" src="https://github.com/user-attachments/assets/7c488eee-59e9-44db-ac34-24b9517a85f9" />
+<img width="568" height="493" alt="Community screenshot 2" src="https://github.com/user-attachments/assets/2b8f0450-159f-4ed4-ac45-0db5e393a257" />
+<img width="1119" height="396" alt="Community screenshot 3" src="https://github.com/user-attachments/assets/7e1e1995-95b8-4e67-b768-2de20cbb8445" />
+<img width="412" height="468" alt="Community screenshot 4" src="https://github.com/user-attachments/assets/f17ad58c-6d0d-4ac0-a1fe-f3b75bfb2632" />
+
+<img width="349" height="126" alt="Community screenshot 5" src="https://github.com/user-attachments/assets/5007fd73-cb3b-402e-8792-d6c06cdc26bb" />
+<img width="717" height="128" alt="Community screenshot 6" src="https://github.com/user-attachments/assets/b61d1d37-c1e1-4f9d-9abe-190ea2bc49bf" />
+
+<img width="362" height="357" alt="Community screenshot 7" src="https://github.com/user-attachments/assets/def76e03-e62a-4bf3-9a85-0415defa0ee0" />
+<img width="412" height="468" alt="Community screenshot 8" src="https://github.com/user-attachments/assets/4efdfe1c-dbe7-4c8b-8120-3a16cddc3a5e" />
+<img width="616" height="413" alt="Community screenshot 9" src="https://github.com/user-attachments/assets/617a72ae-9575-4b8e-b33f-23d82a20ac5e" />
 
 ## Star History
 

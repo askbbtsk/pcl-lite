@@ -24,8 +24,7 @@ public partial class PageSetupUI
         var card = new MyCard { Title = Lang.Text("Theme.Pack.Title"), Margin = new Thickness(0, 0, 0, 15) };
         var body = new StackPanel { Margin = new Thickness(25, 42, 25, 20) };
         var description = ThemeText("Theme.Pack.Description");
-        _themePackages = new MyComboBox { MinHeight = 38, Margin = new Thickness(0, 10, 0, 10),
-            HorizontalAlignment = HorizontalAlignment.Stretch };
+        _themePackages = CreateThemePackageSelector();
         _themePackageInfo = ThemeText("Theme.Pack.BuiltIn");
         var buttons = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) };
         AddThemeAction(buttons, "Theme.Pack.OpenExample", () =>
@@ -74,6 +73,37 @@ public partial class PageSetupUI
         parent.Children.Insert(index + 1, themeCard);
     }
 
+    internal static MyComboBox CreateThemePackageSelector()
+    {
+        var selector = new MyComboBox { MinHeight = 38, Margin = new Thickness(0, 10, 0, 10),
+            HorizontalAlignment = HorizontalAlignment.Stretch };
+        // Theme recovery must remain usable even if a package's ComboBox
+        // template is broken. Pin the built-in PCL style for this one selector.
+        ThemeControlRegistry.SetProtected(selector, true);
+        selector.Style = (Style)System.Windows.Application.Current.FindResource(typeof(MyComboBox));
+        selector.ItemContainerStyle = (Style)System.Windows.Application.Current.FindResource("MyComboBoxItem");
+        selector.Resources["MyComboBoxItem"] = selector.ItemContainerStyle;
+        return selector;
+    }
+
+    internal static void PopulateThemePackageSelector(MyComboBox selector,
+        IReadOnlyList<ThemeCatalogItem> installed, string? activeId, string builtInLabel)
+    {
+        selector.Items.Clear();
+        var builtin = new MyComboBoxItem { Content = builtInLabel, MinHeight = 38 };
+        selector.Items.Add(builtin);
+        selector.SelectedItem = builtin;
+        foreach (var item in installed)
+        {
+            var option = new MyComboBoxItem { MinHeight = 38,
+                Content = item.Manifest is { } manifest ? manifest.Name + " · " + manifest.Version
+                    : Path.GetFileName(item.Directory) + " · " + item.Error,
+                Tag = item.Manifest?.Id, IsEnabled = item.Manifest is not null };
+            selector.Items.Add(option);
+            if (activeId is not null && item.Manifest?.Id == activeId) selector.SelectedItem = option;
+        }
+    }
+
     private static TextBlock ThemeText(string key)
     {
         var text = new TextBlock { Text = Lang.Text(key), TextWrapping = TextWrapping.Wrap, FontSize = 13 };
@@ -112,19 +142,8 @@ public partial class PageSetupUI
         try
         {
             var installed = await _themeRuntime.GetInstalledAsync();
-            _themePackages.Items.Clear();
-            var builtin = new MyComboBoxItem { Content = Lang.Text("Theme.Pack.BuiltIn"), MinHeight = 38 };
-            _themePackages.Items.Add(builtin);
-            _themePackages.SelectedItem = builtin;
-            foreach (var item in installed)
-            {
-                var option = new MyComboBoxItem { MinHeight = 38,
-                    Content = item.Manifest is { } manifest ? manifest.Name + " · " + manifest.Version
-                        : Path.GetFileName(item.Directory) + " · " + item.Error,
-                    Tag = item.Manifest?.Id, IsEnabled = item.Manifest is not null };
-                _themePackages.Items.Add(option);
-                if (item.Manifest?.Id == _themeRuntime.ActiveTheme?.Id) _themePackages.SelectedItem = option;
-            }
+            PopulateThemePackageSelector(_themePackages, installed, _themeRuntime.ActiveTheme?.Id,
+                Lang.Text("Theme.Pack.BuiltIn"));
             var current = _themeRuntime.ActiveTheme;
             _themePackageInfo!.Text = _themeRuntime.LastError ?? (current is null ? Lang.Text("Theme.Pack.BuiltIn")
                 : Lang.Text("Theme.Pack.Information", current.Name, current.Version,

@@ -64,6 +64,8 @@ internal static class Program
                 CheckTextBoxRoundTrip(registry, form, layer);
                 CheckCardRoundTrip(registry, form, layer);
                 CheckComboBoxRoundTrip(registry, form, layer);
+                CheckThemeDropDownRecovery(registry, form, layer);
+                CheckProtectedThemeSelector(registry, form);
                 CheckSelectionAndListRoundTrips(registry, form);
                 CheckProgrammaticPresentationState(registry, form);
                 CheckRootResourceRestoration(registry, main, form, runtime, layer);
@@ -263,6 +265,98 @@ internal static class Program
         }
         form.Children.Remove(combo);
         Console.WriteLine("20 editable MyComboBox switches retained text and raised one change event per edit.");
+    }
+
+    private static void CheckThemeDropDownRecovery(Type registry, Grid form, ResourceDictionary layer)
+    {
+        var combo = new MyComboBox { Width = 300, Height = 42 };
+        combo.Items.Add(new MyComboBoxItem { Content = "内置主题", MinHeight = 38 });
+        combo.Items.Add(new MyComboBoxItem { Content = "Soft Slate", Tag = "pcl.soft-slate", MinHeight = 38 });
+        combo.SelectedIndex = 1;
+        form.Children.Add(combo);
+        object entry = Entry(registry, combo, "ComboBox");
+        Invoke(entry, "Apply");
+        _ = Render(combo);
+        var popup = (System.Windows.Controls.Primitives.Popup)combo.Template.FindName("PART_Popup", combo);
+        // Remove the popup binding in this process only. The actual click must
+        // change the owning selector state without showing a popup on the desktop.
+        System.Windows.Data.BindingOperations.ClearBinding(popup, System.Windows.Controls.Primitives.Popup.IsOpenProperty);
+        popup.SetValue(System.Windows.Controls.Primitives.Popup.IsOpenProperty, false);
+        var click = new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
+        { RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent };
+        combo.RaiseEvent(click);
+        // This host deliberately stays unloaded so no HWND popup is created.
+        // WPF coerces IsDropDownOpen=false until Loaded; inspect its requested
+        // local value to verify that the mouse handler actually requests opening.
+        if (!Equals(combo.ReadLocalValue(ComboBox.IsDropDownOpenProperty), true))
+            throw new InvalidDataException("Clicking the installed theme's selector did not open its dropdown."
+                + $" bridge={typeof(MyComboBox).GetField("_themeNeedsDropDownBridge", PrivateInstance)!.GetValue(combo)}"
+                + $" toggles={Descendants(combo).OfType<System.Windows.Controls.Primitives.ToggleButton>().Count()}"
+                + $" handled={click.Handled} enabled={combo.IsEnabled}");
+        if (combo.Items.Count != 2 || ((MyComboBoxItem)combo.Items[0]).Content?.ToString() != "内置主题")
+            throw new InvalidDataException("Built-in theme must remain the first dropdown option.");
+        combo.SelectedIndex = 0;
+        if (((MyComboBoxItem)combo.SelectedItem).Tag is not null)
+            throw new InvalidDataException("Built-in theme selection must resolve to the built-in appearance.");
+        combo.IsDropDownOpen = false;
+        Invoke(entry, "Restore");
+        form.Children.Remove(combo);
+        Console.WriteLine("Mouse input requests opening for an installed custom ComboBox, with built-in theme first.");
+    }
+
+    private static void CheckProtectedThemeSelector(Type registry, Grid form)
+    {
+        var selector = (MyComboBox)typeof(PageSetupUI).GetMethod("CreateThemePackageSelector",
+            BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, null)!;
+        var populate = typeof(PageSetupUI).GetMethod("PopulateThemePackageSelector", BindingFlags.Static | BindingFlags.NonPublic)!;
+        ThemeCatalogItem[] installed =
+        [
+            new("themes/pcl.soft-slate", new ThemeManifest { Id = "pcl.soft-slate", Name = "Soft Slate" }, null),
+            new("themes/broken", null, "Invalid manifest")
+        ];
+        form.Children.Add(selector);
+        foreach (string? active in new[] { null, "pcl.soft-slate", "removed-theme", null })
+        {
+            populate.Invoke(null, [selector, installed, active, "内置主题"]);
+            if (selector.Items.Count != 3 || selector.Items[0] is not MyComboBoxItem { Tag: null, IsEnabled: true } builtin
+                || builtin.Content?.ToString() != "内置主题" || builtin.MinHeight < 38)
+                throw new InvalidDataException("Built-in theme is missing/disabled/not first.");
+            if (selector.SelectedIndex != (active == "pcl.soft-slate" ? 1 : 0))
+                throw new InvalidDataException("Unavailable/broken packages must never replace the built-in selection.");
+        }
+        object entry = Entry(registry, selector, "ComboBox");
+        Invoke(entry, "Apply");
+        _ = Render(selector);
+        var popup = (System.Windows.Controls.Primitives.Popup)selector.Template.FindName("PART_Popup", selector);
+        System.Windows.Data.BindingOperations.ClearBinding(popup, System.Windows.Controls.Primitives.Popup.IsOpenProperty);
+        popup.SetValue(System.Windows.Controls.Primitives.Popup.IsOpenProperty, false);
+        var toggle = Descendants(selector).OfType<System.Windows.Controls.Primitives.ToggleButton>().FirstOrDefault();
+        if (toggle is null) throw new InvalidDataException("The protected theme selector lost its native PCL dropdown trigger.");
+        var binding = System.Windows.Data.BindingOperations.GetBinding(toggle,
+            System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty);
+        if (binding?.Path?.Path != "IsDropDownOpen" || binding.Mode != System.Windows.Data.BindingMode.TwoWay)
+            throw new InvalidDataException("Theme recovery dropdown trigger is not connected to IsDropDownOpen.");
+        typeof(System.Windows.Controls.Primitives.ToggleButton).GetMethod("OnToggle",
+            BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(toggle, null);
+        if (!Equals(selector.ReadLocalValue(ComboBox.IsDropDownOpenProperty), true))
+            throw new InvalidDataException("Theme recovery dropdown cannot open.");
+        selector.SelectedIndex = 0;
+        if (((MyComboBoxItem)selector.SelectedItem).Tag is not null)
+            throw new InvalidDataException("Cannot select built-in theme from the protected dropdown.");
+        selector.IsDropDownOpen = false;
+        Invoke(entry, "Restore");
+        form.Children.Remove(selector);
+        Console.WriteLine("Protected production theme selector requests opening and keeps the enabled built-in option first, including broken/missing packages.");
+    }
+
+    private static IEnumerable<DependencyObject> Descendants(DependencyObject parent)
+    {
+        for (int index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            yield return child;
+            foreach (var nested in Descendants(child)) yield return nested;
+        }
     }
 
     private static object Entry(Type registry, FrameworkElement host, string role) =>

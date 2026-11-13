@@ -27,6 +27,7 @@ public partial class MyComboBox : ComboBox
     private bool isTextChanging;
     private double realWidth; // 由于下拉框 Popup 宽度与 Width 一致，故不能为 NaN（Auto）
     private MyTextBox textBox;
+    private bool _themeNeedsDropDownBridge;
 
     // 基础
     public int Uuid = ModBase.GetUuid();
@@ -34,7 +35,8 @@ public partial class MyComboBox : ComboBox
     public MyComboBox()
     {
         _Text = SelectedItem?.ToString() ?? "";
-        PreviewMouseLeftButtonDown += MyComboBox_PreviewMouseLeftButtonDown;
+        AddHandler(PreviewMouseLeftButtonDownEvent,
+            new MouseButtonEventHandler(MyComboBox_PreviewMouseLeftButtonDown), handledEventsToo: true);
         PreviewMouseLeftButtonUp += MyComboBox_PreviewMouseLeftButtonUp;
         MouseLeave += MyComboBox_PreviewMouseLeftButtonUp;
         IsEnabledChanged += (_, _) => RefreshColor();
@@ -100,6 +102,8 @@ public partial class MyComboBox : ComboBox
             textBox = null;
         }
         base.OnApplyTemplate();
+        _themeNeedsDropDownBridge = ThemeControlRegistry.HasTemplate(this)
+            && !ThemeControlRegistry.Descendants(this).OfType<ToggleButton>().Any();
         RefreshTahoeComboChrome();
         if (!IsEditable)
             return;
@@ -134,6 +138,17 @@ public partial class MyComboBox : ComboBox
     private void MyComboBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         isMouseDown = true;
+        // Older visual packages (including Soft Slate 1.0) supplied the popup
+        // but omitted the ToggleButton that normally opens it. Keep those
+        // installed files usable without changing the user's theme files.
+        // ComboBox's class handler marks this event handled before instance
+        // handlers run, even when a custom template has no opening toggle.
+        if (!_themeNeedsDropDownBridge || !IsEnabled) return;
+        if (e.OriginalSource is DependencyObject source && source != this && !IsAncestorOf(source)) return;
+        if (IsEditable && e.GetPosition(this).X < Math.Max(0, ActualWidth - 28)) return;
+        Focus();
+        IsDropDownOpen = !IsDropDownOpen;
+        e.Handled = true;
     }
 
     private void MyComboBox_PreviewMouseLeftButtonUp(object sender, EventArgs e)
@@ -206,7 +221,7 @@ public partial class MyComboBox : ComboBox
         try
         {
             var popup = (Grid)Template.FindName("PanPopup", this);
-            popup.Opacity = ModMain.frmMain.Opacity;
+            popup.Opacity = ModMain.frmMain?.Opacity ?? 1d;
             if (!DropDownWidthSync)
                 popup.MinWidth = ActualWidth;
         }

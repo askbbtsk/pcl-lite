@@ -41,9 +41,14 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyComboBox.cs",
-    "Sha256": "A7C40C6F765CC222910CFE5B1763AFA872AAE6930A7533CEDF431DAD551DB937",
-    "Members": ["PCL.MyComboBox::MethodDeclaration::OnApplyTemplate()"],
-    "Reason": "Unsubscribe previous editable-textbox handlers and preserve text when replacing/restoring templates. Twenty production-control cycles verify one notification per edit."
+    "Sha256": "6D4D1C974C6397D48D8C2DBC4A58CAC9CAB15D64EBEB39D4B53C95D0C53F30DC",
+    "Members": [
+      "PCL.MyComboBox::ConstructorDeclaration::.ctor()",
+      "PCL.MyComboBox::MethodDeclaration::MyComboBox_DropDownOpened(object sender, EventArgs e)",
+      "PCL.MyComboBox::MethodDeclaration::MyComboBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)",
+      "PCL.MyComboBox::MethodDeclaration::OnApplyTemplate()"
+    ],
+    "Reason": "Preserves prior template/text/subscription behavior. Pre-1 bridges handled mouse input only for custom templates missing a dropdown ToggleButton; editable text keeps its input area and ordinary templates keep original behavior. Regression smoke validates requested dropdown opening and protected built-in recovery selection."
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyListItem.LayoutAndAppearance.cs",

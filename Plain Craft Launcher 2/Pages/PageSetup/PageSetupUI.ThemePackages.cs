@@ -55,7 +55,6 @@ public partial class PageSetupUI
         {
             if ((_themePackages.SelectedItem as MyComboBoxItem)?.Tag is string id) await runtime.PreviewAsync(id);
         });
-        AddThemeAction(buttons, "Theme.Pack.BuiltIn", () => { runtime.RestoreBuiltIn(); return Task.CompletedTask; });
         body.Children.Add(description);
         body.Children.Add(_themePackages);
         body.Children.Add(_themePackageInfo);

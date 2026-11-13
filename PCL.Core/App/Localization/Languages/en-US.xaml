@@ -7,7 +7,7 @@
     <sys:String x:Key="Theme.Pack.Title">Visual theme packages</sys:String>
     <sys:String x:Key="Theme.Pack.Description">Customize PCL controls and materials with XAML. Start with “Open annotated example”, edit a copy in Notepad or VS Code, save as a UTF-8 .xaml file, then drop it here to install. For later edits, open the theme folder, edit the installed copy, then choose “Reload and preview”. Confirm within 15 seconds or the previous theme returns. Reopening the example never overwrites your edits.</sys:String>
     <sys:String x:Key="Theme.Pack.OpenExample">Open annotated example</sys:String>
-    <sys:String x:Key="Theme.Pack.BuiltIn">Restore built-in theme</sys:String>
+    <sys:String x:Key="Theme.Pack.BuiltIn">Built-in theme</sys:String>
     <sys:String x:Key="Theme.Pack.OpenFolder">Open theme folder</sys:String>
     <sys:String x:Key="Theme.Pack.Install">Install theme file</sys:String>
     <sys:String x:Key="Theme.Pack.InstallFolder">Install theme directory</sys:String>

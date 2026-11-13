@@ -7,7 +7,7 @@
     <sys:String x:Key="Theme.Pack.Title">外观主题包</sys:String>
     <sys:String x:Key="Theme.Pack.Description">用 XAML 定制 PCL 控件和材质外观。新手可点击“打开注释示例”，用记事本或 VS Code 编辑副本，保存为 UTF-8 的 .xaml 后拖入安装。日常修改请打开主题文件夹编辑已安装副本，再点击“重新加载并预览”。15 秒内确认保留，否则自动恢复；再次打开示例不会覆盖已编辑内容。</sys:String>
     <sys:String x:Key="Theme.Pack.OpenExample">打开注释示例</sys:String>
-    <sys:String x:Key="Theme.Pack.BuiltIn">恢复内置主题</sys:String>
+    <sys:String x:Key="Theme.Pack.BuiltIn">内置主题</sys:String>
     <sys:String x:Key="Theme.Pack.OpenFolder">打开主题文件夹</sys:String>
     <sys:String x:Key="Theme.Pack.Install">安装主题文件</sys:String>
     <sys:String x:Key="Theme.Pack.InstallFolder">安装主题目录</sys:String>

@@ -123,6 +123,7 @@ PCL Lite 始终建议使用最新版本的操作系统以获得最佳体验。
 <img width="412" height="468" alt="image" src="https://github.com/user-attachments/assets/4efdfe1c-dbe7-4c8b-8120-3a16cddc3a5e" />
 <img width="616" height="413" alt="image" src="https://github.com/user-attachments/assets/617a72ae-9575-4b8e-b33f-23d82a20ac5e" />
 
+<img width="563" height="128" alt="image" src="https://github.com/user-attachments/assets/54813ecd-6620-4f06-b494-52d0f325fdcd" />我不知道阿q姓赵!
 
 
 ## Star History

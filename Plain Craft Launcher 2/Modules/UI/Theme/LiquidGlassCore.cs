@@ -41,7 +41,17 @@ public static partial class LiquidGlassCore
             ? IsDesktopBackdropRequested ? _window?.TahoeDesktopImage : _window?.TahoeBackdrop : null;
     public static event EventHandler? Changed;
     public static PCL.Core.UI.LiquidGlassProfile Profile =>
-        PCL.Core.UI.LiquidGlassPerformance.GetProfile(Config.Preference.TahoeGlass.PerformancePreset);
+        PCL.Core.UI.LiquidGlassPerformance.ResolveProfile(Config.Preference.TahoeGlass.PerformancePreset,
+            Config.Preference.TahoeGlass.MaximumFrameRate, Config.Preference.TahoeGlass.BlurRadius,
+            Config.Preference.TahoeGlass.Dispersion, Config.Preference.TahoeGlass.Highlight, Config.Preference.TahoeGlass.Motion);
+    public static int SamplingFrameRate => PCL.Core.UI.LiquidGlassPerformance.SamplingFrameRate(
+        Config.Preference.TahoeGlass.SamplingFrameRate, Config.Preference.TahoeGlass.MaximumFrameRate);
+    public static double DiffuseStrength => PCL.Core.UI.LiquidGlassPerformance.Adjustment(
+        Config.Preference.TahoeGlass.Diffuse, ThemeManager.IsDarkMode ? 14 : 17, 50) / 100d;
+    public static double EdgeSharpness => PCL.Core.UI.LiquidGlassPerformance.Adjustment(
+        Config.Preference.TahoeGlass.EdgeSharpness, 90, 100) / 100d;
+    public static double TintScale => PCL.Core.UI.LiquidGlassPerformance.Adjustment(
+        Config.Preference.TahoeGlass.TintScale, 100, 100) / 100d;
 
     public static void Refresh()
     {
@@ -62,7 +72,7 @@ public static partial class LiquidGlassCore
                 _windowClip = new LiquidGlassWindowClip(window, window.PanForm, window.RectForm,
                     error => LogCapture("[LiquidGlass] Native window clipping failed", error));
                 ITahoeCapturePlatform capturePlatform =
-                    new LiquidGlassScreenshotCapturePlatform(() => Config.Preference.TahoeGlass.MaximumFrameRate);
+                    new LiquidGlassScreenshotCapturePlatform(() => SamplingFrameRate);
                 LogCapture("[LiquidGlass] CaptureBackend=Magnifier; GlobalCaptureExclusion=False", null);
                 _desktopCapture = new TahoeDesktopCapture(window, window.PanForm, window.TahoeDesktopImage,
                     window.TransformRotate, window.TransformPos, capturePlatform, LogCapture);
@@ -112,8 +122,8 @@ public static partial class LiquidGlassCore
                     surface.Dispersion = Profile.Dispersion;
                     surface.HighlightStrength = Profile.Highlight;
                     surface.IsDarkMode = darkNow;
-                    surface.DiffuseStrength = darkNow ? 0.14 : 0.17;
-                    surface.EdgeSharpness = 0.90;
+                    surface.DiffuseStrength = DiffuseStrength;
+                    surface.EdgeSharpness = EdgeSharpness;
                 }
             }
             window.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, () =>
@@ -253,11 +263,11 @@ public static partial class LiquidGlassCore
         surface.BackdropSource = BackdropSource;
         surface.TintColor = SystemParameters.HighContrast ? SystemColors.WindowColor : tintColor;
         surface.TintOpacity = SystemParameters.HighContrast ? 1
-            : PCL.Core.UI.LiquidGlassMaterial.SurfaceWashOpacity(dark, IsDesktopBackdropRequested, wallpaperOpacity, desktopOpacity);
+            : PCL.Core.UI.LiquidGlassMaterial.SurfaceWashOpacity(dark, IsDesktopBackdropRequested, wallpaperOpacity, desktopOpacity) * TintScale;
         surface.ForceCompatibility = SystemParameters.HighContrast;
         surface.IsDarkMode = dark;
-        surface.DiffuseStrength = dark ? 0.14 : 0.17;
-        surface.EdgeSharpness = 0.90;
+        surface.DiffuseStrength = DiffuseStrength;
+        surface.EdgeSharpness = EdgeSharpness;
         surface.BlurRadius = Profile.BlurRadius;
         surface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
         surface.Dispersion = Profile.Dispersion;

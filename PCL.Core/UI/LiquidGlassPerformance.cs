@@ -11,6 +11,7 @@ public static class LiquidGlassPerformance
     public const int MinimumFrameRate = 30;
     public const int MaximumLimitedFrameRate = 240;
     public const int UnlimitedSliderValue = 211;
+    public const int CustomPreset = 4;
 
     public static LiquidGlassProfile GetProfile(int preset) => preset switch
     {
@@ -20,7 +21,21 @@ public static class LiquidGlassPerformance
         _ => new(60, 1, .08, .5, true)
     };
 
-    public static int NormalizePreset(int preset) => Math.Clamp(preset, 0, 3);
+    public static int NormalizePreset(int preset) => Math.Clamp(preset, 0, CustomPreset);
+    public static int Adjustment(int configured, int fallback, int maximum) =>
+        Math.Clamp(configured == -1 ? fallback : configured, 0, maximum);
+    public static int SamplingFrameRate(int configured, int animationFrameRate) =>
+        NormalizeFrameRate(configured == -1 ? animationFrameRate : configured);
+    public static LiquidGlassProfile ResolveProfile(int preset, int frameRate, int blur,
+        int dispersion, int highlight, int motion)
+    {
+        var recommended = GetProfile(preset);
+        return new LiquidGlassProfile(NormalizeFrameRate(frameRate),
+            Adjustment(blur, (int)recommended.BlurRadius, 32),
+            Adjustment(dispersion, (int)Math.Round(recommended.Dispersion * 100), 100) / 100d,
+            Adjustment(highlight, (int)Math.Round(recommended.Highlight * 100), 100) / 100d,
+            motion == -1 ? recommended.Motion : motion != 0);
+    }
     public static bool IsEnabled(bool enabled, bool performanceConsent) => enabled && performanceConsent;
     public static bool ShouldCaptureDesktop(bool enabled, bool performanceConsent, bool desktopRequested, bool desktopConsent)
         => IsEnabled(enabled, performanceConsent) && desktopRequested && desktopConsent;

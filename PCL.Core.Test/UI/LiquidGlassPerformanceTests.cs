@@ -52,6 +52,34 @@ public sealed class LiquidGlassPerformanceTests
     }
 
     [TestMethod]
+    public void CustomSettingsOverrideEveryPresetAndSurviveProfileResolution()
+    {
+        for (var preset = 0; preset <= LiquidGlassPerformance.CustomPreset; preset++)
+        {
+            var p = LiquidGlassPerformance.ResolveProfile(preset, 144, 7, 43, 81, 0);
+            Assert.AreEqual(new LiquidGlassProfile(144, 7, .43, .81, false), p);
+            Assert.AreEqual(30, LiquidGlassPerformance.SamplingFrameRate(30, p.FrameRate));
+            Assert.AreEqual(0, LiquidGlassPerformance.SamplingFrameRate(0, p.FrameRate));
+        }
+    }
+
+    [TestMethod]
+    public void OldSettingsInheritThePreviousPresetWithoutResettingFrameRate()
+    {
+        for (var preset = 0; preset < 4; preset++)
+        {
+            var recommended = LiquidGlassPerformance.GetProfile(preset);
+            var resolved = LiquidGlassPerformance.ResolveProfile(preset, 75, -1, -1, -1, -1);
+            Assert.AreEqual(recommended with { FrameRate = 75 }, resolved);
+            Assert.AreEqual(75, LiquidGlassPerformance.SamplingFrameRate(-1, 75));
+        }
+        Assert.AreEqual(4, LiquidGlassPerformance.NormalizePreset(4));
+        Assert.AreEqual(32, LiquidGlassPerformance.ResolveProfile(4, 999, int.MaxValue, 999, 999, 1).BlurRadius);
+        Assert.AreEqual(0, LiquidGlassPerformance.Adjustment(int.MinValue, 17, 50));
+        Assert.AreEqual(50, LiquidGlassPerformance.Adjustment(int.MaxValue, 17, 50));
+    }
+
+    [TestMethod]
     public void FrameGateAppliesToEveryFrameIncludingMovingWindowAndUnlimitedHasNoArtificialDelay()
     {
         const long frequency = 1_000_000;

@@ -9,7 +9,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/LiquidGlassSurface.cs",
-    "Sha256": "7A753F56F83BDE476C1BCF1DFBC51D458722A5AF04FE58DDBF4A84469AC29640",
+    "Sha256": "1DDD8FEDCBC4BFE8E3B4323A53C06FBB7A0EF5B10CA92474AB781C1B027F563F",
     "Members": [
       "PCL.TahoeGlassSurface::FieldDeclaration::_rim",
       "PCL.TahoeGlassSurface::FieldDeclaration::_shadow",
@@ -21,7 +21,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.LiquidGlass.cs",
-    "Sha256": "1AC7C957A081197DAF772AFA1BBAC640416DD56C48FFD89542ED444B0E1EA748",
+    "Sha256": "E2800BA12F7FD0F8811BA87611B4BA085CAEDEC4065599E4ADB6003EF1527E17",
     "Members": [
       "PCL.MyButton::MethodDeclaration::ApplyTahoeButtonTheme()",
       "PCL.MyButton::MethodDeclaration::RefreshTahoeButtonAppearance()"
@@ -82,7 +82,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
-    "Sha256": "56D150632B99F92933FCC040A6C5140D243E1367E34F04755D43500680AA6AAD",
+    "Sha256": "1936F944D799DE9C24657DBE97C5149F7C04AFF0B3E9BF13FF211BD23DC7B1E4",
     "Members": [
       "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
       "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",
@@ -92,7 +92,8 @@
       "PCL.LiquidGlassCore::MethodDeclaration::SetResource(FormMain window, string key, object value)",
       "PCL.LiquidGlassCore::PropertyDeclaration::BackdropSource",
       "PCL.LiquidGlassCore::PropertyDeclaration::IsDesktopBackdropRequested",
-      "PCL.LiquidGlassCore::PropertyDeclaration::IsEnabled"
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsEnabled",
+      "PCL.LiquidGlassCore::PropertyDeclaration::Profile"
     ],
     "Reason": "Compute CurrentPalette from active PCL-Lite theme HSL, publish unified theme resources, calibrate desktop/wallpaper surface washes, and propagate IsDarkMode, DiffuseStrength, and EdgeSharpness across surfaces."
   }

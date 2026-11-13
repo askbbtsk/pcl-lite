@@ -38,7 +38,8 @@ internal sealed class TahoeCapturePlatform(Action<string, Exception?> log, Func<
 
     public ITahoeMonitorCapture CreateMonitor(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed) =>
         new MonitorCapture(monitor, present, failed, log,
-            frameRate ?? (() => Config.Preference.TahoeGlass.MaximumFrameRate));
+            frameRate ?? (() => LiquidGlassPerformance.SamplingFrameRate(
+                Config.Preference.TahoeGlass.SamplingFrameRate, Config.Preference.TahoeGlass.MaximumFrameRate)));
 
     [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
     private delegate bool MonitorEnum(IntPtr monitor, IntPtr dc, ref NativeRect rect, IntPtr data);

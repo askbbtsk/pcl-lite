@@ -1,0 +1,37 @@
+[
+  {
+    "SourcePath": "PCL.Core/UI/LiquidGlassPerformance.cs",
+    "Sha256": "7C7854E0D4FA0A8DD676E4D5EDDB02BE87A234405A0A29C7B29E77226B78F996",
+    "Members": [
+      "PCL.Core.UI.LiquidGlassPerformance::MethodDeclaration::NormalizePreset(int preset)"
+    ],
+    "Reason": "Add the explicit Custom choice; recommendations remain defaults while saved tuning is resolved independently. Pure tests cover legacy fallback, independent sampling and parameter limits."
+  },
+  {
+    "SourcePath": "PCL.Core/UI/Theme/ThemeService.cs",
+    "Sha256": "1B55E5C816A48A9CACAC4A19EE0FB68D2125F7F41A398DD65211BF77D6DAB31D",
+    "Members": [
+      "PCL.Core.UI.Theme.ThemeService::MethodDeclaration::GetCustomThemeArgs()"
+    ],
+    "Reason": "Resolve Jester preset hue once per launcher process for regular and glass themes without overwriting saved theme arguments; all other preset hues remain unchanged."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCapturePlatform.cs",
+    "Sha256": "EB090421C45F4D2352A52F3CDA5A42D6BAFE6070A7BF64402485078E447D2043",
+    "Members": [
+      "PCL.TahoeCapturePlatform::MethodDeclaration::CreateMonitor(IntPtr monitor, Action<TahoeCaptureFrame, Action> present, Action<Exception> failed)"
+    ],
+    "Reason": "Use independently configured desktop sampling rate, retaining explicit caller-supplied frame-rate delegates and the existing capture lifecycle."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.LiquidGlass.cs",
+    "Sha256": "8CD22B07FE859A27E44AD4C9CD02AC5F92BB59FFBA0E7DADB095C8CF82D2255F",
+    "Members": [
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassDesktop_Change(object sender, bool user)",
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassFrameRate_Changed(object sender, bool user)",
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassPreset_Changed(object sender, SelectionChangedEventArgs e)",
+      "PCL.PageSetupUI::MethodDeclaration::RefreshLiquidGlassSettings()"
+    ],
+    "Reason": "Expose independent sampling and optical controls, preserve inherited values when entering Custom, seed recommendations only on explicit selection, retain capture consent. Production-control smoke verifies setting, reopening and parameter independence."
+  }
+]

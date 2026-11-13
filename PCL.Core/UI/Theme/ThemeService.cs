@@ -205,7 +205,7 @@ public sealed partial class ThemeService
         var config = Config.Preference.Theme;
         if (!config.CustomThemeEnabled) return null;
         var args = new PclThemeArgs(
-            Hue: Math.Clamp(config.WindowHue, 0, 360),
+            Hue: SessionThemeHue.Resolve(config.ThemeSelected, Math.Clamp(config.WindowHue, 0, 360)),
             Saturation: Math.Clamp(config.WindowSat, 0, 100),
             LightAdjust: Math.Clamp(config.WindowLight - 20, -20, 20),
             TopbarDelta: Math.Clamp(config.WindowDelta - 90, -180, 180),

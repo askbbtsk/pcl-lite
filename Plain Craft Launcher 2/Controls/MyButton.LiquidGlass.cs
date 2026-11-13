@@ -212,8 +212,8 @@ public partial class MyButton
         _tahoeBody.BorderBrush = highContrast ? SystemColors.WindowTextBrush : Brushes.Transparent;
         _tahoeSurface.ForceCompatibility = highContrast;
         _tahoeSurface.IsDarkMode = dark;
-        _tahoeSurface.DiffuseStrength = dark ? 0.14 : 0.17;
-        _tahoeSurface.EdgeSharpness = 0.90;
+        _tahoeSurface.DiffuseStrength = LiquidGlassCore.DiffuseStrength;
+        _tahoeSurface.EdgeSharpness = LiquidGlassCore.EdgeSharpness;
         _tahoeSurface.BlurRadius = LiquidGlassCore.Profile.BlurRadius;
         _tahoeSurface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
         _tahoeSurface.RefractionStrength = PCL.Core.UI.LiquidGlassMaterial.RefractionStrength(Config.Preference.TahoeGlass.RefractionStrength);
@@ -221,7 +221,7 @@ public partial class MyButton
         _tahoeSurface.HighlightStrength = LiquidGlassCore.Profile.Highlight;
         _tahoeSurface.TintColor = highContrast ? SystemColors.WindowColor : palette.ButtonTint;
         _tahoeSurface.TintOpacity = highContrast ? 1 : PCL.Core.UI.LiquidGlassMaterial.SurfaceWashOpacity(dark,
-            TahoeThemeManager.IsDesktopBackdropRequested, hover ? 0.16 : 0.12, hover ? 0.28 : 0.22);
+            TahoeThemeManager.IsDesktopBackdropRequested, hover ? 0.16 : 0.12, hover ? 0.28 : 0.22) * LiquidGlassCore.TintScale;
         PanButtonVisual.Opacity = _tahoeOriginalOpacity * (IsEnabled || highContrast ? 1 : 0.5);
         _tahoeFocus!.Visibility = IsKeyboardFocusWithin && IsEnabled ? Visibility.Visible : Visibility.Collapsed;
         if (highContrast) _tahoeFocus.SetResourceReference(BorderBrushProperty, SystemColors.HighlightBrushKey);

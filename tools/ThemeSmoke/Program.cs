@@ -32,6 +32,7 @@ internal static class Program
             LoadBuiltInResources(application);
             CheckLearningExampleExport();
             CheckThemeSettingsPlacement();
+            CheckLiquidGlassSettings();
             var source = System.IO.Path.GetFullPath("examples/themes/SoftSlate");
             var service = new ThemePackageService(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pcl-theme-smoke"),
                 System.IO.Path.GetTempPath());
@@ -129,6 +130,56 @@ internal static class Program
                 && (string?)element.Attribute("Title") == "{DynamicResource Setup.Ui.Tahoe.Title}"))
             throw new InvalidDataException("The actual settings XAML must name the liquid glass anchor.");
         Console.WriteLine("Theme package settings insert immediately below the actual liquid glass card.");
+    }
+
+    private static void CheckLiquidGlassSettings()
+    {
+        var config = Config.Preference.TahoeGlass;
+        config.PerformancePreset = 3;
+        config.MaximumFrameRate = 120;
+        config.SamplingFrameRate = -1;
+        config.BlurRadius = config.Dispersion = config.Highlight = config.Motion = -1;
+        config.Diffuse = config.EdgeSharpness = -1;
+        static PageSetupUI CreatePage()
+        {
+            // Match the production page-construction guard: unrelated XAML defaults
+            // must not invoke main-window preference observers during InitializeComponent.
+            ModAnimation.AniControlEnabled++;
+            try { return new PageSetupUI(); }
+            finally { ModAnimation.AniControlEnabled--; }
+        }
+        var page = CreatePage(); // Never loaded into a Window; no capture or desktop access.
+        var refresh = typeof(PageSetupUI).GetMethod("RefreshLiquidGlassSettings", PrivateInstance)!;
+        var custom = typeof(PageSetupUI).GetMethod("UseCustomGlassSettings", PrivateInstance)!;
+        refresh.Invoke(page, null);
+        custom.Invoke(page, null);
+        if (config.PerformancePreset != PCL.Core.UI.LiquidGlassPerformance.CustomPreset ||
+            config.BlurRadius != 3 || config.Dispersion != 30 || config.Highlight != 80 ||
+            config.Motion != 1 || config.SamplingFrameRate != 120)
+            throw new InvalidDataException("Custom glass settings lost inherited Ultra values.");
+        var combo = (MyComboBox)page.FindName("ComboLiquidGlassPreset");
+        if (combo.Items.Count != 5 || combo.SelectedIndex != 4 || combo.MinHeight < 38)
+            throw new InvalidDataException("Glass recommendations must include a full-height Custom option.");
+        var slider = (MySlider)page.FindName("SliderLiquidGlassRefraction");
+        slider.Value = 0;
+        typeof(PageSetupUI).GetMethod("LiquidGlassRefraction_Changed", PrivateInstance)!.Invoke(page, [slider, true]);
+        if (config.RefractionStrength != 0 || config.BlurRadius != 3)
+            throw new InvalidDataException("Zero refraction must be accepted without resetting other tuning.");
+        slider.Value = 10;
+        typeof(PageSetupUI).GetMethod("LiquidGlassRefraction_Changed", PrivateInstance)!.Invoke(page, [slider, true]);
+        if (config.RefractionStrength != 10)
+            throw new InvalidDataException("The refraction control must reach 200%.");
+        var sampling = (MySlider)page.FindName("SliderLiquidGlassSampling");
+        sampling.Value = 0;
+        typeof(PageSetupUI).GetMethod("LiquidGlassSampling_Changed", PrivateInstance)!.Invoke(page, [sampling, true]);
+        if (config.SamplingFrameRate != 30 || config.MaximumFrameRate != 120)
+            throw new InvalidDataException("Desktop sampling must be independent of animation frame rate.");
+        var reopened = CreatePage();
+        refresh.Invoke(reopened, null);
+        if (((MyComboBox)reopened.FindName("ComboLiquidGlassPreset")).SelectedIndex != 4 ||
+            ((MySlider)reopened.FindName("SliderLiquidGlassSampling")).Value != 0)
+            throw new InvalidDataException("Reopening settings must retain custom tuning.");
+        Console.WriteLine("Glass settings: Custom option, inherited-value preservation, 0–200% refraction and independent sampling passed.");
     }
 
     private static void CheckLearningExampleExport()

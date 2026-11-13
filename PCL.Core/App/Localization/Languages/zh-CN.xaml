@@ -29,7 +29,7 @@
     <sys:String x:Key="Theme.Pack.GlassPaused">该主题未声明玻璃支持，使用期间暂停玻璃，原有设置保持不变。</sys:String>
     <sys:String x:Key="Setup.About.ReleaseDescription">1.7.8 pre-1：修复 Soft Slate 等自定义主题的选择框无法用鼠标展开，导致看不到“内置主题”的问题。主题恢复选择框固定使用内置 PCL 样式，首项始终保留可用的“内置主题”；兼容已安装的旧主题模板，不改写用户主题文件。补充鼠标展开、默认项顺序及损坏主题记录的回归检查。</sys:String>
     <sys:String x:Key="Lunar.Status.NativeMemoryFailure">Java 原生内存分配失败。请释放系统内存并检查分页文件；可适当降低游戏分配内存，为堆外内存留出空间。具体原因请查看游戏目录的 hs_err_pid*.log；这与原生库文件占用是不同问题。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">性能预设</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">推荐配置（手动调整后为自定义）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.2">高画质</sys:String>
@@ -41,8 +41,8 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">效果最高帧率（30–240 FPS，最右为不限制）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Frost">玻璃磨砂度</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction">边缘折射强度</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">100% 为当前效果，也是默认值和最小值。向右增强边缘折射，最高 300%，不改变文字或图标；独立于磨砂度和性能预设保存。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 为通透玻璃，向右增加柔和高斯模糊，只影响玻璃背景，不影响文字和图标。默认 8 DIP；更高数值会增加图形开销，且独立于性能预设保存。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">范围 0–200%。0% 不产生折射位移，100% 保留默认强度，200% 为两倍强度；不改变文字或图标。修改后保存在自定义配置中。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 为通透玻璃，向右增加柔和高斯模糊，只影响玻璃背景，不影响文字和图标。默认 8 DIP；更高数值会增加图形开销。选择推荐配置会填入相应参数。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">不限制（可能显著增加功耗）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">是否开启液态玻璃？&#xA;预设：{0}；效果帧率上限：{1}。&#xA;{2}&#xA;会增加 CPU/GPU、内存和电量开销；这些是相对预估，不是设备实测或流畅度保证。默认使用可截图的背景模式。若另行开启实时桌面折射，启动器会从截图和录屏中排除。无需等待，确认后立即生效。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">实时桌面折射会持续采集启动器背后的桌面画面，增加 GPU/CPU 开销，不保存或上传画面。采样仅排除启动器自身，不阻止截图和录屏，也不使用 WGC 黄色采集边框。拖动时保留玻璃和实时更新，采样帧率遵守下方设置，包括不限制。背景不透明度只影响底色和图片/视频，不改变实时桌面、玻璃、文字和徽标。仍要启用吗？</sys:String>
@@ -4285,4 +4285,15 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Lunar.CredentialRisk.Title">Lunar 账号安全提示</sys:String>
     <sys:String x:Key="Lunar.CredentialRisk.Message">Lunar 原版启动器会将 Refresh Token 明文存储。PCL Lite 为兼容 Lunar，同样使用这一账号文件格式。使用此功能可能导致账号凭据泄露；能够读取该账号文件的程序或他人可能获取你的登录凭据。&#10;&#10;请勿分享 Lunar 账号文件。确认知晓后不再提示；可随时取消进入。</sys:String>
     <sys:String x:Key="Lunar.CredentialRisk.Confirm">我已知晓，继续</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.4">自定义</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.4">自定义：使用下方保存的参数，不被推荐配置覆盖。提高采样率、模糊或磨砂度会增加图形与耗电开销。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling">桌面采样率（30–240 FPS，最右为不限制）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling.Hint">独立控制实时桌面画面的采样频率；不改变按钮动效帧数。仅开启实时桌面折射时生效，拖动窗口也遵循此值。提高采样率会增加 CPU/GPU 开销。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Blur">基础模糊半径（0–32 DIP）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Dispersion">边缘色散（0–100%）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Highlight">边缘高光（0–100%）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Diffuse">漫反射强度（0–50%）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Sharpness">边缘清晰度（0–100%）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">玻璃染色比例（0–100%，不影响背景透明度）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">启用按钮按压与跟随动效</sys:String>
 </ResourceDictionary>

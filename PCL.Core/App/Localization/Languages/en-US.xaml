@@ -29,7 +29,7 @@
     <sys:String x:Key="Theme.Pack.GlassPaused">This theme does not declare glass support. Glass is paused while it is active; your settings are preserved.</sys:String>
     <sys:String x:Key="Setup.About.ReleaseDescription">1.7.8 pre-1: fixes mouse opening for custom-theme dropdowns such as Soft Slate, which prevented access to the built-in theme option. The recovery selector now uses the built-in PCL style and always keeps an enabled “Built-in theme” entry first. Existing theme files remain untouched. Adds regression checks for opening, default-option ordering and invalid package records.</sys:String>
     <sys:String x:Key="Lunar.Status.NativeMemoryFailure">Java could not allocate native memory. Free system memory and check the Windows page file; reducing game heap allocation may leave more room for native memory. See hs_err_pid*.log in the game directory for details. This is separate from native-library files being in use.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Recommended settings (manual changes become custom)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.2">High quality</sys:String>
@@ -41,8 +41,8 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">Effect frame cap (30–240 FPS; far right is unlimited)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Frost">Glass frosting</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction">Edge refraction strength</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">100% preserves the current effect and is both the default and minimum. Move right for stronger edge refraction, up to 300%, without changing text or icons. Saved independently of frosting and performance presets.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 keeps glass clear; move right for soft Gaussian blur on the glass background only. Text and icons remain sharp. Default: 8 DIP. Higher values increase graphics cost; this setting is independent of performance presets.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">Range: 0–200%. 0% disables refractive displacement; 100% keeps the default strength and 200% doubles it. Text and icons are unchanged. Manual changes are saved as custom settings.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 keeps glass clear; move right for soft Gaussian blur on the glass background only. Text and icons remain sharp. Default: 8 DIP. Higher values increase graphics cost. Choosing a recommendation fills in its settings.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">Unlimited (may significantly increase power use)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">Enable liquid glass?&#xA;Preset: {0}; effect frame cap: {1}.&#xA;{2}&#xA;This adds CPU/GPU, memory and battery costs. These are relative estimates, not device benchmarks or a smoothness guarantee. Screenshot-friendly background mode is the default. If live desktop refraction is enabled separately, the launcher is excluded from screenshots and recordings. No countdown is required.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction continuously samples the desktop behind the launcher and increases GPU/CPU usage. Frames are never saved or uploaded. Only the sampler excludes the launcher itself; screenshots and recording remain available and WGC's yellow capture border is not used. Moving keeps glass and live updates at the configured frame rate, including unlimited. Background opacity affects only the background color and image/video, not the live desktop, glass, text or logo. Enable anyway?</sys:String>
@@ -4282,4 +4282,15 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Lunar.CredentialRisk.Title">Lunar account security notice</sys:String>
     <sys:String x:Key="Lunar.CredentialRisk.Message">The original Lunar launcher stores Refresh Tokens in plain text. For compatibility, PCL Lite uses the same account file format. Using this feature may expose your account credentials: programs or other people able to read that file may obtain your login credentials.&#10;&#10;Do not share Lunar account files. This notice will not appear again after you acknowledge it. You can cancel entry at any time.</sys:String>
     <sys:String x:Key="Lunar.CredentialRisk.Confirm">I understand, continue</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.4">Custom</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.4">Custom: uses the saved parameters below without preset overrides. Higher capture rates, blur and frosting increase graphics and power costs.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling">Desktop sampling rate (30–240 FPS; far right is unlimited)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling.Hint">Controls live desktop capture separately from button animation. Only applies to live desktop refraction, including window movement. Higher capture rates increase CPU/GPU usage.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Blur">Base blur radius (0–32 DIP)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Dispersion">Edge dispersion (0–100%)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Highlight">Edge highlight (0–100%)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Diffuse">Diffuse strength (0–50%)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Sharpness">Edge sharpness (0–100%)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">Glass tint scale (0–100%; separate from background opacity)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">Enable button press and follow animations</sys:String>
 </ResourceDictionary>

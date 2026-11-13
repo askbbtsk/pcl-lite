@@ -383,7 +383,8 @@ public sealed class TahoeGlassSurface : Grid
                 matrix.M11 / crop.Width, matrix.M12 / crop.Height);
             _shader.Axis = new Point4D(matrix.M21 / crop.Width, matrix.M22 / crop.Height, crop.Width, crop.Height);
             _shader.Source = new Point4D(sourceSize.Width / crop.Width, sourceSize.Height / crop.Height, RefractionStrength, BlurRadius);
-            _shader.Optics = new Point4D(HighlightStrength, Dispersion, -.55, -.83);
+            // At zero refraction, chromatic taps must not displace the background either.
+            _shader.Optics = new Point4D(HighlightStrength, RefractionStrength > 0 ? Dispersion : 0, -.55, -.83);
             _shader.Tint = new Point4D(TintColor.R / 255d, TintColor.G / 255d, TintColor.B / 255d, TintOpacity);
             _shader.Material = new Point4D(DiffuseStrength, EdgeSharpness, FrostRadius > 0 ? 1d : 0d, IsDarkMode ? 1d : 0d);
             _shader.Texel = new Point4D(Math.Min(.49, .5 / (crop.Width * dpi.DpiScaleX)), Math.Min(.49, .5 / (crop.Height * dpi.DpiScaleY)),

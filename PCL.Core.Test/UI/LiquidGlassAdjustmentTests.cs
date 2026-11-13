@@ -8,12 +8,12 @@ namespace PCL.Core.Test.UI;
 public sealed class LiquidGlassAdjustmentTests
 {
     [TestMethod]
-    public void RefractionCannotFallBelowTheCurrentDefaultAndRejectsOutOfRangeConfiguration()
+    public void RefractionRangesFromZeroToTwoHundredPercentAndKeepsDefault()
     {
         Assert.AreEqual(.05, LiquidGlassMaterial.RefractionStrength(5), 1e-12);
-        Assert.AreEqual(.05, LiquidGlassMaterial.RefractionStrength(int.MinValue), 1e-12);
-        Assert.AreEqual(.15, LiquidGlassMaterial.RefractionStrength(int.MaxValue), 1e-12);
-        for (int setting = 5; setting <= 15; setting++)
+        Assert.AreEqual(0, LiquidGlassMaterial.RefractionStrength(int.MinValue), 1e-12);
+        Assert.AreEqual(.10, LiquidGlassMaterial.RefractionStrength(int.MaxValue), 1e-12);
+        for (int setting = 0; setting <= 10; setting++)
         {
             Assert.AreEqual(setting / 100d, LiquidGlassMaterial.RefractionStrength(setting), 1e-12);
             Assert.AreEqual(setting, LiquidGlassMaterial.RefractionSetting(setting));

@@ -4279,4 +4279,7 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="CommandPalette.Setting">Setting</sys:String>
     <sys:String x:Key="CommandPalette.Action">Action</sys:String>
     <sys:String x:Key="CommandPalette.Disabled">Disabled</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Title">Lunar account security notice</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Message">The original Lunar launcher stores Refresh Tokens in plain text. For compatibility, PCL Lite uses the same account file format. Using this feature may expose your account credentials: programs or other people able to read that file may obtain your login credentials.&#10;&#10;Do not share Lunar account files. This notice will not appear again after you acknowledge it. You can cancel entry at any time.</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Confirm">I understand, continue</sys:String>
 </ResourceDictionary>

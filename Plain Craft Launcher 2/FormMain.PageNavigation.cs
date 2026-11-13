@@ -184,6 +184,7 @@ public partial class FormMain
     /// </summary>
     public void PageChange(PageStackData stack, PageSubType subType = PageSubType.Default)
     {
+        if (!EnsureLunarCredentialConsent(stack)) return;
         if (string.IsNullOrEmpty(PageNameGet(stack)))
         {
             // 切换到主页面
@@ -340,6 +341,7 @@ public partial class FormMain
     /// </summary>
     private void PageChangeActual(PageStackData stack, PageSubType subType)
     {
+        if (!EnsureLunarCredentialConsent(stack)) return;
         if (pageCurrent == stack && (PageCurrentSub == subType || (int)subType == -1))
             return;
         ModAnimation.AniControlEnabled += 1;

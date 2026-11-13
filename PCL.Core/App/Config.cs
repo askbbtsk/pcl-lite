@@ -274,6 +274,10 @@ public static partial class Config
         /// </summary>
         [ConfigGroup("Lunar")] partial class LunarConfigGroup
         {
+            /// <summary>用户已明确确认 Lunar 明文凭据兼容风险；取消不视为确认。</summary>
+            [ConfigItem<bool>("LunarCredentialRiskAcknowledged", false, ConfigSource.Local)]
+            public partial bool CredentialRiskAcknowledged { get; set; }
+
             /// <summary>
             /// 启动前校验物料文件的 SHA-1。
             /// <para>

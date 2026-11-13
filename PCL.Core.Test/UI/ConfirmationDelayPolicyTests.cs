@@ -45,6 +45,23 @@ public sealed class ConfirmationDelayPolicyTests
     }
 
     [TestMethod]
+    public void LunarRiskConfirmationWaitsThreeSecondsAndCanAlwaysBeCancelled()
+    {
+        var clock = new Clock();
+        var delay = new ConfirmationDelayPolicy(
+            TimeSpan.FromSeconds(PCL.Core.App.Lunar.LunarCredentialConsent.ConfirmationSeconds), clock);
+        clock.Ticks = TimeSpan.FromHours(1).Ticks;
+        Assert.IsFalse(delay.CanConfirm, "Time before showing cannot satisfy the countdown.");
+        delay.MarkShown();
+        clock.Ticks += TimeSpan.FromMilliseconds(2999).Ticks;
+        Assert.IsFalse(delay.CanConfirm);
+        Assert.AreEqual(1, delay.RemainingSeconds);
+        delay.Cancel();
+        clock.Ticks += TimeSpan.FromDays(1).Ticks;
+        Assert.IsFalse(delay.CanConfirm, "Cancelling during the delay must remain cancellation.");
+    }
+
+    [TestMethod]
     public void CancelledConfirmationNeverBecomesAvailableEvenAfterTimePasses()
     {
         var clock = new Clock();

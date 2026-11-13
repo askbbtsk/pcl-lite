@@ -4282,4 +4282,7 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="CommandPalette.Setting">设置</sys:String>
     <sys:String x:Key="CommandPalette.Action">操作</sys:String>
     <sys:String x:Key="CommandPalette.Disabled">已禁用</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Title">Lunar 账号安全提示</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Message">Lunar 原版启动器会将 Refresh Token 明文存储。PCL Lite 为兼容 Lunar，同样使用这一账号文件格式。使用此功能可能导致账号凭据泄露；能够读取该账号文件的程序或他人可能获取你的登录凭据。&#10;&#10;请勿分享 Lunar 账号文件。确认知晓后不再提示；可随时取消进入。</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Confirm">我已知晓，继续</sys:String>
 </ResourceDictionary>

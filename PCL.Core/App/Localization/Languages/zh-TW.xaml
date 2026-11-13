@@ -4279,4 +4279,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="CommandPalette.Setting">設定</sys:String>
     <sys:String x:Key="CommandPalette.Action">操作</sys:String>
     <sys:String x:Key="CommandPalette.Disabled">已停用</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Title">Lunar 帳號安全提示</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Message">Lunar 原版啟動器會以明文儲存 Refresh Token。PCL Lite 為相容 Lunar，同樣使用這種帳號檔案格式。使用此功能可能導致帳號憑證外洩；能夠讀取該帳號檔案的程式或其他人可能取得你的登入憑證。&#10;&#10;請勿分享 Lunar 帳號檔案。確認知悉後不再提示；可隨時取消進入。</sys:String>
+    <sys:String x:Key="Lunar.CredentialRisk.Confirm">我已知悉，繼續</sys:String>
 </ResourceDictionary>

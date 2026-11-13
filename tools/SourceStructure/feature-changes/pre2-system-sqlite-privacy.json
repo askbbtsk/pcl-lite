@@ -1,0 +1,59 @@
+[
+  {
+    "SourcePath": "PCL.Core/Logging/ExceptionDetails.cs",
+    "Sha256": "6CE7086A0373F73EAF65D64EB4C7C8285338FF450BE6F815F584FC6D909707BA",
+    "Members": [
+      "PCL.Core.Logging.ExceptionDetails::MethodDeclaration::Compose(string summary, string? details)",
+      "PCL.Core.Logging.ExceptionDetails::MethodDeclaration::GetDebugDetails(Exception exception)",
+      "PCL.Core.Logging.ExceptionDetails::MethodDeclaration::_RedactSensitiveText(string text)"
+    ],
+    "Reason": "Pre-2: mask user profile paths even in early initialization errors, preserving exception type, chain and stack; ExceptionPrivacyTests cover both privacy settings."
+  },
+  {
+    "SourcePath": "PCL.Core/Logging/Logger.cs",
+    "Sha256": "6D2C6861446DCE0965E5C7D2A078940C0CC8CF0C4038F84631BC4FD7B645730B",
+    "Members": [
+      "PCL.Core.Logging.Logger::MethodDeclaration::Log(string message)",
+      "PCL.Core.Logging.Logger::MethodDeclaration::_ProcessLogQueueAsync()"
+    ],
+    "Reason": "Pre-2: mask paths before enqueueing; flush final partial batch so fatal initialization errors survive immediate shutdown. File-content regression test exercises this lifecycle."
+  },
+  {
+    "SourcePath": "PCL.Core/Utils/Hash/HashCache.cs",
+    "Sha256": "B522847724F0B7B042FE21669FC7A5DD536A77DB75C5EDF96DC4D1533E53A1C0",
+    "Members": [
+      "PCL.Core.Utils.Hash.HashCache::MethodDeclaration::_InsertOrUpdateHashAsync(string fullPath, long fileSize, string lastWrite, string algoName, string hash)"
+    ],
+    "Reason": "Pre-2: replace SQLite 3.24 UPSERT with immediate-transaction UPDATE and conditional INSERT compatible with Windows 1809 SQLite 3.23.2; concurrent connections preserve all hash columns."
+  },
+  {
+    "SourcePath": "PCL.Core/Utils/OS/UserPathMasker.cs",
+    "Sha256": "9439EB272DC7E7A1D7ED7EFF8CDCE3F196F6D745E1CDA9B3BF5122C54ABFD350",
+    "Members": [
+      "PCL.Core.Utils.OS.UserPathMasker::MethodDeclaration::MaskUserFolders(string? text)",
+      "PCL.Core.Utils.OS.UserPathMasker::MethodDeclaration::UserFolderPattern()"
+    ],
+    "Reason": "Pre-2: preserve existing fixed-length masking and unrelated numbers; cover spaced/unicode usernames, escaped separators and relocated profiles without accessing configuration."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/MessageNoticeCore.cs",
+    "Sha256": "E6C511E5448C6E9D716D94CF742D75AA51ED4191F65304D003C4FA5979563243",
+    "Members": [
+      "PCL.MessageNoticeCore::MethodDeclaration::MyMsgBox(string caption, string? title = null, string? button1 = null, string? button2 = \"\",\n        string? button3 = \"\", bool isWarn = false, bool highLight = true, bool forceWait = false,\n        Action button1Action = null, Action button2Action = null, Action button3Action = null)",
+      "PCL.MessageNoticeCore::MethodDeclaration::MyMsgBoxAuthServer(string defaultServer, IReadOnlyDictionary<string, string> presets,\n        string? title = null)",
+      "PCL.MessageNoticeCore::MethodDeclaration::MyMsgBoxInput(string title, string text = \"\", string defaultInput = \"\",\n        Collection<IValidator<string>>? validateRules = null, string hintText = \"\", string? button1 = null,\n        string? button2 = null, bool isWarn = false, bool multiline = false)",
+      "PCL.MessageNoticeCore::MethodDeclaration::MyMsgBoxMarkdown(string caption, string? title = null, string? button1 = null, string? button2 = \"\",\n        string? button3 = \"\", bool isWarn = false, bool highLight = true, bool forceWait = false,\n        Action button1Action = null, Action button2Action = null, Action button3Action = null)",
+      "PCL.MessageNoticeCore::MethodDeclaration::MyMsgBoxMultiSelect(List<MyListItem> selections, bool allowEmptySelection,\n        string? title = null, string? button1 = null, string? button2 = \"\", bool isWarn = false)",
+      "PCL.MessageNoticeCore::MethodDeclaration::MyMsgBoxSelect(List<IMyRadio> selections, string? title = null, string? button1 = null,\n        string? button2 = \"\", bool isWarn = false)"
+    ],
+    "Reason": "Retains earlier reviewed dialog lifecycle/input fixes unchanged; pre-2 additionally masks text/markdown dialog captions and titles before both PCL presentation and early native fallback."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLog.xaml.cs",
+    "Sha256": "C35D5B0594C51AA66AD84172C1436F2F88B3D0EB38F4256AE5448BDE389D949A",
+    "Members": [
+      "PCL.PageSetupLog::MethodDeclaration::ExportLog(IEnumerable<string> sourceFiles)"
+    ],
+    "Reason": "Pre-2: apply current profile privacy policy to exported historical logs; source log files are not rewritten."
+  }
+]

@@ -227,18 +227,25 @@ public class HashCache : IDisposable
         await _gate.WaitAsync().ConfigureAwait(false);
         try
         {
+            // Windows 10 1809 ships SQLite 3.23.2, before UPSERT was introduced.
+            // An immediate transaction serializes different connections/processes;
+            // UPDATE preserves hashes computed by other algorithms.
+            using var transaction = _connection.BeginTransaction();
             using var cmd = _connection.CreateCommand();
+            cmd.Transaction = transaction;
             cmd.CommandText = """
+                UPDATE HashCache SET
+                    FileSize = @FileSize,
+                    LastWriteTime = @LastWriteTime,
+                    MD5 = COALESCE(@MD5, MD5),
+                    SHA1 = COALESCE(@SHA1, SHA1),
+                    SHA256 = COALESCE(@SHA256, SHA256),
+                    SHA512 = COALESCE(@SHA512, SHA512),
+                    MurmurHash2 = COALESCE(@MurmurHash2, MurmurHash2)
+                WHERE FilePath = @FilePath;
                 INSERT INTO HashCache (FilePath, FileSize, LastWriteTime, MD5, SHA1, SHA256, SHA512, MurmurHash2)
-                VALUES (@FilePath, @FileSize, @LastWriteTime, @MD5, @SHA1, @SHA256, @SHA512, @MurmurHash2)
-                ON CONFLICT(FilePath) DO UPDATE SET
-                    FileSize = excluded.FileSize,
-                    LastWriteTime = excluded.LastWriteTime,
-                    MD5 = COALESCE(excluded.MD5, HashCache.MD5),
-                    SHA1 = COALESCE(excluded.SHA1, HashCache.SHA1),
-                    SHA256 = COALESCE(excluded.SHA256, HashCache.SHA256),
-                    SHA512 = COALESCE(excluded.SHA512, HashCache.SHA512),
-                    MurmurHash2 = COALESCE(excluded.MurmurHash2, HashCache.MurmurHash2)
+                SELECT @FilePath, @FileSize, @LastWriteTime, @MD5, @SHA1, @SHA256, @SHA512, @MurmurHash2
+                WHERE NOT EXISTS (SELECT 1 FROM HashCache WHERE FilePath = @FilePath);
                 """;
             cmd.Parameters.AddWithValue("@FilePath", fullPath);
             cmd.Parameters.AddWithValue("@FileSize", fileSize);
@@ -249,6 +256,7 @@ public class HashCache : IDisposable
             cmd.Parameters.AddWithValue("@SHA512", algoName == "SHA512" ? hash : DBNull.Value);
             cmd.Parameters.AddWithValue("@MurmurHash2", algoName == "MurmurHash2" ? hash : DBNull.Value);
             await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            transaction.Commit();
         }
         finally
         {

@@ -25,6 +25,11 @@ dotnet publish "Plain Craft Launcher 2/Plain Craft Launcher 2.csproj" `
 `--no-self-contained` 意味着**用户机器上要装 .NET 10 桌面运行时**。想要免安装运行时就把这个参数去掉，
 体积会涨到 60 MB 以上。
 
+SQLite 使用 Windows 自带的 `winsqlite3.dll`，构建只引用
+`Microsoft.Data.Sqlite.Core` 和 `SQLitePCLRaw.provider.winsqlite3`，不附带 `e_sqlite3`。
+最低兼容范围仍是 Windows 10 1809（17763）；哈希缓存写入采用兼容其 SQLite 3.23.2
+的事务语法。首次连接前由 Core 初始化系统提供程序，并限定从 Windows 系统目录加载。
+
 ## 三、密钥注入
 
 这是本项目最容易被坑的地方。

@@ -51,6 +51,31 @@ public class UserPathMaskerTest
     }
 
     [TestMethod]
+    [DataRow(@"C:\Users\Jane Doe\AppData\PCL", @"C:\Users\*****\AppData\PCL")]
+    [DataRow(@"'C:\Users\Jane Doe'", @"'C:\Users\*****'")]
+    [DataRow(@"C:\\Users\\Jane Doe\\PCL", @"C:\\Users\\*****\\PCL")]
+    [DataRow(@"C:\Users\张 三\PCL\file.dll", @"C:\Users\*****\PCL\file.dll")]
+    [DataRow("file:///C:/Users/Jane%20Doe/PCL", "file:///C:/Users/*****/PCL")]
+    [DataRow(@"c:\uSeRs\Someone\AppData", @"c:\uSeRs\*****\AppData")]
+    public void ShouldMaskSpacedUnicodeEscapedAndUriPaths(string input, string expected)
+    {
+        Assert.AreEqual(expected, UserPathMasker.MaskUserFolders(input));
+    }
+
+    [TestMethod]
+    public void ShouldMaskRelocatedProfileWithoutTouchingOtherNames()
+    {
+        const string profile = @"D:\Profiles\Jane Doe";
+        Assert.AreEqual(@"D:\Profiles\*****\PCL; D:/Profiles/*****/Desktop; Jane Doe",
+            UserPathMasker.MaskUserFolders(
+                @"D:\Profiles\Jane Doe\PCL; D:/Profiles/Jane Doe/Desktop; Jane Doe", profile));
+        Assert.AreEqual(@"Failed at D:\Profiles\*****",
+            UserPathMasker.MaskUserFolders(@"Failed at D:\Profiles\Jane Doe", profile));
+        Assert.AreEqual(@"D:\Profiles\Jane Doe2\PCL",
+            UserPathMasker.MaskUserFolders(@"D:\Profiles\Jane Doe2\PCL", profile));
+    }
+
+    [TestMethod]
     public void ShouldMaskUserFolderAtEndOfText()
     {
         Assert.AreEqual(@"C:\Users\*****", UserPathMasker.MaskUserFolders(@"C:\Users\18857"));

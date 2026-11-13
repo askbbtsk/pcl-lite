@@ -25,6 +25,8 @@ public static partial class UserPathMasker
     public const string Mask = "*****";
 
     private static volatile bool _enabled = true;
+    private static readonly Regex? CurrentProfilePattern =
+        CreateProfilePattern(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
 
     /// <summary>
     ///     界面上要不要打码。默认开；由启动器在启动时和用户改设置时同步过来
@@ -45,9 +47,11 @@ public static partial class UserPathMasker
 
     /// <summary>
     ///     <c>Users</c> 路径段 + 紧随其后的一段（用户名）。前面必须是分隔符或字符串开头，
-    ///     后面遇到分隔符、空白或文件名非法字符就停。
+    ///     支持带空格的路径段与 JSON 转义后的分隔符。
     /// </summary>
-    [GeneratedRegex(@"(?<![^\\/])[Uu][Ss][Ee][Rr][Ss][\\/][^\\/\s""'<>|:*?]+")]
+    [GeneratedRegex(
+        """(?<![^\\/])(?<prefix>Users[\\/]+)(?:[^\\/\r\n"'<>|:*?]+(?=[\\/"'])|[^\\/\s"'<>|:*?]+)""",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex UserFolderPattern();
 
     /// <summary>
@@ -57,8 +61,36 @@ public static partial class UserPathMasker
     public static string MaskUserFolders(string? text)
     {
         if (string.IsNullOrEmpty(text)) return text ?? string.Empty;
-        // 绝大多数文本里根本没有这个路径段，先做个大小写无关的粗筛，省掉正则的开销
+        return MaskUserFolders(text, CurrentProfilePattern);
+    }
+
+    // Explicit profile is also used by tests for relocated Windows profiles.
+    internal static string MaskUserFolders(string text, string profilePath) =>
+        MaskUserFolders(text, CreateProfilePattern(profilePath));
+
+    private static string MaskUserFolders(string text, Regex? profilePattern)
+    {
+        // Match the actual profile first: this also handles spaces in a terminal
+        // profile path, or a profile relocated outside the usual Users directory.
+        if (profilePattern is not null)
+            text = profilePattern.Replace(text, match => match.Groups["prefix"].Value + Mask);
         if (text.IndexOf("users", StringComparison.OrdinalIgnoreCase) < 0) return text;
-        return UserFolderPattern().Replace(text, match => match.Value[..6] + Mask); // 前 6 个字符是 "Users" + 分隔符
+        return UserFolderPattern().Replace(text, match => match.Groups["prefix"].Value + Mask);
+    }
+
+    private static Regex? CreateProfilePattern(string profilePath)
+    {
+        var path = profilePath.TrimEnd('\\', '/');
+        var lastSeparator = path.LastIndexOfAny(['\\', '/']);
+        if (lastSeparator < 2 || path.Length <= lastSeparator + 1) return null;
+        // Escape each path segment; both ordinary and JSON-escaped separators match.
+        var prefix = string.Join(@"[\\/]+",
+            Array.ConvertAll(path[..lastSeparator].Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries),
+                Regex.Escape));
+        if (path.StartsWith(@"\\", StringComparison.Ordinal)) prefix = @"[\\/]{2,}" + prefix;
+        return new Regex(
+            @"(?<![\w])(?<prefix>" + prefix + @"[\\/]+)" +
+            Regex.Escape(path[(lastSeparator + 1)..]) + """(?=$|[\\/\s"'<>|:),;\]])""",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 }

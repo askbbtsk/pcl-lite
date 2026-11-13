@@ -87,6 +87,33 @@ public class HashCacheTest
     }
 
     [TestMethod]
+    public async Task DifferentConnectionsPreserveAllPersistedHashColumns()
+    {
+        var file = await CreateRandomFile(_tempDir, 4096);
+        var first = NewCache();
+        var second = NewCache();
+        await Task.WhenAll(
+            first.GetMD5Async(file.FilePath),
+            second.GetSHA1Async(file.FilePath),
+            first.GetSHA256Async(file.FilePath),
+            second.GetSHA512Async(file.FilePath),
+            first.GetMurmurHash2Async(file.FilePath));
+
+        using var connection = new Microsoft.Data.Sqlite.SqliteConnection(
+            $"Data Source={Path.Combine(_tempDir, ".hash_cache.db")};Pooling=False");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT MD5, SHA1, SHA256, SHA512, MurmurHash2 FROM HashCache WHERE FilePath = @path";
+        command.Parameters.AddWithValue("@path", file.FilePath);
+        using var reader = command.ExecuteReader();
+        Assert.IsTrue(reader.Read());
+        CollectionAssert.AreEqual(
+            new[] { file.MD5, file.SHA1, file.SHA256, file.SHA512, file.MurmurHash2 },
+            Enumerable.Range(0, 5).Select(reader.GetString).ToArray());
+        Assert.IsFalse(reader.Read(), "A file must have only one cache row.");
+    }
+
+    [TestMethod]
     public async Task TestSingleFile_SingleDB_AllAlgorithms_Concurrent()
     {
         var file = await CreateRandomFile(_tempDir, 4096).ConfigureAwait(false);

@@ -56,6 +56,8 @@ internal static class MessageNoticeCore
         string? button3 = "", bool isWarn = false, bool highLight = true, bool forceWait = false,
         Action button1Action = null, Action button2Action = null, Action button3Action = null)
     {
+        caption = UserPathMasker.Apply(caption);
+        title = title is null ? null : UserPathMasker.Apply(title);
         title ??= GetDefaultDialogTitle();
         button1 ??= GetDefaultConfirmText();
         button2 ??= "";
@@ -154,6 +156,8 @@ internal static class MessageNoticeCore
         string? button3 = "", bool isWarn = false, bool highLight = true, bool forceWait = false,
         Action button1Action = null, Action button2Action = null, Action button3Action = null)
     {
+        caption = UserPathMasker.Apply(caption);
+        title = title is null ? null : UserPathMasker.Apply(title);
         title ??= GetDefaultDialogTitle();
         button1 ??= GetDefaultConfirmText();
         button2 ??= "";

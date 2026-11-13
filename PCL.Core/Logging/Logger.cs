@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using PCL.Core.Utils.Exts;
+using PCL.Core.Utils.OS;
 
 namespace PCL.Core.Logging;
 
@@ -96,6 +97,7 @@ public sealed class Logger : IAsyncDisposable
     public void Log(string message)
     {
         if (_disposed) return;
+        message = UserPathMasker.Apply(message);
         if (!_logChannel.Writer.TryWrite(message))
         {
             Interlocked.Increment(ref _droppedCount);
@@ -140,6 +142,11 @@ public sealed class Logger : IAsyncDisposable
                     await Task.Delay(80).ConfigureAwait(false);
                 }
             }
+
+            // A fatal startup error can dispose the logger immediately after
+            // enqueueing its only message. Flush that final partial batch too.
+            if (lineCount != 0)
+                await DoRefreshAsync().ConfigureAwait(false);
 
             async Task DoRefreshAsync()
             {

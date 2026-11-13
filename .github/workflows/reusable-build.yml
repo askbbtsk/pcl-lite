@@ -101,6 +101,13 @@ jobs:
               throw "Unexpected external Windows projection: $name"
             }
           }
+          $assets = Get-Content 'Plain Craft Launcher 2/obj/project.assets.json' -Raw | ConvertFrom-Json
+          $bundledSqlite = $assets.libraries.PSObject.Properties.Name | Where-Object {
+            $_ -match '^SQLitePCLRaw\.(?:bundle_e_sqlite3|config\.e_sqlite3|provider\.e_sqlite3|lib\.e_sqlite3)/'
+          }
+          if ($bundledSqlite) {
+            throw "Unexpected bundled SQLite dependency: $($bundledSqlite -join ', ')"
+          }
 
       - name: Upload the Build Artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -11,9 +11,7 @@ namespace PCL.Core.Test.IO.Storage.Cache;
 /// Unit tests for the CacheService class.
 /// Tests focus on basic cache operations, expiration handling, and the new TODO implementations.
 /// 
-/// NOTE: SQLite tests require proper SQLitePCL initialization.
-/// If SQLite tests fail with "sqlite3_malloc not implemented", add SQLitePCL.Batteries_V2.Init()
-/// to your test setup or ensure the SQLite native libraries are properly deployed.
+/// Uses the same Windows SQLite provider initialization as the launcher.
 /// </summary>
 [TestClass]
 public class CacheServiceTest
@@ -25,16 +23,6 @@ public class CacheServiceTest
     [TestInitialize]
     public async Task Setup()
     {
-        try
-        {
-            // Initialize SQLitePCL if needed (for SQLite native library binding)
-            SQLitePCL.Batteries_V2.Init();
-        }
-        catch
-        {
-            // SQLitePCL may already be initialized or not available, continue anyway
-        }
-
         // Create a temporary test cache directory
         _testCacheDir = Path.Combine(Path.GetTempPath(), "pcl_cache_test_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_testCacheDir);

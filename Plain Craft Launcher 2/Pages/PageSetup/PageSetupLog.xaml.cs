@@ -9,6 +9,7 @@ using PCL.Core.UI;
 using PCL.Core.Utils;
 using PCL.Core.Utils.Exts;
 using PCL.Core.App.Localization;
+using PCL.Core.Utils.OS;
 
 namespace PCL;
 
@@ -108,7 +109,7 @@ public partial class PageSetupLog
                 {
                     var itemFileName = Path.GetFileName(item);
                     var tempPath = Path.Combine(tempDirName, itemFileName);
-                    File.Copy(item, tempPath);
+                    File.WriteAllText(tempPath, UserPathMasker.Apply(File.ReadAllText(item)));
                     zip.CreateEntryFromFile(tempPath, itemFileName, CompressionLevel.Fastest);
                     File.Delete(tempPath);
                 }

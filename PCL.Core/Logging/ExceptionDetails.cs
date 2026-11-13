@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using PCL.Core.App.Localization;
+using PCL.Core.Utils.OS;
 
 namespace PCL.Core.Logging;
 
@@ -68,20 +69,20 @@ public static partial class ExceptionDetails
         text = _KeyValueCredentialPattern().Replace(text, "$1[redacted]");
         text = _QueryStringCredentialPattern().Replace(text, "$1[redacted]");
         text = _BearerTokenPattern().Replace(text, "Bearer [redacted]");
-        return text;
+        return UserPathMasker.Apply(text);
     }
 
     /// <summary>
-    ///     返回完整的异常文本，用于调试和日志记录。
+    ///     返回包含完整异常链和堆栈的文本，按隐私设置隐藏用户目录名。
     /// </summary>
     public static string GetDebugDetails(Exception exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
-        return exception.ToString();
+        return UserPathMasker.Apply(exception.ToString());
     }
 
     /// <summary>
-    ///     将完整的原始异常文本附加到一个稳定的本地化摘要后面。
+    ///     将保留异常链和堆栈的详细文本附加到本地化摘要后，遵守用户目录脱敏设置。
     /// </summary>
     public static string Compose(string summary, Exception? exception = null)
     {
@@ -89,14 +90,14 @@ public static partial class ExceptionDetails
     }
 
     /// <summary>
-    ///     将调用方提供的详细文本附加到稳定的本地化摘要后面，而不修改该详细文本。
+    ///     将调用方提供的详细文本附加到摘要后，仅按隐私设置隐藏用户目录名。
     /// </summary>
     public static string Compose(string summary, string? details)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(summary);
 
-        return string.IsNullOrWhiteSpace(details)
+        return UserPathMasker.Apply(string.IsNullOrWhiteSpace(details)
             ? summary
-            : Lang.Text("SystemDialog.Error.Detail.WithException", summary.TrimEnd(), details);
+            : Lang.Text("SystemDialog.Error.Detail.WithException", summary.TrimEnd(), details));
     }
 }

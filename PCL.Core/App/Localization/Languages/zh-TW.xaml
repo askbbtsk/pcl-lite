@@ -27,7 +27,7 @@
     <sys:String x:Key="Theme.Pack.Information">{0} · {1}&#xA;作者：{2}&#xA;適用版本：{3}&#xA;{4}</sys:String>
     <sys:String x:Key="Theme.Pack.GlassSupported">支援液態玻璃；仍依使用者原有開關與授權啟用。</sys:String>
     <sys:String x:Key="Theme.Pack.GlassPaused">此主題未宣告玻璃支援，使用期間暫停玻璃，原有設定保持不變。</sys:String>
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.8 snapshot-1：新增 XAML 外觀主題套件，可拖入 XAML / ZIP 或安裝主題目錄，支援相容版本提示、強制預覽、15 秒確認恢復及玻璃支援宣告。個人化提供「開啟註解範例」，內含中文逐項講解與編輯步驟，範例副本不會被重複覆蓋。同步補齊主題文件、SoftSlate 多模式範例及控制項切換回歸檢查。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.8 snapshot-2：將外觀主題套件設定移至液態玻璃下方；移除獨立的「恢復內建主題」按鈕，改為主題下拉框首項「內建主題」，選取即可恢復。同步三語文字與主題編輯教學。刪除多寫的 BedrockBoot 獨立致謝，保留實際使用的 BedrockLauncher.Core 及歷史 MIT 授權。</sys:String>
     <sys:String x:Key="Lunar.Status.NativeMemoryFailure">Java 原生記憶體配置失敗。請釋放系統記憶體並檢查分頁檔；可適度降低遊戲配置記憶體，為堆積外記憶體預留空間。具體原因請查看遊戲目錄的 hs_err_pid*.log；這與原生程式庫檔案占用是不同問題。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">效能預設</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>

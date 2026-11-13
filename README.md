@@ -111,6 +111,17 @@ PCL Lite 始终建议使用最新版本的操作系统以获得最佳体验。
 
 ## 遛狗区
 <img width="310" height="148" alt="b4bccd42-7ae9-4e36-ba76-33a3c93eff6b" src="https://github.com/user-attachments/assets/7c488eee-59e9-44db-ac34-24b9517a85f9" />
+<img width="568" height="493" alt="image" src="https://github.com/user-attachments/assets/2b8f0450-159f-4ed4-ac45-0db5e393a257" />
+<img width="1119" height="396" alt="image" src="https://github.com/user-attachments/assets/7e1e1995-95b8-4e67-b768-2de20cbb8445" />
+<img width="412" height="468" alt="image" src="https://github.com/user-attachments/assets/f17ad58c-6d0d-4ac0-a1fe-f3b75bfb2632" />
+
+<img width="349" height="126" alt="image" src="https://github.com/user-attachments/assets/5007fd73-cb3b-402e-8792-d6c06cdc26bb" />
+<img width="717" height="128" alt="image" src="https://github.com/user-attachments/assets/b61d1d37-c1e1-4f9d-9abe-190ea2bc49bf" />
+
+<img width="362" height="357" alt="image" src="https://github.com/user-attachments/assets/def76e03-e62a-4bf3-9a85-0415defa0ee0" />
+<img width="412" height="468" alt="image" src="https://github.com/user-attachments/assets/4efdfe1c-dbe7-4c8b-8120-3a16cddc3a5e" />
+<img width="616" height="413" alt="image" src="https://github.com/user-attachments/assets/617a72ae-9575-4b8e-b33f-23d82a20ac5e" />
+
 
 
 ## Star History

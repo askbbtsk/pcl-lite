@@ -5,7 +5,8 @@
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
     <sys:String x:Key="Theme.Pack.Title">Visual theme packages</sys:String>
-    <sys:String x:Key="Theme.Pack.Description">Customize PCL controls and materials with XAML. Drop XAML / ZIP files to install, or edit files in the theme folder and reload manually. Confirm a preview within 15 seconds to keep it; otherwise the previous theme returns.</sys:String>
+    <sys:String x:Key="Theme.Pack.Description">Customize PCL controls and materials with XAML. Start with “Open annotated example”, edit a copy in Notepad or VS Code, save as a UTF-8 .xaml file, then drop it here to install. For later edits, open the theme folder, edit the installed copy, then choose “Reload and preview”. Confirm within 15 seconds or the previous theme returns. Reopening the example never overwrites your edits.</sys:String>
+    <sys:String x:Key="Theme.Pack.OpenExample">Open annotated example</sys:String>
     <sys:String x:Key="Theme.Pack.BuiltIn">Restore built-in theme</sys:String>
     <sys:String x:Key="Theme.Pack.OpenFolder">Open theme folder</sys:String>
     <sys:String x:Key="Theme.Pack.Install">Install theme file</sys:String>
@@ -26,7 +27,7 @@
     <sys:String x:Key="Theme.Pack.Information">{0} · {1}&#xA;Author: {2}&#xA;Compatibility: {3}&#xA;{4}</sys:String>
     <sys:String x:Key="Theme.Pack.GlassSupported">Supports liquid glass; existing user settings and consent still apply.</sys:String>
     <sys:String x:Key="Theme.Pack.GlassPaused">This theme does not declare glass support. Glass is paused while it is active; your settings are preserved.</sys:String>
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-6: Clip the native glass window to its visible rounded content, removing black corner protrusions while keeping resize edges usable. Fix keyboard interception preventing text entry in global search. Desktop sampling during dragging follows the selected frame rate, including unlimited. Explain Lunar exits caused by JVM native-memory allocation failure.</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.8 snapshot-1: adds XAML visual theme packages with XAML / ZIP drag installation, directory installation, compatibility warnings, forced previews, 15-second confirmation recovery and declared glass support. Personalization includes an annotated learning example and editing guide; reopening it preserves user edits. Includes theme API documentation, the SoftSlate light/dark/glass example and control-switching regression checks.</sys:String>
     <sys:String x:Key="Lunar.Status.NativeMemoryFailure">Java could not allocate native memory. Free system memory and check the Windows page file; reducing game heap allocation may leave more room for native memory. See hs_err_pid*.log in the game directory for details. This is separate from native-library files being in use.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Performance preset</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>

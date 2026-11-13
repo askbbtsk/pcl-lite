@@ -30,6 +30,7 @@ internal static class Program
             InitializeMemoryConfiguration();
             var application = new System.Windows.Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             LoadBuiltInResources(application);
+            CheckLearningExampleExport();
             var source = System.IO.Path.GetFullPath("examples/themes/SoftSlate");
             var service = new ThemePackageService(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pcl-theme-smoke"),
                 System.IO.Path.GetTempPath());
@@ -93,6 +94,37 @@ internal static class Program
                 && !element.Name.NamespaceName.Contains(";assembly=", StringComparison.Ordinal))
                 element.Name = XName.Get(element.Name.LocalName, element.Name.NamespaceName + ";assembly=Plain Craft Launcher 2");
         application.Resources = (ResourceDictionary)System.Windows.Markup.XamlReader.Parse(dictionary.ToString());
+    }
+
+    private static void CheckLearningExampleExport()
+    {
+        string data = Path.Combine(Path.GetTempPath(), "pcl-theme-learning-smoke-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Type exporter = typeof(FormMain).Assembly.GetType("PCL.ThemeLearningExample", true)!;
+            MethodInfo export = exporter.GetMethod("Export", BindingFlags.NonPublic | BindingFlags.Static)!;
+            string directory = (string)export.Invoke(null, [data])!;
+            foreach (string file in new[] { "StarterTheme.xaml", "README.md" })
+                if (!File.ReadAllBytes(Path.Combine(directory, file)).AsSpan()
+                        .SequenceEqual(File.ReadAllBytes(Path.Combine("docs", "theme-examples", file))))
+                    throw new InvalidDataException("The shipped theme learning file differs from its documented source: " + file);
+            string edited = Path.Combine(directory, "StarterTheme.xaml");
+            File.AppendAllText(edited, "\n<!-- USER EDIT: keep me -->");
+            string expected = File.ReadAllText(edited);
+            File.Delete(Path.Combine(directory, "README.md"));
+            string secondDirectory = (string)export.Invoke(null, [data])!;
+            if (directory != secondDirectory || File.ReadAllText(edited) != expected
+                || !File.Exists(Path.Combine(directory, "README.md"))
+                || Directory.EnumerateFiles(directory, "*.tmp").Any())
+                throw new InvalidDataException("Opening the learning example must preserve user edits and recover missing files.");
+            var service = new ThemePackageService(Path.Combine(data, "Themes"), Path.Combine(data, "Temp"));
+            var package = Task.Run(() => service.InspectAsync(edited)).GetAwaiter().GetResult();
+            var resources = new ThemeResourceLoader().Load(package, false, false);
+            typeof(FormMain).Assembly.GetType("PCL.ThemeControlRegistry", true)!
+                .GetMethod("ValidateTemplates", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, [resources]);
+            Console.WriteLine("Embedded annotated example matches docs, remains installable and never overwrites user edits.");
+        }
+        finally { if (Directory.Exists(data)) Directory.Delete(data, true); }
     }
 
     private static void CheckButtonRoundTrip(Type registry, Grid form, ResourceDictionary layer)

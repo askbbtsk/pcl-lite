@@ -2,6 +2,8 @@
 
 外观主题扩展现有 `ThemeService`、配色资源与 PCL 控件，不重新实现启动器的导航、业务页面或输入逻辑。主题安装在 `Paths.Data/Themes/<id>/`，个性化设置提供打开目录、文件/目录安装、选择、手动重载和恢复内置主题。
 
+**第一次编辑 XAML？** 先看 [入门步骤](theme-examples/README.md) 和 [带中文注释、可直接安装的 StarterTheme.xaml](theme-examples/StarterTheme.xaml)。启动器的“打开注释示例”会导出同一份示例并打开目录，不覆盖你已编辑的副本。使用记事本／VS Code 修改后保存，再手动重新加载预览。
+
 ## 安装与恢复
 
 - 将主题目录或根目录有 `theme.json` 的 ZIP 安装到列表。将根元素为 `ResourceDictionary` 的 `.xaml` 拖入启动器，可直接安装并预览；自定义主页 XAML 继续走主页导入流程。

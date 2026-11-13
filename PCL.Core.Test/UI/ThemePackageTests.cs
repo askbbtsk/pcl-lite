@@ -312,6 +312,37 @@ public sealed class ThemePackageTests
     }
 
     [TestMethod]
+    public async Task AnnotatedLearningXamlInstallsAsStandaloneAndPreservesHostContent()
+    {
+        string? repository = AppContext.BaseDirectory;
+        while (repository is not null && !File.Exists(Path.Combine(repository, "docs", "theme-examples", "StarterTheme.xaml")))
+            repository = Path.GetDirectoryName(repository.TrimEnd(Path.DirectorySeparatorChar));
+        Assert.IsNotNull(repository);
+        string source = Path.Combine(repository, "docs", "theme-examples", "StarterTheme.xaml");
+        var package = await _service.InspectAsync(source);
+        Assert.IsTrue(ThemePackageService.IsThemeXaml(source));
+        Assert.IsNull(package.Manifest.LauncherVersion);
+        Assert.AreEqual("", package.Manifest.Author);
+        Assert.AreEqual(2, package.Files.Count, "Only the standalone XAML and generated manifest should be installed.");
+        Assert.IsFalse(package.Manifest.SupportsGlass);
+        await _service.InstallAsync(package, false);
+        var installed = await _service.InspectAsync(Path.Combine(_service.ThemesDirectory, package.Manifest.Id));
+        Assert.AreEqual(package.ContentHash, installed.ContentHash);
+        OnSta(() =>
+        {
+            foreach (bool dark in new[] { false, true })
+            {
+                var resources = new ThemeResourceLoader().Load(installed, dark, false);
+                Assert.AreEqual(new CornerRadius(12), resources["Pcl.Theme.Button.CornerRadius"]);
+                Assert.IsInstanceOfType<Geometry>(resources["Pcl.Theme.Icon.lucide/search"]);
+                foreach (string role in new[] { "Button", "Card", "TextBox" })
+                    Assert.IsNotNull(((ControlTemplate)resources["Pcl.Theme.Template." + role]).LoadContent());
+            }
+        });
+        Assert.IsTrue(File.ReadAllText(source).Contains("第 1 课", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public async Task MergedDictionaryAssetsResolveRelativeToTheirOwnFileAndSurviveSourceDeletion()
     {
         string source = Source("""

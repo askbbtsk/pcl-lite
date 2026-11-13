@@ -127,6 +127,8 @@
         <Resource Include="Images\**" />
         <Resource Include="Resources\**" />
         <EmbeddedResource Include="metadata.json" />
+        <EmbeddedResource Include="..\docs\theme-examples\StarterTheme.xaml" LogicalName="PCL.ThemeLearning.StarterTheme.xaml" />
+        <EmbeddedResource Include="..\docs\theme-examples\README.md" LogicalName="PCL.ThemeLearning.README.md" />
         <!--
             许可协议正文随程序一起走。以前这里写的是 <Content Include="LICENCE" />，
             但仓库里的文件叫 LICENSE、而且放在**仓库根目录**（本项目目录的上一级），

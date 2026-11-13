@@ -1,0 +1,120 @@
+<!--
+    PCL Lite 主题入门：可以直接安装的单文件示例
+
+    编辑方法：
+    1. 先复制这个文件，保留原件。右键副本 → 打开方式 → 记事本 / VS Code。
+       双击 XAML 可能打开浏览器或其他程序，不代表主题已经安装。
+    2. 从下面标注“可改”的数值开始，一次只改一两项，按 Ctrl+S 保存。
+    3. 将副本拖入 PCL Lite，确认“安装并预览”，15 秒内点击“保留主题”。
+    4. 后续日常编辑：设置 → 个性化 → 外观主题包 → 打开主题文件夹，
+       编辑已安装目录中的这个 XAML，保存后点击“重新加载并预览”。
+       修改最初拖入的副本不会自动更新已安装文件；可以再次拖入以替换。
+    5. 写错语法会提示文件和位置并恢复；预览不满意可以点击“恢复原主题”，
+       或等待 15 秒自动恢复。不要删除模板中的 ContentPresenter。
+
+    这是视觉主题，不是主页，也不是插件：不能写 C#、事件处理函数、网络地址。
+    本例沿用启动器的深浅色和配色，因此浅色、深色都可学习；没有 theme.json，
+    作者与适用版本会显示“未声明”，液态玻璃在使用期间暂停，不修改原开关。
+    多文件、兼容版本声明与玻璃变体见同目录 README.md 及上一级 THEME-PACKS.md。
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:theme="clr-namespace:PCL.Core.UI.Theme;assembly=PCL.Core">
+
+    <!-- 第 1 课：资源键就是参数名。x:Key 名称保留，只修改标签里的值。 -->
+
+    <!-- 可改：字体按顺序回退；不要填写网络字体地址。 -->
+    <FontFamily x:Key="LaunchFontFamily">Segoe UI, Microsoft YaHei UI</FontFamily>
+
+    <!-- 可改：继承字体大小，单位 DIP；正常范围 8 到 48，建议 13 到 16。 -->
+    <sys:Double x:Key="Pcl.Theme.FontSize">14</sys:Double>
+
+    <!-- 可改：圆角 0 是直角，12 比较柔和。四个值时顺序为左上、右上、右下、左下。 -->
+    <CornerRadius x:Key="Pcl.Theme.Button.CornerRadius">12</CornerRadius>
+    <CornerRadius x:Key="Pcl.Theme.Card.CornerRadius">16</CornerRadius>
+
+    <!-- 可改：内边距，顺序为左、上、右、下。别设太大会挤掉文字。 -->
+    <Thickness x:Key="Pcl.Theme.Button.Padding">8,4,8,4</Thickness>
+
+    <!-- 可改：固定强调色。#AARRGGBB 的 AA 是透明度：00 全透明，FF 不透明。
+         本例没有覆盖 ColorBrush1 等正文色，避免固定黑字在深色主题里看不清。 -->
+    <SolidColorBrush x:Key="Pcl.Theme.Learn.Accent">#FF5C8DFF</SolidColorBrush>
+
+    <!-- 第 2 课：按钮模板。外围仍是 PCL 按钮，由宿主处理点击、键盘和禁用。 -->
+    <ControlTemplate x:Key="Pcl.Theme.Template.Button"
+                     TargetType="{x:Type theme:ThemePresenter}">
+        <!-- TemplateBinding 从宿主读取参数；DynamicResource 会跟随当前配色刷新。
+             可改 BorderThickness（边框粗细）、CornerRadius、Padding 等视觉属性。 -->
+        <Border x:Name="Chrome"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}"
+                Background="{DynamicResource ColorBrushHalfWhite}"
+                BorderBrush="{DynamicResource Pcl.Theme.Learn.Accent}"
+                BorderThickness="1">
+            <!-- 必须保留：显示原有按钮文字、图标和其他内容，不用自己重写业务。 -->
+            <ContentPresenter Content="{TemplateBinding Content}" />
+        </Border>
+
+        <!-- 第 3 课：状态。TargetName 指向本模板的 Chrome，而不是修改宿主操作。
+             IsHovered / HasFocus 是外围 PCL 控件的状态，不能让呈现层抢焦点。 -->
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsHovered" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource ColorBrush7}" />
+            </Trigger>
+            <Trigger Property="HasFocus" Value="True">
+                <Setter TargetName="Chrome" Property="BorderThickness" Value="2" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Chrome" Property="Opacity" Value="0.7" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Chrome" Property="Opacity" Value="0.45" />
+            </Trigger>
+            <!-- 保留危险操作的红色提示，不要把删除按钮装饰得和普通按钮无法区别。 -->
+            <Trigger Property="IsDanger" Value="True">
+                <Setter TargetName="Chrome" Property="BorderBrush" Value="Red" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- 第 4 课：卡片背景。主题只替换外观，卡片标题、内容和折叠继续由宿主管理。 -->
+    <ControlTemplate x:Key="Pcl.Theme.Template.Card"
+                     TargetType="{x:Type theme:ThemePresenter}">
+        <Border CornerRadius="{TemplateBinding CornerRadius}"
+                Background="{DynamicResource ColorBrushTransparentBackground}"
+                BorderBrush="{DynamicResource ColorBrush6}" BorderThickness="1">
+            <Border.Effect>
+                <!-- 可改：模糊半径 10、阴影偏移 2、透明度 0.12。
+                     较大模糊更耗性能；这里不需要实时桌面采样。 -->
+                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.12" Color="Black" />
+            </Border.Effect>
+            <ContentPresenter Content="{TemplateBinding Content}" />
+        </Border>
+    </ControlTemplate>
+
+    <!-- 第 5 课：输入框。目标是 TextBox，不能把它改成 ThemePresenter。
+         PART_ContentHost 是真正的编辑区域，名字和 ScrollViewer 类型必须保留。
+         labHint 是占位提示，labWrong 是校验提示，建议都保留。 -->
+    <ControlTemplate x:Key="Pcl.Theme.Template.TextBox" TargetType="TextBox">
+        <Grid>
+            <Border CornerRadius="10" BorderThickness="1"
+                    Background="{DynamicResource ColorBrushHalfWhite}"
+                    BorderBrush="{TemplateBinding BorderBrush}" Padding="{TemplateBinding Padding}">
+                <ScrollViewer x:Name="PART_ContentHost" />
+            </Border>
+            <TextBlock x:Name="labHint" IsHitTestVisible="False"
+                       Margin="12,0,12,0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource ColorBrushGray2}" />
+            <TextBlock x:Name="labWrong" IsHitTestVisible="False"
+                       Visibility="Collapsed" Height="0" VerticalAlignment="Bottom" Foreground="Red" />
+        </Grid>
+    </ControlTemplate>
+
+    <!-- 第 6 课：图标。可用 Geometry 替换已有 SVG 图标，不改变搜索功能。
+         例子是 24×24 坐标里的放大镜；不想换图标就删除这一个资源即可。 -->
+    <StreamGeometry x:Key="Pcl.Theme.Icon.lucide/search">M10,2 A8,8 0 1 1 10,18 A8,8 0 1 1 10,2 Z M10,4 A6,6 0 1 0 10,16 A6,6 0 1 0 10,4 Z M15,16 L17,14 L23,20 L21,22 Z</StreamGeometry>
+
+    <!-- 学习建议：先试着把按钮圆角从 12 改成 4、强调色改成自己喜欢的颜色。
+         逐项保存、重载、确认，最后再学习完整 SoftSlate 多文件示例。 -->
+</ResourceDictionary>

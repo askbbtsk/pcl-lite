@@ -28,6 +28,12 @@ public partial class PageSetupUI
             HorizontalAlignment = HorizontalAlignment.Stretch };
         _themePackageInfo = ThemeText("Theme.Pack.BuiltIn");
         var buttons = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) };
+        AddThemeAction(buttons, "Theme.Pack.OpenExample", () =>
+        {
+            string directory = ThemeLearningExample.Export(PCL.Core.App.Paths.Data);
+            Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+            return Task.CompletedTask;
+        });
         AddThemeAction(buttons, "Theme.Pack.OpenFolder", () =>
         {
             Directory.CreateDirectory(runtime.Directory);

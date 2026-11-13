@@ -5,7 +5,8 @@
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
     <sys:String x:Key="Theme.Pack.Title">外观主题包</sys:String>
-    <sys:String x:Key="Theme.Pack.Description">用 XAML 定制 PCL 控件和材质外观。可拖入 XAML / ZIP 安装，或打开主题文件夹自行编辑；保存后手动重新加载。切换后有 15 秒确认时间，未保留会自动恢复。</sys:String>
+    <sys:String x:Key="Theme.Pack.Description">用 XAML 定制 PCL 控件和材质外观。新手可点击“打开注释示例”，用记事本或 VS Code 编辑副本，保存为 UTF-8 的 .xaml 后拖入安装。日常修改请打开主题文件夹编辑已安装副本，再点击“重新加载并预览”。15 秒内确认保留，否则自动恢复；再次打开示例不会覆盖已编辑内容。</sys:String>
+    <sys:String x:Key="Theme.Pack.OpenExample">打开注释示例</sys:String>
     <sys:String x:Key="Theme.Pack.BuiltIn">恢复内置主题</sys:String>
     <sys:String x:Key="Theme.Pack.OpenFolder">打开主题文件夹</sys:String>
     <sys:String x:Key="Theme.Pack.Install">安装主题文件</sys:String>
@@ -26,7 +27,7 @@
     <sys:String x:Key="Theme.Pack.Information">{0} · {1}&#xA;作者：{2}&#xA;适用版本：{3}&#xA;{4}</sys:String>
     <sys:String x:Key="Theme.Pack.GlassSupported">支持液态玻璃；仍按用户已有开关和授权启用。</sys:String>
     <sys:String x:Key="Theme.Pack.GlassPaused">该主题未声明玻璃支持，使用期间暂停玻璃，原有设置保持不变。</sys:String>
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.7 hotfix-6：修复玻璃圆角外的原生窗口黑块，按实际内容裁剪窗口并保留缩放热区；修复全局搜索拦截键盘导致无法输入文本的问题。拖动时桌面采样遵守用户帧率设置，包括不限制。Lunar 原生内存不足退出时显示针对性说明。</sys:String>
+    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.8 snapshot-1：新增 XAML 外观主题包，可拖入 XAML / ZIP 或安装主题目录，支持兼容版本提示、强制预览、15 秒确认恢复及玻璃支持声明。个性化提供“打开注释示例”，内附中文逐项讲解和编辑步骤，示例副本不会被重复覆盖。主题文档、SoftSlate 多模式示例与控件切换回归检查同步补齐。</sys:String>
     <sys:String x:Key="Lunar.Status.NativeMemoryFailure">Java 原生内存分配失败。请释放系统内存并检查分页文件；可适当降低游戏分配内存，为堆外内存留出空间。具体原因请查看游戏目录的 hs_err_pid*.log；这与原生库文件占用是不同问题。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">性能预设</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>

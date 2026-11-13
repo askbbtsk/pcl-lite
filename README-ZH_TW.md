@@ -9,6 +9,8 @@
 前言：pcl 和它的護衛隊天天說動了蛋糕，順手扣帽子，我想知道 pcl 這個帽子工廠和烘焙店是有仇嗎 怎麼帽子工廠天天動蛋糕？
 [神祕文章來自 cubk](https://github.com/askbbtsk/pcl-lite/blob/main/readmedlc.md)
 
+[惡俗維基相關條目](https://esu.lol/%E5%B0%B9%E6%B5%B7%E8%88%AA)
+
 <img src="https://repobeats.axiom.co/api/embed/9eeaaa6c831dc44bdc2f264bc4126460aceb8518.svg" alt="PCL Lite 儲存庫活動統計" title="Repobeats 儲存庫活動統計" width="100%" />
 
 [![Stars](https://img.shields.io/github/stars/askbbtsk/pcl-lite?style=for-the-badge&logo=github&labelColor=444444&color=eac54f)](https://github.com/askbbtsk/pcl-lite/stargazers)

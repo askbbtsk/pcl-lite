@@ -383,6 +383,15 @@
                     <local:MyButton x:Name="BtnLiquidGlassReset" Text="{DynamicResource Setup.Ui.LiquidGlass.Reset}"
                                     Height="38" MinHeight="38" MinWidth="180" HorizontalAlignment="Left"
                                     Padding="16,0" Margin="0,4,0,12" Click="LiquidGlassReset_Click" />
+                    <local:MyCheckBox x:Name="CheckLiquidGlassEdgeAA" Text="{DynamicResource Setup.Ui.LiquidGlass.EdgeAA}"
+                                      Height="38" Change="LiquidGlassEdgeAA_Changed" Margin="0,0,0,8" />
+                    <local:MyComboBox x:Name="ComboLiquidGlassEdgeAA" Height="38" MinHeight="38" VerticalContentAlignment="Center"
+                                      SelectionChanged="LiquidGlassEdgeAAQuality_Changed" Margin="0,0,0,8">
+                        <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.EdgeAA.Low}" MinHeight="38" />
+                        <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.EdgeAA.Normal}" MinHeight="38" />
+                        <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.LiquidGlass.EdgeAA.High}" MinHeight="38" />
+                    </local:MyComboBox>
+                    <TextBlock Text="{DynamicResource Setup.Ui.LiquidGlass.EdgeAA.Hint}" Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,12" />
                     <local:MyCheckBox x:Name="CheckTahoeDesktop" Text="{DynamicResource Setup.Ui.Tahoe.Desktop}"
                                       Height="32" Margin="0,6,0,6"
                                       IsEnabled="{Binding Checked, ElementName=CheckTahoeGlass}"

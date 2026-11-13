@@ -7,7 +7,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.LiquidGlass.cs",
-    "Sha256": "C2320CA296C673D64FA2D9FEDEC295B6CB242E981352FDA8C3AF3B4C0DD34DC4",
+    "Sha256": "89CDC5F9EB4B508467D28667D0028AAF1FB2C0747D14D7A084753E593CC17F2E",
     "Members": ["PCL.MyButton::MethodDeclaration::ApplyTahoeButtonTheme()"],
     "Reason": "A validated theme presenter owns button chrome; the existing glass chrome restores before it is applied. Repeated production-control round trips tested."
   },
@@ -19,7 +19,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyCard.LiquidGlass.cs",
-    "Sha256": "DBC2E442FE04B504959A60BA2B188E0C39F3FE9E836D503EC716A6CC59351668",
+    "Sha256": "B17571F9FE8C90CBD60F762C8C677AA272FF641DFB85666B3B11C3070AE87677",
     "Members": ["PCL.MyCard::MethodDeclaration::ApplyTahoeCard()"],
     "Reason": "Theme-owned card chrome takes priority over hardcoded glass styling, with existing normal restoration preserved."
   },

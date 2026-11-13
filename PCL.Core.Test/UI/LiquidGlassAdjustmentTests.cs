@@ -81,6 +81,28 @@ public sealed class LiquidGlassAdjustmentTests
     }
 
     [TestMethod]
+    public void EdgeAntialiasingQualityControlsDpiAwareCoverageWidth()
+    {
+        Assert.AreEqual(.75, LiquidGlassMaterial.EdgeSmoothingWidth(true, 0, 1), 1e-12);
+        Assert.AreEqual(1, LiquidGlassMaterial.EdgeSmoothingWidth(true, 1, 1), 1e-12);
+        Assert.AreEqual(1.5, LiquidGlassMaterial.EdgeSmoothingWidth(true, 2, 1), 1e-12);
+        Assert.AreEqual(.5, LiquidGlassMaterial.EdgeSmoothingWidth(true, 1, 2), 1e-12);
+        Assert.AreEqual(.25, LiquidGlassMaterial.EdgeSmoothingWidth(false, 2, 1), 1e-12);
+        Assert.AreEqual(1.5, LiquidGlassMaterial.EdgeSmoothingWidth(true, int.MaxValue, 0), 1e-12);
+    }
+
+    [TestMethod]
+    public void DisablingMaterialEdgeAntialiasingSelectsAliasedEdgeMode()
+    {
+        Assert.AreEqual(System.Windows.Media.EdgeMode.Unspecified,
+            LiquidGlassMaterial.EdgeMode(true, false));
+        Assert.AreEqual(System.Windows.Media.EdgeMode.Aliased,
+            LiquidGlassMaterial.EdgeMode(false, false));
+        Assert.AreEqual(System.Windows.Media.EdgeMode.Unspecified,
+            LiquidGlassMaterial.EdgeMode(false, true), "High contrast keeps system antialias behavior.");
+    }
+
+    [TestMethod]
     public void DragUsesTheConfiguredFrameRateIncludingUnlimited()
     {
         Assert.AreEqual(0, TahoeCaptureResources.FrameRateDuringMove(0, true));

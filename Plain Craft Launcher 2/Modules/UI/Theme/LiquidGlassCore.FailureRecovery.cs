@@ -33,6 +33,8 @@ public static partial class LiquidGlassCore
                 surface.BackdropSource = null;
                 surface.Visibility = Visibility.Collapsed;
             }
+            foreach (var item in EnumerateListItems(window))
+                item.SetGlassNavigationVisibility(false);
             // Persist only the glass enable switch. Every tuning value and all
             // account/theme settings remain available after the user restarts.
             Config.Preference.TahoeGlass.IsEnabled = false;
@@ -40,5 +42,15 @@ public static partial class LiquidGlassCore
             window.Dispatcher.BeginInvoke(() => LogWrapper.Warn("LiquidGlass",
                 "液态玻璃因内存不足或渲染线程故障已自动关闭，桌面采样已停止。参数已保留；若窗口仍无响应，请重启启动器。"));
         });
+    }
+
+    private static System.Collections.Generic.IEnumerable<MyListItem> EnumerateListItems(DependencyObject parent)
+    {
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, index);
+            if (child is MyListItem item) yield return item;
+            foreach (var nested in EnumerateListItems(child)) yield return nested;
+        }
     }
 }

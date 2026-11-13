@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -68,6 +69,7 @@ internal static class Program
                 CheckThemeDropDownRecovery(registry, form, layer);
                 CheckProtectedThemeSelector(registry, form);
                 CheckSelectionAndListRoundTrips(registry, form);
+            CheckMinecraftRootSelectorUsesGlassCapsule();
                 CheckProgrammaticPresentationState(registry, form);
                 CheckRootResourceRestoration(registry, main, form, runtime, layer);
             }
@@ -85,6 +87,30 @@ internal static class Program
             Console.Error.WriteLine("::error::Theme smoke failed: " + error);
             return 1;
         }
+    }
+
+    private static void CheckMinecraftRootSelectorUsesGlassCapsule()
+    {
+        ModAnimation.AniControlEnabled++;
+        try
+        {
+            var page = new PageSelectLeft();
+            var item = new MyListItem
+            {
+                Type = MyListItem.CheckType.RadioBox,
+                IsScaleAnimationEnabled = false,
+                Height = 40,
+                Title = "Minecraft root"
+            };
+            var panList = (Panel)typeof(PageSelectLeft).GetField("PanList",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(page)!;
+            panList.Children.Add(item);
+            var method = typeof(MyListItem).GetMethod("IsNavigationItem", PrivateInstance)!;
+            if (!(bool)method.Invoke(item, null)!)
+                throw new InvalidDataException("Minecraft-root radio choices must use the glass navigation capsule.");
+        }
+        finally { ModAnimation.AniControlEnabled--; }
+        Console.WriteLine("Minecraft-root selector is included in rounded glass navigation.");
     }
 
     private static void LoadBuiltInResources(System.Windows.Application application)
@@ -194,6 +220,16 @@ internal static class Program
         }
         if (config.Brightness != -31 || config.CardBrightness != 33)
             throw new InvalidDataException("Glass and card brightness must be independent.");
+        var edgeQuality = (MyComboBox)page.FindName("ComboLiquidGlassEdgeAA");
+        if (edgeQuality.SelectedIndex != 1 || !CheckBoxValue(page, "CheckLiquidGlassEdgeAA"))
+            throw new InvalidDataException("Glass edge antialiasing must default to enabled at standard quality.");
+        edgeQuality.SelectedIndex = 2;
+        typeof(PageSetupUI).GetMethod("LiquidGlassEdgeAAQuality_Changed", PrivateInstance)!
+            .Invoke(page, [edgeQuality, new SelectionChangedEventArgs(Selector.SelectionChangedEvent, Array.Empty<object>(), Array.Empty<object>())]);
+        var edgeEnabled = page.FindName("CheckLiquidGlassEdgeAA");
+        typeof(PageSetupUI).GetMethod("LiquidGlassEdgeAA_Changed", PrivateInstance)!.Invoke(page, [edgeEnabled, true]);
+        if (!config.EdgeAntiAliasing || config.EdgeAntiAliasingQuality != 2)
+            throw new InvalidDataException("Glass edge antialiasing quality must be independently persisted.");
         var sampling = (MySlider)page.FindName("SliderLiquidGlassSampling");
         sampling.Value = 0;
         typeof(PageSetupUI).GetMethod("LiquidGlassSampling_Changed", PrivateInstance)!.Invoke(page, [sampling, true]);
@@ -219,6 +255,9 @@ internal static class Program
             throw new InvalidDataException("Restoring glass parameters must preserve switches, consent and theme.");
         Console.WriteLine("Glass settings: Custom option, inherited-value preservation, 0–200% refraction and independent sampling passed.");
     }
+
+    private static bool CheckBoxValue(PageSetupUI page, string name) =>
+        ((MyCheckBox)page.FindName(name)).Checked == true;
 
     private static void CheckLearningExampleExport()
     {

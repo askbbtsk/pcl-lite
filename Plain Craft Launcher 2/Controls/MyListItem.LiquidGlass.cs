@@ -13,16 +13,18 @@ public partial class MyListItem
     private Visibility _originalNavigationCheckVisibility;
     private GridLength _originalNavigationPadding;
     private FontWeight _originalNavigationFontWeight;
+    private object? _originalNavigationBackground;
     private Thickness? _originalNavigationActionMargin;
 
     private bool IsNavigationItem()
     {
         if (Type != CheckType.RadioBox || IsScaleAnimationEnabled || Height > 40) return false;
         DependencyObject? parent = this;
-        while ((parent = VisualTreeHelper.GetParent(parent)) != null)
+        while ((parent = VisualTreeHelper.GetParent(parent) ?? LogicalTreeHelper.GetParent(parent)) != null)
         {
-            // These pages contain application navigation. Directory and running-instance
-            // selectors also inherit MyPageLeft, so deliberately do not include them.
+            // The Minecraft-root selector is a short list outside the other
+            // left-page category branch.
+            if (parent is PageSelectLeft page) return page.PanList.Children.Contains(this);
             if (parent is MyPageLeft)
                 return parent is PageSetupLeft or PageDownloadLeft or PageToolsLeft or PagePluginsLeft
                     or PageInstanceLeft or PageInstanceSavesLeft or PageBedrockLeft or PageLunarLeft;
@@ -68,6 +70,8 @@ public partial class MyListItem
             _originalNavigationCheckVisibility = rectCheck?.Visibility ?? Visibility.Visible;
             _originalNavigationPadding = ColumnPaddingLeft.Width;
             _originalNavigationFontWeight = LabTitle.FontWeight;
+            _originalNavigationBackground = ReadLocalValue(BackgroundProperty);
+            SetCurrentValue(BackgroundProperty, Brushes.Transparent);
             _tahoeNavigationChrome ??= new Border
             {
                 Margin = new Thickness(16, 2, 14, 2),
@@ -92,6 +96,7 @@ public partial class MyListItem
         }
 
         ModAnimation.AniStop("MyListItem Checked " + Uuid);
+        _tahoeNavigationChrome!.Visibility = Visibility.Visible;
         bool dark = ThemeManager.IsDarkMode;
         bool contrast = SystemParameters.HighContrast;
         bool hover = IsMouseOver && isMouseOverAnimationEnabled;
@@ -141,6 +146,22 @@ public partial class MyListItem
         return true;
     }
 
+    internal void SetGlassNavigationVisibility(bool visible)
+    {
+        if (!_isTahoeNavigationItem || !_tahoeNavigationApplied || _tahoeNavigationChrome is null) return;
+        if (visible)
+        {
+            _tahoeNavigationChrome.Visibility = Visibility.Visible;
+            RectBack.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            // Recovery disables the glass theme immediately, so restore every
+            // captured local value rather than only hiding its rounded overlay.
+            RestoreNavigationChrome();
+        }
+    }
+
     private void RestoreNavigationChrome()
     {
         if (!_tahoeNavigationApplied) return;
@@ -150,6 +171,11 @@ public partial class MyListItem
         if (buttonStack != null && _originalNavigationActionMargin is { } actionMargin)
             buttonStack.Margin = actionMargin;
         _originalNavigationActionMargin = null;
+        if (ReferenceEquals(_originalNavigationBackground, DependencyProperty.UnsetValue))
+            ClearValue(BackgroundProperty);
+        else if (_originalNavigationBackground is Brush originalBackground)
+            SetValue(BackgroundProperty, originalBackground);
+        _originalNavigationBackground = null;
         RectBack.Visibility = _originalNavigationHoverVisibility;
         ColumnPaddingLeft.Width = _originalNavigationPadding;
         LabTitle.SetCurrentValue(TextBlock.FontWeightProperty, _originalNavigationFontWeight);

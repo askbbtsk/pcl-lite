@@ -214,6 +214,8 @@ public partial class MyButton
         _tahoeSurface.IsDarkMode = dark;
         _tahoeSurface.DiffuseStrength = LiquidGlassCore.DiffuseStrength;
         _tahoeSurface.EdgeSharpness = LiquidGlassCore.EdgeSharpness;
+        _tahoeSurface.EdgeAntiAliasing = Config.Preference.TahoeGlass.EdgeAntiAliasing;
+        _tahoeSurface.EdgeAntiAliasingQuality = Math.Clamp(Config.Preference.TahoeGlass.EdgeAntiAliasingQuality, 0, 2);
         _tahoeSurface.Brightness = highContrast ? 0 : Math.Clamp(Config.Preference.TahoeGlass.Brightness, -50, 50);
         _tahoeSurface.BlurRadius = LiquidGlassCore.Profile.BlurRadius;
         _tahoeSurface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);

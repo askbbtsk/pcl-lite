@@ -18,7 +18,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.FailureRecovery.cs",
-    "Sha256": "A96B7CCC754B96D06D704241FF290F568D24E3ABAD8B16903BC293206801E12C",
+    "Sha256": "3FB4CA5F389B3ED4B78E135F87F2B08061D210793EE74473DFD4359C00E4D02C",
     "Members": [],
     "RemovedMembers": [
       "PCL.LiquidGlassCore::MethodDeclaration::ApplySurface(TahoeGlassSurface surface, bool dark, double opacity)",

@@ -1,5 +1,15 @@
 [
   {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyListItem.LiquidGlass.cs",
+    "Sha256": "66337DBF0A02DAE00405C70558547A961F4ED05CAACCF95D0263D5C054621CA6",
+    "Members": [
+      "PCL.MyListItem::MethodDeclaration::IsNavigationItem()",
+      "PCL.MyListItem::MethodDeclaration::RefreshTahoeNavigation(bool animate)",
+      "PCL.MyListItem::MethodDeclaration::RestoreNavigationChrome()"
+    ],
+    "Reason": "Include Minecraft-root choices in the rounded glass selection capsule, clear their prior full-row background only while glass is active, and restore the previous background when glass is disabled. Other instance selectors retain their current presentation."
+  },
+  {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassDesktopCapture.cs",
     "Sha256": "C814F65646A6A3B8FB33F4A6DD8D3D348CB05F4479CF61271F712769D08B2ECF",
     "Members": [
@@ -8,7 +18,7 @@
       "PCL.TahoeDesktopCapture::MethodDeclaration::SetInteractiveMove(bool moving)",
       "PCL.TahoeDesktopCapture::MethodDeclaration::UpdateGeometry()"
     ],
-    "Reason": "Retain prior move/session contracts; accept a reduced-resolution full-viewport payload without changing physical coordinates, validate viewport coverage, reallocate only on resolution changes and upload full first frames. Synthetic capture regression covers downscale, reuse and restoring native resolution."
+    "Reason": "Retain prior move/session and failure cleanup contracts; accept a reduced-resolution full-viewport payload without changing physical coordinates, validate viewport coverage, reallocate only on resolution changes and upload full first frames. Synthetic capture regression covers downscale, reuse and restoring native resolution."
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassScreenshotCapturePlatform.cs",

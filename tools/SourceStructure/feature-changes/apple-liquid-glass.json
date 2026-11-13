@@ -9,10 +9,11 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/LiquidGlassSurface.cs",
-    "Sha256": "ECB969CB1B91CD969E41A2B3E00FC7C839FBD87BD2903C8F5A0D446974110387",
+    "Sha256": "A03C1AC2A580ABF7B91841D3B225B1ACE289B4F874CC5C5569166FDF26907161",
     "Members": [
       "PCL.TahoeGlassSurface::ConstructorDeclaration::.ctor()",
       "PCL.TahoeGlassSurface::MethodDeclaration::Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)",
+      "PCL.TahoeGlassSurface::MethodDeclaration::OnSystemParametersChanged(object? sender, PropertyChangedEventArgs e)",
       "PCL.TahoeGlassSurface::FieldDeclaration::_rim",
       "PCL.TahoeGlassSurface::FieldDeclaration::_shadow",
       "PCL.TahoeGlassSurface::MethodDeclaration::RefreshSampling()",
@@ -23,7 +24,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.LiquidGlass.cs",
-    "Sha256": "48D4A25D2DB4FA7D8FAFEB68891321DDC8F0A503A109777807A77B3355A28264",
+    "Sha256": "89CDC5F9EB4B508467D28667D0028AAF1FB2C0747D14D7A084753E593CC17F2E",
     "Members": [
       "PCL.MyButton::MethodDeclaration::ApplyTahoeButtonTheme()",
       "PCL.MyButton::MethodDeclaration::RefreshTahoeButtonAppearance()"
@@ -49,11 +50,13 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyListItem.LiquidGlass.cs",
-    "Sha256": "F9381CD94684B412928F2341B1B0990BEC029F51EEF2D525BC7ADF7FACB72701",
+    "Sha256": "66337DBF0A02DAE00405C70558547A961F4ED05CAACCF95D0263D5C054621CA6",
     "Members": [
-      "PCL.MyListItem::MethodDeclaration::RefreshTahoeNavigation(bool animate)"
+      "PCL.MyListItem::MethodDeclaration::IsNavigationItem()",
+      "PCL.MyListItem::MethodDeclaration::RefreshTahoeNavigation(bool animate)",
+      "PCL.MyListItem::MethodDeclaration::RestoreNavigationChrome()"
     ],
-    "Reason": "Fuse navigation pills with the surrounding sidebar slab using concentric 12px corners, theme-harmonized washes, and subtle top-lit catchlight hairlines via LiquidGlassMaterial.NavigationPillBorder."
+    "Reason": "Include Minecraft-root choices in the rounded glass selection capsule, clear their prior full-row background only while glass is active, and restore the previous background when glass is disabled. Other instance selectors retain their current presentation."
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyRadioButton.LiquidGlass.cs",
@@ -84,7 +87,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
-    "Sha256": "54B4994320C1DB3943EF9889CDAF6AE5A49D3DE9DB973AF8D9F43EAF8C2669FC",
+    "Sha256": "9E0D816CBE7982C7197C5565B67460384B9A7AAEA432E327285D1C5F7F3A14C0",
     "Members": [
       "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
       "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",

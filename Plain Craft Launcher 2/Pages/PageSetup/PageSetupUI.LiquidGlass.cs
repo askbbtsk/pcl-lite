@@ -45,6 +45,8 @@ public partial class PageSetupUI
             BindGlassSlider(SliderLiquidGlassCard, TextLiquidGlassCard,
                 LiquidGlassMaterial.CardOpacityPercent(Config.Preference.TahoeGlass.CardOpacity, ThemeManager.IsDarkMode), "%");
             CheckLiquidGlassMotion.Checked = profile.Motion;
+            BindBrightnessSlider(SliderLiquidGlassBrightness, TextLiquidGlassBrightness, Config.Preference.TahoeGlass.Brightness);
+            BindBrightnessSlider(SliderLiquidGlassCardBrightness, TextLiquidGlassCardBrightness, Config.Preference.TahoeGlass.CardBrightness);
             TextLiquidGlassCost.Text = Lang.Text("Setup.Ui.LiquidGlass.Cost."
                 + LiquidGlassPerformance.NormalizePreset(Config.Preference.TahoeGlass.PerformancePreset));
         }
@@ -80,6 +82,14 @@ public partial class PageSetupUI
         try { ComboLiquidGlassPreset.SelectedIndex = LiquidGlassPerformance.CustomPreset; }
         finally { _liquidGlassBinding = previous; }
         TextLiquidGlassCost.Text = Lang.Text("Setup.Ui.LiquidGlass.Cost.4");
+    }
+
+    private static void BindBrightnessSlider(MySlider slider, TextBlock label, int configured)
+    {
+        var value = Math.Clamp(configured, -50, 50);
+        slider.getHintText = new Func<object, object>(raw => ((int)raw - 50).ToString("+0;-0;0"));
+        slider.Value = value + 50;
+        label.Text = value.ToString("+0;-0;0");
     }
 
     private void LiquidGlassFrost_Changed(object sender, bool user)
@@ -175,6 +185,7 @@ public partial class PageSetupUI
         config.EdgeSharpness = 90;
         config.TintScale = 100;
         config.CardOpacity = -1;
+        config.Brightness = config.CardBrightness = 0;
         config.Motion = profile.Motion ? 1 : 0;
         RefreshLiquidGlassSettings();
         LiquidGlassCore.Refresh();
@@ -221,6 +232,8 @@ public partial class PageSetupUI
             case "Tint": config.TintScale = slider.Value; break;
             case "Card": config.CardOpacity = slider.Value; break;
             case "Quality": config.SamplingQuality = slider.Value + 25; break;
+            case "Brightness": config.Brightness = slider.Value - 50; break;
+            case "CardBrightness": config.CardBrightness = slider.Value - 50; break;
         }
         RefreshLiquidGlassSettings();
         LiquidGlassCore.Refresh();

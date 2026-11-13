@@ -64,6 +64,23 @@ public sealed class LiquidGlassAdjustmentTests
     }
 
     [TestMethod]
+    public void BrightnessDefaultsToIdentityClampsAndPreservesAlpha()
+    {
+        var color = System.Windows.Media.Color.FromArgb(117, 80, 100, 160);
+        Assert.AreEqual(color, LiquidGlassMaterial.AdjustBrightness(color, 0));
+        for (int value = -50; value <= 50; value++)
+        {
+            var adjusted = LiquidGlassMaterial.AdjustBrightness(color, value);
+            Assert.AreEqual(color.A, adjusted.A);
+            Assert.IsTrue(value >= 0 ? adjusted.R >= color.R : adjusted.R <= color.R);
+        }
+        Assert.AreEqual(LiquidGlassMaterial.AdjustBrightness(color, -50),
+            LiquidGlassMaterial.AdjustBrightness(color, int.MinValue));
+        Assert.AreEqual(LiquidGlassMaterial.AdjustBrightness(color, 50),
+            LiquidGlassMaterial.AdjustBrightness(color, int.MaxValue));
+    }
+
+    [TestMethod]
     public void DragUsesTheConfiguredFrameRateIncludingUnlimited()
     {
         Assert.AreEqual(0, TahoeCaptureResources.FrameRateDuringMove(0, true));

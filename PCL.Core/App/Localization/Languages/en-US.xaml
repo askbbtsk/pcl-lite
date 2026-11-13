@@ -4299,4 +4299,6 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">Changes only the card surface: 0% is transparent and 100% is opaque. Text, icons, glass tint and window background are unchanged. High-contrast mode retains solid system colors.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality">Desktop sampling quality (25–100% resolution)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">Scales desktop sample dimensions proportionally. 100% keeps native resolution; 50% halves width and height, yielding one quarter of the pixels. Lower values reduce frame transfer and upload size with less detail; Windows capture still retains a full-size intermediate. Only affects live desktop detail, not text, animation or capture rate.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Brightness">Glass brightness (-50 to 50; default 0)</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.CardBrightness">Card brightness (-50 to 50; default 0)</sys:String>
 </ResourceDictionary>

@@ -4302,4 +4302,6 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">仅调整卡片半透明底色：0% 为透明，100% 为不透明。文字、图标、玻璃染色及窗口背景不受影响；高对比度模式仍使用系统实色。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality">桌面采样质量（25–100% 分辨率）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">按原始宽高比例缩小桌面采样图像，100% 为原始分辨率，50% 为宽高各一半、像素数四分之一。降低可减少画面传输和上传量，细节也会减少；Windows 捕获仍保留原尺寸中间画面。仅影响实时桌面，不影响文字、按钮动效或采样帧率。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Brightness">玻璃明暗度（-50～50，默认 0）</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.CardBrightness">卡片明暗度（-50～50，默认 0）</sys:String>
 </ResourceDictionary>

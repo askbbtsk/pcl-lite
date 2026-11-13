@@ -25,6 +25,7 @@ public sealed class TahoeGlassSurface : Grid
     public static readonly DependencyProperty BlurRadiusProperty = Numeric(nameof(BlurRadius), 2, 0, 32);
     public static readonly DependencyProperty FrostRadiusProperty = Numeric(nameof(FrostRadius), 0, 0, 24);
     public static readonly DependencyProperty TintOpacityProperty = Numeric(nameof(TintOpacity), .10, 0, 1);
+    public static readonly DependencyProperty BrightnessProperty = Numeric(nameof(Brightness), 0, -50, 50);
     public static readonly DependencyProperty HighlightStrengthProperty = Numeric(nameof(HighlightStrength), .65, 0, 1);
     public static readonly DependencyProperty DispersionProperty = Numeric(nameof(Dispersion), .20, 0, 1);
     public static readonly DependencyProperty DiffuseStrengthProperty = Numeric(nameof(DiffuseStrength), .16, 0, .5);
@@ -53,6 +54,7 @@ public sealed class TahoeGlassSurface : Grid
     private readonly Grid _clippedMaterial = new();
     private readonly Rectangle _surface = new();
     private readonly Border _tint = new();
+    private readonly Border _brightness = new() { IsHitTestVisible = false };
     private readonly Border _rim = new() { BorderThickness = new Thickness(.55) };
     private readonly List<UIElement> _observedElements = [];
     private readonly List<DependencyObject?> _observedParents = [];
@@ -80,6 +82,7 @@ public sealed class TahoeGlassSurface : Grid
         Children.Add(_shadow);
         _clippedMaterial.Children.Add(_surface);
         _clippedMaterial.Children.Add(_tint);
+        _clippedMaterial.Children.Add(_brightness);
         Children.Add(_clippedMaterial);
         Children.Add(_rim);
         Loaded += OnLoaded;
@@ -96,6 +99,7 @@ public sealed class TahoeGlassSurface : Grid
     public double FrostRadius { get => (double)GetValue(FrostRadiusProperty); set => SetValue(FrostRadiusProperty, value); }
     public Color TintColor { get => (Color)GetValue(TintColorProperty); set => SetValue(TintColorProperty, value); }
     public double TintOpacity { get => (double)GetValue(TintOpacityProperty); set => SetValue(TintOpacityProperty, value); }
+    public double Brightness { get => (double)GetValue(BrightnessProperty); set => SetValue(BrightnessProperty, value); }
     public double HighlightStrength { get => (double)GetValue(HighlightStrengthProperty); set => SetValue(HighlightStrengthProperty, value); }
     public double Dispersion { get => (double)GetValue(DispersionProperty); set => SetValue(DispersionProperty, value); }
     public double DiffuseStrength { get => (double)GetValue(DiffuseStrengthProperty); set => SetValue(DiffuseStrengthProperty, value); }
@@ -113,6 +117,15 @@ public sealed class TahoeGlassSurface : Grid
     private static void Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var surface = (TahoeGlassSurface)d;
+        if (e.Property == BrightnessProperty)
+        {
+            double brightness = SystemParameters.HighContrast ? 0 : surface.Brightness;
+            surface._brightness.Background = brightness == 0 ? Brushes.Transparent :
+                FrozenBrush(Color.FromArgb((byte)Math.Round(Math.Abs(brightness) * 2.55),
+                    brightness > 0 ? (byte)255 : (byte)0,
+                    brightness > 0 ? (byte)255 : (byte)0,
+                    brightness > 0 ? (byte)255 : (byte)0));
+        }
         surface._dirty = true;
         if (e.Property == BackdropSourceProperty && surface._tracking) surface.SubscribeSource();
         surface.RefreshSampling();

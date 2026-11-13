@@ -55,6 +55,14 @@ public static class LiquidGlassMaterial
     public static Color CardTint(Color original, int configured) => configured == -1 ? original :
         Color.FromArgb((byte)Math.Round(Math.Clamp(configured, 0, 100) * 2.55),
             original.R, original.G, original.B);
+    public static Color AdjustBrightness(Color original, int configured)
+    {
+        var amount = Math.Clamp(configured, -50, 50) / 100d;
+        if (amount == 0) return original;
+        byte Channel(byte value) => (byte)Math.Round(amount > 0
+            ? value + (255 - value) * amount : value * (1 + amount));
+        return Color.FromArgb(original.A, Channel(original.R), Channel(original.G), Channel(original.B));
+    }
     public static Color Tint(bool dark) => dark ? Color.FromRgb(23, 29, 39) : Colors.White;
     public static double Opacity(bool dark, bool desktop, double original) =>
         desktop ? Math.Max(original, dark ? .55 : .65) : original;

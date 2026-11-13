@@ -183,6 +183,17 @@ internal static class Program
         typeof(PageSetupUI).GetMethod("LiquidGlassOptics_Changed", PrivateInstance)!.Invoke(page, [quality, true]);
         if (config.SamplingQuality != 50 || config.CardOpacity != 37)
             throw new InvalidDataException("Sampling quality must not overwrite card tint.");
+        foreach (var (name, tag, setting) in new[]
+                 { ("SliderLiquidGlassBrightness", "Brightness", 19), ("SliderLiquidGlassCardBrightness", "CardBrightness", 83) })
+        {
+            var control = (MySlider)page.FindName(name);
+            control.Value = setting;
+            typeof(PageSetupUI).GetMethod("LiquidGlassOptics_Changed", PrivateInstance)!.Invoke(page, [control, true]);
+            if ((tag == "Brightness" ? config.Brightness : config.CardBrightness) != setting - 50)
+                throw new InvalidDataException("Signed brightness control mapping failed: " + name);
+        }
+        if (config.Brightness != -31 || config.CardBrightness != 33)
+            throw new InvalidDataException("Glass and card brightness must be independent.");
         var sampling = (MySlider)page.FindName("SliderLiquidGlassSampling");
         sampling.Value = 0;
         typeof(PageSetupUI).GetMethod("LiquidGlassSampling_Changed", PrivateInstance)!.Invoke(page, [sampling, true]);
@@ -200,7 +211,7 @@ internal static class Program
         var oldDesktopConsent = config.DesktopCaptureConsent;
         typeof(PageSetupUI).GetMethod("ApplyGlassRecommendation", PrivateInstance)!.Invoke(page, [1]);
         if (config.RefractionPercent != 100 || config.FrostRadius != 8 || config.BlurRadius != 1 ||
-            config.CardOpacity != -1 || config.SamplingQuality != 100 ||
+            config.CardOpacity != -1 || config.SamplingQuality != 100 || config.Brightness != 0 || config.CardBrightness != 0 ||
             config.MaximumFrameRate != 60 || config.SamplingFrameRate != 60 ||
             config.IsEnabled != oldGlass || config.UseDesktopBackdrop != oldDesktop ||
             config.PerformanceConsent != oldConsent || config.DesktopCaptureConsent != oldDesktopConsent ||

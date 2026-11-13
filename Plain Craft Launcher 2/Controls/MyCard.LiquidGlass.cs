@@ -90,6 +90,8 @@ public partial class MyCard
 
     private SolidColorBrush TahoeContentBrush() => TahoeIsFlat ? Brushes.Transparent
         : SystemParameters.HighContrast ? SystemColors.WindowBrush
-        : new SolidColorBrush(PCL.Core.UI.LiquidGlassMaterial.CardTint(
-            LiquidGlassCore.CurrentPalette.CardSurface, Config.Preference.TahoeGlass.CardOpacity));
+        : new SolidColorBrush(PCL.Core.UI.LiquidGlassMaterial.AdjustBrightness(
+            PCL.Core.UI.LiquidGlassMaterial.CardTint(
+                LiquidGlassCore.CurrentPalette.CardSurface, Config.Preference.TahoeGlass.CardOpacity),
+            Config.Preference.TahoeGlass.CardBrightness));
 }

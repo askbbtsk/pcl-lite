@@ -108,6 +108,11 @@ PCL Lite 始终建议使用最新版本的操作系统以获得最佳体验。
 感谢这个人
 后记:龙猫你个傻逼能不能不要用主题圈钱啊
 
+
+## 遛狗区
+<img width="310" height="148" alt="b4bccd42-7ae9-4e36-ba76-33a3c93eff6b" src="https://github.com/user-attachments/assets/7c488eee-59e9-44db-ac34-24b9517a85f9" />
+
+
 ## Star History
 
 <a href="https://www.star-history.com/?repos=askbbtsk%2Fpcl-lite&amp;type=date&amp;legend=top-left">

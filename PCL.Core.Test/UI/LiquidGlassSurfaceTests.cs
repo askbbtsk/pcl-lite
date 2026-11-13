@@ -18,7 +18,7 @@ public sealed class TahoeGlassSurfaceTests
     [STATestMethod]
     public void FrostUsesSmoothGaussianInsteadOfSeparatedShaderSamplesAndReleasesItsSource()
     {
-        WithWindow((_, _, backdrop, surface) =>
+        WithWindow((window, host, backdrop, surface) =>
         {
             surface.BlurRadius = 0;
             surface.RefractionStrength = 0;
@@ -30,17 +30,33 @@ public sealed class TahoeGlassSurfaceTests
             backdrop.Background = new DrawingBrush(tile) { TileMode = TileMode.Tile, ViewportUnits = BrushMappingMode.Absolute,
                 Viewport = new Rect(0, 0, 8, 8), Stretch = Stretch.Fill };
             surface.ForceCompatibility = true;
-            double Contrast(int frost)
+            double Contrast(int frost, bool disableBlur = false)
             {
                 surface.FrostRadius = frost;
                 surface.RefreshSampling();
+                window.UpdateLayout();
                 DrainDispatcher();
+                // Negative control: the metric must detect removing the actual
+                // compatibility blur, rather than merely accepting a tinted image.
+                var material = ReadField<Rectangle>(surface, "_surface");
+                var effect = material.Effect;
+                if (disableBlur) material.Effect = null;
                 var image = new System.Windows.Media.Imaging.RenderTargetBitmap(180, 60, 96, 96,
                     System.Windows.Media.PixelFormats.Pbgra32);
+                var origin = surface.TransformToAncestor(host).Transform(new Point());
                 var visual = new DrawingVisual();
+                // Crop in host coordinates. Sampling the surface directly uses
+                // descendant bounds (shadow + blur padding), stretching a different
+                // area for each frost radius and aliasing the stripe fixture.
                 using (var drawing = visual.RenderOpen())
-                    drawing.DrawRectangle(new VisualBrush(surface) { Stretch = Stretch.Fill }, null, new Rect(0, 0, 180, 60));
+                    drawing.DrawRectangle(new VisualBrush(host)
+                    {
+                        ViewboxUnits = BrushMappingMode.Absolute,
+                        Viewbox = new Rect(origin, surface.RenderSize),
+                        Stretch = Stretch.Fill
+                    }, null, new Rect(0, 0, 180, 60));
                 image.Render(visual);
+                if (disableBlur) material.Effect = effect;
                 var pixels = new byte[180 * 60 * 4]; image.CopyPixels(pixels, 180 * 4, 0);
                 double sum = 0;
                 for (int x = 30; x < 149; x++)
@@ -50,6 +66,9 @@ public sealed class TahoeGlassSurfaceTests
             double clear = Contrast(0), frosted = Contrast(8);
             Assert.IsTrue(clear > 20, $"The clear material must retain the stripe detail: {clear}, frosted: {frosted}, state: {surface.RenderStatus}");
             Assert.IsTrue(frosted < clear * .35, $"Frost must smooth the source: {clear} -> {frosted}");
+            double unblurred = Contrast(8, disableBlur: true);
+            Assert.IsTrue(unblurred > clear * .65,
+                $"Removing the blur must restore stripe detail: clear={clear}, frosted={frosted}, bypass={unblurred}");
             surface.ForceCompatibility = false;
             surface.RefreshSampling();
             DrainDispatcher();

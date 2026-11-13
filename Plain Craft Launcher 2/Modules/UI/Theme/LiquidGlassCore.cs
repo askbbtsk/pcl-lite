@@ -25,6 +25,9 @@ public static partial class LiquidGlassCore
     private static readonly Dictionary<string, object?> OriginalThemeResources = new();
 
     public static TahoeAppearance Appearance { get; } = new();
+    private static PCL.Core.UI.LiquidGlassThemePalette _palette =
+        PCL.Core.UI.LiquidGlassMaterial.ComputePalette(210d, 80d, 0d, false);
+    public static PCL.Core.UI.LiquidGlassThemePalette CurrentPalette => _palette;
     public static bool IsEnabled => PCL.Core.UI.LiquidGlassPerformance.IsEnabled(
         Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent)
         && CustomThemeRuntime.AllowsGlass;
@@ -97,6 +100,10 @@ public static partial class LiquidGlassCore
             Changed?.Invoke(null, EventArgs.Empty);
             if (IsEnabled)
             {
+                bool darkNow = ThemeManager.IsDarkMode;
+                var (hueNow, satNow, lightNow) = PCL.Core.UI.LiquidGlassMaterial.ResolveCurrentThemeHsl();
+                _palette = PCL.Core.UI.LiquidGlassMaterial.ComputePalette(
+                    hueNow, satNow, lightNow, darkNow, SystemParameters.HighContrast);
                 foreach (var surface in GlassSurfaces(window))
                 {
                     surface.BlurRadius = Profile.BlurRadius;
@@ -104,6 +111,9 @@ public static partial class LiquidGlassCore
                     surface.RefractionStrength = PCL.Core.UI.LiquidGlassMaterial.RefractionStrength(Config.Preference.TahoeGlass.RefractionStrength);
                     surface.Dispersion = Profile.Dispersion;
                     surface.HighlightStrength = Profile.Highlight;
+                    surface.IsDarkMode = darkNow;
+                    surface.DiffuseStrength = darkNow ? 0.14 : 0.17;
+                    surface.EdgeSharpness = 0.90;
                 }
             }
             window.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, () =>
@@ -158,8 +168,11 @@ public static partial class LiquidGlassCore
     private static void Apply(FormMain window)
     {
         bool dark = ThemeManager.IsDarkMode;
-        var foreground = new SolidColorBrush(SystemParameters.HighContrast ? SystemColors.WindowTextColor
-            : dark ? Color.FromRgb(244, 246, 251) : Color.FromRgb(29, 35, 44));
+        bool highContrast = SystemParameters.HighContrast;
+        var (hue, saturation, lightAdjust) = PCL.Core.UI.LiquidGlassMaterial.ResolveCurrentThemeHsl();
+        var palette = PCL.Core.UI.LiquidGlassMaterial.ComputePalette(hue, saturation, lightAdjust, dark, highContrast);
+        _palette = palette;
+        var foreground = new SolidColorBrush(highContrast ? SystemColors.WindowTextColor : palette.Text);
         foreground.Freeze();
         _desktopCapture!.SetInteractiveMove(_windowMoving);
         _desktopCapture.Apply(IsDesktopBackdropRequested);
@@ -168,24 +181,24 @@ public static partial class LiquidGlassCore
         window.TahoeDesktopImage.Visibility = IsDesktopBackdropRequested ? Visibility.Visible : Visibility.Collapsed;
         ThemeManager.RefreshBackground();
         ApplyOpacity(Config.Preference.Theme.WindowOpacity);
-        SetBrush(window, "TahoeText", dark ? "#F2F3F5" : "#252830");
-        SetBrush(window, "TahoeSecondaryText", dark ? "#B9BEC8" : "#5D626D");
-        SetBrush(window, "TahoeSidebarSection", dark ? "#16FFFFFF" : "#52FFFFFF");
-        SetBrush(window, "TahoeFieldSurface", dark ? "#343840" : "#FFFFFF");
-        SetBrush(window, "TahoeFieldBorder", dark ? "#60FFFFFF" : "#30000000");
-        SetBrush(window, "TahoeAccent", dark ? "#0A84FF" : "#007AFF");
-        SetBrush(window, "TahoeActionText", dark ? "#CDEBFF" : "#003B7A");
-        SetBrush(window, "ColorBrush1", dark ? "#F2F3F5" : "#202B36");
-        SetBrush(window, "ColorBrush2", dark ? "#60B9FF" : "#0065CE");
-        SetBrush(window, "ColorBrush3", dark ? "#80C8FF" : "#007AFF");
-        SetBrush(window, "ColorBrush4", dark ? "#9CD4FF" : "#368FE8");
-        SetBrush(window, "ColorBrush6", dark ? "#394F65" : "#D6E8F6");
-        SetBrush(window, "ColorBrush7", dark ? "#2B4257" : "#E2EFF7");
-        SetBrush(window, "ColorBrush8", dark ? "#243B4F" : "#EBF3F8");
-        SetBrush(window, "ColorBrushGray1", dark ? "#E1E8EF" : "#30404F");
-        SetBrush(window, "ColorBrushGray2", dark ? "#CBD5DF" : "#435563");
-        SetBrush(window, "ColorBrushGray3", dark ? "#B7C6D3" : "#506675");
-        if (SystemParameters.HighContrast)
+        SetBrush(window, "TahoeText", palette.Text);
+        SetBrush(window, "TahoeSecondaryText", palette.SecondaryText);
+        SetBrush(window, "TahoeSidebarSection", palette.SidebarSection);
+        SetBrush(window, "TahoeFieldSurface", palette.FieldSurface);
+        SetBrush(window, "TahoeFieldBorder", palette.FieldBorder);
+        SetBrush(window, "TahoeAccent", palette.Accent);
+        SetBrush(window, "TahoeActionText", palette.ActionText);
+        SetBrush(window, "ColorBrush1", palette.Brush1);
+        SetBrush(window, "ColorBrush2", palette.Brush2);
+        SetBrush(window, "ColorBrush3", palette.Brush3);
+        SetBrush(window, "ColorBrush4", palette.Brush4);
+        SetBrush(window, "ColorBrush6", palette.Brush6);
+        SetBrush(window, "ColorBrush7", palette.Brush7);
+        SetBrush(window, "ColorBrush8", palette.Brush8);
+        SetBrush(window, "ColorBrushGray1", palette.Gray1);
+        SetBrush(window, "ColorBrushGray2", palette.Gray2);
+        SetBrush(window, "ColorBrushGray3", palette.Gray3);
+        if (highContrast)
         {
             foreach (string key in new[] { "TahoeText", "TahoeSecondaryText", "TahoeActionText",
                          "ColorBrush1", "ColorBrushGray1", "ColorBrushGray2", "ColorBrushGray3" })
@@ -215,10 +228,10 @@ public static partial class LiquidGlassCore
         _windowClip?.SetEnabled(true);
         UpdateSidebarClip(window);
 
-        ApplySurface(window.TahoeToolbar, dark, .10);
-        ApplySurface(window.TahoeWindowControls, dark, .10);
-        ApplySurface(window.TahoeSidebar, dark, .20);
-        if (IsDesktopBackdropRequested) ApplySurface(window.TahoeWindowGlass, dark, .10);
+        ApplySurface(window.TahoeToolbar, palette.ToolbarTint, dark, dark ? .14 : .18, dark ? .26 : .28);
+        ApplySurface(window.TahoeWindowControls, palette.ToolbarTint, dark, dark ? .14 : .18, dark ? .26 : .28);
+        ApplySurface(window.TahoeSidebar, palette.SidebarTint, dark, dark ? .20 : .22, dark ? .32 : .36);
+        if (IsDesktopBackdropRequested) ApplySurface(window.TahoeWindowGlass, palette.WindowTint, dark, .10, dark ? .26 : .30);
         else { window.TahoeWindowGlass.Visibility = Visibility.Collapsed; window.TahoeWindowGlass.BackdropSource = null; }
         UpdateTitleGlass(window);
         window.ShapeTitleLogo.Stroke = foreground;
@@ -234,13 +247,17 @@ public static partial class LiquidGlassCore
         }
     }
 
-    private static void ApplySurface(TahoeGlassSurface surface, bool dark, double opacity)
+    private static void ApplySurface(
+        TahoeGlassSurface surface, Color tintColor, bool dark, double wallpaperOpacity, double desktopOpacity)
     {
         surface.BackdropSource = BackdropSource;
-        surface.TintColor = SystemParameters.HighContrast ? SystemColors.WindowColor : PCL.Core.UI.LiquidGlassMaterial.Tint(dark);
+        surface.TintColor = SystemParameters.HighContrast ? SystemColors.WindowColor : tintColor;
         surface.TintOpacity = SystemParameters.HighContrast ? 1
-            : PCL.Core.UI.LiquidGlassMaterial.Opacity(dark, IsDesktopBackdropRequested, opacity);
+            : PCL.Core.UI.LiquidGlassMaterial.SurfaceWashOpacity(dark, IsDesktopBackdropRequested, wallpaperOpacity, desktopOpacity);
         surface.ForceCompatibility = SystemParameters.HighContrast;
+        surface.IsDarkMode = dark;
+        surface.DiffuseStrength = dark ? 0.14 : 0.17;
+        surface.EdgeSharpness = 0.90;
         surface.BlurRadius = Profile.BlurRadius;
         surface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
         surface.Dispersion = Profile.Dispersion;
@@ -295,9 +312,9 @@ public static partial class LiquidGlassCore
     private static IEnumerable<MyIconButton> TitleIcons(FormMain window) =>
         [window.BtnTitleClose, window.BtnTitleMin, window.BtnTitleHelp, window.BtnTitleInner, window.BtnTitleNavOverflow];
 
-    private static void SetBrush(FormMain window, string key, string color)
+    private static void SetBrush(FormMain window, string key, Color color)
     {
-        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
+        var brush = new SolidColorBrush(color);
         brush.Freeze();
         SetResource(window, key, brush);
     }

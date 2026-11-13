@@ -39,22 +39,22 @@ public partial class MyComboBox
         _tahoeComboApplied = true;
         ModAnimation.AniStop("MyComboBox Color " + Uuid);
         bool contrast = SystemParameters.HighContrast;
-        bool dark = ThemeManager.IsDarkMode;
         bool focus = IsEnabled && (IsKeyboardFocusWithin || IsDropDownOpen);
-        Foreground = new SolidColorBrush(!IsEnabled
-            ? contrast ? SystemColors.GrayTextColor : dark ? Color.FromRgb(151, 157, 167) : Color.FromRgb(112, 116, 124)
-            : contrast ? SystemColors.WindowTextColor
-            : dark ? Color.FromRgb(242, 243, 245) : Color.FromRgb(37, 40, 48));
+        var palette = LiquidGlassCore.CurrentPalette;
+        Foreground = new SolidColorBrush(contrast
+            ? IsEnabled ? SystemColors.WindowTextColor : SystemColors.GrayTextColor
+            : IsEnabled ? palette.Text : palette.SecondaryText);
         Background = new SolidColorBrush(contrast ? SystemColors.WindowColor
-            : dark ? Color.FromArgb(66, 12, 20, 30) : Color.FromArgb(focus ? (byte)78 : (byte)46, 255, 255, 255));
+            : focus ? palette.FieldFocusSurface : palette.FieldSurface);
         if (Template?.FindName("border", this) is Border border)
         {
             border.CornerRadius = new CornerRadius(10);
             border.BorderBrush = new SolidColorBrush(!IsEnabled
-                ? contrast ? SystemColors.GrayTextColor : dark ? Color.FromArgb(48, 255, 255, 255) : Color.FromArgb(24, 0, 0, 0)
+                ? contrast ? SystemColors.GrayTextColor
+                    : Color.FromArgb((byte)(palette.FieldBorder.A / 2), palette.FieldBorder.R, palette.FieldBorder.G, palette.FieldBorder.B)
                 : contrast ? SystemColors.WindowTextColor
-                : focus ? dark ? Color.FromRgb(10, 132, 255) : Color.FromRgb(0, 122, 255)
-                : dark ? Color.FromArgb(96, 255, 255, 255) : Color.FromArgb(48, 0, 0, 0));
+                : focus ? palette.Accent
+                : palette.FieldBorder);
         }
         return true;
     }

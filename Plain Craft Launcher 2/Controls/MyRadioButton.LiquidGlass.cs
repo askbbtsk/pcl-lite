@@ -34,9 +34,9 @@ public partial class MyRadioButton
                 ModAnimation.AniStop("MyRadioButton Color " + Uuid);
             }
 
-            // A stable capsule outline belongs to the navigation chrome, not the pointer highlight.
+            // A subtle top-lit capsule sits fused inside the toolbar glass rather than fighting its rim.
             SetCurrentValue(CornerRadiusProperty, new CornerRadius(13.5));
-            SetCurrentValue(BorderThicknessProperty, new Thickness(0));
+            SetCurrentValue(BorderThicknessProperty, new Thickness(.5));
             LabText.SetCurrentValue(TextBlock.FontWeightProperty, Checked ? FontWeights.SemiBold : FontWeights.Normal);
         }
         else if (_tahoeChromeApplied)
@@ -51,27 +51,21 @@ public partial class MyRadioButton
 
     private void RefreshTahoeColor(bool animate)
     {
-        var dark = ThemeManager.IsDarkMode;
-        var foreground = Checked
-            ? dark ? Color.FromRgb(226, 246, 255) : Color.FromRgb(0, 61, 115)
-            : dark ? Color.FromRgb(225, 235, 243) : Color.FromRgb(35, 50, 63);
+        bool dark = ThemeManager.IsDarkMode;
+        bool contrast = SystemParameters.HighContrast;
+        var palette = LiquidGlassCore.CurrentPalette;
+        var foreground = contrast
+            ? Checked ? SystemColors.HighlightTextColor : SystemColors.WindowTextColor
+            : Checked ? palette.ActionText : palette.Text;
         LabText.FontWeight = Checked ? FontWeights.SemiBold : FontWeights.Normal;
-        var background = Checked
-            ? dark ? Color.FromArgb(50, 170, 215, 250) : Color.FromArgb(150, 255, 255, 255)
-            : isMouseDown
-                ? dark ? Color.FromArgb(38, 255, 255, 255) : Color.FromArgb(188, 255, 255, 255)
-                : IsMouseOver
-                    ? dark ? Color.FromArgb(22, 255, 255, 255) : Color.FromArgb(102, 255, 255, 255)
-                    : Colors.Transparent;
-        if (SystemParameters.HighContrast)
-        {
-            foreground = Checked ? SystemColors.HighlightTextColor : SystemColors.WindowTextColor;
-            background = Checked ? SystemColors.HighlightColor : SystemColors.WindowColor;
-        }
+        var background = contrast
+            ? Checked ? SystemColors.HighlightColor : SystemColors.WindowColor
+            : Checked ? palette.NavCheckedFill
+            : isMouseDown ? palette.NavPressFill
+            : IsMouseOver ? palette.NavHoverFill
+            : Colors.Transparent;
 
-        SetCurrentValue(BorderBrushProperty, new SolidColorBrush(Checked
-            ? dark ? Color.FromArgb(50, 255, 255, 255) : Color.FromArgb(210, 255, 255, 255)
-            : Colors.Transparent));
+        SetCurrentValue(BorderBrushProperty, PCL.Core.UI.LiquidGlassMaterial.NavigationPillBorder(dark, Checked, contrast));
 
         // All states use the same readable foreground; selection is expressed by the material.
         var foregroundBrush = new SolidColorBrush(foreground);

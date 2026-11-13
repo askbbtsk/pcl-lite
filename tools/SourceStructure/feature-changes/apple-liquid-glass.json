@@ -1,0 +1,99 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/LiquidGlassEffect.cs",
+    "Sha256": "74239145D212F6BDC78B0E778A0FC95A17B887A8BC10100BC1B0324D442C83DE",
+    "Members": [
+      "PCL.TahoeGlassEffect::ConstructorDeclaration::.ctor()"
+    ],
+    "Reason": "Initialize dual-sampler FrostedBackdrop (s1) plus shader Tint (c6) and Material (c7) inputs for Apple-style dual-zone optical refraction while keeping c0-c5 compatibility intact."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/LiquidGlassSurface.cs",
+    "Sha256": "7A753F56F83BDE476C1BCF1DFBC51D458722A5AF04FE58DDBF4A84469AC29640",
+    "Members": [
+      "PCL.TahoeGlassSurface::FieldDeclaration::_rim",
+      "PCL.TahoeGlassSurface::FieldDeclaration::_shadow",
+      "PCL.TahoeGlassSurface::MethodDeclaration::RefreshSampling()",
+      "PCL.TahoeGlassSurface::MethodDeclaration::ReleaseBrushes()",
+      "PCL.TahoeGlassSurface::MethodDeclaration::UpdateChrome(Size size, double radius)"
+    ],
+    "Reason": "Drive dual-sampler s0/s1 inputs, release both samplers on unload/FrostRadius=0/compatibility fallback, and coordinate subtle corner-lit hairline rims with shader Screen glints without chalky outlines."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.LiquidGlass.cs",
+    "Sha256": "1AC7C957A081197DAF772AFA1BBAC640416DD56C48FFD89542ED444B0E1EA748",
+    "Members": [
+      "PCL.MyButton::MethodDeclaration::ApplyTahoeButtonTheme()",
+      "PCL.MyButton::MethodDeclaration::RefreshTahoeButtonAppearance()"
+    ],
+    "Reason": "Harmonize primary, danger, and secondary button washes, focus ring, foreground ink, and optical glass parameters with LiquidGlassCore.CurrentPalette while preserving custom template and keyboard/motion restoration."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyCard.LiquidGlass.cs",
+    "Sha256": "A29D451B2D193D1097A9AEB91E2200FA7BEE2A16F7771E45E8587BA100944FE1",
+    "Members": [
+      "PCL.MyCard::MethodDeclaration::ApplyTahoeCard()",
+      "PCL.MyCard::MethodDeclaration::TahoeContentBrush()"
+    ],
+    "Reason": "Use translucent theme-tinted CardSurface and hairline CardBorder from LiquidGlassCore.CurrentPalette while preserving custom theme overrides, high contrast, and non-glass restoration."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyComboBox.LiquidGlass.cs",
+    "Sha256": "92CCAE37A476CCBEA43BDD44383B98F3C857C6FEE33F389B996DCAC533DF1225",
+    "Members": [
+      "PCL.MyComboBox::MethodDeclaration::RefreshTahoeComboChrome()"
+    ],
+    "Reason": "Derive ComboBox field fill, focus border, and typography colors from LiquidGlassCore.CurrentPalette while keeping custom template guards and normal-mode restoration intact."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyListItem.LiquidGlass.cs",
+    "Sha256": "F9381CD94684B412928F2341B1B0990BEC029F51EEF2D525BC7ADF7FACB72701",
+    "Members": [
+      "PCL.MyListItem::MethodDeclaration::RefreshTahoeNavigation(bool animate)"
+    ],
+    "Reason": "Fuse navigation pills with the surrounding sidebar slab using concentric 12px corners, theme-harmonized washes, and subtle top-lit catchlight hairlines via LiquidGlassMaterial.NavigationPillBorder."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyRadioButton.LiquidGlass.cs",
+    "Sha256": "6C5EB9D95EE62A2322F2F5A0D7E3D7FA9EE9AE2288C013B11DAF746DFE9CA2B2",
+    "Members": [
+      "PCL.MyRadioButton::MethodDeclaration::ApplyTahoeChrome()",
+      "PCL.MyRadioButton::MethodDeclaration::RefreshTahoeColor(bool animate)"
+    ],
+    "Reason": "Synchronize navigation pill capsules and top-lit hairline rims with LiquidGlassCore.CurrentPalette and LiquidGlassMaterial.NavigationPillBorder while preserving fallback and high contrast."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyTextBox.LiquidGlass.cs",
+    "Sha256": "B8581F43398555AD84715C44F4C44594D1D31280E57764193AE168E8612D01BD",
+    "Members": [
+      "PCL.MyTextBox::MethodDeclaration::RefreshTahoeTextBoxChrome()"
+    ],
+    "Reason": "Replace hardcoded blue focus border and opaque/dark fills with LiquidGlassCore.CurrentPalette tokens while preserving validation states and restoration."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.WindowInteraction.cs",
+    "Sha256": "9AF05F9F431C40666580A97784316F5B389DF201C8DC17BC0DCC22B628B3DF26",
+    "Members": [],
+    "RemovedMembers": [
+      "PCL.LiquidGlassCore::MethodDeclaration::ApplySurface(TahoeGlassSurface surface, bool dark, double opacity)",
+      "PCL.LiquidGlassCore::MethodDeclaration::SetBrush(FormMain window, string key, string color)"
+    ],
+    "Reason": "ApplySurface and SetBrush moved to palette-aware overloads using LiquidGlassThemePalette colors and dual-zone optical parameters."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
+    "Sha256": "56D150632B99F92933FCC040A6C5140D243E1367E34F04755D43500680AA6AAD",
+    "Members": [
+      "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::OnClosed(object? sender, EventArgs e)",
+      "PCL.LiquidGlassCore::MethodDeclaration::Refresh()",
+      "PCL.LiquidGlassCore::MethodDeclaration::Restore(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::SetResource(FormMain window, string key, object value)",
+      "PCL.LiquidGlassCore::PropertyDeclaration::BackdropSource",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsDesktopBackdropRequested",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsEnabled"
+    ],
+    "Reason": "Compute CurrentPalette from active PCL-Lite theme HSL, publish unified theme resources, calibrate desktop/wallpaper surface washes, and propagate IsDarkMode, DiffuseStrength, and EdgeSharpness across surfaces."
+  }
+]

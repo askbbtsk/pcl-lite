@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using PCL.Core.App;
 
 namespace PCL;
 
@@ -196,30 +197,41 @@ public partial class MyButton
         bool primary = _ColorType == ColorState.Highlight;
         bool danger = _ColorType == ColorState.Red;
         bool hover = IsMouseOver && IsEnabled;
+        var palette = LiquidGlassCore.CurrentPalette;
         LabText.FontWeight = primary ? FontWeights.SemiBold : _tahoeOriginalFontWeight;
-        // Keep the sampled material visible in every action. The semantic accent
-        // is a translucent wash, not an opaque paint layer over the shader.
+        // Keep the optical lens perimeter visible on every action button while tinting primary actions like jewel glass.
         _tahoeSurface.Visibility = Visibility.Visible;
         _tahoeSurface.BackdropSource = TahoeThemeManager.BackdropSource;
         _tahoeBody!.Visibility = _tahoeWash!.Visibility = _tahoeHighlight!.Visibility = Visibility.Visible;
         _tahoeBody.Background = new SolidColorBrush(highContrast ? SystemColors.WindowColor
-            : primary ? Color.FromArgb(hover ? (byte)64 : (byte)42, 0, 122, 255)
+            : primary ? (hover ? palette.PrimaryButtonHoverFill : palette.PrimaryButtonFill)
+            : danger ? Color.FromArgb(hover ? (byte)54 : (byte)24, 224, 58, 52)
+            : hover ? Color.FromArgb(dark ? (byte)24 : (byte)64, 255, 255, 255)
             : Colors.Transparent);
         // The material owns its rim; avoid a second outline covering the bevel.
         _tahoeBody.BorderBrush = highContrast ? SystemColors.WindowTextBrush : Brushes.Transparent;
         _tahoeSurface.ForceCompatibility = highContrast;
-        _tahoeSurface.TintColor = highContrast ? SystemColors.WindowColor : PCL.Core.UI.LiquidGlassMaterial.Tint(dark);
-        _tahoeSurface.TintOpacity = highContrast ? 1 : PCL.Core.UI.LiquidGlassMaterial.Opacity(dark,
-            TahoeThemeManager.IsDesktopBackdropRequested, IsMouseOver && IsEnabled ? 0.14 : 0.10);
+        _tahoeSurface.IsDarkMode = dark;
+        _tahoeSurface.DiffuseStrength = dark ? 0.14 : 0.17;
+        _tahoeSurface.EdgeSharpness = 0.90;
+        _tahoeSurface.BlurRadius = LiquidGlassCore.Profile.BlurRadius;
+        _tahoeSurface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);
+        _tahoeSurface.RefractionStrength = PCL.Core.UI.LiquidGlassMaterial.RefractionStrength(Config.Preference.TahoeGlass.RefractionStrength);
+        _tahoeSurface.Dispersion = LiquidGlassCore.Profile.Dispersion;
+        _tahoeSurface.HighlightStrength = LiquidGlassCore.Profile.Highlight;
+        _tahoeSurface.TintColor = highContrast ? SystemColors.WindowColor : palette.ButtonTint;
+        _tahoeSurface.TintOpacity = highContrast ? 1 : PCL.Core.UI.LiquidGlassMaterial.SurfaceWashOpacity(dark,
+            TahoeThemeManager.IsDesktopBackdropRequested, hover ? 0.16 : 0.12, hover ? 0.28 : 0.22);
         PanButtonVisual.Opacity = _tahoeOriginalOpacity * (IsEnabled || highContrast ? 1 : 0.5);
         _tahoeFocus!.Visibility = IsKeyboardFocusWithin && IsEnabled ? Visibility.Visible : Visibility.Collapsed;
-        _tahoeFocus.SetResourceReference(BorderBrushProperty, highContrast ? SystemColors.HighlightBrushKey : "ColorBrush2");
+        if (highContrast) _tahoeFocus.SetResourceReference(BorderBrushProperty, SystemColors.HighlightBrushKey);
+        else _tahoeFocus.BorderBrush = new SolidColorBrush(palette.Accent);
         _tahoeContrastForeground = true;
         LabText.Foreground = new SolidColorBrush(highContrast
             ? IsEnabled ? SystemColors.WindowTextColor : SystemColors.GrayTextColor
-            : primary ? dark ? Color.FromRgb(205, 235, 255) : Color.FromRgb(0, 59, 122)
+            : primary ? palette.PrimaryButtonText
             : danger ? dark ? Color.FromRgb(255, 115, 110) : Color.FromRgb(190, 45, 40)
-            : dark ? Color.FromRgb(242, 243, 245) : Color.FromRgb(37, 40, 48));
+            : palette.Text);
         if (!IsEnabled)
         {
             isMouseDown = false;

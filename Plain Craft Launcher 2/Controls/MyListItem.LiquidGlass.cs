@@ -71,7 +71,7 @@ public partial class MyListItem
             _tahoeNavigationChrome ??= new Border
             {
                 Margin = new Thickness(16, 2, 14, 2),
-                CornerRadius = new CornerRadius(14),
+                CornerRadius = new CornerRadius(12),
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(.5),
                 IsHitTestVisible = false,
@@ -93,22 +93,19 @@ public partial class MyListItem
 
         ModAnimation.AniStop("MyListItem Checked " + Uuid);
         bool dark = ThemeManager.IsDarkMode;
+        bool contrast = SystemParameters.HighContrast;
         bool hover = IsMouseOver && isMouseOverAnimationEnabled;
-        var color = Checked
-            ? dark ? Color.FromArgb(50, 160, 215, 255) : Color.FromArgb(145, 255, 255, 255)
-            : hover
-                ? dark ? Color.FromArgb(isMouseDown ? (byte)35 : (byte)19, 255, 255, 255)
-                    : Color.FromArgb(isMouseDown ? (byte)160 : (byte)90, 255, 255, 255)
-                : Colors.Transparent;
-        if (SystemParameters.HighContrast)
-            color = Checked ? SystemColors.HighlightColor : SystemColors.WindowColor;
-        SetCurrentValue(ForegroundProperty, new SolidColorBrush(SystemParameters.HighContrast
-            ? Checked ? SystemColors.HighlightTextColor : SystemColors.WindowTextColor : dark
-            ? Color.FromRgb(242, 244, 248) : Color.FromRgb(33, 39, 48)));
+        var palette = LiquidGlassCore.CurrentPalette;
+        var color = contrast
+            ? Checked ? SystemColors.HighlightColor : SystemColors.WindowColor
+            : Checked ? palette.NavCheckedFill
+            : hover ? (isMouseDown ? palette.NavPressFill : palette.NavHoverFill)
+            : Colors.Transparent;
+        SetCurrentValue(ForegroundProperty, new SolidColorBrush(contrast
+            ? Checked ? SystemColors.HighlightTextColor : SystemColors.WindowTextColor
+            : Checked ? palette.ActionText : palette.Text));
         LabTitle.SetCurrentValue(TextBlock.FontWeightProperty, Checked ? FontWeights.SemiBold : FontWeights.Normal);
-        _tahoeNavigationChrome!.BorderBrush = new SolidColorBrush(Checked
-            ? dark ? Color.FromArgb(35, 255, 255, 255) : Color.FromArgb(190, 255, 255, 255)
-            : Colors.Transparent);
+        _tahoeNavigationChrome!.BorderBrush = PCL.Core.UI.LiquidGlassMaterial.NavigationPillBorder(dark, Checked, contrast);
 
         if (buttonStack != null)
         {

@@ -58,19 +58,19 @@ public partial class MyTextBox
         bool contrast = SystemParameters.HighContrast;
         bool dark = ThemeManager.IsDarkMode;
         bool invalid = IsEnabled && !IsValidated && isTextChanged;
+        bool focus = IsEnabled && IsKeyboardFocusWithin;
+        var palette = LiquidGlassCore.CurrentPalette;
         SetCurrentValue(CornerRadiusProperty, new CornerRadius(10));
         Foreground = new SolidColorBrush(contrast
             ? IsEnabled ? SystemColors.WindowTextColor : SystemColors.GrayTextColor
-            : !IsEnabled ? dark ? Color.FromRgb(147, 158, 171) : Color.FromRgb(95, 111, 124)
-            : dark ? Color.FromRgb(242, 243, 245) : Color.FromRgb(37, 40, 48));
+            : IsEnabled ? palette.Text : palette.SecondaryText);
         BorderBrush = new SolidColorBrush(contrast ? SystemColors.WindowTextColor
             : invalid ? dark ? Color.FromRgb(255, 115, 110) : Color.FromRgb(190, 45, 40)
-            : IsKeyboardFocusWithin ? dark ? Color.FromRgb(10, 132, 255) : Color.FromRgb(0, 122, 255)
-            : dark ? Color.FromArgb(96, 255, 255, 255) : Color.FromArgb(48, 0, 0, 0));
+            : focus ? palette.Accent
+            : palette.FieldBorder);
         Background = !HasBackground ? Brushes.Transparent : new SolidColorBrush(contrast ? SystemColors.WindowColor
             : invalid ? dark ? Color.FromArgb(55, 140, 35, 30) : Color.FromArgb(32, 255, 90, 80)
-            : dark ? Color.FromArgb(66, 12, 20, 30)
-            : Color.FromArgb(IsKeyboardFocusWithin ? (byte)78 : (byte)46, 255, 255, 255));
+            : focus ? palette.FieldFocusSurface : palette.FieldSurface);
         return true;
     }
 }

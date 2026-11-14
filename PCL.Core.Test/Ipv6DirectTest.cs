@@ -260,6 +260,11 @@ public class Ipv6DirectTest
         await using var guest = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
 
         Assert.IsTrue(host.TryAcceptGuestAck(guest.AckCode, out var ackMsg), ackMsg);
+        StringAssert.Contains(ackMsg, "好友 #1");
+        Assert.IsFalse(ackMsg.Contains("::1", StringComparison.Ordinal));
+        var initialPeers = host.GetPeers();
+        Assert.AreEqual(1, initialPeers.Count);
+        Assert.AreEqual(1, initialPeers[0].VirtualId);
         while (!guest.IsConnected && !cts.IsCancellationRequested)
             await Task.Delay(25, cts.Token);
         Assert.IsTrue(guest.IsConnected);

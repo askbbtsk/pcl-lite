@@ -109,7 +109,7 @@ public partial class PageToolsDirectLink
                 ModMain.frmLinkLeft.UpdateSidebarStatus(
                     false,
                     Lang.Text("Link.Sidebar.GuestConnecting"),
-                    $"[{_guestSession.HostEndpoint.Address}]:{_guestSession.HostEndpoint.Port}");
+                    "房主 #1 · 正在建立直连通道");
             }
             return;
         }
@@ -277,15 +277,16 @@ public partial class PageToolsDirectLink
         var hasPunching = false;
         var lines = peers.Select(p =>
         {
+            var peerLabel = p.VirtualId > 0 ? $"好友 #{p.VirtualId}" : "好友";
             if (p.State == DirectPeerState.Connected)
-                return $"• [{p.Endpoint.Address}]:{p.Endpoint.Port}  已连上 · {p.RttMs} ms{(p.IsDirectNoAck ? "（直连）" : "")}";
+                return $"• {peerLabel}  已连上 · {p.RttMs} ms{(p.IsDirectNoAck ? "（直连）" : "")}";
 
             hasPunching = true;
             var elapsedSec = p.AddedUtc == default ? 0 : Math.Max(0, (int)(now - p.AddedUtc).TotalSeconds);
             var status = elapsedSec >= 8
                 ? $"仍在打洞（已尝试 {elapsedSec}s，请检查双方 Windows 防火墙及路由器 IPv6 入站放行，并在日志查看报错详情）"
                 : $"正在打洞，已尝试 {elapsedSec}s…";
-            return $"• [{p.Endpoint.Address}]:{p.Endpoint.Port}  {status}";
+            return $"• {peerLabel}  {status}";
         });
         LabHostPeers.Text = string.Join(Environment.NewLine, lines);
 

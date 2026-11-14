@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using PCL.Core.App.Localization;
 using PCL.Core.Link.Ipv6Direct;
 using PCL.Core.UI;
@@ -149,7 +150,7 @@ public partial class PageToolsDirectLink
         }, ct), ct);
     }
 
-    private void BtnRetryIpv6_Click(object sender, RoutedEventArgs e)
+    private void BtnRetryIpv6_Click(object sender, MouseButtonEventArgs e)
     {
         RefreshIpv6ByUser();
     }
@@ -163,7 +164,7 @@ public partial class PageToolsDirectLink
         }
     }
 
-    private async void BtnHostToggle_Click(object sender, RoutedEventArgs e)
+    private async void BtnHostToggle_Click(object sender, MouseButtonEventArgs e)
     {
         if (_hostSession is not null)
         {
@@ -254,14 +255,14 @@ public partial class PageToolsDirectLink
         LabHostPeers.Text = string.Join(Environment.NewLine, lines);
     }
 
-    private void BtnCopyInvite_Click(object sender, RoutedEventArgs e)
+    private void BtnCopyInvite_Click(object sender, MouseButtonEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(TextInviteCode.Text)) return;
         TrySetClipboard(TextInviteCode.Text);
         HintService.Hint("邀请码已复制！", HintType.Success);
     }
 
-    private void BtnAcceptAck_Click(object sender, RoutedEventArgs e)
+    private void BtnAcceptAck_Click(object sender, MouseButtonEventArgs e)
     {
         if (_hostSession is null)
         {
@@ -292,7 +293,7 @@ public partial class PageToolsDirectLink
         }
     }
 
-    private async void BtnGuestToggle_Click(object sender, RoutedEventArgs e)
+    private async void BtnGuestToggle_Click(object sender, MouseButtonEventArgs e)
     {
         if (_guestSession is not null)
         {
@@ -416,14 +417,14 @@ public partial class PageToolsDirectLink
         }
     }
 
-    private void BtnCopyGuestAck_Click(object sender, RoutedEventArgs e)
+    private void BtnCopyGuestAck_Click(object sender, MouseButtonEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(TextGuestAckCode.Text)) return;
         TrySetClipboard(TextGuestAckCode.Text);
         HintService.Hint("回执码已复制，发给房主放行就行！", HintType.Success);
     }
 
-    private void BtnCopyLocalAddr_Click(object sender, RoutedEventArgs e)
+    private void BtnCopyLocalAddr_Click(object sender, MouseButtonEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(TextLocalAddr.Text)) return;
         TrySetClipboard(TextLocalAddr.Text);

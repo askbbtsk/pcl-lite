@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using PCL.Core.App.Localization;
 
@@ -73,10 +74,17 @@ public partial class PageLinkLeft
     {
         if (pageID == id) return;
         Select(id, false);
+        if (ModMain.frmMain.pageCurrent.page == FormMain.PageType.Link)
+        {
+            pageID = id;
+            ModMain.frmToolsDirectLink ??= new PageToolsDirectLink();
+            ModMain.frmToolsDirectLink.SetMode(id);
+            return;
+        }
         ModMain.frmMain.PageChange(FormMain.PageType.Link, id);
     }
 
-    private void BtnRefreshNet_Click(object sender, RoutedEventArgs e)
+    private void BtnRefreshNet_Click(object sender, MouseButtonEventArgs e)
     {
         ModMain.frmToolsDirectLink ??= new PageToolsDirectLink();
         ModMain.frmToolsDirectLink.RefreshIpv6ByUser();

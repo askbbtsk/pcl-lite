@@ -18,7 +18,9 @@ internal static class Program
         foreach (string path in new[]
         {
             "Plain Craft Launcher 2/FormMain.xaml",
-            "Plain Craft Launcher 2/Controls/CommandPalette.xaml"
+            "Plain Craft Launcher 2/Controls/CommandPalette.xaml",
+            "Plain Craft Launcher 2/Pages/PageTools/PageLinkLeft.xaml",
+            "Plain Craft Launcher 2/Pages/PageTools/PageToolsDirectLink.xaml"
         })
         {
             var document = XDocument.Load(path, LoadOptions.SetLineInfo);

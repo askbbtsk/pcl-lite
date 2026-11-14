@@ -18,6 +18,7 @@ on:
   pull_request:
     paths-ignore: *ignored
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   ui_smoke:

@@ -661,6 +661,11 @@ public partial class FormMain
         /// </summary>
         ToolsImport = 4,
 
+        /// <summary>
+        ///     IPv6 离线邀请码直连联机。
+        /// </summary>
+        ToolsDirectLink = 5,
+
         BedrockDownload = 0,
         BedrockLaunch = 1,
 

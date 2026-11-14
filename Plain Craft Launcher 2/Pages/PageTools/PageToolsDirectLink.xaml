@@ -1,0 +1,129 @@
+<local:MyPageRight x:Class="PCL.PageToolsDirectLink"
+                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:local="clr-namespace:PCL"
+                   PanScroll="{Binding ElementName=PanBack}">
+    <local:MyScrollViewer x:Name="PanBack" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel x:Name="PanMain" Margin="25,10">
+
+            <!-- 网络环境检测卡片 -->
+            <local:MyCard Margin="0,15,0,15" Title="{DynamicResource Tools.DirectLink.EnvTitle}">
+                <StackPanel Margin="25,40,25,20">
+                    <TextBlock Text="{DynamicResource Tools.DirectLink.EnvDesc}" TextWrapping="Wrap" LineHeight="19" />
+                    <TextBlock x:Name="LabIpv6Status" Margin="0,10,0,0" TextWrapping="Wrap" FontWeight="SemiBold"
+                               Text="正在检测本机公网 IPv6 地址…" />
+                    <WrapPanel Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnRefreshIpv6" MinWidth="130" Height="35"
+                                        Text="{DynamicResource Tools.DirectLink.RefreshEnv}"
+                                        Click="BtnRefreshIpv6_Click" />
+                    </WrapPanel>
+                </StackPanel>
+            </local:MyCard>
+
+            <!-- 我是房主 -->
+            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Tools.DirectLink.HostTitle}">
+                <StackPanel Margin="25,40,25,20">
+                    <TextBlock Text="{DynamicResource Tools.DirectLink.HostPort}" TextWrapping="Wrap" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <local:MyTextBox x:Name="TextHostPort" Grid.Column="0" Text="25565"
+                                         TextChanged="TextHostPort_TextChanged" />
+                        <TextBlock x:Name="LabLanDetected" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0"
+                                   Opacity="0.72" TextWrapping="Wrap"
+                                   Text="等待 Minecraft“对局域网开放”广播，或手动填写端口号。" />
+                    </Grid>
+
+                    <WrapPanel Margin="0,14,0,0">
+                        <local:MyButton x:Name="BtnHostToggle" MinWidth="180" Height="35" ColorType="Highlight"
+                                        Text="{DynamicResource Tools.DirectLink.HostStart}"
+                                        Click="BtnHostToggle_Click" />
+                    </WrapPanel>
+
+                    <StackPanel x:Name="PanHostActive" Margin="0,14,0,0" Visibility="Collapsed">
+                        <TextBlock Text="{DynamicResource Tools.DirectLink.InviteCodeLabel}" TextWrapping="Wrap" />
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <local:MyTextBox x:Name="TextInviteCode" Grid.Column="0" IsReadOnly="True" />
+                            <local:MyButton x:Name="BtnCopyInvite" Grid.Column="1" MinWidth="80" Height="35" Margin="10,0,0,0"
+                                            Text="{DynamicResource Tools.DirectLink.Copy}"
+                                            Click="BtnCopyInvite_Click" />
+                        </Grid>
+
+                        <TextBlock Margin="0,14,0,0" Text="{DynamicResource Tools.DirectLink.AckInputLabel}" TextWrapping="Wrap" />
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <local:MyTextBox x:Name="TextHostAckInput" Grid.Column="0" HintText="粘贴好友发来的 ACK6-..." />
+                            <local:MyButton x:Name="BtnAcceptAck" Grid.Column="1" MinWidth="100" Height="35" Margin="10,0,0,0"
+                                            Text="{DynamicResource Tools.DirectLink.AcceptAck}"
+                                            Click="BtnAcceptAck_Click" />
+                        </Grid>
+
+                        <TextBlock x:Name="LabHostPeers" Margin="0,12,0,0" TextWrapping="Wrap" Opacity="0.82"
+                                   Text="尚未有好友连接。" />
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
+
+            <!-- 我是房客 -->
+            <local:MyCard Margin="0,0,0,20" Title="{DynamicResource Tools.DirectLink.GuestTitle}">
+                <StackPanel Margin="25,40,25,20">
+                    <TextBlock Text="{DynamicResource Tools.DirectLink.GuestInviteLabel}" TextWrapping="Wrap" />
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <local:MyTextBox x:Name="TextGuestInviteInput" Grid.Column="0" HintText="粘贴房主的 PCL6-..." />
+                        <local:MyButton x:Name="BtnGuestToggle" Grid.Column="1" MinWidth="105" Height="35" Margin="10,0,0,0"
+                                        ColorType="Highlight"
+                                        Text="{DynamicResource Tools.DirectLink.GuestConnect}"
+                                        Click="BtnGuestToggle_Click" />
+                    </Grid>
+
+                    <StackPanel x:Name="PanGuestActive" Margin="0,14,0,0" Visibility="Collapsed">
+                        <TextBlock x:Name="LabGuestStatus" FontWeight="SemiBold" TextWrapping="Wrap"
+                                   Text="正在尝试直连房主…" />
+
+                        <StackPanel x:Name="PanGuestAck" Margin="0,12,0,0" Visibility="Collapsed">
+                            <TextBlock Text="{DynamicResource Tools.DirectLink.GuestAckLabel}" TextWrapping="Wrap" />
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <local:MyTextBox x:Name="TextGuestAckCode" Grid.Column="0" IsReadOnly="True" />
+                                <local:MyButton x:Name="BtnCopyGuestAck" Grid.Column="1" MinWidth="80" Height="35" Margin="10,0,0,0"
+                                                Text="{DynamicResource Tools.DirectLink.Copy}"
+                                                Click="BtnCopyGuestAck_Click" />
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel x:Name="PanGuestConnected" Margin="0,12,0,0" Visibility="Collapsed">
+                            <TextBlock Text="{DynamicResource Tools.DirectLink.LocalAddrLabel}" TextWrapping="Wrap" />
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <local:MyTextBox x:Name="TextLocalAddr" Grid.Column="0" IsReadOnly="True" />
+                                <local:MyButton x:Name="BtnCopyLocalAddr" Grid.Column="1" MinWidth="80" Height="35" Margin="10,0,0,0"
+                                                Text="{DynamicResource Tools.DirectLink.Copy}"
+                                                Click="BtnCopyLocalAddr_Click" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
+
+        </StackPanel>
+    </local:MyScrollViewer>
+</local:MyPageRight>

@@ -3968,6 +3968,25 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Tools.Import.Scanning">正在繼續搜尋其它磁碟，找到會自動列出來…（也可以直接點「選擇資料夾」）</sys:String>
     <sys:String x:Key="Tools.Import.Picked">匯入</sys:String>
     <sys:String x:Key="Tools.Import.None">還沒選</sys:String>
+    <sys:String x:Key="Tools.Left.DirectLink">IPv6 直連</sys:String>
+    <!-- Tools.DirectLink -->
+    <sys:String x:Key="Tools.DirectLink.EnvTitle">IPv6 離線邀請碼連線</sys:String>
+    <sys:String x:Key="Tools.DirectLink.EnvDesc">零中繼伺服器、免虛擬網卡驅動：利用雙方公網 IPv6 進行 UDP 雙向打洞，直連承載 Minecraft 區域網路流量。</sys:String>
+    <sys:String x:Key="Tools.DirectLink.RefreshEnv">重新偵測 IPv6</sys:String>
+    <sys:String x:Key="Tools.DirectLink.HostTitle">我是房主（建立邀請碼）</sys:String>
+    <sys:String x:Key="Tools.DirectLink.HostPort">本機遊戲連接埠（可自動擷取「對區域網路開放」）：</sys:String>
+    <sys:String x:Key="Tools.DirectLink.HostStart">建立房間並產生邀請碼</sys:String>
+    <sys:String x:Key="Tools.DirectLink.HostStop">關閉房間</sys:String>
+    <sys:String x:Key="Tools.DirectLink.InviteCodeLabel">傳給好友的邀請碼（PCL6-...）：</sys:String>
+    <sys:String x:Key="Tools.DirectLink.AckInputLabel">好友傳來的回執碼（ACK6-...，若直連已通可略過）：</sys:String>
+    <sys:String x:Key="Tools.DirectLink.AcceptAck">放行好友</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestTitle">我是房客（加入房間）</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestInviteLabel">貼上房主傳來的邀請碼（PCL6-...）：</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestConnect">嘗試直連</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestDisconnect">中斷連線</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestAckLabel">若未自動連通，請將此回執碼傳給房主以完成穿透（ACK6-...）：</sys:String>
+    <sys:String x:Key="Tools.DirectLink.LocalAddrLabel">本機對應位址（遊戲「多人遊戲」已同步廣播，也可直接連線此位址）：</sys:String>
+    <sys:String x:Key="Tools.DirectLink.Copy">複製</sys:String>
     <sys:String x:Key="Tools.Import.Action">開始匯入</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Ce">PCL CE / PCL Lite</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 原版</sys:String>

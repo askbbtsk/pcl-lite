@@ -4027,6 +4027,25 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Tools.Import.Scanning">Still searching other drives; anything found will show up here… (or just pick the folder manually)</sys:String>
     <sys:String x:Key="Tools.Import.Picked">Import</sys:String>
     <sys:String x:Key="Tools.Import.None">Not selected</sys:String>
+    <sys:String x:Key="Tools.Left.DirectLink">IPv6 Direct</sys:String>
+    <!-- Tools.DirectLink -->
+    <sys:String x:Key="Tools.DirectLink.EnvTitle">IPv6 Offline Invite Link</sys:String>
+    <sys:String x:Key="Tools.DirectLink.EnvDesc">Zero relay server and zero virtual NIC driver: punches through IPv6 firewalls via bidirectional UDP and tunnels Minecraft LAN traffic directly.</sys:String>
+    <sys:String x:Key="Tools.DirectLink.RefreshEnv">Re-detect IPv6</sys:String>
+    <sys:String x:Key="Tools.DirectLink.HostTitle">Host a Room (Create Invite Code)</sys:String>
+    <sys:String x:Key="Tools.DirectLink.HostPort">Local game port (auto-detected from Open to LAN):</sys:String>
+    <sys:String x:Key="Tools.DirectLink.HostStart">Create Room &amp; Invite Code</sys:String>
+    <sys:String x:Key="Tools.DirectLink.HostStop">Close Room</sys:String>
+    <sys:String x:Key="Tools.DirectLink.InviteCodeLabel">Share this invite code with friends (PCL6-...):</sys:String>
+    <sys:String x:Key="Tools.DirectLink.AckInputLabel">Friend's ack code (ACK6-..., optional if direct punch succeeded):</sys:String>
+    <sys:String x:Key="Tools.DirectLink.AcceptAck">Allow Friend</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestTitle">Join a Room (Guest)</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestInviteLabel">Paste host invite code (PCL6-...):</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestConnect">Connect</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestDisconnect">Disconnect</sys:String>
+    <sys:String x:Key="Tools.DirectLink.GuestAckLabel">If not connected within 1s, send this ack code back to the host (ACK6-...):</sys:String>
+    <sys:String x:Key="Tools.DirectLink.LocalAddrLabel">Local address (also broadcast to Minecraft Multiplayer):</sys:String>
+    <sys:String x:Key="Tools.DirectLink.Copy">Copy</sys:String>
     <sys:String x:Key="Tools.Import.Action">Start import</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Ce">PCL CE / PCL Lite</sys:String>
     <sys:String x:Key="Tools.Import.Kind.Pcl2">PCL2 (original)</sys:String>

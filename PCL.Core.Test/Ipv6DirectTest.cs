@@ -20,6 +20,7 @@ public class Ipv6DirectTest
         var hostPayload = new InviteCodePayload(InviteKind.HostInvite, ip, 49152, 0x1234ABCD);
         var hostCode = InviteCodeCodec.Encode(hostPayload);
 
+        Assert.IsTrue(hostCode.StartsWith("BSK-", StringComparison.Ordinal));
         Assert.IsTrue(hostCode.StartsWith(InviteCodeCodec.HostPrefix, StringComparison.Ordinal));
         Assert.IsTrue(InviteCodeCodec.TryDecode(hostCode, out var decodedHost, out var err), err);
         Assert.AreEqual(InviteKind.HostInvite, decodedHost.Kind);
@@ -29,6 +30,7 @@ public class Ipv6DirectTest
 
         var ackPayload = new InviteCodePayload(InviteKind.GuestAck, IPAddress.Parse("2408:8207::1"), 55555, 0x1234ABCD);
         var ackCode = InviteCodeCodec.Encode(ackPayload);
+        Assert.IsTrue(ackCode.StartsWith("ACK-", StringComparison.Ordinal));
         Assert.IsTrue(ackCode.StartsWith(InviteCodeCodec.GuestAckPrefix, StringComparison.Ordinal));
         Assert.IsTrue(InviteCodeCodec.TryDecode("  " + ackCode + "\n", out var decodedAck, out err), err);
         Assert.AreEqual(InviteKind.GuestAck, decodedAck.Kind);
@@ -41,8 +43,12 @@ public class Ipv6DirectTest
     {
         var ip = IPAddress.Parse("2409:8a00::9");
         var code = InviteCodeCodec.Encode(new InviteCodePayload(InviteKind.HostInvite, ip, 25565, 99));
-        var tampered = code[..^1] + (code[^1] == '1' ? '2' : '1');
-        Assert.IsFalse(InviteCodeCodec.TryDecode(tampered, out _, out _));
+        var tamperedLast = code[..^1] + (code[^1] == '1' ? '2' : '1');
+        var tamperedMid = code[..8] + (code[8] == 'A' ? 'B' : 'A') + code[9..];
+        var truncated = code[..^1];
+        Assert.IsFalse(InviteCodeCodec.TryDecode(tamperedLast, out _, out _));
+        Assert.IsFalse(InviteCodeCodec.TryDecode(tamperedMid, out _, out _));
+        Assert.IsFalse(InviteCodeCodec.TryDecode(truncated, out _, out _));
         Assert.IsFalse(InviteCodeCodec.TryDecode("BAD-123", out _, out _));
     }
 
@@ -300,5 +306,31 @@ public class Ipv6DirectTest
         cts.Cancel();
         mockMcServer.Stop();
         try { await serverTask; } catch { }
+    }
+
+    [TestMethod]
+    public async Task GuestSession_AssignsRandomUnoccupiedPorts()
+    {
+        using var occupiedTcp = new TcpListener(IPAddress.Loopback, 0);
+        occupiedTcp.Start();
+        var occupiedPort = ((IPEndPoint)occupiedTcp.LocalEndpoint).Port;
+
+        await using var host = Ipv6HostSession.Start(IPAddress.IPv6Loopback, 25565, requireOnlineAuth: false);
+        Assert.IsTrue(InviteCodeCodec.TryDecode(host.InviteCode, out var invite, out var err), err);
+
+        await using var guest1 = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
+        await using var guest2 = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
+
+        Assert.IsTrue(guest1.LocalProxyPort is >= 20000 and < 60000, $"Unexpected guest1 LocalProxyPort: {guest1.LocalProxyPort}");
+        Assert.IsTrue(guest2.LocalProxyPort is >= 20000 and < 60000, $"Unexpected guest2 LocalProxyPort: {guest2.LocalProxyPort}");
+        Assert.AreNotEqual(occupiedPort, guest1.LocalProxyPort);
+        Assert.AreNotEqual(occupiedPort, guest2.LocalProxyPort);
+        Assert.AreNotEqual(guest1.LocalProxyPort, guest2.LocalProxyPort);
+
+        Assert.IsTrue(InviteCodeCodec.TryDecode(guest1.AckCode, out var ack1, out err), err);
+        Assert.IsTrue(InviteCodeCodec.TryDecode(guest2.AckCode, out var ack2, out err), err);
+        Assert.IsTrue(ack1.Port is >= 20000 and < 60000);
+        Assert.IsTrue(ack2.Port is >= 20000 and < 60000);
+        Assert.AreNotEqual(ack1.Port, ack2.Port);
     }
 }

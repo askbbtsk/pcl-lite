@@ -28,12 +28,13 @@
                         <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="130" />
+                                <ColumnDefinition Width="165" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"
                                        Text="{DynamicResource Link.Host.PortLabel}" />
-                            <local:MyTextBox x:Name="TextHostPort" Grid.Column="1" Text="25565"
+                            <local:MyTextBox x:Name="TextHostPort" Grid.Column="1"
+                                             HintText="{DynamicResource Link.Host.PortPlaceholder}"
                                              TextChanged="TextHostPort_TextChanged" />
                             <local:MyButton x:Name="BtnHostToggle" Grid.Column="2" HorizontalAlignment="Left"
                                             MinWidth="190" Height="35" Margin="12,0,0,0" ColorType="Highlight"

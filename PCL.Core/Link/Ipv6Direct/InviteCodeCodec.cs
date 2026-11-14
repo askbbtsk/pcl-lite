@@ -24,8 +24,8 @@ public readonly record struct InviteCodePayload(
 /// </summary>
 public static class InviteCodeCodec
 {
-    public const string HostPrefix = "PCL6-";
-    public const string GuestAckPrefix = "ACK6-";
+    public const string HostPrefix = "BSK-";
+    public const string GuestAckPrefix = "ACK-";
 
     private const int PayloadLength = 25;
     private const string Base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -59,7 +59,9 @@ public static class InviteCodeCodec
         BinaryPrimitives.WriteUInt16BigEndian(buffer[23..25], crc);
 
         var prefix = payload.Kind == InviteKind.GuestAck ? GuestAckPrefix : HostPrefix;
-        return prefix + EncodeBase58(buffer);
+        var encodedBody = EncodeBase58(buffer);
+        var checkChar = ComputeCheckChar(payload.Kind, encodedBody);
+        return prefix + encodedBody + checkChar;
     }
 
     public static bool TryDecode(string? code, out InviteCodePayload payload, out string error)
@@ -88,13 +90,28 @@ public static class InviteCodeCodec
         }
         else
         {
-            error = "邀请码前缀无效（应为 PCL6- 或 ACK6-）。";
+            error = "邀请码前缀无效（应为 BSK- 或 ACK-）。";
             return false;
         }
 
         // 允许复制时混入空白或换行，但不动大小写（Base58 区分大小写）
         var cleaned = StripWhitespace(body);
-        if (!TryDecodeBase58(cleaned, out var raw) || raw.Length != PayloadLength)
+        if (cleaned.Length < 2)
+        {
+            error = "邀请码格式损坏或长度不正确。";
+            return false;
+        }
+
+        var encodedBody = cleaned[..^1];
+        var actualCheckChar = cleaned[^1];
+        if (!TryComputeCheckChar(expectedKind, encodedBody, out var expectedCheckChar) ||
+            actualCheckChar != expectedCheckChar)
+        {
+            error = "邀请码末尾校验位不匹配，请检查是否输错、多字或漏字。";
+            return false;
+        }
+
+        if (!TryDecodeBase58(encodedBody, out var raw) || raw.Length != PayloadLength)
         {
             error = "邀请码格式损坏或长度不正确。";
             return false;
@@ -125,6 +142,44 @@ public static class InviteCodeCodec
         }
 
         payload = new InviteCodePayload(expectedKind, ip, port, token);
+        return true;
+    }
+
+    private static char ComputeCheckChar(InviteKind kind, string encodedBody)
+    {
+        if (!TryComputeCheckChar(kind, encodedBody, out var checkChar))
+            throw new InvalidOperationException("Failed to compute invite code check character.");
+        return checkChar;
+    }
+
+    private static bool TryComputeCheckChar(InviteKind kind, string encodedBody, out char checkChar)
+    {
+        checkChar = default;
+        if (string.IsNullOrEmpty(encodedBody))
+            return false;
+
+        // Luhn mod 58 + 类型盐值，覆盖最后一位的任意单字符输入错误
+        var sum = kind == InviteKind.GuestAck ? 17 : 11;
+        var factor = 2;
+        for (var i = encodedBody.Length - 1; i >= 0; i--)
+        {
+            var ch = encodedBody[i];
+            if (ch >= 128)
+                return false;
+            var digit = Base58Map[ch];
+            if (digit < 0)
+                return false;
+
+            var addend = factor * digit;
+            if (addend >= 58)
+                addend -= 57; // floor(addend / 58) + (addend % 58)
+
+            sum += addend;
+            factor = factor == 2 ? 1 : 2;
+        }
+
+        var checkDigit = (58 - (sum % 58)) % 58;
+        checkChar = Base58Alphabet[checkDigit];
         return true;
     }
 

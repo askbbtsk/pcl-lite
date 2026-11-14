@@ -151,7 +151,9 @@ internal static partial class Program
                 else members[headerKey] = header;
                 if (type is EnumDeclarationSyntax enumeration)
                 {
-                    members[name + "::enum"] = Tokens(enumeration);
+                    var enumKey = name + "::enum";
+                    members[enumKey] = Tokens(enumeration);
+                    sourcesByMember[enumKey] = path.Replace('\\', '/');
                     continue;
                 }
                 if (type is not TypeDeclarationSyntax container) continue;

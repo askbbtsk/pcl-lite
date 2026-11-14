@@ -1,0 +1,70 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Config.cs",
+    "Sha256": "203E86D480E73207501F90E35D66DBD7B704C05ECACAB87ED99CE32063AD804B",
+    "Members": [
+      "PCL.Core.App.Config+PreferenceConfigGroup::PropertyDeclaration::TopBarCollapsedTabs"
+    ],
+    "Reason": "1.8.0-alpha-2 IPv6 direct multiplayer: default top-bar collapsed tab list includes Link tab id 15 alongside 3 and 14."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Controls/MyListItem.LiquidGlass.cs",
+    "Sha256": "8DDF97437A3F930AAAF712760146E74C257BCE69BF3B8F892FD3177D195A0BDC",
+    "Members": [
+      "PCL.MyListItem::MethodDeclaration::IsNavigationItem()",
+      "PCL.MyListItem::MethodDeclaration::RefreshTahoeNavigation(bool animate)",
+      "PCL.MyListItem::MethodDeclaration::RestoreNavigationChrome()"
+    ],
+    "Reason": "1.8.0-alpha-2 IPv6 direct multiplayer: recognize PageLinkLeft items as left navigation items for Tahoe Liquid Glass styling; other members unchanged from hotfix-3."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.CommandPalette.cs",
+    "Sha256": "ED5DC50F8A8AE2232AF4E2AE2D08F8CDAEDF86B8383B451B318F15464F90F756",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::CreatePageCommands()",
+      "PCL.FormMain::MethodDeclaration::ToggleCommandPalette()"
+    ],
+    "Reason": "1.8.0-alpha-2 IPv6 direct multiplayer: add Link page command entry to command palette; existing command behavior preserved."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.FileDropHandling.cs",
+    "Sha256": "9C369A41D7992D7B7FBDF113058C53F207DCCCB102EF5F3829655B8443BA6554",
+    "Members": [
+      "PCL.FormMain+PageSubType::enum",
+      "PCL.FormMain+PageType::enum",
+      "PCL.FormMain::MethodDeclaration::FileDrag(IEnumerable<string> filePathList)"
+    ],
+    "Reason": "1.8.0-alpha-1/alpha-2 IPv6 direct multiplayer: add PageType.Link (15) and PageSubType.LinkHost (30) / LinkGuest (31) enum values."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.PageNavigation.cs",
+    "Sha256": "E91C8B7EAEE50FF656B32B8AECD74C153B724C78A419A1968FCBBA28041EFA6C",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::PageChange(PageStackData stack, PageSubType subType = PageSubType.Default)",
+      "PCL.FormMain::MethodDeclaration::PageChangeActual(PageStackData stack, PageSubType subType)",
+      "PCL.FormMain::PropertyDeclaration::PageCurrentSub"
+    ],
+    "Reason": "1.8.0-alpha-2 IPv6 direct multiplayer: wire PageType.Link navigation selection and page instantiation into FormMain; Lunar confirmation & existing pages unchanged."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+    "Sha256": "0434921C02BF840157B7F9ADAA8D4805E5C100920D81ABB81A5E1ECC2E590ACA",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::FormMain_KeyDown(object sender, KeyEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::ParseCollapsedNavigationIds(string? value)",
+      "PCL.FormMain::MethodDeclaration::RefreshNavigationOverflow()",
+      "PCL.FormMain::MethodDeclaration::_SizeWndProc(nint hWnd, int msg, nint wParam, nint lParam, ref bool handled)"
+    ],
+    "Reason": "1.8.0-alpha-2 IPv6 direct multiplayer: include BtnTitleSelectLink (id 15) in top-bar overflow and collapsed navigation id parsing."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.PreferenceBinding.cs",
+    "Sha256": "7B77033B64BE339D494221A05CF27ED3872087AC7B19524F73D0B7225CEAA06A",
+    "Members": [
+      "PCL.PageSetupUI::MethodDeclaration::BackgroundRefresh(bool isHint, bool refresh)",
+      "PCL.PageSetupUI::MethodDeclaration::RefreshTopBarCollapsedTabs()",
+      "PCL.PageSetupUI::MethodDeclaration::TopBarCollapsedTab_Change(object senderRaw, bool user)"
+    ],
+    "Reason": "1.8.0-alpha-2 IPv6 direct multiplayer: bind CheckTopBarCollapseLink (id 15) in UI settings collapsed-tab preferences."
+  }
+]

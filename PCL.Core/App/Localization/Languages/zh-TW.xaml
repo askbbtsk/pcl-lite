@@ -4301,9 +4301,4 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">依原始寬高比例縮小桌面取樣影像，100% 為原始解析度，50% 為寬高各一半、像素數四分之一。降低可減少影像傳輸與上傳量，細節也會減少；Windows 擷取仍保留原尺寸中間影像。僅影響即時桌面，不影響文字、按鈕動效或取樣影格率。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Brightness">玻璃明暗度（-50～50，預設 0）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardBrightness">卡片明暗度（-50～50，預設 0）</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA">玻璃邊角反鋸齒</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA.Low">低品質</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA.Normal">標準品質</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA.High">高品質</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA.Hint">平滑玻璃材質邊緣，減少圓角鋸齒；品質越高越平滑但繪製開銷越高。關閉後使用硬邊。僅影響玻璃材質外框，不影響文字與圖示反鋸齒。</sys:String>
 </ResourceDictionary>

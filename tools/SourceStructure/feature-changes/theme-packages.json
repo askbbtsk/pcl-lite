@@ -7,7 +7,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.LiquidGlass.cs",
-    "Sha256": "89CDC5F9EB4B508467D28667D0028AAF1FB2C0747D14D7A084753E593CC17F2E",
+    "Sha256": "48D4A25D2DB4FA7D8FAFEB68891321DDC8F0A503A109777807A77B3355A28264",
     "Members": ["PCL.MyButton::MethodDeclaration::ApplyTahoeButtonTheme()"],
     "Reason": "A validated theme presenter owns button chrome; the existing glass chrome restores before it is applied. Repeated production-control round trips tested."
   },

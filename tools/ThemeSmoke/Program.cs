@@ -220,16 +220,6 @@ internal static class Program
         }
         if (config.Brightness != -31 || config.CardBrightness != 33)
             throw new InvalidDataException("Glass and card brightness must be independent.");
-        var edgeQuality = (MyComboBox)page.FindName("ComboLiquidGlassEdgeAA");
-        if (edgeQuality.SelectedIndex != 1 || !CheckBoxValue(page, "CheckLiquidGlassEdgeAA"))
-            throw new InvalidDataException("Glass edge antialiasing must default to enabled at standard quality.");
-        edgeQuality.SelectedIndex = 2;
-        typeof(PageSetupUI).GetMethod("LiquidGlassEdgeAAQuality_Changed", PrivateInstance)!
-            .Invoke(page, [edgeQuality, new SelectionChangedEventArgs(Selector.SelectionChangedEvent, Array.Empty<object>(), Array.Empty<object>())]);
-        var edgeEnabled = page.FindName("CheckLiquidGlassEdgeAA");
-        typeof(PageSetupUI).GetMethod("LiquidGlassEdgeAA_Changed", PrivateInstance)!.Invoke(page, [edgeEnabled, true]);
-        if (!config.EdgeAntiAliasing || config.EdgeAntiAliasingQuality != 2)
-            throw new InvalidDataException("Glass edge antialiasing quality must be independently persisted.");
         var sampling = (MySlider)page.FindName("SliderLiquidGlassSampling");
         sampling.Value = 0;
         typeof(PageSetupUI).GetMethod("LiquidGlassSampling_Changed", PrivateInstance)!.Invoke(page, [sampling, true]);
@@ -255,9 +245,6 @@ internal static class Program
             throw new InvalidDataException("Restoring glass parameters must preserve switches, consent and theme.");
         Console.WriteLine("Glass settings: Custom option, inherited-value preservation, 0–200% refraction and independent sampling passed.");
     }
-
-    private static bool CheckBoxValue(PageSetupUI page, string name) =>
-        ((MyCheckBox)page.FindName(name)).Checked == true;
 
     private static void CheckLearningExampleExport()
     {

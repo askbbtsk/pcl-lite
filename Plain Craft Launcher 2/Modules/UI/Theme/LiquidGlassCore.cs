@@ -127,8 +127,6 @@ public static partial class LiquidGlassCore
                     surface.IsDarkMode = darkNow;
                     surface.DiffuseStrength = DiffuseStrength;
                     surface.EdgeSharpness = EdgeSharpness;
-                    surface.EdgeAntiAliasing = Config.Preference.TahoeGlass.EdgeAntiAliasing;
-                    surface.EdgeAntiAliasingQuality = Math.Clamp(Config.Preference.TahoeGlass.EdgeAntiAliasingQuality, 0, 2);
                     surface.Brightness = SystemParameters.HighContrast ? 0 : Math.Clamp(Config.Preference.TahoeGlass.Brightness, -50, 50);
                 }
             }
@@ -274,8 +272,6 @@ public static partial class LiquidGlassCore
         surface.IsDarkMode = dark;
         surface.DiffuseStrength = DiffuseStrength;
         surface.EdgeSharpness = EdgeSharpness;
-        surface.EdgeAntiAliasing = Config.Preference.TahoeGlass.EdgeAntiAliasing;
-        surface.EdgeAntiAliasingQuality = Math.Clamp(Config.Preference.TahoeGlass.EdgeAntiAliasingQuality, 0, 2);
         surface.Brightness = SystemParameters.HighContrast ? 0 : Math.Clamp(Config.Preference.TahoeGlass.Brightness, -50, 50);
         surface.BlurRadius = Profile.BlurRadius;
         surface.FrostRadius = PCL.Core.UI.LiquidGlassMaterial.FrostRadius(Config.Preference.TahoeGlass.FrostRadius);

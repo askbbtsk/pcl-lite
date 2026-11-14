@@ -45,9 +45,6 @@ public partial class PageSetupUI
             BindGlassSlider(SliderLiquidGlassCard, TextLiquidGlassCard,
                 LiquidGlassMaterial.CardOpacityPercent(Config.Preference.TahoeGlass.CardOpacity, ThemeManager.IsDarkMode), "%");
             CheckLiquidGlassMotion.Checked = profile.Motion;
-            CheckLiquidGlassEdgeAA.Checked = Config.Preference.TahoeGlass.EdgeAntiAliasing;
-            ComboLiquidGlassEdgeAA.SelectedIndex = Math.Clamp(Config.Preference.TahoeGlass.EdgeAntiAliasingQuality, 0, 2);
-            ComboLiquidGlassEdgeAA.IsEnabled = Config.Preference.TahoeGlass.EdgeAntiAliasing;
             BindBrightnessSlider(SliderLiquidGlassBrightness, TextLiquidGlassBrightness, Config.Preference.TahoeGlass.Brightness);
             BindBrightnessSlider(SliderLiquidGlassCardBrightness, TextLiquidGlassCardBrightness, Config.Preference.TahoeGlass.CardBrightness);
             TextLiquidGlassCost.Text = Lang.Text("Setup.Ui.LiquidGlass.Cost."
@@ -188,8 +185,6 @@ public partial class PageSetupUI
         config.EdgeSharpness = 90;
         config.TintScale = 100;
         config.CardOpacity = -1;
-        config.EdgeAntiAliasing = true;
-        config.EdgeAntiAliasingQuality = 1;
         config.Brightness = config.CardBrightness = 0;
         config.Motion = profile.Motion ? 1 : 0;
         RefreshLiquidGlassSettings();
@@ -249,23 +244,6 @@ public partial class PageSetupUI
         if (_liquidGlassBinding || ModAnimation.AniControlEnabled != 0) return;
         UseCustomGlassSettings();
         Config.Preference.TahoeGlass.Motion = CheckLiquidGlassMotion.Checked == true ? 1 : 0;
-        LiquidGlassCore.Refresh();
-    }
-
-    private void LiquidGlassEdgeAA_Changed(object sender, bool user)
-    {
-        if (_liquidGlassBinding || ModAnimation.AniControlEnabled != 0) return;
-        UseCustomGlassSettings();
-        Config.Preference.TahoeGlass.EdgeAntiAliasing = CheckLiquidGlassEdgeAA.Checked == true;
-        ComboLiquidGlassEdgeAA.IsEnabled = Config.Preference.TahoeGlass.EdgeAntiAliasing;
-        LiquidGlassCore.Refresh();
-    }
-
-    private void LiquidGlassEdgeAAQuality_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        if (_liquidGlassBinding || ModAnimation.AniControlEnabled != 0 || ComboLiquidGlassEdgeAA.SelectedIndex < 0) return;
-        UseCustomGlassSettings();
-        Config.Preference.TahoeGlass.EdgeAntiAliasingQuality = Math.Clamp(ComboLiquidGlassEdgeAA.SelectedIndex, 0, 2);
         LiquidGlassCore.Refresh();
     }
 }

@@ -45,11 +45,6 @@ public sealed record LiquidGlassThemePalette(
 public static class LiquidGlassMaterial
 {
     public static int FrostRadius(int configured) => Math.Clamp(configured, 0, 24);
-    public static double EdgeSmoothingWidth(bool enabled, int quality, double dpiScale) =>
-        (enabled ? Math.Clamp(quality, 0, 2) switch { 0 => .75, 2 => 1.5, _ => 1d } : .25) /
-        (double.IsFinite(dpiScale) && dpiScale > 0 ? dpiScale : 1d);
-    public static EdgeMode EdgeMode(bool enabled, bool highContrast) =>
-        !enabled && !highContrast ? System.Windows.Media.EdgeMode.Aliased : System.Windows.Media.EdgeMode.Unspecified;
     public static int RefractionSetting(int configured) => Math.Clamp(configured, 0, 10);
     public static double RefractionStrength(int configured) => RefractionSetting(configured) / 100d;
     public static int ResolveRefractionPercent(int percent, int legacySetting) =>

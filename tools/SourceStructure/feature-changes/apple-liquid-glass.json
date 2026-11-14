@@ -9,11 +9,10 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/LiquidGlassSurface.cs",
-    "Sha256": "A03C1AC2A580ABF7B91841D3B225B1ACE289B4F874CC5C5569166FDF26907161",
+    "Sha256": "ECB969CB1B91CD969E41A2B3E00FC7C839FBD87BD2903C8F5A0D446974110387",
     "Members": [
       "PCL.TahoeGlassSurface::ConstructorDeclaration::.ctor()",
       "PCL.TahoeGlassSurface::MethodDeclaration::Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)",
-      "PCL.TahoeGlassSurface::MethodDeclaration::OnSystemParametersChanged(object? sender, PropertyChangedEventArgs e)",
       "PCL.TahoeGlassSurface::FieldDeclaration::_rim",
       "PCL.TahoeGlassSurface::FieldDeclaration::_shadow",
       "PCL.TahoeGlassSurface::MethodDeclaration::RefreshSampling()",
@@ -24,7 +23,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Controls/MyButton.LiquidGlass.cs",
-    "Sha256": "89CDC5F9EB4B508467D28667D0028AAF1FB2C0747D14D7A084753E593CC17F2E",
+    "Sha256": "48D4A25D2DB4FA7D8FAFEB68891321DDC8F0A503A109777807A77B3355A28264",
     "Members": [
       "PCL.MyButton::MethodDeclaration::ApplyTahoeButtonTheme()",
       "PCL.MyButton::MethodDeclaration::RefreshTahoeButtonAppearance()"
@@ -87,7 +86,7 @@
   },
   {
     "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
-    "Sha256": "9E0D816CBE7982C7197C5565B67460384B9A7AAEA432E327285D1C5F7F3A14C0",
+    "Sha256": "54B4994320C1DB3943EF9889CDAF6AE5A49D3DE9DB973AF8D9F43EAF8C2669FC",
     "Members": [
       "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
       "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",

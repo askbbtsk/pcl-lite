@@ -4301,9 +4301,4 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">Scales desktop sample dimensions proportionally. 100% keeps native resolution; 50% halves width and height, yielding one quarter of the pixels. Lower values reduce frame transfer and upload size with less detail; Windows capture still retains a full-size intermediate. Only affects live desktop detail, not text, animation or capture rate.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Brightness">Glass brightness (-50 to 50; default 0)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardBrightness">Card brightness (-50 to 50; default 0)</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA">Glass edge antialiasing</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA.Low">Low quality</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA.Normal">Standard quality</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA.High">High quality</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.EdgeAA.Hint">Smooth glass-material edges. Higher quality is smoother but costs more rendering work. Disabled uses hard edges. Affects glass outlines only; text and icons keep normal antialiasing.</sys:String>
 </ResourceDictionary>

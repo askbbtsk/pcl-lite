@@ -60,7 +60,7 @@
 1. 打开 [Discord 开发者门户](https://discord.com/developers/applications)，`New Application`
 2. 名字随意（会显示在状态卡片上）
 3. **General Information → APP ICON** 上传图标，1024×1024 PNG。
-   本仓库自带一张：`docs/assets/logo-1024.png`（另有 512 / 256 两版）
+   本仓库自带一张：`docs/assets/icon-1024.png`（另有 512 / 256 两版）
 4. 复制 **Application ID**，填进设置页的「应用 ID」
 5. 回设置页点「立即刷新」
 
@@ -121,7 +121,7 @@ Discord **同一时间只显示一个「正在玩」**。如果本机还有别�
 | `assets.large_image` | 应用里上传的资产键，或 `mp:external/...` | 不填就用应用图标 |
 
 应用图标在 Discord 开发者门户的 **Rich Presence → Art Assets** 上传；
-不传的话资料页那张卡片左侧是空白的。仓库里的 `docs/assets/logo-1024.png` 可以直接用。
+不传的话资料页那张卡片左侧是空白的。仓库里的 `docs/assets/icon-1024.png` 可以直接用。
 
 ## 七、怎么测（不用真的开游戏）
 

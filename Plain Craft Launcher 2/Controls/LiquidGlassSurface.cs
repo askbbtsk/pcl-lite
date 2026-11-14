@@ -26,9 +26,6 @@ public sealed class TahoeGlassSurface : Grid
     public static readonly DependencyProperty FrostRadiusProperty = Numeric(nameof(FrostRadius), 0, 0, 24);
     public static readonly DependencyProperty TintOpacityProperty = Numeric(nameof(TintOpacity), .10, 0, 1);
     public static readonly DependencyProperty BrightnessProperty = Numeric(nameof(Brightness), 0, -50, 50);
-    public static readonly DependencyProperty EdgeAntiAliasingProperty = DependencyProperty.Register(
-        nameof(EdgeAntiAliasing), typeof(bool), typeof(TahoeGlassSurface), new PropertyMetadata(true, Changed));
-    public static readonly DependencyProperty EdgeAntiAliasingQualityProperty = Numeric(nameof(EdgeAntiAliasingQuality), 1, 0, 2);
     public static readonly DependencyProperty HighlightStrengthProperty = Numeric(nameof(HighlightStrength), .65, 0, 1);
     public static readonly DependencyProperty DispersionProperty = Numeric(nameof(Dispersion), .20, 0, 1);
     public static readonly DependencyProperty DiffuseStrengthProperty = Numeric(nameof(DiffuseStrength), .16, 0, .5);
@@ -103,8 +100,6 @@ public sealed class TahoeGlassSurface : Grid
     public Color TintColor { get => (Color)GetValue(TintColorProperty); set => SetValue(TintColorProperty, value); }
     public double TintOpacity { get => (double)GetValue(TintOpacityProperty); set => SetValue(TintOpacityProperty, value); }
     public double Brightness { get => (double)GetValue(BrightnessProperty); set => SetValue(BrightnessProperty, value); }
-    public bool EdgeAntiAliasing { get => (bool)GetValue(EdgeAntiAliasingProperty); set => SetValue(EdgeAntiAliasingProperty, value); }
-    public double EdgeAntiAliasingQuality { get => (double)GetValue(EdgeAntiAliasingQualityProperty); set => SetValue(EdgeAntiAliasingQualityProperty, value); }
     public double HighlightStrength { get => (double)GetValue(HighlightStrengthProperty); set => SetValue(HighlightStrengthProperty, value); }
     public double Dispersion { get => (double)GetValue(DispersionProperty); set => SetValue(DispersionProperty, value); }
     public double DiffuseStrength { get => (double)GetValue(DiffuseStrengthProperty); set => SetValue(DiffuseStrengthProperty, value); }
@@ -122,9 +117,6 @@ public sealed class TahoeGlassSurface : Grid
     private static void Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var surface = (TahoeGlassSurface)d;
-        if (e.Property == EdgeAntiAliasingProperty || e.Property == EdgeAntiAliasingQualityProperty)
-            RenderOptions.SetEdgeMode(surface._clippedMaterial,
-                PCL.Core.UI.LiquidGlassMaterial.EdgeMode(surface.EdgeAntiAliasing, SystemParameters.HighContrast));
         if (e.Property == BrightnessProperty)
         {
             double brightness = SystemParameters.HighContrast ? 0 : surface.Brightness;
@@ -181,8 +173,6 @@ public sealed class TahoeGlassSurface : Grid
     private void OnSystemParametersChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(SystemParameters.HighContrast)) return;
-        RenderOptions.SetEdgeMode(_clippedMaterial,
-            PCL.Core.UI.LiquidGlassMaterial.EdgeMode(EdgeAntiAliasing, SystemParameters.HighContrast));
         _dirty = true;
         RefreshSampling();
     }
@@ -401,9 +391,7 @@ public sealed class TahoeGlassSurface : Grid
                 _shader!.FrostedBackdrop = _backdrop;
             }
             _shader!.Backdrop = _backdrop;
-            _shader.Size = new Point4D(size.Width, size.Height, radius,
-                PCL.Core.UI.LiquidGlassMaterial.EdgeSmoothingWidth(EdgeAntiAliasing, (int)EdgeAntiAliasingQuality,
-                    Math.Max(dpi.DpiScaleX, dpi.DpiScaleY)));
+            _shader.Size = new Point4D(size.Width, size.Height, radius, 1 / Math.Max(dpi.DpiScaleX, dpi.DpiScaleY));
             _shader.Origin = new Point4D((matrix.OffsetX - crop.X) / crop.Width, (matrix.OffsetY - crop.Y) / crop.Height,
                 matrix.M11 / crop.Width, matrix.M12 / crop.Height);
             _shader.Axis = new Point4D(matrix.M21 / crop.Width, matrix.M22 / crop.Height, crop.Width, crop.Height);

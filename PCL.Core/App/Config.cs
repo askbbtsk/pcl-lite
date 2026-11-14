@@ -561,8 +561,6 @@ public static partial class Config
             [ConfigItem<int>("UiLiquidGlassCardOpacity", -1, ConfigSource.Local)] public partial int CardOpacity { get; set; }
             [ConfigItem<int>("UiLiquidGlassBrightness", 0, ConfigSource.Local)] public partial int Brightness { get; set; }
             [ConfigItem<int>("UiLiquidGlassCardBrightness", 0, ConfigSource.Local)] public partial int CardBrightness { get; set; }
-            [ConfigItem<bool>("UiLiquidGlassEdgeAA", true, ConfigSource.Local)] public partial bool EdgeAntiAliasing { get; set; }
-            [ConfigItem<int>("UiLiquidGlassEdgeAAQuality", 1, ConfigSource.Local)] public partial int EdgeAntiAliasingQuality { get; set; }
             [ConfigItem<int>("UiLiquidGlassMotion", -1, ConfigSource.Local)] public partial int Motion { get; set; }
             // Fresh opt-in is required even for settings left by earlier experimental builds.
             [ConfigItem<bool>("UiLiquidGlassConsent", false, ConfigSource.Local)] public partial bool PerformanceConsent { get; set; }

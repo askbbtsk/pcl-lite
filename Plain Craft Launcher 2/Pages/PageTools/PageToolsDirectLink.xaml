@@ -42,13 +42,15 @@
                         </Grid>
 
                         <StackPanel x:Name="PanHostInviteRow" Margin="0,14,0,0" Visibility="Collapsed">
+                            <TextBlock x:Name="LabHostAuthMode" Margin="0,0,0,6" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource ColorBrush1}" TextWrapping="Wrap" />
                             <TextBlock Text="{DynamicResource Link.Host.InviteHint}" TextWrapping="Wrap" Opacity="0.82" />
                             <Grid Margin="0,6,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <local:MyTextBox x:Name="TextInviteCode" Grid.Column="0" IsReadOnly="True" />
+                                <local:MyTextBox x:Name="TextInviteCode" Grid.Column="0" IsReadOnly="True" IsReadOnlyCaretVisible="False" />
                                 <local:MyButton x:Name="BtnCopyInvite" Grid.Column="1" MinWidth="95" Height="35" Margin="10,0,0,0"
                                                 Text="{DynamicResource Link.Host.CopyAgain}"
                                                 Click="BtnCopyInvite_Click" />
@@ -118,7 +120,7 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <local:MyTextBox x:Name="TextGuestAckCode" Grid.Column="0" IsReadOnly="True" />
+                                <local:MyTextBox x:Name="TextGuestAckCode" Grid.Column="0" IsReadOnly="True" IsReadOnlyCaretVisible="False" />
                                 <local:MyButton x:Name="BtnCopyGuestAck" Grid.Column="1" MinWidth="105" Height="35" Margin="10,0,0,0"
                                                 ColorType="Highlight"
                                                 Text="{DynamicResource Link.Guest.CopyAck}"
@@ -133,7 +135,17 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <local:MyTextBox x:Name="TextLocalAddr" Grid.Column="0" IsReadOnly="True" />
+                                <Border Grid.Column="0" Height="35" Padding="10,0" CornerRadius="6" BorderThickness="1"
+                                        Background="{DynamicResource ColorBrush8}"
+                                        BorderBrush="{DynamicResource ColorBrush6}"
+                                        Cursor="Hand"
+                                        ToolTip="只读地址，点击右侧按钮或此处复制"
+                                        MouseLeftButtonUp="BtnCopyLocalAddr_Click">
+                                    <TextBlock x:Name="TextLocalAddr" VerticalAlignment="Center"
+                                               FontFamily="Consolas" FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource ColorBrush1}"
+                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                </Border>
                                 <local:MyButton x:Name="BtnCopyLocalAddr" Grid.Column="1" MinWidth="105" Height="35" Margin="10,0,0,0"
                                                 Text="{DynamicResource Link.Guest.CopyAddr}"
                                                 Click="BtnCopyLocalAddr_Click" />

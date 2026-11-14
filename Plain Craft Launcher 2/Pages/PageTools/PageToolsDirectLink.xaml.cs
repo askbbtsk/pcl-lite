@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using PCL.Core.App.Localization;
 using PCL.Core.Link.Ipv6Direct;
+using PCL.Core.Minecraft.Profile;
+using PCL.Core.Minecraft.Profile.Models;
 using PCL.Core.UI;
 
 namespace PCL;
@@ -19,6 +22,7 @@ public partial class PageToolsDirectLink
     private Ipv6GuestSession? _guestSession;
     private CancellationTokenSource? _lanListenCts;
     private CancellationTokenSource? _guestAckRevealCts;
+    private DispatcherTimer? _hostPunchUiTimer;
     private FormMain.PageSubType _currentMode = FormMain.PageSubType.LinkHost;
     private bool _hasAutoFilledLanPort;
 
@@ -50,10 +54,11 @@ public partial class PageToolsDirectLink
 
     private void PageToolsDirectLink_Unloaded(object sender, RoutedEventArgs e)
     {
-        // 只停止 LAN 多播扫描；若房主/房客联机正在进行，切换去启动游戏时保持隧道不断开。
+        // 只停止 LAN 多播扫描与页面刷新定时器；若联机正在进行，切去启动游戏时保持隧道不断开。
         _lanListenCts?.Cancel();
         _lanListenCts?.Dispose();
         _lanListenCts = null;
+        StopHostPunchTimer();
     }
 
     public void RefreshIpv6ByUser()
@@ -79,12 +84,14 @@ public partial class PageToolsDirectLink
         if (_hostSession is not null)
         {
             var connectedCount = _hostSession.GetPeers().Count(p => p.State == DirectPeerState.Connected);
+            var authTag = _hostSession.RequireOnlineAuth ? "正版验证" : "允许离线";
+            var detail = connectedCount > 0
+                ? Lang.Text("Link.Sidebar.HostPeersCount", connectedCount, _hostSession.McPort)
+                : Lang.Text("Link.Sidebar.HostWaiting", _hostSession.McPort);
             ModMain.frmLinkLeft.UpdateSidebarStatus(
                 true,
                 Lang.Text("Link.Sidebar.HostRunning"),
-                connectedCount > 0
-                    ? Lang.Text("Link.Sidebar.HostPeersCount", connectedCount, _hostSession.McPort)
-                    : Lang.Text("Link.Sidebar.HostWaiting", _hostSession.McPort));
+                $"{detail}\n{authTag}");
             return;
         }
 
@@ -172,14 +179,11 @@ public partial class PageToolsDirectLink
             return;
         }
 
+        RefreshIpv6Status();
         if (_ipv6Candidates.Count == 0)
         {
-            RefreshIpv6Status();
-            if (_ipv6Candidates.Count == 0)
-            {
-                HintService.Hint("当前网络没拿到公网 IPv6，开不了直连房间。", HintType.Error);
-                return;
-            }
+            HintService.Hint("当前网络没拿到公网 IPv6，开不了直连房间。", HintType.Error);
+            return;
         }
 
         if (!ushort.TryParse(TextHostPort.Text.Trim(), out var mcPort) || mcPort == 0)
@@ -188,15 +192,33 @@ public partial class PageToolsDirectLink
             return;
         }
 
+        // 每次开房都弹窗询问是否开启正版验证，不记忆上次选择
+        var authChoice = ModMain.MyMsgBox(
+            "是否要为本次联机开启正版验证？\n\n" +
+            "• 开启正版验证：在联机状态中标记为正版验证；房客若使用离线账号将收到提示。\n" +
+            "• 关闭正版验证（允许离线）：在联机状态中标记为允许离线/第三方账号。\n\n" +
+            "提示：本直连通道仅负责转发游戏流量；原版 Minecraft 的「对局域网开放」默认仍由游戏端校验正版（离线好友需房主在游戏内使用离线局域网 Mod 或服务端设置 online-mode=false）。",
+            "选择本次联机验证方式",
+            button1: "开启正版验证",
+            button2: "关闭正版验证（允许离线）",
+            button3: "取消");
+        if (authChoice is not (1 or 2))
+            return;
+
+        var requireOnlineAuth = authChoice == 1;
+
         try
         {
-            _hostSession = Ipv6HostSession.Start(_ipv6Candidates[0].Address, mcPort);
+            _hostSession = Ipv6HostSession.Start(_ipv6Candidates[0].Address, mcPort, requireOnlineAuth);
             _hostSession.StateChanged += () => Dispatcher.BeginInvoke(() =>
             {
                 UpdateHostPeersUi();
                 PushSidebarStatus();
             });
 
+            LabHostAuthMode.Text = requireOnlineAuth
+                ? "验证方式：本次已开启正版验证（房客需使用正版或对应外置登录）"
+                : "验证方式：本次已关闭正版验证（允许离线 / 第三方登录；请确保游戏内局域网同样关闭正版验证）";
             TextInviteCode.Text = _hostSession.InviteCode;
             PanHostInviteRow.Visibility = Visibility.Visible;
             CardHostAck.Visibility = Visibility.Visible;
@@ -217,6 +239,7 @@ public partial class PageToolsDirectLink
 
     private async Task StopHostAsync()
     {
+        StopHostPunchTimer();
         if (_hostSession is null)
             return;
         var session = _hostSession;
@@ -225,6 +248,7 @@ public partial class PageToolsDirectLink
         PanHostInviteRow.Visibility = Visibility.Collapsed;
         CardHostAck.Visibility = Visibility.Collapsed;
         CardHostPeers.Visibility = Visibility.Collapsed;
+        LabHostAuthMode.Text = string.Empty;
         TextInviteCode.Text = string.Empty;
         TextHostAckInput.Text = string.Empty;
         LabHostPeers.Text = Lang.Text("Link.Host.NoPeers");
@@ -237,22 +261,57 @@ public partial class PageToolsDirectLink
     private void UpdateHostPeersUi()
     {
         if (_hostSession is null)
+        {
+            StopHostPunchTimer();
             return;
+        }
         var peers = _hostSession.GetPeers();
         if (peers.Count == 0)
         {
+            StopHostPunchTimer();
             LabHostPeers.Text = Lang.Text("Link.Host.NoPeers");
             return;
         }
 
+        var now = DateTimeOffset.UtcNow;
+        var hasPunching = false;
         var lines = peers.Select(p =>
         {
-            var status = p.State == DirectPeerState.Connected
-                ? $"已连上 · {p.RttMs} ms{(p.IsDirectNoAck ? "（直连）" : "")}"
-                : "正在打洞，等两秒…";
+            if (p.State == DirectPeerState.Connected)
+                return $"• [{p.Endpoint.Address}]:{p.Endpoint.Port}  已连上 · {p.RttMs} ms{(p.IsDirectNoAck ? "（直连）" : "")}";
+
+            hasPunching = true;
+            var elapsedSec = p.AddedUtc == default ? 0 : Math.Max(0, (int)(now - p.AddedUtc).TotalSeconds);
+            var status = elapsedSec >= 8
+                ? $"仍在打洞（已尝试 {elapsedSec}s，请检查双方 Windows 防火墙及路由器 IPv6 入站放行，并在日志查看报错详情）"
+                : $"正在打洞，已尝试 {elapsedSec}s…";
             return $"• [{p.Endpoint.Address}]:{p.Endpoint.Port}  {status}";
         });
         LabHostPeers.Text = string.Join(Environment.NewLine, lines);
+
+        if (hasPunching)
+            EnsureHostPunchTimerRunning();
+        else
+            StopHostPunchTimer();
+    }
+
+    private void EnsureHostPunchTimerRunning()
+    {
+        if (_hostPunchUiTimer is null)
+        {
+            _hostPunchUiTimer = new DispatcherTimer(DispatcherPriority.Background, Dispatcher)
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _hostPunchUiTimer.Tick += (_, _) => UpdateHostPeersUi();
+        }
+        if (!_hostPunchUiTimer.IsEnabled)
+            _hostPunchUiTimer.Start();
+    }
+
+    private void StopHostPunchTimer()
+    {
+        _hostPunchUiTimer?.Stop();
     }
 
     private void BtnCopyInvite_Click(object sender, MouseButtonEventArgs e)
@@ -301,14 +360,11 @@ public partial class PageToolsDirectLink
             return;
         }
 
+        RefreshIpv6Status();
         if (_ipv6Candidates.Count == 0)
         {
-            RefreshIpv6Status();
-            if (_ipv6Candidates.Count == 0)
-            {
-                HintService.Hint("当前网络没拿到公网 IPv6，连不上纯 IPv6 房间。", HintType.Error);
-                return;
-            }
+            HintService.Hint("当前网络没拿到公网 IPv6，连不上纯 IPv6 房间。", HintType.Error);
+            return;
         }
 
         // 若输入框为空或无效，尝试直接从剪贴板读 PCL6- 邀请码
@@ -397,6 +453,7 @@ public partial class PageToolsDirectLink
         CardGuestProgress.Visibility = Visibility.Collapsed;
         PanGuestAck.Visibility = Visibility.Collapsed;
         PanGuestConnected.Visibility = Visibility.Collapsed;
+        TextLocalAddr.Text = string.Empty;
         BtnGuestToggle.Text = Lang.Text("Link.Guest.PasteAndConnect");
         BtnGuestToggle.ColorType = MyButton.ColorState.Highlight;
         PushSidebarStatus();
@@ -413,7 +470,20 @@ public partial class PageToolsDirectLink
             _guestAckRevealCts?.Cancel();
             PanGuestAck.Visibility = Visibility.Collapsed;
             PanGuestConnected.Visibility = Visibility.Visible;
-            LabGuestStatus.Text = Lang.Text("Link.Guest.ConnectedStatus", _guestSession.RttMs);
+
+            var statusText = Lang.Text("Link.Guest.ConnectedStatus", _guestSession.RttMs);
+            if (_guestSession.HostRequiresOnlineAuth)
+            {
+                var isOfflineProfile = ProfileService.Current?.ProfileType == ProfileType.Offline;
+                statusText += isOfflineProfile
+                    ? "\n⚠️ 房主本次开启了正版验证，你当前使用离线账号，进服可能会被拒绝，请切换正版/外置账号。"
+                    : "\n验证方式：房主本次开启了正版验证。";
+            }
+            else
+            {
+                statusText += "\n验证方式：房主本次允许离线（请确保房主游戏内局域网已关闭正版验证）。";
+            }
+            LabGuestStatus.Text = statusText;
         }
     }
 

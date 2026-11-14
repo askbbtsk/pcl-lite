@@ -33,7 +33,9 @@ public sealed class UdpReliablePeer : IAsyncDisposable
 
     private readonly uint _token;
     private readonly Func<ReadOnlyMemory<byte>, ValueTask> _sendRawAsync;
+    private readonly bool _localRequiresOnlineAuth;
     private readonly ConcurrentDictionary<uint, ReliableStream> _streams = new();
+    private readonly ConcurrentDictionary<uint, (uint FinalAck, ulong FinalSack)> _closedStreams = new();
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _retransmitLoop;
 
@@ -41,6 +43,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
     private long _lastReceivedTicks;
     private long _lastPongTicks;
     private int _rttMs;
+    private int _remoteRequiresOnlineAuth;
 
     public event Action<ReliableStream>? OnStreamAccepted;
     public event Action<int>? OnConnectedOrHeartbeat;
@@ -48,11 +51,17 @@ public sealed class UdpReliablePeer : IAsyncDisposable
     public bool IsReachable => Volatile.Read(ref _lastPongTicks) != 0;
     public int RttMs => Volatile.Read(ref _rttMs);
     public DateTimeOffset LastActivityUtc => new(Volatile.Read(ref _lastReceivedTicks), TimeSpan.Zero);
+    public bool LocalRequiresOnlineAuth => _localRequiresOnlineAuth;
+    public bool RemoteRequiresOnlineAuth => Volatile.Read(ref _remoteRequiresOnlineAuth) != 0;
 
-    public UdpReliablePeer(uint token, Func<ReadOnlyMemory<byte>, ValueTask> sendRawAsync)
+    public UdpReliablePeer(
+        uint token,
+        Func<ReadOnlyMemory<byte>, ValueTask> sendRawAsync,
+        bool localRequiresOnlineAuth = false)
     {
         _token = token;
         _sendRawAsync = sendRawAsync;
+        _localRequiresOnlineAuth = localRequiresOnlineAuth;
         _lastReceivedTicks = DateTimeOffset.UtcNow.Ticks;
         _retransmitLoop = Task.Run(() => RetransmitLoopAsync(_cts.Token));
     }
@@ -96,10 +105,11 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         {
             case TunnelPacketType.Ping:
             {
-                var pong = new byte[HeaderSize + 8];
+                var pong = new byte[HeaderSize + 9];
                 WriteHeader(pong, TunnelPacketType.Pong, 0, 0, 0, 0);
                 if (packet.Length >= HeaderSize + 8)
                     packet.Slice(HeaderSize, 8).CopyTo(pong.AsSpan(HeaderSize, 8));
+                pong[HeaderSize + 8] = _localRequiresOnlineAuth ? (byte)0x01 : (byte)0x00;
                 _ = _sendRawAsync(pong);
                 break;
             }
@@ -112,12 +122,18 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                     var rtt = (int)Math.Clamp(Environment.TickCount64 - sentTick, 1, 9999);
                     Volatile.Write(ref _rttMs, rtt);
                 }
+                if (packet.Length >= HeaderSize + 9)
+                {
+                    var flags = packet[HeaderSize + 8];
+                    Volatile.Write(ref _remoteRequiresOnlineAuth, (flags & 0x01) != 0 ? 1 : 0);
+                }
                 OnConnectedOrHeartbeat?.Invoke(Volatile.Read(ref _rttMs));
                 break;
             }
             case TunnelPacketType.Open:
             {
-                var stream = GetOrAcceptStream(connId);
+                if (GetOrAcceptStream(connId) is not { } stream)
+                    break;
                 var (replyAck, replySackMask) = stream.GetAckState();
                 // 回复 ACK 确认打开
                 _ = SendAckAsync(connId, replyAck, replySackMask);
@@ -125,7 +141,8 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             }
             case TunnelPacketType.Data:
             {
-                var stream = GetOrAcceptStream(connId);
+                if (GetOrAcceptStream(connId) is not { } stream)
+                    break;
                 stream.HandleData(seq, packet[HeaderSize..]);
                 stream.HandleAck(ack, sackMask);
                 break;
@@ -138,17 +155,24 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             }
             case TunnelPacketType.Close:
             {
-                var stream = GetOrAcceptStream(connId);
+                if (GetOrAcceptStream(connId) is not { } stream)
+                    break;
                 stream.HandleRemoteClose(seq);
                 break;
             }
         }
     }
 
-    private ReliableStream GetOrAcceptStream(uint connId)
+    private ReliableStream? GetOrAcceptStream(uint connId)
     {
         if (_streams.TryGetValue(connId, out var existing))
             return existing;
+
+        if (_closedStreams.TryGetValue(connId, out var closedAck))
+        {
+            _ = SendAckAsync(connId, closedAck.FinalAck, closedAck.FinalSack);
+            return null;
+        }
 
         var created = new ReliableStream(connId, this, isInitiator: false);
         var actual = _streams.GetOrAdd(connId, created);
@@ -202,7 +226,10 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                 {
                     await kv.Value.PumpRetransmitsAsync(now).ConfigureAwait(false);
                     if (kv.Value.IsFullyClosed)
+                    {
+                        _closedStreams[kv.Key] = kv.Value.GetAckState();
                         _streams.TryRemove(kv.Key, out _);
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -222,6 +249,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         foreach (var kv in _streams)
             kv.Value.ForceClose();
         _streams.Clear();
+        _closedStreams.Clear();
         try { await _retransmitLoop.ConfigureAwait(false); } catch { }
         _cts.Dispose();
     }
@@ -447,13 +475,22 @@ public sealed class UdpReliablePeer : IAsyncDisposable
 
                 foreach (var seq in toRemove)
                 {
-                    if (_unacked.Remove(seq))
+                    if (_unacked.Remove(seq, out var pkt) && !pkt.IsClose)
                         released++;
                 }
             }
 
             if (released > 0)
-                _windowSignal.Release(released);
+            {
+                try
+                {
+                    _windowSignal.Release(released);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 流正在销毁
+                }
+            }
         }
 
         internal async Task PumpRetransmitsAsync(long nowMs)

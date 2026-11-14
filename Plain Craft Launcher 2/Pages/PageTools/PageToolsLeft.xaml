@@ -25,14 +25,6 @@
                           Title="{DynamicResource Tools.Left.Import}" Check="PageCheck"
                           LogoScale="0.9"
                           SvgIcon="lucide/folder-input" />
-        <local:MyListItem x:Name="ItemDirectLink"
-                          IsScaleAnimationEnabled="False"
-                          Type="RadioBox" Tag="5"
-                          MinPaddingRight="35" Height="36"
-                          VerticalAlignment="Top"
-                          Title="{DynamicResource Tools.Left.DirectLink}" Check="PageCheck"
-                          LogoScale="0.9"
-                          SvgIcon="lucide/network" />
 
     </StackPanel>
 </local:MyPageLeft>

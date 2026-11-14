@@ -261,7 +261,8 @@ public partial class FormMain
             Page("misc", "Setup.Left.Item.Misc", PageType.Setup, PageSubType.SetupLauncherMisc, "proxy network mcp 代理 网络 網路", true),
             Page("update", "Setup.Left.Item.Update", PageType.Setup, PageSubType.SetupUpdate, "update channel 更新 通道", true),
             Page("about", "Setup.Left.Item.About", PageType.Setup, PageSubType.SetupAbout, "about version 关于 關於 版本", true),
-            Page("plugins", "Main.Tab.Plugins", PageType.Plugins, PageSubType.PluginInstalled, "plugins 插件 外掛")
+            Page("plugins", "Main.Tab.Plugins", PageType.Plugins, PageSubType.PluginInstalled, "plugins 插件 外掛"),
+            Page("link", "Main.Tab.Link", PageType.Link, PageSubType.LinkHost, "link multiplayer ipv6 联机 連線 直连")
         ];
 
         foreach (var command in candidates)

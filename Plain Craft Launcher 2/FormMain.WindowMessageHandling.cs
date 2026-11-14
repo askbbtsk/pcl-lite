@@ -324,7 +324,7 @@ public partial class FormMain
         var buttons = new (MyRadioButton Button, int Id)[]
         {
             (BtnTitleSelect0, 0), (BtnTitleSelect1, 1), (BtnTitleSelect2, 2),
-            (BtnTitleSelectLunar, 13), (BtnTitleSelect4, 4),
+            (BtnTitleSelectLunar, 13), (BtnTitleSelectLink, 15), (BtnTitleSelect4, 4),
             (BtnTitleSelect3, 3), (BtnTitleSelectPlugins, 14)
         };
         var preferredCollapsedIds = ParseCollapsedNavigationIds(Config.Preference.TopBarCollapsedTabs);
@@ -395,7 +395,7 @@ public partial class FormMain
 
     private static HashSet<int> ParseCollapsedNavigationIds(string? value)
     {
-        var validIds = new HashSet<int> { 1, 2, 3, 4, 13, 14 };
+        var validIds = new HashSet<int> { 1, 2, 3, 4, 13, 14, 15 };
         return (value ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(text => int.TryParse(text, out var id) ? id : -1)
             .Where(validIds.Contains)

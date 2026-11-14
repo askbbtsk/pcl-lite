@@ -6,123 +6,142 @@
     <local:MyScrollViewer x:Name="PanBack" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel x:Name="PanMain" Margin="25,10">
 
-            <!-- 网络环境检测卡片 -->
-            <local:MyCard Margin="0,15,0,15" Title="{DynamicResource Tools.DirectLink.EnvTitle}">
+            <!-- 仅在没检测到公网 IPv6 时显示，不占用正常情况的版面 -->
+            <local:MyCard x:Name="CardNoIpv6" Margin="0,15,0,15" Visibility="Collapsed"
+                          Title="{DynamicResource Link.Env.NoIpv6Title}">
                 <StackPanel Margin="25,40,25,20">
-                    <TextBlock Text="{DynamicResource Tools.DirectLink.EnvDesc}" TextWrapping="Wrap" LineHeight="19" />
-                    <TextBlock x:Name="LabIpv6Status" Margin="0,10,0,0" TextWrapping="Wrap" FontWeight="SemiBold"
-                               Text="正在检测本机公网 IPv6 地址…" />
+                    <TextBlock Text="{DynamicResource Link.Env.NoIpv6Desc}" TextWrapping="Wrap" LineHeight="20" />
                     <WrapPanel Margin="0,12,0,0">
-                        <local:MyButton x:Name="BtnRefreshIpv6" MinWidth="130" Height="35"
-                                        Text="{DynamicResource Tools.DirectLink.RefreshEnv}"
-                                        Click="BtnRefreshIpv6_Click" />
+                        <local:MyButton x:Name="BtnRetryIpv6" MinWidth="130" Height="35"
+                                        Text="{DynamicResource Link.Left.RefreshNet}"
+                                        Click="BtnRetryIpv6_Click" />
                     </WrapPanel>
                 </StackPanel>
             </local:MyCard>
 
-            <!-- 我是房主 -->
-            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Tools.DirectLink.HostTitle}">
-                <StackPanel Margin="25,40,25,20">
-                    <TextBlock Text="{DynamicResource Tools.DirectLink.HostPort}" TextWrapping="Wrap" />
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <local:MyTextBox x:Name="TextHostPort" Grid.Column="0" Text="25565"
-                                         TextChanged="TextHostPort_TextChanged" />
-                        <TextBlock x:Name="LabLanDetected" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0"
-                                   Opacity="0.72" TextWrapping="Wrap"
-                                   Text="等待 Minecraft“对局域网开放”广播，或手动填写端口号。" />
-                    </Grid>
-
-                    <WrapPanel Margin="0,14,0,0">
-                        <local:MyButton x:Name="BtnHostToggle" MinWidth="180" Height="35" ColorType="Highlight"
-                                        Text="{DynamicResource Tools.DirectLink.HostStart}"
-                                        Click="BtnHostToggle_Click" />
-                    </WrapPanel>
-
-                    <StackPanel x:Name="PanHostActive" Margin="0,14,0,0" Visibility="Collapsed">
-                        <TextBlock Text="{DynamicResource Tools.DirectLink.InviteCodeLabel}" TextWrapping="Wrap" />
-                        <Grid Margin="0,6,0,0">
+            <!-- 房主视图 -->
+            <StackPanel x:Name="PanHostMode" Margin="0,15,0,0">
+                <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Link.Host.Step1Title}">
+                    <StackPanel Margin="25,40,25,20">
+                        <TextBlock x:Name="LabLanDetected" TextWrapping="Wrap" LineHeight="20"
+                                   Text="{DynamicResource Link.Host.LanWaiting}" />
+                        <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="130" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <local:MyTextBox x:Name="TextInviteCode" Grid.Column="0" IsReadOnly="True" />
-                            <local:MyButton x:Name="BtnCopyInvite" Grid.Column="1" MinWidth="80" Height="35" Margin="10,0,0,0"
-                                            Text="{DynamicResource Tools.DirectLink.Copy}"
-                                            Click="BtnCopyInvite_Click" />
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"
+                                       Text="{DynamicResource Link.Host.PortLabel}" />
+                            <local:MyTextBox x:Name="TextHostPort" Grid.Column="1" Text="25565"
+                                             TextChanged="TextHostPort_TextChanged" />
+                            <local:MyButton x:Name="BtnHostToggle" Grid.Column="2" HorizontalAlignment="Left"
+                                            MinWidth="190" Height="35" Margin="12,0,0,0" ColorType="Highlight"
+                                            Text="{DynamicResource Link.Host.StartBtn}"
+                                            Click="BtnHostToggle_Click" />
                         </Grid>
 
-                        <TextBlock Margin="0,14,0,0" Text="{DynamicResource Tools.DirectLink.AckInputLabel}" TextWrapping="Wrap" />
-                        <Grid Margin="0,6,0,0">
+                        <StackPanel x:Name="PanHostInviteRow" Margin="0,14,0,0" Visibility="Collapsed">
+                            <TextBlock Text="{DynamicResource Link.Host.InviteHint}" TextWrapping="Wrap" Opacity="0.82" />
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <local:MyTextBox x:Name="TextInviteCode" Grid.Column="0" IsReadOnly="True" />
+                                <local:MyButton x:Name="BtnCopyInvite" Grid.Column="1" MinWidth="95" Height="35" Margin="10,0,0,0"
+                                                Text="{DynamicResource Link.Host.CopyAgain}"
+                                                Click="BtnCopyInvite_Click" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </local:MyCard>
+
+                <local:MyCard x:Name="CardHostAck" Margin="0,0,0,15" Visibility="Collapsed"
+                              Title="{DynamicResource Link.Host.Step2Title}">
+                    <StackPanel Margin="25,40,25,20">
+                        <TextBlock Text="{DynamicResource Link.Host.AckDesc}" TextWrapping="Wrap" LineHeight="20" Opacity="0.82" />
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <local:MyTextBox x:Name="TextHostAckInput" Grid.Column="0" HintText="粘贴好友发来的 ACK6-..." />
-                            <local:MyButton x:Name="BtnAcceptAck" Grid.Column="1" MinWidth="100" Height="35" Margin="10,0,0,0"
-                                            Text="{DynamicResource Tools.DirectLink.AcceptAck}"
+                            <local:MyTextBox x:Name="TextHostAckInput" Grid.Column="0"
+                                             HintText="{DynamicResource Link.Host.AckPlaceholder}" />
+                            <local:MyButton x:Name="BtnAcceptAck" Grid.Column="1" MinWidth="120" Height="35" Margin="10,0,0,0"
+                                            ColorType="Highlight"
+                                            Text="{DynamicResource Link.Host.PasteAndAccept}"
                                             Click="BtnAcceptAck_Click" />
                         </Grid>
-
-                        <TextBlock x:Name="LabHostPeers" Margin="0,12,0,0" TextWrapping="Wrap" Opacity="0.82"
-                                   Text="尚未有好友连接。" />
                     </StackPanel>
-                </StackPanel>
-            </local:MyCard>
+                </local:MyCard>
 
-            <!-- 我是房客 -->
-            <local:MyCard Margin="0,0,0,20" Title="{DynamicResource Tools.DirectLink.GuestTitle}">
-                <StackPanel Margin="25,40,25,20">
-                    <TextBlock Text="{DynamicResource Tools.DirectLink.GuestInviteLabel}" TextWrapping="Wrap" />
-                    <Grid Margin="0,6,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <local:MyTextBox x:Name="TextGuestInviteInput" Grid.Column="0" HintText="粘贴房主的 PCL6-..." />
-                        <local:MyButton x:Name="BtnGuestToggle" Grid.Column="1" MinWidth="105" Height="35" Margin="10,0,0,0"
-                                        ColorType="Highlight"
-                                        Text="{DynamicResource Tools.DirectLink.GuestConnect}"
-                                        Click="BtnGuestToggle_Click" />
-                    </Grid>
+                <local:MyCard x:Name="CardHostPeers" Margin="0,0,0,20" Visibility="Collapsed"
+                              Title="{DynamicResource Link.Host.PeersTitle}">
+                    <StackPanel Margin="25,40,25,20">
+                        <TextBlock x:Name="LabHostPeers" TextWrapping="Wrap" LineHeight="22"
+                                   Text="{DynamicResource Link.Host.NoPeers}" />
+                    </StackPanel>
+                </local:MyCard>
+            </StackPanel>
 
-                    <StackPanel x:Name="PanGuestActive" Margin="0,14,0,0" Visibility="Collapsed">
-                        <TextBlock x:Name="LabGuestStatus" FontWeight="SemiBold" TextWrapping="Wrap"
-                                   Text="正在尝试直连房主…" />
+            <!-- 房客视图 -->
+            <StackPanel x:Name="PanGuestMode" Margin="0,15,0,0" Visibility="Collapsed">
+                <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Link.Guest.Step1Title}">
+                    <StackPanel Margin="25,40,25,20">
+                        <TextBlock Text="{DynamicResource Link.Guest.InviteHint}" TextWrapping="Wrap" LineHeight="20" />
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <local:MyTextBox x:Name="TextGuestInviteInput" Grid.Column="0"
+                                             HintText="{DynamicResource Link.Guest.InvitePlaceholder}" />
+                            <local:MyButton x:Name="BtnGuestToggle" Grid.Column="1" MinWidth="125" Height="35" Margin="10,0,0,0"
+                                            ColorType="Highlight"
+                                            Text="{DynamicResource Link.Guest.PasteAndConnect}"
+                                            Click="BtnGuestToggle_Click" />
+                        </Grid>
+                    </StackPanel>
+                </local:MyCard>
 
-                        <StackPanel x:Name="PanGuestAck" Margin="0,12,0,0" Visibility="Collapsed">
-                            <TextBlock Text="{DynamicResource Tools.DirectLink.GuestAckLabel}" TextWrapping="Wrap" />
-                            <Grid Margin="0,6,0,0">
+                <local:MyCard x:Name="CardGuestProgress" Margin="0,0,0,20" Visibility="Collapsed"
+                              Title="{DynamicResource Link.Guest.Step2Title}">
+                    <StackPanel Margin="25,40,25,20">
+                        <TextBlock x:Name="LabGuestStatus" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="20"
+                                   Text="{DynamicResource Link.Guest.Connecting}" />
+
+                        <StackPanel x:Name="PanGuestAck" Margin="0,14,0,0" Visibility="Collapsed">
+                            <TextBlock Text="{DynamicResource Link.Guest.AckExplain}" TextWrapping="Wrap" LineHeight="20" Opacity="0.85" />
+                            <Grid Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <local:MyTextBox x:Name="TextGuestAckCode" Grid.Column="0" IsReadOnly="True" />
-                                <local:MyButton x:Name="BtnCopyGuestAck" Grid.Column="1" MinWidth="80" Height="35" Margin="10,0,0,0"
-                                                Text="{DynamicResource Tools.DirectLink.Copy}"
+                                <local:MyButton x:Name="BtnCopyGuestAck" Grid.Column="1" MinWidth="105" Height="35" Margin="10,0,0,0"
+                                                ColorType="Highlight"
+                                                Text="{DynamicResource Link.Guest.CopyAck}"
                                                 Click="BtnCopyGuestAck_Click" />
                             </Grid>
                         </StackPanel>
 
-                        <StackPanel x:Name="PanGuestConnected" Margin="0,12,0,0" Visibility="Collapsed">
-                            <TextBlock Text="{DynamicResource Tools.DirectLink.LocalAddrLabel}" TextWrapping="Wrap" />
-                            <Grid Margin="0,6,0,0">
+                        <StackPanel x:Name="PanGuestConnected" Margin="0,14,0,0" Visibility="Collapsed">
+                            <TextBlock Text="{DynamicResource Link.Guest.FallbackAddrHint}" TextWrapping="Wrap" LineHeight="20" Opacity="0.82" />
+                            <Grid Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <local:MyTextBox x:Name="TextLocalAddr" Grid.Column="0" IsReadOnly="True" />
-                                <local:MyButton x:Name="BtnCopyLocalAddr" Grid.Column="1" MinWidth="80" Height="35" Margin="10,0,0,0"
-                                                Text="{DynamicResource Tools.DirectLink.Copy}"
+                                <local:MyButton x:Name="BtnCopyLocalAddr" Grid.Column="1" MinWidth="105" Height="35" Margin="10,0,0,0"
+                                                Text="{DynamicResource Link.Guest.CopyAddr}"
                                                 Click="BtnCopyLocalAddr_Click" />
                             </Grid>
                         </StackPanel>
                     </StackPanel>
-                </StackPanel>
-            </local:MyCard>
+                </local:MyCard>
+            </StackPanel>
 
         </StackPanel>
     </local:MyScrollViewer>

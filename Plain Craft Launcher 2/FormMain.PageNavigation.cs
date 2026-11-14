@@ -89,6 +89,12 @@ public partial class FormMain
                     return ModMain.frmLunarLeft.pageID;
                 }
 
+                case PageType.Link:
+                {
+                    ModMain.frmLinkLeft ??= new PageLinkLeft();
+                    return ModMain.frmLinkLeft.pageID;
+                }
+
                 case PageType.InstanceSetup:
                 {
                     if (ModMain.frmInstanceLeft is null)
@@ -259,6 +265,12 @@ public partial class FormMain
                             break;
                         }
 
+                    break;
+                }
+                case PageType.Link:
+                {
+                    ModMain.frmLinkLeft ??= new PageLinkLeft();
+                    ModMain.frmLinkLeft.Select(subType, stack == pageCurrent);
                     break;
                 }
             }
@@ -453,6 +465,17 @@ public partial class FormMain
                         subType = ModMain.frmLunarLeft.pageID;
                         PageChangeAnim(ModMain.frmLunarLeft,
                             (FrameworkElement)ModMain.frmLunarLeft.PageGet(subType));
+                        break;
+                    }
+                case PageType.Link: // 联机
+                    {
+                        ModMain.frmLinkLeft ??= new PageLinkLeft();
+                        if (subType is PageSubType.LinkHost or PageSubType.LinkGuest)
+                            ModMain.frmLinkLeft.pageID = subType;
+                        else
+                            subType = ModMain.frmLinkLeft.pageID;
+                        PageChangeAnim(ModMain.frmLinkLeft,
+                            (FrameworkElement)ModMain.frmLinkLeft.PageGet(subType));
                         break;
                     }
                 case PageType.Setup: // 设置

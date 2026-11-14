@@ -230,6 +230,7 @@ public partial class PageSetupUI
         CheckTopBarCollapseSettings.Checked = collapsedIds.Contains(3);
         CheckTopBarCollapseTools.Checked = collapsedIds.Contains(4);
         CheckTopBarCollapseLunar.Checked = collapsedIds.Contains(13);
+        CheckTopBarCollapseLink.Checked = collapsedIds.Contains(15);
         CheckTopBarCollapsePlugins.Checked = collapsedIds.Contains(14);
     }
 
@@ -243,7 +244,7 @@ public partial class PageSetupUI
         var collapsedIds = (Config.Preference.TopBarCollapsedTabs ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(value => int.TryParse(value, out var currentId) ? currentId : -1)
-            .Where(currentId => currentId is 1 or 2 or 3 or 4 or 13 or 14)
+            .Where(currentId => currentId is 1 or 2 or 3 or 4 or 13 or 14 or 15)
             .ToHashSet();
         if (checkBox.Checked == true)
             collapsedIds.Add(id);

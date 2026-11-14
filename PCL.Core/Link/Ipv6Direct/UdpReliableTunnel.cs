@@ -117,23 +117,17 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             }
             case TunnelPacketType.Open:
             {
-                var stream = _streams.GetOrAdd(connId, id =>
-                {
-                    var s = new ReliableStream(id, this, isInitiator: false);
-                    OnStreamAccepted?.Invoke(s);
-                    return s;
-                });
+                var stream = GetOrAcceptStream(connId);
+                var (replyAck, replySackMask) = stream.GetAckState();
                 // 回复 ACK 确认打开
-                _ = SendAckAsync(connId, stream.ExpectedReceiveSeq, stream.BuildSackMask());
+                _ = SendAckAsync(connId, replyAck, replySackMask);
                 break;
             }
             case TunnelPacketType.Data:
             {
-                if (_streams.TryGetValue(connId, out var stream))
-                {
-                    stream.HandleData(seq, packet[HeaderSize..]);
-                    stream.HandleAck(ack, sackMask);
-                }
+                var stream = GetOrAcceptStream(connId);
+                stream.HandleData(seq, packet[HeaderSize..]);
+                stream.HandleAck(ack, sackMask);
                 break;
             }
             case TunnelPacketType.Ack:
@@ -144,11 +138,23 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             }
             case TunnelPacketType.Close:
             {
-                if (_streams.TryGetValue(connId, out var stream))
-                    stream.HandleRemoteClose(seq);
+                var stream = GetOrAcceptStream(connId);
+                stream.HandleRemoteClose(seq);
                 break;
             }
         }
+    }
+
+    private ReliableStream GetOrAcceptStream(uint connId)
+    {
+        if (_streams.TryGetValue(connId, out var existing))
+            return existing;
+
+        var created = new ReliableStream(connId, this, isInitiator: false);
+        var actual = _streams.GetOrAdd(connId, created);
+        if (ReferenceEquals(actual, created))
+            OnStreamAccepted?.Invoke(created);
+        return actual;
     }
 
     internal ValueTask SendControlAsync(TunnelPacketType type, uint connId, uint seq)
@@ -281,8 +287,9 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                     _unacked[seq] = new PendingPacket(seq, copy, Environment.TickCount64);
                 }
 
+                var (ack, sackMask) = GetAckState();
                 await _peer.SendDataPacketAsync(
-                    _connId, seq, ExpectedReceiveSeq, BuildSackMask(), copy).ConfigureAwait(false);
+                    _connId, seq, ack, sackMask, copy).ConfigureAwait(false);
             }
         }
 
@@ -345,6 +352,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         internal void HandleData(uint seq, ReadOnlySpan<byte> payload)
         {
             var sendAck = false;
+            (uint Ack, ulong SackMask) ackState = default;
             lock (_recvLock)
             {
                 if (seq < _recvExpectedSeq)
@@ -368,20 +376,25 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                     _outOfOrder.TryAdd(seq, payload.ToArray());
                     sendAck = true;
                 }
+
+                if (sendAck)
+                    ackState = GetAckStateLocked();
             }
 
             if (sendAck)
-                _ = _peer.SendAckAsync(_connId, ExpectedReceiveSeq, BuildSackMask());
+                _ = _peer.SendAckAsync(_connId, ackState.Ack, ackState.SackMask);
         }
 
         internal void HandleRemoteClose(uint seq)
         {
+            (uint Ack, ulong SackMask) ackState;
             lock (_recvLock)
             {
                 _remoteCloseSeq = seq;
                 CheckRemoteCloseLocked();
+                ackState = GetAckStateLocked();
             }
-            _ = _peer.SendAckAsync(_connId, ExpectedReceiveSeq, BuildSackMask());
+            _ = _peer.SendAckAsync(_connId, ackState.Ack, ackState.SackMask);
         }
 
         private void CheckRemoteCloseLocked()
@@ -389,23 +402,27 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             if (_remoteCloseSeq is { } closeSeq && _recvExpectedSeq >= closeSeq && !_remoteClosedDelivered)
             {
                 _remoteClosedDelivered = true;
+                _recvExpectedSeq = closeSeq + 1;
                 _incomingChunks.Writer.TryComplete();
             }
         }
 
-        internal ulong BuildSackMask()
+        internal (uint Ack, ulong SackMask) GetAckState()
         {
             lock (_recvLock)
+                return GetAckStateLocked();
+        }
+
+        private (uint Ack, ulong SackMask) GetAckStateLocked()
+        {
+            ulong mask = 0;
+            foreach (var seq in _outOfOrder.Keys)
             {
-                ulong mask = 0;
-                foreach (var seq in _outOfOrder.Keys)
-                {
-                    var diff = (int)(seq - _recvExpectedSeq);
-                    if (diff >= 1 && diff <= 64)
-                        mask |= 1UL << (diff - 1);
-                }
-                return mask;
+                var diff = (int)(seq - _recvExpectedSeq);
+                if (diff >= 1 && diff <= 64)
+                    mask |= 1UL << (diff - 1);
             }
+            return (_recvExpectedSeq, mask);
         }
 
         internal void HandleAck(uint ack, ulong sackMask)
@@ -461,10 +478,15 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             foreach (var pkt in due)
             {
                 if (pkt.IsClose)
+                {
                     await _peer.SendControlAsync(TunnelPacketType.Close, _connId, pkt.Seq).ConfigureAwait(false);
+                }
                 else
+                {
+                    var (ack, sackMask) = GetAckState();
                     await _peer.SendDataPacketAsync(
-                        _connId, pkt.Seq, ExpectedReceiveSeq, BuildSackMask(), pkt.Data).ConfigureAwait(false);
+                        _connId, pkt.Seq, ack, sackMask, pkt.Data).ConfigureAwait(false);
+                }
             }
         }
     }

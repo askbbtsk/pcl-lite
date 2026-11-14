@@ -420,6 +420,8 @@
                                           Tag="14" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
                         <local:MyCheckBox x:Name="CheckTopBarCollapseLunar" Text="Lunar"
                                           Tag="13" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
+                        <local:MyCheckBox x:Name="CheckTopBarCollapseLink" Text="{DynamicResource Main.Tab.Link}"
+                                          Tag="15" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
                         <local:MyCheckBox x:Name="CheckTopBarCollapseSettings" Text="{DynamicResource Main.Tab.Settings}"
                                           Tag="3" Height="24" Margin="0,0,12,6" Change="TopBarCollapsedTab_Change" />
                         <local:MyCheckBox x:Name="CheckTopBarCollapseTools" Text="{DynamicResource Main.Tab.Tools}"

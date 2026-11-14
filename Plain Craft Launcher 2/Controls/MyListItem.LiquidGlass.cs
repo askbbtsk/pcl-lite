@@ -27,7 +27,7 @@ public partial class MyListItem
             if (parent is PageSelectLeft page) return page.PanList.Children.Contains(this);
             if (parent is MyPageLeft)
                 return parent is PageSetupLeft or PageDownloadLeft or PageToolsLeft or PagePluginsLeft
-                    or PageInstanceLeft or PageInstanceSavesLeft or PageBedrockLeft or PageLunarLeft;
+                    or PageInstanceLeft or PageInstanceSavesLeft or PageBedrockLeft or PageLunarLeft or PageLinkLeft;
         }
         return false;
     }

@@ -210,6 +210,10 @@
                                                  Check="BtnTitleSelect_Click"
                                                  LogoScale="1"
                                                  SvgIcon="brand/lunar" />
+                            <local:MyRadioButton x:Name="BtnTitleSelectLink" Text="{DynamicResource Main.Tab.Link}" Tag="15" Margin="5,0" Padding="2,0"
+                                                 Check="BtnTitleSelect_Click"
+                                                 LogoScale="0.95"
+                                                 SvgIcon="lucide/network" />
                             <local:MyRadioButton x:Name="BtnTitleSelect4" Text="{DynamicResource Main.Tab.Tools}" Tag="4" Margin="5,0" Padding="2,0"
                                                  Check="BtnTitleSelect_Click"
                                                  LogoScale="1"

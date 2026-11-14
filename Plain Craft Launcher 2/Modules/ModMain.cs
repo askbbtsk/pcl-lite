@@ -37,6 +37,7 @@ public static partial class ModMain
     public static PageToolsLeft? frmToolsLeft;
     public static PageToolsTest? frmToolsTest;
     public static PageToolsImport? frmToolsImport;
+    public static PageLinkLeft? frmLinkLeft;
     public static PageToolsDirectLink? frmToolsDirectLink;
     public static PageBedrockLeft? frmBedrockLeft;
     public static PageBedrockDownload? frmBedrockDownload;

@@ -252,7 +252,7 @@ public static partial class Config
         [ConfigItem<bool>("UiLogoLeft", false, ConfigSource.Local)] public partial bool TopBarLeftAlign { get; set; }
 
         /// <summary>标题栏空间不足时优先折叠的主导航页码，以逗号分隔。</summary>
-        [ConfigItem<string>("UiTopBarCollapsedTabs", "3,14", ConfigSource.Local)] public partial string TopBarCollapsedTabs { get; set; }
+        [ConfigItem<string>("UiTopBarCollapsedTabs", "3,14,15", ConfigSource.Local)] public partial string TopBarCollapsedTabs { get; set; }
 
         /// <summary>
         /// 全局字体。

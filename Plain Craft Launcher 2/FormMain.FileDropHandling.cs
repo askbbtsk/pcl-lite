@@ -601,6 +601,11 @@ public partial class FormMain
         ///         </para>
         /// </summary>
         Lunar = 13,
+
+        /// <summary>
+        ///     IPv6 直连联机。导航栏里排在「Lunar」右侧。
+        /// </summary>
+        Link = 15,
     }
 
 
@@ -662,9 +667,10 @@ public partial class FormMain
         ToolsImport = 4,
 
         /// <summary>
-        ///     IPv6 离线邀请码直连联机。
+        ///     IPv6 离线邀请码直连联机（房主 / 房客）。
         /// </summary>
-        ToolsDirectLink = 5,
+        LinkHost = 30,
+        LinkGuest = 31,
 
         BedrockDownload = 0,
         BedrockLaunch = 1,

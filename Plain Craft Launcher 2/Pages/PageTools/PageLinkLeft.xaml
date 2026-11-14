@@ -1,0 +1,81 @@
+<local:MyPageLeft x:Class="PCL.PageLinkLeft"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:local="clr-namespace:PCL"
+                  mc:Ignorable="d"
+                  Width="260">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="20" />
+        </Grid.RowDefinitions>
+
+        <local:MyScrollViewer Grid.Row="0"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+            <StackPanel Orientation="Vertical" x:Name="PanItem" Margin="0,12,0,0">
+
+                <TextBlock Text="{DynamicResource Link.Left.Category}"
+                           Margin="13,5,5,3"
+                           Opacity="0.6" FontSize="12" />
+
+                <local:MyListItem x:Name="ItemHost"
+                                  IsScaleAnimationEnabled="False"
+                                  Type="RadioBox" Tag="30"
+                                  Check="PageCheck"
+                                  MinPaddingRight="35" Height="36"
+                                  VerticalAlignment="Top"
+                                  Title="{DynamicResource Link.Left.Host}"
+                                  LogoScale="0.88"
+                                  SvgIcon="lucide/server" />
+
+                <local:MyListItem x:Name="ItemGuest"
+                                  IsScaleAnimationEnabled="False"
+                                  Type="RadioBox" Tag="31"
+                                  Check="PageCheck"
+                                  MinPaddingRight="35" Height="36"
+                                  VerticalAlignment="Top"
+                                  Title="{DynamicResource Link.Left.Guest}"
+                                  LogoScale="0.88"
+                                  SvgIcon="lucide/user-plus" />
+
+                <TextBlock Text="{DynamicResource Link.Left.StatusTitle}"
+                           Style="{StaticResource TahoeSidebarHeadingStyle}" />
+                <Border Style="{StaticResource TahoeSidebarSectionStyle}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Ellipse x:Name="ShapeStatusDot" Grid.Column="0"
+                                     Width="8" Height="8" Margin="0,4,8,0"
+                                     VerticalAlignment="Top"
+                                     Fill="{DynamicResource ColorBrushGray4}" />
+                            <TextBlock x:Name="LabStatus" Grid.Column="1"
+                                       FontSize="13" FontWeight="Bold"
+                                       TextWrapping="Wrap" MaxHeight="40"
+                                       ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
+                                       Text="{DynamicResource Link.Left.Detecting}" />
+                        </Grid>
+                        <TextBlock x:Name="LabDetail" Text=""
+                                   Style="{StaticResource TahoeSidebarPathStyle}"
+                                   Margin="16,4,0,0"
+                                   MaxHeight="72" LineHeight="14"
+                                   ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </local:MyScrollViewer>
+
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <local:MyButton x:Name="BtnRefreshNet" Height="40" Margin="20,0"
+                            Text="{DynamicResource Link.Left.RefreshNet}"
+                            Click="BtnRefreshNet_Click" />
+        </Grid>
+    </Grid>
+</local:MyPageLeft>

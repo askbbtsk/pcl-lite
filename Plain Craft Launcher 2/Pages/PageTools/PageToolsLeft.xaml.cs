@@ -80,12 +80,6 @@ public partial class PageToolsLeft
                     ModMain.frmToolsImport = new PageToolsImport();
                 return ModMain.frmToolsImport;
             }
-            case FormMain.PageSubType.ToolsDirectLink:
-            {
-                if (ModMain.frmToolsDirectLink is null)
-                    ModMain.frmToolsDirectLink = new PageToolsDirectLink();
-                return ModMain.frmToolsDirectLink;
-            }
             default:
             {
                 throw new Exception("未知的更多子页面种类：" + (int)id);
@@ -104,8 +98,6 @@ public partial class PageToolsLeft
     {
         if (id == FormMain.PageSubType.ToolsImport)
             ItemImport.SetChecked(true, false, true);
-        else if (id == FormMain.PageSubType.ToolsDirectLink)
-            ItemDirectLink.SetChecked(true, false, true);
         else
             ItemTest.SetChecked(true, false, true);
 

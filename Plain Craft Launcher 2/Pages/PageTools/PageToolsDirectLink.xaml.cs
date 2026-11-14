@@ -23,7 +23,6 @@ public partial class PageToolsDirectLink
     private Ipv6HostSession? _hostSession;
     private Ipv6GuestSession? _guestSession;
     private CancellationTokenSource? _lanListenCts;
-    private CancellationTokenSource? _guestAckRevealCts;
     private DispatcherTimer? _hostPunchUiTimer;
     private DispatcherTimer? _lanExpireTimer;
     private FormMain.PageSubType _currentMode = FormMain.PageSubType.LinkHost;
@@ -416,6 +415,7 @@ public partial class PageToolsDirectLink
         if (ok)
         {
             TextHostAckInput.Text = string.Empty;
+            TextHostAckInput.Focus();
             UpdateHostPeersUi();
             PushSidebarStatus();
             HintService.Hint(msg, HintType.Success);
@@ -474,37 +474,16 @@ public partial class PageToolsDirectLink
             TextGuestAckCode.Text = _guestSession.AckCode;
             TextLocalAddr.Text = $"127.0.0.1:{_guestSession.LocalProxyPort}";
             CardGuestProgress.Visibility = Visibility.Visible;
-            PanGuestAck.Visibility = Visibility.Collapsed;
+            PanGuestAck.Visibility = Visibility.Visible;
             PanGuestConnected.Visibility = Visibility.Collapsed;
-            LabGuestStatus.Text = Lang.Text("Link.Guest.Connecting");
+            LabGuestStatus.Text = Lang.Text("Link.Guest.NeedAckStatus");
 
             BtnGuestToggle.Text = Lang.Text("Link.Guest.DisconnectBtn");
             BtnGuestToggle.ColorType = MyButton.ColorState.Red;
             PushSidebarStatus();
 
-            _guestAckRevealCts?.Cancel();
-            _guestAckRevealCts = new CancellationTokenSource();
-            var revealCt = _guestAckRevealCts.Token;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.Delay(1200, revealCt);
-                    await Dispatcher.BeginInvoke(() =>
-                    {
-                        if (_guestSession is { IsConnected: false })
-                        {
-                            PanGuestAck.Visibility = Visibility.Visible;
-                            LabGuestStatus.Text = Lang.Text("Link.Guest.NeedAckStatus");
-                            TrySetClipboard(_guestSession.AckCode);
-                            HintService.Hint("未直接连通，已自动复制回执码！快发给房主点放行。", HintType.Success);
-                        }
-                    });
-                }
-                catch (OperationCanceledException)
-                {
-                }
-            }, revealCt);
+            TrySetClipboard(_guestSession.AckCode);
+            HintService.Hint("已复制回执码，请通过可信聊天渠道发给房主放行。每位好友都需要单独放行。", HintType.Success);
         }
         catch (Exception ex)
         {
@@ -514,10 +493,6 @@ public partial class PageToolsDirectLink
 
     private async Task StopGuestAsync()
     {
-        _guestAckRevealCts?.Cancel();
-        _guestAckRevealCts?.Dispose();
-        _guestAckRevealCts = null;
-
         if (_guestSession is null)
             return;
 
@@ -541,7 +516,6 @@ public partial class PageToolsDirectLink
 
         if (_guestSession.IsConnected)
         {
-            _guestAckRevealCts?.Cancel();
             PanGuestAck.Visibility = Visibility.Collapsed;
             PanGuestConnected.Visibility = Visibility.Visible;
 

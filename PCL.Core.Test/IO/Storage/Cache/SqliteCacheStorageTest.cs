@@ -13,6 +13,7 @@ namespace PCL.Core.Test.IO.Storage.Cache;
 /// Tests the database layer operations including CRUD, queries, and file hash management.
 /// </summary>
 [TestClass]
+[DoNotParallelize] // Cleanup clears the process-wide SQLite connection pools.
 public class SqliteCacheStorageTest
 {
     private SqliteCacheStorage _storage = null!;

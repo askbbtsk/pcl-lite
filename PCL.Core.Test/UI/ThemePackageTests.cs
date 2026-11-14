@@ -279,10 +279,7 @@ public sealed class ThemePackageTests
     [TestMethod]
     public async Task ShippedExampleLoadsEveryModeAndCannotLoseContentSlots()
     {
-        string? repository = AppContext.BaseDirectory;
-        while (repository is not null && !Directory.Exists(Path.Combine(repository, "examples", "themes", "SoftSlate")))
-            repository = Path.GetDirectoryName(repository.TrimEnd(Path.DirectorySeparatorChar));
-        Assert.IsNotNull(repository);
+        string repository = TestRepository.FindRoot();
         var package = await _service.InspectAsync(Path.Combine(repository, "examples", "themes", "SoftSlate"));
         // Launcher-specific editable ComboBox parts are exercised by ThemeSmoke,
         // which references the real launcher. Core tests do not load that assembly.
@@ -314,10 +311,7 @@ public sealed class ThemePackageTests
     [TestMethod]
     public async Task AnnotatedLearningXamlInstallsAsStandaloneAndPreservesHostContent()
     {
-        string? repository = AppContext.BaseDirectory;
-        while (repository is not null && !File.Exists(Path.Combine(repository, "docs", "theme-examples", "StarterTheme.xaml")))
-            repository = Path.GetDirectoryName(repository.TrimEnd(Path.DirectorySeparatorChar));
-        Assert.IsNotNull(repository);
+        string repository = TestRepository.FindRoot();
         string source = Path.Combine(repository, "docs", "theme-examples", "StarterTheme.xaml");
         var package = await _service.InspectAsync(source);
         Assert.IsTrue(ThemePackageService.IsThemeXaml(source));

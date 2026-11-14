@@ -13,6 +13,7 @@ namespace PCL.Core.Test;
 /// </para>
 /// </summary>
 [TestClass]
+[DoNotParallelize] // Changes the process-wide UserPathMasker.Enabled switch.
 public class UserPathMaskerTest
 {
     [TestMethod]

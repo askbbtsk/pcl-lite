@@ -17,7 +17,7 @@ public class Ipv6DirectTest
     public void InviteCode_RoundTrip_HostAndAck()
     {
         var ip = IPAddress.Parse("240e:3b4:1234:5678::abcd");
-        var hostPayload = new InviteCodePayload(InviteKind.HostInvite, ip, 49152, 0x1234ABCD);
+        var hostPayload = new InviteCodePayload(InviteKind.HostInvite, ip, 49152, 0x1234ABCD, TunnelSecret.Create());
         var hostCode = InviteCodeCodec.Encode(hostPayload);
 
         Assert.IsTrue(hostCode.StartsWith("BSK-", StringComparison.Ordinal));
@@ -28,7 +28,7 @@ public class Ipv6DirectTest
         Assert.AreEqual((ushort)49152, decodedHost.Port);
         Assert.AreEqual(0x1234ABCDu, decodedHost.Token);
 
-        var ackPayload = new InviteCodePayload(InviteKind.GuestAck, IPAddress.Parse("2408:8207::1"), 55555, 0x1234ABCD);
+        var ackPayload = InviteCodeCodec.CreateGuestAck(decodedHost, IPAddress.Parse("2408:8207::1"), 55555, RandomNumberGenerator.GetBytes(TunnelAuthentication.PeerIdSize));
         var ackCode = InviteCodeCodec.Encode(ackPayload);
         Assert.IsTrue(ackCode.StartsWith("ACK-", StringComparison.Ordinal));
         Assert.IsTrue(ackCode.StartsWith(InviteCodeCodec.GuestAckPrefix, StringComparison.Ordinal));
@@ -42,7 +42,7 @@ public class Ipv6DirectTest
     public void InviteCode_DetectsTampering()
     {
         var ip = IPAddress.Parse("2409:8a00::9");
-        var code = InviteCodeCodec.Encode(new InviteCodePayload(InviteKind.HostInvite, ip, 25565, 99));
+        var code = InviteCodeCodec.Encode(new InviteCodePayload(InviteKind.HostInvite, ip, 25565, 99, TunnelSecret.Create()));
         var tamperedLast = code[..^1] + (code[^1] == '1' ? '2' : '1');
         var tamperedMid = code[..8] + (code[8] == 'A' ? 'B' : 'A') + code[9..];
         var truncated = code[..^1];
@@ -76,11 +76,13 @@ public class Ipv6DirectTest
     public async Task UdpReliablePeer_TransfersLargePayloadWithPacketLoss()
     {
         const uint token = 0xCAFEBABE;
+        var secret = TunnelSecret.Create();
+        var peerId = RandomNumberGenerator.GetBytes(TunnelAuthentication.PeerIdSize);
         UdpReliablePeer? peerA = null;
         UdpReliablePeer? peerB = null;
         var dropCounter = 0;
 
-        peerA = new UdpReliablePeer(token, pkt =>
+        peerA = new UdpReliablePeer(token, secret, peerId, isHost: false, pkt =>
         {
             var copy = pkt.ToArray();
             if (Interlocked.Increment(ref dropCounter) % 7 == 0)
@@ -93,7 +95,7 @@ public class Ipv6DirectTest
             return ValueTask.CompletedTask;
         });
 
-        peerB = new UdpReliablePeer(token, pkt =>
+        peerB = new UdpReliablePeer(token, secret, peerId, isHost: true, pkt =>
         {
             var copy = pkt.ToArray();
             _ = Task.Run(async () =>
@@ -145,6 +147,8 @@ public class Ipv6DirectTest
     public async Task UdpReliablePeer_PongPropagatesOnlineAuthAndNoSemaphoreOverflow()
     {
         const uint token = 0x13572468;
+        var secret = TunnelSecret.Create();
+        var peerId = RandomNumberGenerator.GetBytes(TunnelAuthentication.PeerIdSize);
         var semaphoreOverflowSeen = 0;
         EventHandler<System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs> onFirstChance = (_, args) =>
         {
@@ -158,14 +162,14 @@ public class Ipv6DirectTest
             UdpReliablePeer? hostPeer = null;
             UdpReliablePeer? guestPeer = null;
 
-            hostPeer = new UdpReliablePeer(token, pkt =>
+            hostPeer = new UdpReliablePeer(token, secret, peerId, isHost: true, pkt =>
             {
                 var copy = pkt.ToArray();
                 _ = Task.Run(() => guestPeer!.HandleIncomingPacket(copy));
                 return ValueTask.CompletedTask;
             }, localRequiresOnlineAuth: true);
 
-            guestPeer = new UdpReliablePeer(token, pkt =>
+            guestPeer = new UdpReliablePeer(token, secret, peerId, isHost: false, pkt =>
             {
                 var copy = pkt.ToArray();
                 _ = Task.Run(() => hostPeer.HandleIncomingPacket(copy));

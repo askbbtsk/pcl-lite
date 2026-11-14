@@ -4053,10 +4053,10 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Link.Host.PortPlaceholder">Port (e.g. 25565)</sys:String>
     <sys:String x:Key="Link.Host.StartBtn">Start Room &amp; Copy Invite</sys:String>
     <sys:String x:Key="Link.Host.StopBtn">Close Room</sys:String>
-    <sys:String x:Key="Link.Host.InviteHint">Invite code copied automatically — send it to your friends:</sys:String>
+    <sys:String x:Key="Link.Host.InviteHint">Invite copied: 30 characters (BSK- plus 26 common Chinese characters). Send the original text through a trusted chat channel. Both sides need the updated launcher:</sys:String>
     <sys:String x:Key="Link.Host.CopyAgain">Copy Again</sys:String>
     <sys:String x:Key="Link.Host.Step2Title">2. Allow a Friend (Skip if already connected)</sys:String>
-    <sys:String x:Key="Link.Host.AckDesc">If your friend connected right away, skip this. If their screen shows an ACK- code, ask them to send it here and click Paste &amp; Allow:</sys:String>
+    <sys:String x:Key="Link.Host.AckDesc">Each friend must send their own ACK- code through a trusted chat channel after entering the BSK- invite. Paste and allow each code to add more friends without interrupting existing connections. Repeating the same ACK does not add a duplicate.</sys:String>
     <sys:String x:Key="Link.Host.AckPlaceholder">Copy friend's ACK- code and click the button to paste &amp; allow</sys:String>
     <sys:String x:Key="Link.Host.PasteAndAccept">Paste &amp; Allow</sys:String>
     <sys:String x:Key="Link.Host.PeersTitle">Friends in Room</sys:String>
@@ -4068,9 +4068,9 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Link.Guest.DisconnectBtn">Disconnect</sys:String>
     <sys:String x:Key="Link.Guest.Step2Title">2. Join Game</sys:String>
     <sys:String x:Key="Link.Guest.Connecting">Trying to reach host directly…</sys:String>
-    <sys:String x:Key="Link.Guest.NeedAckStatus">Blocked by host's firewall — your ACK- code below was copied automatically. Send it to the host and keep this page open:</sys:String>
+    <sys:String x:Key="Link.Guest.NeedAckStatus">Waiting for host approval. Your ACK- code was copied automatically. Send it through a trusted chat channel and ask the host to click Paste &amp; Allow. Keep this page open while connecting:</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">Connected ({0} ms)! Open Multiplayer in Minecraft and look at the bottom of the list.</sys:String>
-    <sys:String x:Key="Link.Guest.AckExplain">Your ack code (ACK-...):</sys:String>
+    <sys:String x:Key="Link.Guest.AckExplain">Your ACK (ACK- plus 26 common Chinese characters, 30 characters total):</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">Copy Ack</sys:String>
     <sys:String x:Key="Link.Guest.FallbackAddrHint">If the LAN entry doesn't show up, use Direct Connection with this address:</sys:String>
     <sys:String x:Key="Link.Guest.CopyAddr">Copy Address</sys:String>

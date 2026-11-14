@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 namespace PCL.Core.Test.Hash;
 
 [TestClass]
+[DoNotParallelize] // Cleanup clears the process-wide SQLite connection pools.
 public class HashCacheTest
 {
     private string _tempDir = null!;

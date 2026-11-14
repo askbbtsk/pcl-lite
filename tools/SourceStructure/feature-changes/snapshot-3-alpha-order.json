@@ -1,0 +1,20 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Updates/UpdateChannelLevels.cs",
+    "Sha256": "7CDCCE44A31359B459CE765DFD78C4664B403FDC279960C2F7092063845B3D92",
+    "Members": [
+      "PCL.Core.App.Updates.UpdateChannelLevels::MethodDeclaration::FromSuffix(string? suffix)",
+      "PCL.Core.App.Updates.UpdateChannelLevels::MethodDeclaration::Describe(int level)"
+    ],
+    "Reason": "User-requested ordering fix: alpha belongs to the unstable channel below snapshot. Preserve all other channel rules including snapshot hotfixes; UpdateAlphaVersionTest and UpdateChannelLevelsTest cover classification and selection."
+  },
+  {
+    "SourcePath": "PCL.Core/App/Updates/UpdateVersion.cs",
+    "Sha256": "61AD5D9B4DE723F140316B5FA541CF59EF2D51FC6909742BF604A8D75B4CCF1D",
+    "Members": [
+      "PCL.Core.App.Updates.UpdateVersion::FieldDeclaration::RankLatest",
+      "PCL.Core.App.Updates.UpdateVersion::MethodDeclaration::_RankOf(string suffix)"
+    ],
+    "Reason": "User-requested explicit alpha tier between snapshot and nightly; base version remains dominant and existing stable/early/preview/snapshot-hotfix rules remain covered. New RankAlpha retains integer ranks without conflating alpha and nightly."
+  }
+]

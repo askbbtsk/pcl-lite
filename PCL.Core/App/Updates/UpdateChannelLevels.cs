@@ -24,13 +24,13 @@ public static class UpdateChannelLevels
     /// </summary>
     public const int Stable = 0;
 
-    /// <summary>预览版：pre / preview / beta / alpha / rc 等，统一归到这一档。</summary>
+    /// <summary>预览版：pre / preview / beta / rc 等，统一归到这一档。</summary>
     public const int Preview = 1;
 
     /// <summary>快照版：snapshot。</summary>
     public const int Snapshot = 2;
 
-    /// <summary>不稳定版：nightly。</summary>
+    /// <summary>不稳定版：alpha / nightly。</summary>
     public const int Latest = 3;
 
     /// <summary>
@@ -58,6 +58,7 @@ public static class UpdateChannelLevels
         if (text.Contains("early", StringComparison.OrdinalIgnoreCase)) return Stable;
 
         if (text.Contains("nightly", StringComparison.OrdinalIgnoreCase)) return Latest;
+        if (text.Split(['-', '.'])[0].Equals("alpha", StringComparison.OrdinalIgnoreCase)) return Latest;
         if (text.Contains("snapshot", StringComparison.OrdinalIgnoreCase)) return Snapshot;
         return Preview;
     }
@@ -86,7 +87,7 @@ public static class UpdateChannelLevels
     /// <summary>等级的中文说明，用于日志与提示。</summary>
     public static string Describe(int level) => level switch
     {
-        Latest => "不稳定版（nightly）",
+        Latest => "不稳定版（alpha / nightly）",
         Snapshot => "快照版（snapshot）",
         Preview => "预览版（pre）",
         _ => "正式版"

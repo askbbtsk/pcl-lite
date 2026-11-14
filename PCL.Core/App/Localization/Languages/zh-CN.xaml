@@ -3707,10 +3707,10 @@ Release 发布时间：{2}
     <sys:String x:Key="Link.Host.PortPlaceholder">请输入端口（如 25565）</sys:String>
     <sys:String x:Key="Link.Host.StartBtn">创建房间并复制邀请码</sys:String>
     <sys:String x:Key="Link.Host.StopBtn">关闭房间</sys:String>
-    <sys:String x:Key="Link.Host.InviteHint">邀请码已自动复制，发给好友就行（不用反复截图）：</sys:String>
+    <sys:String x:Key="Link.Host.InviteHint">邀请码已自动复制，共 30 字符（BSK- 加 26 个常用汉字）。请通过可信聊天渠道把原文发给好友，双方需使用新版：</sys:String>
     <sys:String x:Key="Link.Host.CopyAgain">再复制一次</sys:String>
     <sys:String x:Key="Link.Host.Step2Title">2. 好友连不上点这里（能直接进就不用管）</sys:String>
-    <sys:String x:Key="Link.Host.AckDesc">好友粘完邀请码要是直接连上了，下面不用碰。如果好友那头提示被墙挡住、弹出 ACK- 回执码，让他发给你，点右边直接粘进来放行（几个人就点几次）：</sys:String>
+    <sys:String x:Key="Link.Host.AckDesc">每位好友粘贴 BSK- 邀请码后，都需通过可信聊天渠道把自己的 ACK- 回执码发给你。逐个粘贴并放行，可继续添加多位好友，不影响已连接的人；重复放行同一个回执不会重复添加。</sys:String>
     <sys:String x:Key="Link.Host.AckPlaceholder">复制好友发的 ACK- 回执码，可直接点右边粘进来</sys:String>
     <sys:String x:Key="Link.Host.PasteAndAccept">粘贴并放行</sys:String>
     <sys:String x:Key="Link.Host.PeersTitle">连进来的好友</sys:String>
@@ -3722,9 +3722,9 @@ Release 发布时间：{2}
     <sys:String x:Key="Link.Guest.DisconnectBtn">断开连接</sys:String>
     <sys:String x:Key="Link.Guest.Step2Title">2. 进游戏</sys:String>
     <sys:String x:Key="Link.Guest.Connecting">正在连房主，等 1 秒看看能不能直接通…</sys:String>
-    <sys:String x:Key="Link.Guest.NeedAckStatus">被房主防火墙挡住了，已自动复制下面这串回执码。发给房主让他点一下「粘贴并放行」，这页别关，放行后自动通：</sys:String>
+    <sys:String x:Key="Link.Guest.NeedAckStatus">等待房主放行。已自动复制回执码，请通过可信聊天渠道发给房主，让他点击「粘贴并放行」。保持此页开启，放行后继续尝试连接：</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">已经连上房主（延迟 {0} ms）！打开游戏点「多人游戏」，拉到最底下就能进。</sys:String>
-    <sys:String x:Key="Link.Guest.AckExplain">你的回执码（ACK-...）：</sys:String>
+    <sys:String x:Key="Link.Guest.AckExplain">你的回执码（ACK- 加 26 个常用汉字，共 30 字符）：</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">复制回执码</sys:String>
     <sys:String x:Key="Link.Guest.FallbackAddrHint">要是多人游戏列表没刷出来，点「直接连接」填这个地址也能进：</sys:String>
     <sys:String x:Key="Link.Guest.CopyAddr">复制地址</sys:String>

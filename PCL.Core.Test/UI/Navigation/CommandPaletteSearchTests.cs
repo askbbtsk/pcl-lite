@@ -310,15 +310,5 @@ public class CommandPaletteSearchTests
         innerWriter.Write("""{"schemaVersion":1,"id":"nested_mod","version":"1.0.0","name":"Nested Mod"}""");
     }
 
-    private static string FindRepositoryRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Plain Craft Launcher 2", "Controls", "CommandPalette.xaml")))
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
-    }
+    private static string FindRepositoryRoot() => TestRepository.FindRoot();
 }

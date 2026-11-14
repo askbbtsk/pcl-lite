@@ -13,6 +13,7 @@ namespace PCL.Core.Test.IO.Storage.Cache;
 /// Tests file storage, reference counting, and cleanup operations.
 /// </summary>
 [TestClass]
+[DoNotParallelize] // Cleanup clears the process-wide SQLite connection pools.
 public class FileCacheStorageTest
 {
     private FileCacheStorage _fileCache = null!;

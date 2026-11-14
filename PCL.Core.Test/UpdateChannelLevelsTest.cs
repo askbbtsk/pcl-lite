@@ -24,7 +24,7 @@ public class UpdateChannelLevelsTest
     [DataRow("1.3.2-pre", UpdateChannelLevels.Preview)]
     [DataRow("1.3.2-preview", UpdateChannelLevels.Preview)]
     [DataRow("1.3.2-beta", UpdateChannelLevels.Preview)]
-    [DataRow("1.3.2-alpha", UpdateChannelLevels.Preview)]
+    [DataRow("1.3.2-alpha", UpdateChannelLevels.Latest)]
     [DataRow("1.3.2-rc1", UpdateChannelLevels.Preview)]
     [DataRow("1.3.2-snapshot", UpdateChannelLevels.Snapshot)]
     [DataRow("1.3.2-nightly", UpdateChannelLevels.Latest)]

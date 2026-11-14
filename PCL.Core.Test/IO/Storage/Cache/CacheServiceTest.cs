@@ -14,6 +14,7 @@ namespace PCL.Core.Test.IO.Storage.Cache;
 /// Uses the same Windows SQLite provider initialization as the launcher.
 /// </summary>
 [TestClass]
+[DoNotParallelize] // Cleanup clears the process-wide SQLite connection pools.
 public class CacheServiceTest
 {
     private CacheService _cache = null!;

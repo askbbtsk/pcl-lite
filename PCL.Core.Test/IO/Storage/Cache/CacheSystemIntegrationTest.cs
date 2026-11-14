@@ -13,6 +13,7 @@ namespace PCL.Core.Test.IO.Storage.Cache;
 /// Tests interactions between CacheService, SqliteCacheStorage, and FileCacheStorage.
 /// </summary>
 [TestClass]
+[DoNotParallelize] // Cleanup clears the process-wide SQLite connection pools.
 public class CacheSystemIntegrationTest
 {
     private CacheService _cache = null!;

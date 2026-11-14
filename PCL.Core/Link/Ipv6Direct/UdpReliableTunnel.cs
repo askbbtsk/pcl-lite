@@ -28,10 +28,12 @@ internal enum TunnelPacketType : byte
 public sealed class UdpReliablePeer : IAsyncDisposable
 {
     public const ushort PacketMagic = 0x5043; // "PC"
-    public const int MaxChunkSize = 1160;
+    // Leave room for authentication plus IPv6/UDP headers within a 1280-byte packet.
+    public const int MaxChunkSize = 1152;
     private const int HeaderSize = 2 + 4 + 1 + 4 + 4 + 4 + 8; // Magic(2)+Token(4)+Type(1)+ConnId(4)+Seq(4)+Ack(4)+SackMask(8) = 27
 
     private readonly uint _token;
+    private readonly TunnelAuthentication _authentication;
     private readonly Func<ReadOnlyMemory<byte>, ValueTask> _sendRawAsync;
     private readonly bool _localRequiresOnlineAuth;
     private readonly ConcurrentDictionary<uint, ReliableStream> _streams = new();
@@ -56,10 +58,14 @@ public sealed class UdpReliablePeer : IAsyncDisposable
 
     public UdpReliablePeer(
         uint token,
+        TunnelSecret secret,
+        ReadOnlySpan<byte> peerId,
+        bool isHost,
         Func<ReadOnlyMemory<byte>, ValueTask> sendRawAsync,
         bool localRequiresOnlineAuth = false)
     {
         _token = token;
+        _authentication = new TunnelAuthentication(token, secret, peerId, isHost);
         _sendRawAsync = sendRawAsync;
         _localRequiresOnlineAuth = localRequiresOnlineAuth;
         _lastReceivedTicks = DateTimeOffset.UtcNow.Ticks;
@@ -71,7 +77,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         var pkt = new byte[HeaderSize + 8];
         WriteHeader(pkt, TunnelPacketType.Ping, 0, 0, 0, 0);
         BinaryPrimitives.WriteInt64BigEndian(pkt.AsSpan(HeaderSize, 8), Environment.TickCount64);
-        return _sendRawAsync(pkt);
+        return SendPacketAsync(pkt);
     }
 
     public ReliableStream OpenStream()
@@ -85,6 +91,9 @@ public sealed class UdpReliablePeer : IAsyncDisposable
 
     public void HandleIncomingPacket(ReadOnlySpan<byte> packet)
     {
+        if (!_authentication.TryUnprotect(packet, out var authenticated))
+            return;
+        packet = authenticated;
         if (packet.Length < HeaderSize)
             return;
         if (BinaryPrimitives.ReadUInt16BigEndian(packet[0..2]) != PacketMagic)
@@ -110,7 +119,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                 if (packet.Length >= HeaderSize + 8)
                     packet.Slice(HeaderSize, 8).CopyTo(pong.AsSpan(HeaderSize, 8));
                 pong[HeaderSize + 8] = _localRequiresOnlineAuth ? (byte)0x01 : (byte)0x00;
-                _ = _sendRawAsync(pong);
+                _ = SendPacketAsync(pong);
                 break;
             }
             case TunnelPacketType.Pong:
@@ -185,14 +194,14 @@ public sealed class UdpReliablePeer : IAsyncDisposable
     {
         var pkt = new byte[HeaderSize];
         WriteHeader(pkt, type, connId, seq, 0, 0);
-        return _sendRawAsync(pkt);
+        return SendPacketAsync(pkt);
     }
 
     internal ValueTask SendAckAsync(uint connId, uint ack, ulong sackMask)
     {
         var pkt = new byte[HeaderSize];
         WriteHeader(pkt, TunnelPacketType.Ack, connId, 0, ack, sackMask);
-        return _sendRawAsync(pkt);
+        return SendPacketAsync(pkt);
     }
 
     internal ValueTask SendDataPacketAsync(uint connId, uint seq, uint ack, ulong sackMask, ReadOnlySpan<byte> payload)
@@ -200,8 +209,10 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         var pkt = new byte[HeaderSize + payload.Length];
         WriteHeader(pkt, TunnelPacketType.Data, connId, seq, ack, sackMask);
         payload.CopyTo(pkt.AsSpan(HeaderSize));
-        return _sendRawAsync(pkt);
+        return SendPacketAsync(pkt);
     }
+
+    private ValueTask SendPacketAsync(ReadOnlySpan<byte> packet) => _sendRawAsync(_authentication.Protect(packet));
 
     private void WriteHeader(Span<byte> buf, TunnelPacketType type, uint connId, uint seq, uint ack, ulong sackMask)
     {
@@ -251,6 +262,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         _streams.Clear();
         _closedStreams.Clear();
         try { await _retransmitLoop.ConfigureAwait(false); } catch { }
+        _authentication.Dispose();
         _cts.Dispose();
     }
 

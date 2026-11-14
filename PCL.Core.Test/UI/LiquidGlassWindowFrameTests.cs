@@ -32,11 +32,5 @@ public sealed class LiquidGlassWindowFrameTests
             StringComparison.Ordinal));
     }
 
-    private static string FindRepositoryRoot()
-    {
-        for (DirectoryInfo? directory = new(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-            if (File.Exists(Path.Combine(directory.FullName, "Plain Craft Launcher 2", "FormMain.xaml")))
-                return directory.FullName;
-        throw new DirectoryNotFoundException("Could not locate the PCL Lite source tree.");
-    }
+    private static string FindRepositoryRoot() => TestRepository.FindRoot();
 }

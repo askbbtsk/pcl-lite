@@ -32,6 +32,7 @@ public sealed class Ipv6HostSession : IAsyncDisposable
     {
         public required int VirtualId { get; init; }
         public required UdpReliablePeer Peer { get; init; }
+        public required byte[] PeerId { get; init; }
         public required bool DirectNoAck { get; init; }
         public required DateTimeOffset AddedUtc { get; init; }
         public int ConnectedLogged;
@@ -39,6 +40,7 @@ public sealed class Ipv6HostSession : IAsyncDisposable
 
     private readonly Socket _udp;
     private readonly uint _token;
+    private readonly TunnelSecret _secret = TunnelSecret.Create();
     private readonly ushort _udpPort;
     private readonly IPAddress _publicAddress;
     private readonly bool _requireOnlineAuth;
@@ -84,7 +86,7 @@ public sealed class Ipv6HostSession : IAsyncDisposable
             InviteKind.HostInvite,
             publicAddress,
             udpPort,
-            token));
+            token, _secret));
 
         var actualLocal = _udp.LocalEndPoint as IPEndPoint;
         LogWrapper.Info("Link",
@@ -118,18 +120,39 @@ public sealed class Ipv6HostSession : IAsyncDisposable
             message = "这不是好友发来的回执码（应以 ACK- 开头）。";
             return false;
         }
-        if (payload.Token != _token)
+        if (!InviteCodeCodec.VerifyGuestAck(payload, _token, _secret))
         {
-            message = "回执码与当前房间不匹配（可能是旧房间或别人房间的回执码）。";
+            message = "回执码认证失败或与当前房间不匹配，请重新生成并复制回执码。";
             return false;
         }
 
         var ep = TunnelBridgeHelper.NormalizeEndpoint(new IPEndPoint(payload.Address, payload.Port));
-        var entry = GetOrCreatePeerEntry(ep, directNoAck: false);
+        PeerEntry entry;
+        bool alreadyAccepted;
+        lock (_peerCreateLock)
+        {
+            alreadyAccepted = _peers.TryGetValue(ep, out var known);
+            if (known is not null && !known.PeerId.AsSpan().SequenceEqual(payload.PeerId))
+            {
+                message = "该端口已绑定另一个好友会话，请好友重新加入并生成回执码。";
+                return false;
+            }
+            foreach (var peer in _peers)
+            {
+                if (!peer.Key.Equals(ep) && peer.Value.PeerId.AsSpan().SequenceEqual(payload.PeerId))
+                {
+                    message = "该好友会话已绑定其他端口，请好友重新加入并生成回执码。";
+                    return false;
+                }
+            }
+            entry = GetOrCreatePeerEntry(ep, directNoAck: false, payload.PeerId!);
+        }
         _ = SendPunchBurstAsync(entry.Peer, _cts.Token);
         LogWrapper.Info("Link", $"[Host] 已添加 好友 #{entry.VirtualId}，正在连发打洞探测包");
         StateChanged?.Invoke();
-        message = $"已添加 好友 #{entry.VirtualId}，正在双向打洞…";
+        message = alreadyAccepted
+            ? $"好友 #{entry.VirtualId} 已放行，已保留原连接，可继续输入其他好友的回执码。"
+            : $"已添加 好友 #{entry.VirtualId}，正在双向打洞，可继续输入其他好友的回执码。";
         return true;
     }
 
@@ -146,7 +169,7 @@ public sealed class Ipv6HostSession : IAsyncDisposable
             .ToList();
     }
 
-    private PeerEntry GetOrCreatePeerEntry(IPEndPoint ep, bool directNoAck)
+    private PeerEntry GetOrCreatePeerEntry(IPEndPoint ep, bool directNoAck, byte[] peerId)
     {
         ep = TunnelBridgeHelper.NormalizeEndpoint(ep);
         if (_peers.TryGetValue(ep, out var existing))
@@ -163,8 +186,10 @@ public sealed class Ipv6HostSession : IAsyncDisposable
                 VirtualId = virtualId,
                 Peer = new UdpReliablePeer(
                     _token,
+                    _secret, peerId, isHost: true,
                     data => SendToAsync(ep, virtualId, data),
                     localRequiresOnlineAuth: _requireOnlineAuth),
+                PeerId = peerId.ToArray(),
                 DirectNoAck = directNoAck,
                 AddedUtc = DateTimeOffset.UtcNow
             };
@@ -229,21 +254,10 @@ public sealed class Ipv6HostSession : IAsyncDisposable
 
                 var remoteEp = TunnelBridgeHelper.NormalizeEndpoint(rawRemoteEp);
                 var packet = buffer.AsSpan(0, res.ReceivedBytes);
-                if (packet.Length < 7)
+                // 只有房主输入 ACK 放行的端点才能进入隧道；邀请码本身不代表放行。
+                if (!_peers.TryGetValue(remoteEp, out var entry))
                     continue;
-                if (System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(packet[0..2]) != UdpReliablePeer.PacketMagic)
-                    continue;
-                if (System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(packet[2..6]) != _token)
-                    continue;
-
-                // 如果房主本地无防火墙拦截，收到携带正确房间 Token 的房客包时直接接纳，免去复制回执码！
-                var isNew = !_peers.ContainsKey(remoteEp);
-                var entry = GetOrCreatePeerEntry(remoteEp, directNoAck: true);
-                if (isNew)
-                    LogWrapper.Info("Link", $"[Host] 收到 好友 #{entry.VirtualId} 的直连数据包");
                 entry.Peer.HandleIncomingPacket(packet);
-                if (isNew)
-                    StateChanged?.Invoke();
             }
             catch (OperationCanceledException)
             {
@@ -358,13 +372,10 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
         _localProxy = localProxy;
         LocalProxyPort = (ushort)((IPEndPoint)localProxy.LocalEndpoint).Port;
 
-        AckCode = InviteCodeCodec.Encode(new InviteCodePayload(
-            InviteKind.GuestAck,
-            localPublicIpv6,
-            localUdpPort,
-            hostInvite.Token));
+        var peerId = RandomNumberGenerator.GetBytes(TunnelAuthentication.PeerIdSize);
+        AckCode = InviteCodeCodec.Encode(InviteCodeCodec.CreateGuestAck(hostInvite, localPublicIpv6, localUdpPort, peerId));
 
-        _peer = new UdpReliablePeer(hostInvite.Token, SendToHostAsync);
+        _peer = new UdpReliablePeer(hostInvite.Token, hostInvite.Secret!, peerId, isHost: false, SendToHostAsync);
         _peer.OnConnectedOrHeartbeat += rtt =>
         {
             if (Interlocked.Exchange(ref _connectedLogged, 1) == 0)
@@ -389,7 +400,7 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
 
     public static Ipv6GuestSession Start(IPAddress localPublicIpv6, InviteCodePayload hostInvite)
     {
-        if (hostInvite.Kind != InviteKind.HostInvite)
+        if (hostInvite.Kind != InviteKind.HostInvite || hostInvite.Secret is null)
             throw new ArgumentException("必须使用房主生成的 BSK- 邀请码。", nameof(hostInvite));
 
         var udp = TunnelBridgeHelper.BindUdpSocket(localPublicIpv6, "[Guest]");
@@ -426,6 +437,9 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
             try
             {
                 var res = await _udp.ReceiveFromAsync(buffer, SocketFlags.None, remoteAny, ct).ConfigureAwait(false);
+                if (res.RemoteEndPoint is not IPEndPoint endpoint ||
+                    !TunnelBridgeHelper.NormalizeEndpoint(endpoint).Equals(_hostEndpoint))
+                    continue;
                 _peer.HandleIncomingPacket(buffer.AsSpan(0, res.ReceivedBytes));
             }
             catch (OperationCanceledException)

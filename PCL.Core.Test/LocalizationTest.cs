@@ -145,16 +145,5 @@ public class LocalizationTest
             .ToArray();
     }
 
-    private static string GetRepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (Directory.Exists(Path.Combine(directory.FullName, "PCL.Core"))) return directory.FullName;
-            directory = directory.Parent;
-        }
-
-        Assert.Fail("无法定位仓库根目录");
-        return string.Empty;
-    }
+    private static string GetRepositoryRoot() => TestRepository.FindRoot();
 }

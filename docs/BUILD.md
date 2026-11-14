@@ -151,7 +151,7 @@ Get-AuthenticodeSignature "publish-x64/Plain Craft Launcher 2.exe" | Select Stat
 
 ### 触发工作流
 
-`.github/workflows/release-publish.yml` 是 `workflow_dispatch`，要手动触发，并且**必须从 `main` 派发**：
+GitHub Actions 中选择 **CI and release publish**（`.github/workflows/release-publish.yml`），手动触发，并且**必须从 `main` 派发**：
 
 ```powershell
 # 正式版填 Release；Beta 会发成 prerelease；版本号不带前导 v
@@ -161,7 +161,9 @@ gh workflow run release-publish.yml `
   -f version=1.7.2
 ```
 
-它会 x64 / ARM64 各编一份，用 Sigstore 签名，先建 draft Release，最后一步再发布。
+流程先校验分支、版本号和已有 tag，再复用**同一提交**的完整 Build (CI)：原生控件烟测、源码契约检查、TestAll 插件构建、完整 `PCL.Core.Test` 单测，以及 x64 / ARM64 的 CI 构建和控件运行烟测。
+
+**CI 失败、取消或跳过时，发布构建与 Release 创建均不会执行，也不会发布。** CI 全部成功后，才构建 x64 / ARM64 的发布产物，保留 OAuth Client ID 注入和 Sigstore 签名，先建 draft Release，待两种架构均完成上传后再发布。发布构建或任一架构签名、上传失败时同样不会发布；可能保留 draft，修复后应从相同提交重试。已有 tag 指向其他提交时直接拒绝，避免把通过 CI 的源码与发布标签混用。
 
 ### 发布说明从哪来
 

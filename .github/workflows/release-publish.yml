@@ -1,4 +1,4 @@
-name: Release publish
+name: CI and release publish
 
 permissions:
   contents: write
@@ -21,11 +21,81 @@ on:
         type: string
 
 jobs:
-  ui_smoke:
-    uses: ./.github/workflows/ui-smoke.yml
+  validate:
+    name: Validate release request
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the protected release branch and valid inputs
+        env:
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_CONFIGURATION: ${{ inputs.configuration }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$RELEASE_REF" != "refs/heads/main" ]]; then
+            echo "Releases must be dispatched from refs/heads/main" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_CONFIGURATION" != "Release" && "$RELEASE_CONFIGURATION" != "Beta" ]]; then
+            echo "Invalid build configuration" >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version" >&2
+            exit 1
+          fi
+
+      - name: Checkout the release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Verify metadata version and existing tag
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          metadata="Plain Craft Launcher 2/metadata.json"
+          if [[ ! -f "$metadata" ]]; then
+            echo "Missing $metadata" >&2
+            exit 1
+          fi
+          # metadata.json 带 UTF-8 BOM，读取前先剥掉。
+          sed '1s/^\xEF\xBB\xBF//' "$metadata" > "$RUNNER_TEMP/release-metadata.json"
+          base=$(jq -er '.version.base' "$RUNNER_TEMP/release-metadata.json")
+          suffix=$(jq -r '.version.suffix // ""' "$RUNNER_TEMP/release-metadata.json")
+          code=$(jq -er '.version.code' "$RUNNER_TEMP/release-metadata.json")
+          if [[ -n "$suffix" && "$suffix" != "null" ]]; then
+            declared="${base}-${suffix}"
+          else
+            declared="$base"
+          fi
+          if [[ "$declared" != "$RELEASE_VERSION" ]]; then
+            echo "metadata.json 声明的是 '${declared}'，但请求发布的是 '${RELEASE_VERSION}'。" >&2
+            echo "请先修改 Plain Craft Launcher 2/metadata.json 的 version.base / version.suffix 再发版。" >&2
+            exit 1
+          fi
+          if git show-ref --verify --quiet "refs/tags/v$RELEASE_VERSION"; then
+            tagged_sha=$(git rev-parse "refs/tags/v${RELEASE_VERSION}^{commit}")
+            if [[ "$tagged_sha" != "$RELEASE_SHA" ]]; then
+              echo "Release tag v${RELEASE_VERSION} points to a different commit: ${tagged_sha}" >&2
+              exit 1
+            fi
+          fi
+          echo "metadata.json 与发布版本一致：${declared}（code ${code}，commit ${RELEASE_SHA}）"
+
+  ci:
+    name: Full CI
+    needs: [validate]
+    permissions:
+      contents: read
+    # 本地路径复用与发布请求相同提交的完整 CI，不能用其他提交的历史绿灯代替。
+    uses: ./.github/workflows/build-test.yml
 
   build:
-    needs: [ui_smoke]
+    needs: [ci]
     strategy:
       matrix:
         include:
@@ -42,44 +112,19 @@ jobs:
     secrets: inherit
 
   changelog:
-    needs: [ui_smoke]
+    needs: [ci]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout all
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Install git-cliff
         uses: taiki-e/install-action@e407f7bafb71fd004bc5c2da3032e5470cbb6ef0 # v2.87.24
         with:
           tool: git-cliff
-
-      - name: Verify metadata version
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          metadata="Plain Craft Launcher 2/metadata.json"
-          if [[ ! -f "$metadata" ]]; then
-            echo "Missing $metadata" >&2
-            exit 1
-          fi
-          # metadata.json 带 UTF-8 BOM，jq 会因此报 Invalid numeric literal，先剥掉
-          sed '1s/^\xEF\xBB\xBF//' "$metadata" > /tmp/metadata.json
-          base=$(jq -er '.version.base' /tmp/metadata.json)
-          suffix=$(jq -r '.version.suffix // ""' /tmp/metadata.json)
-          code=$(jq -er '.version.code' /tmp/metadata.json)
-          if [[ -n "$suffix" && "$suffix" != "null" ]]; then
-            declared="${base}-${suffix}"
-          else
-            declared="$base"
-          fi
-          if [[ "$declared" != "$RELEASE_VERSION" ]]; then
-            echo "metadata.json 声明的是 '${declared}'，但请求发布的是 '${RELEASE_VERSION}'。" >&2
-            echo "请先修改 Plain Craft Launcher 2/metadata.json 的 version.base / version.suffix 再发版。" >&2
-            exit 1
-          fi
-          echo "metadata.json 与发布版本一致：${declared}（code ${code}）"
 
       - name: Create local release tag
         env:
@@ -108,6 +153,7 @@ jobs:
         with:
           draft: true
           tag_name: v${{ inputs.version }}
+          target_commitish: ${{ github.sha }}
           name: Release ${{ inputs.version }}
           body_path: CHANGELOG.md
           prerelease: ${{ inputs.configuration == 'Beta' }}
@@ -115,7 +161,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   rename_and_release:
-    needs: [build, changelog]
+    needs: [ci, build, changelog]
     permissions:
       actions: read
       contents: write
@@ -167,6 +213,7 @@ jobs:
         with:
           draft: true
           tag_name: v${{ inputs.version }}
+          target_commitish: ${{ github.sha }}
           files: |
             PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe
             PCL-Lite_${{ matrix.configuration }}_${{ matrix.architecture }}.exe.sigstore.json
@@ -174,13 +221,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish_draft:
-    needs: [rename_and_release]
+    needs: [validate, ci, build, changelog, rename_and_release]
+    if: >-
+      ${{
+        success() &&
+        needs.validate.result == 'success' &&
+        needs.ci.result == 'success' &&
+        needs.build.result == 'success' &&
+        needs.changelog.result == 'success' &&
+        needs.rename_and_release.result == 'success'
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Publish Draft
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
+          draft: false
           tag_name: v${{ inputs.version }}
+          target_commitish: ${{ github.sha }}
 
       # 本项目没有接入 MirrorChyan，上游那两步触发（上传 + 发布说明）已连同
       # mirrorchyan_*.yml 一起删除。以后真要接入，把工作流与仓库标识补齐再加回来。

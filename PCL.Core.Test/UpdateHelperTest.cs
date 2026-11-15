@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.App.Essentials;
 
@@ -75,11 +74,18 @@ public class UpdateHelperTest
         // 只挡删除、不挡读取：这正是「旧进程刚退出、映像还被短暂持有」的真实形态。
         // 用 FileShare.Read 而不是 None，否则连备份那一步的读取都会失败，测不到删除分支
         var holder = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var release = Task.Run(async () =>
+        // Replace retries synchronously and blocks a worker thread. Use a dedicated thread
+        // for the releaser so thread-pool starvation cannot make the lock outlive all retries.
+        var release = new Thread(() =>
         {
-            await Task.Delay(600);
+            Thread.Sleep(600);
             holder.Dispose();
-        });
+        })
+        {
+            IsBackground = true,
+            Name = "UpdateHelperTest lock releaser"
+        };
+        release.Start();
 
         Exception? ex;
         try
@@ -88,7 +94,11 @@ public class UpdateHelperTest
         }
         finally
         {
-            release.Wait(TimeSpan.FromSeconds(5));
+            if (!release.Join(TimeSpan.FromSeconds(5)))
+            {
+                holder.Dispose();
+                release.Join();
+            }
             holder.Dispose();
         }
 

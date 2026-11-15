@@ -12,9 +12,8 @@ namespace PCL.Core.Test;
 /// <summary>
 ///     Lunar IPC 端口协商的回归测试。
 ///     <para>
-///         重点验证 1.5.4 新增的「主端口被占就退到备用端口」——PCL 能自己续期时不能轻易
-///         把端口让给 Lunar 启动器（它开着但没登录就续不了）。用真实 TcpListener 占端口，
-///         端口号都取系统分配的临时端口，不写死。
+///         验证固定 IPC 端口被占用时不接管、不换端口。用真实 TcpListener 占端口，
+///         端口号取系统分配的临时端口。
 ///     </para>
 /// </summary>
 [TestClass]
@@ -61,7 +60,7 @@ public class LunarIpcServerTest
         Task.FromResult(LunarRefreshResult.Ok("测试"));
 
     [TestMethod]
-    public async Task StartAsync_FallsBackToAlternatePort()
+    public async Task StartAsync_WhenPortIsOccupiedDoesNotTakeOverOrFallback()
     {
         var busyPort = OccupyPort();
         var fallbackPort = FindFreePort();
@@ -69,27 +68,25 @@ public class LunarIpcServerTest
         var result = await LunarIpcServer.StartAsync(
             busyPort, "test-installation", NoRefresh, _ => { }, [fallbackPort]);
 
-        using (result.Server)
-        {
-            Assert.AreEqual(LunarIpcPortState.Served, result.State,
-                "主端口被占但备用端口可用时，应当由 PCL 接管：" + result.Message);
-            Assert.AreEqual(fallbackPort, result.GamePort, "交给游戏的端口应当是备用端口");
-            Assert.IsNotNull(result.Server);
-            Assert.AreEqual(fallbackPort, result.Server!.Port);
-        }
+        Assert.IsNull(result.Server);
+        Assert.AreEqual(LunarIpcPortState.TakenByLauncher, result.State, result.Message);
+        Assert.AreEqual(busyPort, result.GamePort, "由 Lunar 启动器占用时应把原端口交给游戏");
+        Assert.AreEqual($"端口 {busyPort} 被占用，不接管 Lunar IPC", result.Message);
+
+        using var fallbackProbe = new TcpListener(IPAddress.Loopback, fallbackPort);
+        fallbackProbe.Start();
     }
 
     [TestMethod]
-    public async Task StartAsync_WithoutFallbackYieldsToOccupier()
+    public async Task StartAsync_WhenPortIsOccupiedTreatsItAsLunarLauncher()
     {
         var busyPort = OccupyPort();
 
-        // 占用方不响应 WebSocket 握手，探测超时后应当判定为「被别的程序占了」
         var result = await LunarIpcServer.StartAsync(
             busyPort, "test-installation", NoRefresh, _ => { });
 
         Assert.IsNull(result.Server);
-        Assert.AreEqual(LunarIpcPortState.TakenByOther, result.State, result.Message);
-        Assert.AreEqual(0, result.GamePort, "不该把被占的端口交给游戏");
+        Assert.AreEqual(LunarIpcPortState.TakenByLauncher, result.State, result.Message);
+        Assert.AreEqual(busyPort, result.GamePort, "固定端口被占时不改用其他端口");
     }
 }

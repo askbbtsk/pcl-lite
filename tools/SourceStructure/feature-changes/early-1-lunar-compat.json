@@ -1,0 +1,40 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarIpcServer.cs",
+    "Sha256": "8FBF69D620812A3D964DC6FDAB440D7C1031E83D3AFDBEB619AF3A9B76791FB6",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarIpcServer::MethodDeclaration::StartAsync(\n        int port,\n        string installationId,\n        Func<Guid, CancellationToken, Task<LunarRefreshResult>> refresh,\n        Action<string> log,\n        IReadOnlyList<int>? fallbackPorts = null,\n        ILunarIpcHost? host = null,\n        CancellationToken cancellationToken = default)"
+    ],
+    "Reason": "1.8.0-early fixes Lunar IPC port selection: 28190 is treated as Lunar's port, existing Lunar IPC is passed through to the game, and PCL no longer falls back to 28191. The legacy optional parameter remains source-compatible and is ignored."
+  },
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarIpcServer.cs",
+    "Sha256": "8FBF69D620812A3D964DC6FDAB440D7C1031E83D3AFDBEB619AF3A9B76791FB6",
+    "Members": [],
+    "Reason": "1.8.0-early removes the WebSocket probe because the product rule treats an occupied 28190 as Lunar IPC without probing.",
+    "RemovedMembers": [
+      "PCL.Core.App.Lunar.LunarIpcServer::MethodDeclaration::LooksLikeWebSocketAsync(int port, CancellationToken token)"
+    ]
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.IdentityAndGameProcess.cs",
+    "Sha256": "1C6DD9FC5422D53FA655D7F0D79A9633F1025716099BBEEF5EDC9B291E0C4E89",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::RefreshAccountTokenAsync(LunarAccount account,\n        CancellationToken cancellationToken)",
+      "PCL.ModLunar::MethodDeclaration::RefreshIdentityAsync(LunarIdentityAccount identity,\n        CancellationToken token)",
+      "PCL.ModLunar::MethodDeclaration::RefreshLunarAccountAsync(Guid minecraftUuid,\n        CancellationToken cancellationToken)",
+      "PCL.ModLunar::MethodDeclaration::StartIpcAsync(string installationId)",
+      "PCL.ModLunar::MethodDeclaration::StartIpcAsync(string installationId, long launchSession)"
+    ],
+    "Reason": "1.8.0-early removes the 28191 fallback from both Lunar launch paths. Existing identity and token refresh behavior is pinned unchanged."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
+    "Sha256": "22C37694E0EEC988E6A62A5EBEECC5FE8CE3D65C446E40A88AB4A3B63CB77623",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ConnectSocialAsync()",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory, long launchSession)"
+    ],
+    "Reason": "1.8.0-early clears the previous Lunar game logs immediately before process start while retaining the existing Lunar social and launch lifecycle."
+  }
+]

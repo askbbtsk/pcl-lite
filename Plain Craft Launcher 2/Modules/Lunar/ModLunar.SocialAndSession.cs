@@ -393,6 +393,7 @@ public static partial class ModLunar
             {
             _process = process;
             Interlocked.Exchange(ref _processSession, launchSession);
+            LunarInstaller.ClearPreviousGameLogs(LunarRoot, message => LogSession(launchSession, message));
             process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();

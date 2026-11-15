@@ -125,6 +125,37 @@ public class LunarInstallerTest
         }
     }
 
+    [TestMethod]
+    public void ClearPreviousGameLogs_RemovesOldLogsButPreservesConfiguration()
+    {
+        var root = CreateTempRoot();
+        try
+        {
+            var directory = LunarClientService.GameLogsDirectory(root);
+            Directory.CreateDirectory(directory);
+            var configPath = Path.Combine(directory, "config.xml");
+            var latestPath = Path.Combine(directory, "latest.log");
+            var archivedPath = Path.Combine(directory, "2026-11-15-1.log.gz");
+            var unrelatedPath = Path.Combine(directory, "notes.txt");
+            File.WriteAllText(configPath, "user log config");
+            File.WriteAllText(latestPath, "previous run");
+            File.WriteAllText(archivedPath, "previous archive");
+            File.WriteAllText(unrelatedPath, "unrelated");
+
+            LunarInstaller.ClearPreviousGameLogs(root);
+
+            Assert.IsTrue(File.Exists(configPath));
+            Assert.AreEqual("user log config", File.ReadAllText(configPath));
+            Assert.IsFalse(File.Exists(latestPath));
+            Assert.IsFalse(File.Exists(archivedPath));
+            Assert.IsTrue(File.Exists(unrelatedPath));
+        }
+        finally
+        {
+            DeleteTempRoot(root);
+        }
+    }
+
     #endregion
 
     #region 账户库

@@ -103,7 +103,7 @@
                                              HintText="{DynamicResource Link.Guest.InvitePlaceholder}" />
                             <local:MyButton x:Name="BtnGuestToggle" Grid.Column="1" MinWidth="125" Height="35" Margin="10,0,0,0"
                                             ColorType="Highlight"
-                                            Text="{DynamicResource Link.Guest.PasteAndConnect}"
+                                            Text="{DynamicResource Link.Guest.ConnectBtn}"
                                             Click="BtnGuestToggle_Click" />
                         </Grid>
                     </StackPanel>

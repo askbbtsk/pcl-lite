@@ -5,7 +5,7 @@
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
     <sys:String x:Key="Theme.Pack.Title">外观主题包</sys:String>
-    <sys:String x:Key="Theme.Pack.Description">用 XAML 定制 PCL 控件和材质外观。新手可点击“打开注释示例”，用记事本或 VS Code 编辑副本，保存为 UTF-8 的 .xaml 后拖入安装。日常修改请打开主题文件夹编辑已安装副本，再点击“重新加载并预览”。15 秒内确认保留，否则自动恢复；再次打开示例不会覆盖已编辑内容。</sys:String>
+    <sys:String x:Key="Theme.Pack.Description">用 XAML 定制外观。点击“打开注释示例”编辑后，将 .xaml 文件拖入即可安装预览。</sys:String>
     <sys:String x:Key="Theme.Pack.OpenExample">打开注释示例</sys:String>
     <sys:String x:Key="Theme.Pack.BuiltIn">内置主题</sys:String>
     <sys:String x:Key="Theme.Pack.OpenFolder">打开主题文件夹</sys:String>
@@ -17,40 +17,40 @@
     <sys:String x:Key="Theme.Pack.Revert">恢复原主题</sys:String>
     <sys:String x:Key="Theme.Pack.Force">强制加载并预览</sys:String>
     <sys:String x:Key="Theme.Pack.Undeclared">未声明</sys:String>
-    <sys:String x:Key="Theme.Pack.InstallPrompt">主题：{0}&#xA;作者：{1}&#xA;版本：{2}&#xA;适用启动器版本：{3}&#xA;来源：{4}&#xA;&#xA;是否安装并立即预览？确认后仍可恢复原主题。</sys:String>
-    <sys:String x:Key="Theme.Pack.ReplacePrompt">已安装“{0}”。是否替换为这个主题包？只有校验成功后才会替换，源文件不会移动或改写。</sys:String>
-    <sys:String x:Key="Theme.Pack.Incompatible">“{0}”声明支持 {2}，当前启动器为 {1}，可能存在显示或交互问题。仍要强制加载预览吗？本次选择只对当前启动器版本和当前主题内容有效。</sys:String>
+    <sys:String x:Key="Theme.Pack.InstallPrompt">主题：{0}&#xA;作者：{1}&#xA;版本：{2}&#xA;适用版本：{3}&#xA;来源：{4}&#xA;&#xA;是否安装并立即预览？</sys:String>
+    <sys:String x:Key="Theme.Pack.ReplacePrompt">已安装“{0}”，是否替换？</sys:String>
+    <sys:String x:Key="Theme.Pack.Incompatible">“{0}”声明支持 {2}，与当前版本 {1} 可能不兼容，仍要强制预览吗？</sys:String>
     <sys:String x:Key="Theme.Pack.Failed">主题未能加载，已保留或恢复原主题。&#xA;&#xA;{0}</sys:String>
-    <sys:String x:Key="Theme.Pack.Recovered">检测到上次主题加载或预览未完成，已使用内置主题进入。可在列表中重新选择主题尝试。</sys:String>
-    <sys:String x:Key="Theme.Pack.ChangedOnDisk">主题内容或启动器版本已变化，已使用内置主题进入。请重新选择并确认预览。</sys:String>
-    <sys:String x:Key="Theme.Pack.PreviewCountdown">正在预览“{0}”。{1} 秒内确认保留，否则自动恢复原主题。</sys:String>
+    <sys:String x:Key="Theme.Pack.Recovered">检测到上次主题预览未完成，已恢复为内置主题。</sys:String>
+    <sys:String x:Key="Theme.Pack.ChangedOnDisk">主题文件或启动器版本已变化，已切回内置主题，请重新选择预览。</sys:String>
+    <sys:String x:Key="Theme.Pack.PreviewCountdown">正在预览“{0}”（{1} 秒内未确认将自动还原）。</sys:String>
     <sys:String x:Key="Theme.Pack.Information">{0} · {1}&#xA;作者：{2}&#xA;适用版本：{3}&#xA;{4}</sys:String>
-    <sys:String x:Key="Theme.Pack.GlassSupported">支持液态玻璃；仍按用户已有开关和授权启用。</sys:String>
-    <sys:String x:Key="Theme.Pack.GlassPaused">该主题未声明玻璃支持，使用期间暂停玻璃，原有设置保持不变。</sys:String>
+    <sys:String x:Key="Theme.Pack.GlassSupported">支持液态玻璃。</sys:String>
+    <sys:String x:Key="Theme.Pack.GlassPaused">该主题不支持液态玻璃，使用期间将暂时关闭玻璃效果。</sys:String>
     <sys:String x:Key="Lunar.Status.NativeMemoryFailure">Java 原生内存分配失败。请释放系统内存并检查分页文件；可适当降低游戏分配内存，为堆外内存留出空间。具体原因请查看游戏目录的 hs_err_pid*.log；这与原生库文件占用是不同问题。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">推荐配置（手动调整后为自定义）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.2">高画质</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.3">极致</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.0">低消耗：低模糊、低帧率，适合降低占用。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.1">均衡：日常使用的推荐配置。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">高画质：更清晰，开销更高。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">极致：效果最强，开销最高。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.0">低消耗：极简效果，默认 30 FPS，性能开销最低。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.1">均衡：轻度磨砂与动效，默认 60 FPS，适合日常使用。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">高画质：较强磨砂、色散与动效，默认 90 FPS，显卡负载较高。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">极致：最高画质与动效，默认 120 FPS，可能明显增加功耗与发热。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">效果最高帧率（30–240 FPS，最右为不限制）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Frost">玻璃磨砂度</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction">边缘折射强度</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">0–200%。100% 为默认强度，数值越高折射越明显。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 为透明玻璃，数值越高越柔和；更高数值会增加开销。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">调节边缘折射强度（0–200%），仅影响背景。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">调节背景磨砂模糊程度（默认 8），数值越高性能开销越大。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">不限制（可能显著增加功耗）</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">是否开启液态玻璃？&#xA;预设：{0}；效果帧率上限：{1}。&#xA;{2}&#xA;会增加 CPU/GPU、内存和电量开销。确认后立即生效。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">实时桌面折射会增加 CPU/GPU 开销，桌面画面不会保存或上传。要开启吗？</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">是否开启液态玻璃？（预设：{0}，帧率上限：{1}）&#xA;{2}&#xA;确认后立即生效。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">是否开启实时桌面折射？&#xA;将实时采样窗口后方的桌面画面（仅本地渲染，不保存或上传），会额外增加 CPU/GPU 开销。</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">模组依赖索引</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.Description">为 PCL 已发现的所有 Minecraft 目录中的实例创建索引，包括未选中和隐藏的实例。相同解析环境下的共享模组目录只扫描一次。待机和浏览时不自动补建；下载模组后仍自动更新。</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">正在发现所有 Minecraft 目录中的实例，可随时取消。不会切换主页所选实例。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Description">为 PCL 已发现的所有 Minecraft 实例建立模组依赖索引；已有版本需手动创建索引，后续下载模组时会自动更新。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">正在扫描所有 Minecraft 目录中的实例，可随时取消。</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllProgress">已处理实例：{0} / {1}&#xA;当前实例：{2}&#xA;当前实例已处理模组文件：{3}</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">全实例索引任务结束：已保存 {0} 个实例索引（其中 {1} 个含跳过项），跳过 {2} 个模组文件，{3} 项目录或保存失败。取消时保留已完成项。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">索引完成：已保存 {0} 个实例（{1} 个含跳过项），跳过 {2} 个模组，{3} 项失败。</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Partial">已保存 {0} 个模组的索引，跳过 {1} 个无法解析的文件；其余索引正常可用。</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Skipped">以下模组文件已跳过，未改动或删除。其他文件的索引已保存并可正常使用；这些文件的内嵌依赖关系仍未完成：</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.FileUnavailable">文件不存在、无法读取，或不是当前支持的模组归档。</sys:String>
@@ -904,13 +904,13 @@
     <!-- Instance.Export.Advanced -->
 
     <sys:String x:Key="Instance.Export.Advanced.BundleFiles">打包资源文件，以避免在导入时下载</sys:String>
-    <sys:String x:Key="Instance.Export.Advanced.BundleFiles.ToolTip">将模组、资源包、光影包的文件直接放入整合包中，这样在导入时就无需联网下载它们。&#xA;建议仅在无法稳定连接 CurseForge 或 Modrinth 时才考虑勾选。</sys:String>
+    <sys:String x:Key="Instance.Export.Advanced.BundleFiles.ToolTip">将模组、资源包与光影直接打入整合包（导入时无需联网），仅在网络受限时建议勾选。</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.BundleHint">建议仅在无法稳定连接 CurseForge 或 Modrinth 时才打包资源文件。&#xA;请不要公开发布含资源文件的整合包，这会违反部分模组的使用协议！</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.ConfigHint">配置文件中含有更多高级选项，例如精准控制导出的文件、设置整合包存放位置等。&#xA;要修改这些选项，请先点击 "保存配置"，在编辑配置文件后再导入。</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.ExportConfig">保存配置</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.ImportConfig">读取配置</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.Modrinth">Modrinth 上传模式</sys:String>
-    <sys:String x:Key="Instance.Export.Advanced.Modrinth.ToolTip">如果你想要打包上传到 Modrinth，勾选此项会生成完全符合 Modrinth 要求的整合包文件。&#xA;由于 Modrinth 要求，只能从 CurseForge 下载的资源将无法联网下载，会被直接放入整合包中。&#xA;此外，勾选后也不能在整合包中包含 PCL Lite 启动器文件。</sys:String>
+    <sys:String x:Key="Instance.Export.Advanced.Modrinth.ToolTip">生成符合 Modrinth 规范的整合包（仅 CurseForge 资源将直接打包，且不含启动器文件）。</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.Title">高级选项</sys:String>
 
     <!-- Instance.Export.Config -->
@@ -1083,7 +1083,7 @@
     <sys:String x:Key="Instance.PackUpdate.Card.Button">检查更新</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Local.Button">从本地文件更新</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Local.Title">确认本地整合包来源</sys:String>
-    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">启动器无法验证所选压缩包是否属于当前整合包。继续后会将该文件作为当前整合包的新版本，并保留当前市场项目关联；请只选择可信且确认属于同一整合包的文件。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">无法验证该压缩包是否属于当前整合包；继续后将作为新版本覆盖更新并保留当前市场项目关联，请确认来源可信。</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task">更新整合包</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task.Download">下载整合包版本</sys:String>
     <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">选择整合包版本</sys:String>
@@ -2329,7 +2329,7 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Minecraft.Launch.ExportScript.Cancelled">已取消导出启动脚本！</sys:String>
     <sys:String x:Key="Minecraft.Launch.ExportScript.Success">导出启动脚本成功！</sys:String>
     <sys:String x:Key="Minecraft.Launch.PurchaseHint.Later">下次一定</sys:String>
-    <sys:String x:Key="Minecraft.Launch.PurchaseHint.Message">看起来你似乎没买正版...&#xA;如果觉得 Minecraft 还不错，可以购买正版支持一下，毕竟开发游戏也真的很不容易...不要一直白嫖啦。&#xA;&#xA;在验证一个正版账号之后，就不会出现这个提示了！</sys:String>
+    <sys:String x:Key="Minecraft.Launch.PurchaseHint.Message">检测到当前未使用正版账号，如喜欢 Minecraft 欢迎支持正版；验证正版账号后将不再提示。</sys:String>
     <sys:String x:Key="Minecraft.Launch.PurchaseHint.Purchase">支持正版游戏！</sys:String>
     <sys:String x:Key="Minecraft.Launch.PurchaseHint.Title">考虑一下正版？</sys:String>
     <sys:String x:Key="Minecraft.Launch.Success">{0} 启动成功！</sys:String>
@@ -2808,7 +2808,7 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
 
     <sys:String x:Key="Setup.GameManage.Download.AutoSelectInstance">安装新实例后自动选定该实例</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.FixAuthlib">升级部分版本的 Authlib</sys:String>
-    <sys:String x:Key="Setup.GameManage.Download.FixAuthlib.ToolTip">部分 MC 版本（如 1.16.5）存在 Bug，可能导致使用离线验证时多人游戏被禁用。&#xA;PCL Lite 可尝试升级这些版本的 Authlib 支持库以解决问题。&#xA;此设置仅对新安装的实例有效。</sys:String>
+    <sys:String x:Key="Setup.GameManage.Download.FixAuthlib.ToolTip">自动修复部分旧版本（如 1.16.5）离线登录无法联机的问题（仅对新安装实例生效）。</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.InstallBehavior">安装行为</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.SpeedLimit">速度限制</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.SpeedLimit.ToolTip">设置下载的速度上限，以避免在下载时导致其他需要联网的程序卡死</sys:String>
@@ -2860,7 +2860,7 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Setup.Language.Banner.TitlePrefix">让</sys:String>
     <sys:String x:Key="Setup.Language.Banner.TitleSuffix">走向国际化。</sys:String>
     <sys:String x:Key="Setup.Language.Banner.DescriptionLine1">在社区的共同助力下，PCL Lite 正迈向国际化的新篇章。</sys:String>
-    <sys:String x:Key="Setup.Language.Banner.DescriptionLine2">欢迎向 GitHub 仓库提交 Pull Request 参与本地化贡献，与我们一同完善多语言支持，为 PCL Lite 更好地服务全球用户的目标添砖加瓦。</sys:String>
+    <sys:String x:Key="Setup.Language.Banner.DescriptionLine2">欢迎向 GitHub 仓库提交 Pull Request，共同完善多语言翻译。</sys:String>
     <sys:String x:Key="Setup.Language.Banner.DescriptionLine3">感谢每一位参与翻译、校对与改进的贡献者，让 PCL Lite 因你们而更加完善。</sys:String>
     <sys:String x:Key="Setup.Language.Banner.SubmitPullRequest">提交 Pull Request</sys:String>
     <sys:String x:Key="Setup.Language.Reset.Success">已初始化语言页设置！</sys:String>
@@ -2883,13 +2883,13 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Setup.Launch.Advanced.DisableJlw">禁用 Java Launch Wrapper</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableJlw.Arm64Notice">在启动游戏时不使用 Java Wrapper 进行包装。&#xA;由于系统为 ARM64 架构，Java Wrapper 已被强制禁用。</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableJlw.Arm64ToolTip">在启动游戏时不使用 Java Wrapper 进行包装。&#xA;由于系统为 ARM64 架构，Java Wrapper 已被强制禁用。</sys:String>
-    <sys:String x:Key="Setup.Launch.Advanced.DisableJlw.ToolTip">PCL Lite 会使用 Java Launch Wrapper 来修复老版本 Java 在中文路径下无法启动的问题。&#xA;如果这被反作弊拦截，或遇到其他问题，也可以将其关闭。</sys:String>
+    <sys:String x:Key="Setup.Launch.Advanced.DisableJlw.ToolTip">用于修复老版本 Java 在中文路径下无法启动的问题；若被反作弊拦截可尝试关闭。</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableLF">禁用 LegacyFix</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableLF.ToolTip">PCL Lite 会在启动 1.5.x 及以下版本时使用 LegacyFix 来改善老版本游戏体验和修复兼容性问题。</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.LockMemory">锁定内存分配（-Xms = -Xmx）</sys:String>
-    <sys:String x:Key="Setup.Launch.Advanced.LockMemory.ToolTip">启用后，启动器会额外追加 -Xms 参数并令其等于最大堆 -Xmx，从而固定堆大小。这会隐式禁用堆内存归还（Uncommit），减少操作系统取消映射/重新分配内存页带来的延迟抖动，也有利于 ZGC 的回收预测。代价是游戏全程会占用接近最大分配的内存。</sys:String>
+    <sys:String x:Key="Setup.Launch.Advanced.LockMemory.ToolTip">将初始堆（-Xms）设为与最大堆（-Xmx）相同，可减少内存波动，但游戏全程会占用全部设定内存。</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableLwjglUnsafeAgent">禁用 LWJGL Unsafe Agent</sys:String>
-    <sys:String x:Key="Setup.Launch.Advanced.DisableLwjglUnsafeAgent.ToolTip">Minecraft 26.1 使用了 LWJGL 3.4.1，LWJGL 3.4.1 使用了 FFM API 以在 JDK 25+ 上访问原生内存。由于 JDK 优化能力限制，某些情况下这会产生严重的性能问题。&#xA;PCL Lite 会使用 LWJGL Unsafe Agent 修复这个问题，以解决可能存在的性能问题。&#xA;一般情况下没有禁用该选项的必要，但如果你遇到了额外问题，也可以尝试暂时禁用该选项以排查错误。&#xA;&#xA;该功能仅会在 LWJGL 版本为 3.4.1 时生效。</sys:String>
+    <sys:String x:Key="Setup.Launch.Advanced.DisableLwjglUnsafeAgent.ToolTip">用于修复 Minecraft 26.1（LWJGL 3.4.1）在部分 JDK 下的性能问题。仅在遇到异常时才建议禁用排查。</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.GameTail">游戏参数尾部</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.GameTail.ToolTip">文本框中的内容将会被直接拼合在启动参数的末尾。&#xA;例如，输入 --demo 则会以试玩模式启动游戏。&#xA;支持 Minecraft 实例 JSON 中的字符串替换标记，例如 ${library_directory}。</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.GpuPreference">要求 Java 使用高性能显卡</sys:String>
@@ -2910,7 +2910,7 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Setup.Launch.Advanced.Renderer.Warning.Message">修改此项会严重影响游戏的稳定性与性能。如果你不知道你在做什么，不要修改此选项！&#xA;你确定要继续修改吗？</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.Title">高级启动选项</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.UseJavaExe">使用 java.exe 而不是 javaw.exe</sys:String>
-    <sys:String x:Key="Setup.Launch.Advanced.UseJavaExe.ToolTip">如果遇到游戏窗口长时间不出现等故障可尝试启用此项，PCL Lite 将使用 java.exe 来运行游戏，这样会让游戏进程拥有标准输入/输出流，以尽可能避免打印日志时出现问题。&#xA;&#xA;取决于不同 Java 发行版的行为，java.exe 可能无法使用 HDR 颜色等依赖操作系统支持的特性。因此，如果正常使用没有问题，请勿启用该选项。</sys:String>
+    <sys:String x:Key="Setup.Launch.Advanced.UseJavaExe.ToolTip">改用 java.exe 启动游戏（带控制台流），仅在窗口长期不出现等异常时用于排查；正常情况请勿开启。</sys:String>
 
     <!-- Setup.Launch.Memory -->
 
@@ -2938,10 +2938,10 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Setup.Launch.Options.IpStack.Ipv6">IPv6 优先</sys:String>
     <sys:String x:Key="Setup.Launch.Options.IpStack.JavaDefault">Java 默认</sys:String>
     <sys:String x:Key="Setup.Launch.Options.IpStack.Label">IP 协议偏好</sys:String>
-    <sys:String x:Key="Setup.Launch.Options.IpStack.ToolTip">通过设置 Java 虚拟机参数来设置 MC 的 IP 协议版本偏好。&#xA;一般建议设置为 "IPv4 优先"，这能确保 PCL Lite 大厅正常工作。&#xA;如果有手动 IPv6 联机等需要，可以选择其他选项。&#xA;&#xA;IPv4 优先：-Djava.net.preferIPv4Stack=true&#xA;默认：不添加额外参数&#xA;IPv6 优先：-Djava.net.preferIPv6Stack=true</sys:String>
+    <sys:String x:Key="Setup.Launch.Options.IpStack.ToolTip">设置 MC 的 IP 协议偏好（建议“IPv4 优先”以保障联机正常）：&#xA;IPv4 优先：-Djava.net.preferIPv4Stack=true&#xA;IPv6 优先：-Djava.net.preferIPv6Stack=true</sys:String>
     <sys:String x:Key="Setup.Launch.Options.MsAuth.DeviceCode">设备代码流</sys:String>
     <sys:String x:Key="Setup.Launch.Options.MsAuth.Label">正版验证方式</sys:String>
-    <sys:String x:Key="Setup.Launch.Options.MsAuth.ToolTip">Web 账户管理器的正版验证流程更为简单，而设备代码流允许你在任意设备上打开网页进行验证。&#xA;如果使用 Web 账户管理器登录遇到问题，可以尝试使用设备代码流。&#xA;如果正在公共计算机上临时登录账号，推荐使用设备代码流。&#xA;&#xA;由于部分依赖组件存在较多问题，该选项暂时强制指定为设备代码流。</sys:String>
+    <sys:String x:Key="Setup.Launch.Options.MsAuth.ToolTip">当前临时统一使用设备代码流进行微软登录（可在任意设备上打开网页完成验证）。</sys:String>
     <sys:String x:Key="Setup.Launch.Options.MsAuth.WebManager">Web 账户管理器（暂时强制设备代码流）</sys:String>
     <sys:String x:Key="Setup.Launch.Options.Priority.AboveNormal">高（优先保证游戏运行，游戏性能更佳，但可能造成其他程序卡顿）</sys:String>
     <sys:String x:Key="Setup.Launch.Options.Priority.BelowNormal">低（优先保证其他程序运行，但可能让游戏卡顿，适合挂机时使用）</sys:String>
@@ -3255,19 +3255,19 @@ Release 发布时间：{2}
 
     <sys:String x:Key="Setup.Ui.Tahoe.Title">液态玻璃 · LiquidGlass</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Stopped">桌面折射已关闭。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Starting">正在等待桌面画面，暂时显示静态材质。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Starting">正在初始化桌面折射…</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Live">正在实时折射桌面。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">桌面采样正常，当前设备使用模糊兼容材质。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">桌面采样中断，正在尝试恢复；未就绪区域使用静态材质。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">正在使用兼容模糊材质。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">桌面采样中断，正在尝试恢复…</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Suspended">桌面采样已暂停；窗口恢复可见后继续。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">移动或调整窗口中：保留玻璃与实时采样，遵守设置的帧率。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">移动或调整窗口中…</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">系统不支持桌面采样，当前显示静态材质。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">桌面采样恢复失败，当前显示静态材质；可重新开启“直接折射桌面”重试。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">桌面折射恢复失败，可重新开启“实时桌面折射”重试。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液态玻璃界面</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Description">液态玻璃效果，可在下方调整画质和帧率。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">实时桌面折射</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">使用桌面画面作为玻璃背景，会增加性能开销。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">需要 Windows 10 2004 或更高版本；不可用时使用静态或模糊材质。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Description">启用液态玻璃界面，会带来一定性能开销。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">实时桌面折射（支持截图和录屏）</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">实时折射窗口后方的桌面画面（仅本地渲染，会额外增加显卡负载）。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">需要 Windows 10 2004 及以上版本；不支持时自动回退为静态模糊。</sys:String>
 
     <!-- Setup.Ui.Basic -->
 
@@ -3279,9 +3279,9 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Basic.BlueHint">蓝色，蓝色，还是蓝色！想要逃离蓝色困境？请使用官方快照版！</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurMethod">模糊方法</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Box">方框模糊</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Box.ToolTip">对每个像素周围较小范围的像素使用线性均值采样，速度较快，但容易产生色块。&#xA;该模糊容易丢失细节信息，但性能较好，若设备性能不佳可选择使用。</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Box.ToolTip">速度较快，画质略粗糙，适合性能较弱的设备。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Gaussian">高斯模糊</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Gaussian.ToolTip">对每个像素周围较大范围的像素使用高斯卷积算法的带权重均值采样，速度较慢。&#xA;该模糊质量较高，对细节的处理较为细致，推荐性能较好的设备使用。</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Gaussian.ToolTip">画质更细腻，但性能开销较高。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurMethod.ToolTip">设定模糊方法。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurRadius">模糊半径</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurRadius.ToolTip">设定模糊效果的采样半径，值越大模糊效果越强。</sys:String>
@@ -3304,7 +3304,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">关闭后隐藏右下角搜索按钮，仍可按 Ctrl+K 打开全局搜索。立即生效。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在启动游戏时显示"你知道吗"</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">界面上的用户文件夹名打码</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">把界面上路径里 C:\Users\ 后面那一段统一显示成 *****，截图发出去不会带出 Windows 用户名。只影响显示，不会改动任何文件夹或文件。</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">将界面路径中的 Windows 用户名隐藏为 *****，仅影响显示，不改动文件。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">基础</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">标题栏页面折叠</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">标题栏空间不足时，优先折叠选中的页面；空间足够时显示全部页面。勾选此处的页面会优先收进标题栏右侧的展开区域。</sys:String>
@@ -3419,7 +3419,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Music.Refresh.ToolTip">刷新播放列表，并播放列表中的音乐</sys:String>
     <sys:String x:Key="Setup.Ui.Music.Shuffle">随机播放</sys:String>
     <sys:String x:Key="Setup.Ui.Music.Smtc">接入系统媒体传输控制 (SMTC) 控件</sys:String>
-    <sys:String x:Key="Setup.Ui.Music.Smtc.ToolTip">启用此选项后，可以使用系统控制中心和快捷键等控制 PCL Lite 的媒体播放。&#xA;可以与 Lyricify Lite 或 FluentFlyout 等软件搭配使用。</sys:String>
+    <sys:String x:Key="Setup.Ui.Music.Smtc.ToolTip">启用后可通过系统媒体控制中心或快捷键控制播放。</sys:String>
     <sys:String x:Key="Setup.Ui.Music.StartInGame">游戏启动后自动开始播放，游戏退出后自动暂停播放</sys:String>
     <sys:String x:Key="Setup.Ui.Music.StopInGame">游戏启动后自动暂停播放，游戏退出后自动开始播放</sys:String>
     <sys:String x:Key="Setup.Ui.Music.Title">背景音乐</sys:String>
@@ -3514,10 +3514,10 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Update.Channel.Preview.ToolTip">三个通道里最稳的一档。收正式版，以及正式版之前的预览版（pre / beta）。适合想提前看到下个版本、但不想天天踩坑的用户。</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Snapshot">快照尝鲜</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Snapshot.ToolTip">比预览体验激进一档。额外收快照版（snapshot）——开发过程中的中间构建，功能可能是半成品。</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Snapshot.Warning.Message">你正在把更新通道切到「快照尝鲜」。&#xA;该通道除了正式版和预览版，还会收到快照版（snapshot）。它们是开发过程中的中间构建，功能可能不完整、可能随时出问题。&#xA;&#xA;正式版发布后你仍然会正常升到正式版。如果你在制作整合包，请用「预览体验」或直接下正式版！</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Snapshot.Warning.Message">切换到「快照尝鲜」将接收开发中的快照版本，可能存在不稳定或异常；正式版发布后仍可正常升级。</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest">始终最新</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest.ToolTip">最激进的一档。正式版、预览版、快照版、不稳定版（nightly）全都收，随时可能遇到半成品功能。</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Latest.Warning.Message">你正在把更新通道切到「始终最新」。&#xA;该通道会收到全部版本，包括不稳定版（nightly）——直接来自最新提交的构建，可能完全无法启动。&#xA;&#xA;正式版发布后你仍然会正常升到正式版。该选项仅推荐愿意帮忙排查问题的用户选择。</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.Warning.Message">切换到「始终最新」将接收最新构建（含不稳定版），仅建议用于测试与问题排查。</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Title">最终确认</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Message">确定要切到「始终最新」吗？&#xA;你会收到 nightly 构建，它们可能完全无法使用。&#xA;&#xA;请输入 '{0}' 以确认。</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.ExpectedInput">我确认切换到此通道并已知晓风险</sys:String>
@@ -3574,7 +3574,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Bedrock.Kind.Gdk">GDK 便携版</sys:String>
     <sys:String x:Key="Bedrock.Error.OperationFailed">基岩版页面操作失败。请查看错误详情。</sys:String>
     <sys:String x:Key="Bedrock.Download.Title">下载基岩版</sys:String>
-    <sys:String x:Key="Bedrock.Download.Description">这里列出微软商店已发布的基岩版安装包，包含正式版、预览版与 Beta。选中版本后点右侧按钮，PCL Lite 会把官方原包下载到本地并装好：商店包（UWP）会注册进系统，需要开发者模式；GDK 包会解包到启动器自己的目录里，多个版本可以同时存在。</sys:String>
+    <sys:String x:Key="Bedrock.Download.Description">列出微软商店已发布的基岩版（正式版 / 预览版）。UWP 包需开启开发者模式；GDK 包将解包到启动器目录，支持多版本共存。</sys:String>
     <sys:String x:Key="Bedrock.Download.Refresh">刷新列表</sys:String>
     <sys:String x:Key="Bedrock.Download.OpenFolder">打开下载目录</sys:String>
     <sys:String x:Key="Bedrock.Download.ChooseDir">选择下载目录</sys:String>
@@ -3618,13 +3618,13 @@ Release 发布时间：{2}
     <sys:String x:Key="Bedrock.Download.Cik">内容密钥</sys:String>
     <sys:String x:Key="Bedrock.Download.State.NeedCik">需内容密钥</sys:String>
     <sys:String x:Key="Bedrock.Cik.Title">GDK 内容密钥</sys:String>
-    <sys:String x:Key="Bedrock.Cik.Description">GDK 版安装包是加密的 .msixvc，解包需要商店下发的内容密钥（CIK）。密钥不随启动器分发，这里填你自己手上那把即可（十六进制，至少 48 字节）。留空表示暂时不填，此时 GDK 版本只能下载、不能安装；商店包（UWP）不受影响。</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Description">GDK 安装包需要内容密钥（CIK，十六进制 ≥48 字节）才能解包安装；留空则仅下载不安装。</sys:String>
     <sys:String x:Key="Bedrock.Cik.Hint">十六进制串，可含空格或短横线</sys:String>
     <sys:String x:Key="Bedrock.Cik.Invalid">密钥格式不对：需要至少 {0} 字节的十六进制串。</sys:String>
     <sys:String x:Key="Bedrock.Cik.Saved">内容密钥已保存。</sys:String>
     <sys:String x:Key="Bedrock.Cik.Skipped">没有内容密钥，已取消安装。商店包（UWP）不需要密钥。</sys:String>
     <sys:String x:Key="Bedrock.Cik.PreviewTitle">预览版 GDK 内容密钥</sys:String>
-    <sys:String x:Key="Bedrock.Cik.PreviewDescription">预览版（Beta）的 GDK 安装包用的是与正式版不同的内容密钥，正式版的密钥解不开它。&#10;这里请填写预览版通道对应的密钥（十六进制，至少 48 字节）。留空表示暂时不填，此时预览版只能下载、不能安装；正式版 GDK 与商店包都不受影响。</sys:String>
+    <sys:String x:Key="Bedrock.Cik.PreviewDescription">预览版 GDK 需填写对应通道的内容密钥（与正式版不通用）；留空则仅下载不安装。</sys:String>
     <sys:String x:Key="Bedrock.Cik.PreviewSkipped">没有预览版内容密钥，已取消安装。正式版 GDK 与商店包不受影响。</sys:String>
     <sys:String x:Key="Bedrock.Install.Extracting">正在解压安装包…</sys:String>
     <sys:String x:Key="Bedrock.Install.ExtractFailed">解压安装包失败：{0}</sys:String>
@@ -3637,7 +3637,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Bedrock.Install.VerifyFailed">解包结果校验失败：{0} 个可执行文件无效。&#10;通常是内容密钥与该版本通道不匹配——预览版（Beta）和正式版用的是不同的密钥。&#10;请改用正式版，或填写该通道对应的预览密钥。</sys:String>
     <sys:String x:Key="Bedrock.Install.KeyMismatch">内容密钥与这个安装包不匹配，用它解出来的文件会是乱码。&#10;这个包需要：{0}&#10;当前密钥是：{1}&#10;每个 GDK 包各自一把密钥（按 GUID 区分），不同版本之间、正式版与预览版之间都不通用。</sys:String>
     <sys:String x:Key="Bedrock.Launch.Title">启动基岩版</sys:String>
-    <sys:String x:Key="Bedrock.Launch.Description">这里列出本机所有可启动的基岩版：商店里装的正式版与预览版、下载页解包出来的版本、以及你手动添加的 GDK 目录。选中后点「启动」即可，不需要管理员权限。</sys:String>
+    <sys:String x:Key="Bedrock.Launch.Description">列出本机可启动的基岩版（商店版、已解包版本及手动添加的 GDK 目录），选中即可直接启动。</sys:String>
     <sys:String x:Key="Bedrock.Launch.List.Title">可启动的基岩版</sys:String>
     <sys:String x:Key="Bedrock.Launch.Detecting">正在检测基岩版…</sys:String>
     <sys:String x:Key="Bedrock.Launch.DetectFailed">检测基岩版失败：{0}</sys:String>
@@ -3692,37 +3692,40 @@ Release 发布时间：{2}
     <sys:String x:Key="Link.Sidebar.HostPeersCount">已连入 {0} 位好友 · 端口 {1}</sys:String>
     <sys:String x:Key="Link.Sidebar.HostWaiting">等好友连进来 · 端口 {0}</sys:String>
     <sys:String x:Key="Link.Sidebar.GuestConnected">已连上房主</sys:String>
+    <sys:String x:Key="Link.Sidebar.GuestDisconnected">房主连接已断开</sys:String>
+    <sys:String x:Key="Link.Sidebar.GuestDisconnectedDetail">请重新加入房间</sys:String>
     <sys:String x:Key="Link.Sidebar.GuestConnecting">正在连房主…</sys:String>
     <sys:String x:Key="Link.Sidebar.Ipv6Ready">可以连接</sys:String>
     <sys:String x:Key="Link.Sidebar.Ipv6ReadyDetail">网络环境正常，可直接开房或加房</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6">没拿到公网 IPv6</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6Detail">校园网或老路由器常关掉 IPv6，开手机热点一般就有</sys:String>
     <sys:String x:Key="Link.Env.NoIpv6Title">当前没拿到公网 IPv6</sys:String>
-    <sys:String x:Key="Link.Env.NoIpv6Desc">这套直连走的是纯 IPv6，校园网、公司内网或老路由器没开 IPv6 时连不上。可以打开路由器里的 IPv6 设置，或者用手机开 5G 热点再来点检测。</sys:String>
-    <sys:String x:Key="Link.Host.Step1Title">1. 开房拿邀请码</sys:String>
+    <sys:String x:Key="Link.Env.NoIpv6Desc">当前直连基于纯 IPv6，若校园网或路由器未开启 IPv6，可尝试开启路由器 IPv6 或改用手机热点后重试。</sys:String>
+    <sys:String x:Key="Link.Host.Step1Title">1. 开启新房间</sys:String>
     <sys:String x:Key="Link.Host.LanWaiting">进存档点「对局域网开放」，端口会自动填进来；开独立服务端也能手填端口。</sys:String>
-    <sys:String x:Key="Link.Host.LanCaptured">已抓到局域网世界「{0}」，端口已自动填成 {1}</sys:String>
+    <sys:String x:Key="Link.Host.LanCaptured">已经找到局域网世界「{0}」，端口 {1}</sys:String>
     <sys:String x:Key="Link.Host.PortLabel">游戏端口：</sys:String>
     <sys:String x:Key="Link.Host.PortPlaceholder">请输入端口（如 25565）</sys:String>
-    <sys:String x:Key="Link.Host.StartBtn">创建房间并复制邀请码</sys:String>
+    <sys:String x:Key="Link.Host.StartBtn">开启新房间</sys:String>
     <sys:String x:Key="Link.Host.StopBtn">关闭房间</sys:String>
-    <sys:String x:Key="Link.Host.InviteHint">邀请码已自动复制，共 30 字符（BSK- 加 26 个常用汉字）。请通过可信聊天渠道把原文发给好友，双方需使用新版：</sys:String>
+    <sys:String x:Key="Link.Host.InviteHint">复制后发给好友，让他点击“我要进房间”加入。</sys:String>
     <sys:String x:Key="Link.Host.CopyAgain">再复制一次</sys:String>
-    <sys:String x:Key="Link.Host.Step2Title">2. 输入好友的回执码（好友无法直接进入时）</sys:String>
-    <sys:String x:Key="Link.Host.AckDesc">每位好友粘贴 BSK- 邀请码后，都需通过可信聊天渠道把自己的 ACK- 回执码发给你。逐个粘贴并放行，可继续添加多位好友，不影响已连接的人；重复放行同一个回执不会重复添加。</sys:String>
-    <sys:String x:Key="Link.Host.AckPlaceholder">复制好友发的 ACK- 回执码，可直接点右边粘进来</sys:String>
+    <sys:String x:Key="Link.Host.Step2Title">2. 输入好友的回执码</sys:String>
+    <sys:String x:Key="Link.Host.AckDesc">将好友发来的 ACK- 回执码粘贴到这里并放行。</sys:String>
+    <sys:String x:Key="Link.Host.AckPlaceholder">粘贴好友发来的 ACK- 回执码</sys:String>
     <sys:String x:Key="Link.Host.PasteAndAccept">粘贴并放行</sys:String>
-    <sys:String x:Key="Link.Host.PeersTitle">连进来的好友</sys:String>
-    <sys:String x:Key="Link.Host.NoPeers">还没人连进来。</sys:String>
+    <sys:String x:Key="Link.Host.PeersTitle">当前连接好友</sys:String>
+    <sys:String x:Key="Link.Host.NoPeers">暂无好友连接</sys:String>
     <sys:String x:Key="Link.Host.DisconnectPeer">断开此好友</sys:String>
     <sys:String x:Key="Link.Guest.Step1Title">1. 粘房主的邀请码</sys:String>
-    <sys:String x:Key="Link.Guest.InviteHint">先复制房主发给你的 BSK- 邀请码，不用手动粘，直接点右边「粘贴并连接」就行：</sys:String>
-    <sys:String x:Key="Link.Guest.InvitePlaceholder">点右边可直接从剪贴板读取 BSK- 邀请码</sys:String>
-    <sys:String x:Key="Link.Guest.PasteAndConnect">粘贴并连接</sys:String>
+    <sys:String x:Key="Link.Guest.InviteHint">粘贴好友发来的邀请码，点击连接加入房间。</sys:String>
+    <sys:String x:Key="Link.Guest.InvitePlaceholder">粘贴好友发来的 BSK- 邀请码</sys:String>
+    <sys:String x:Key="Link.Guest.ConnectBtn">连接</sys:String>
     <sys:String x:Key="Link.Guest.DisconnectBtn">断开连接</sys:String>
     <sys:String x:Key="Link.Guest.Step2Title">2. 进游戏</sys:String>
     <sys:String x:Key="Link.Guest.Connecting">正在连房主，等 1 秒看看能不能直接通…</sys:String>
-    <sys:String x:Key="Link.Guest.NeedAckStatus">等待房主放行。已自动复制回执码，请通过可信聊天渠道发给房主，让他点击「粘贴并放行」。保持此页开启，放行后继续尝试连接：</sys:String>
+    <sys:String x:Key="Link.Guest.NeedAckStatus">请点击下方「复制回执码」发给房主放行，保持本页开启即可自动连通：</sys:String>
+    <sys:String x:Key="Link.Guest.ConnectionLost">与房主的连接已断开，请断开后重新加入房间。</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">已经连上房主（延迟 {0} ms）！打开游戏点「多人游戏」，拉到最底下就能进。</sys:String>
     <sys:String x:Key="Link.Guest.AckExplain">你的回执码（ACK- 加 26 个常用汉字，共 30 字符）：</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">复制回执码</sys:String>
@@ -3776,7 +3779,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Tools.Test.Dependency.MissingMessage">当前系统环境缺失软件运行所需依赖"{0}"&#xA;&#xA;点击确定打开微软应用商店安装</sys:String>
     <sys:String x:Key="Tools.Test.Dependency.Title">依赖检查</sys:String>
     <sys:String x:Key="Tools.Test.Error.OperationFailed">测试工具操作失败。请查看错误详情。</sys:String>
-    <sys:String x:Key="Tools.Test.LaunchCount.Message">PCL Lite 已为你成功启动 {0} 次游戏（Java、基岩版和 Lunar）。旧累计值保留，升级前未记录的基岩版和 Lunar 启动不会补算。</sys:String>
+    <sys:String x:Key="Tools.Test.LaunchCount.Message">已为你成功启动 {0} 次游戏。</sys:String>
     <sys:String x:Key="Tools.Test.LaunchCount.Title">查看启动计数</sys:String>
     <sys:String x:Key="Tools.Test.ServerQuery.Title">瞅眼服务器</sys:String>
     <sys:String x:Key="Tools.Test.Title">百宝箱</sys:String>
@@ -3980,7 +3983,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Lunar.Social.Me">我</sys:String>
     <sys:String x:Key="Lunar.Social.Placeholder">输入消息，回车发送…</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">说明</sys:String>
-    <sys:String x:Key="Lunar.Note.Brief">PCL 直接拉起 Lunar 客户端，不经过官方启动器；物料由 PCL 自己下载校验，账号、内存与 JVM 参数都在本页或「设置 → Lunar Client」里配。</sys:String>
+    <sys:String x:Key="Lunar.Note.Brief">直接启动 Lunar 客户端，资源由启动器自动下载校验；账号、内存与 JVM 参数可在本页或设置中配置。</sys:String>
     <sys:String x:Key="Lunar.Note.Docs">查看完整说明 →</sys:String>
     <sys:String x:Key="Lunar.Card.Log">运行日志</sys:String>
     <sys:String x:Key="Lunar.Log.Desc">启动过程与游戏输出</sys:String>
@@ -4260,7 +4263,7 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Instance.Enhancement.IdentityDuplicate">增强身份 {0} 同时出现在这些其他实例：{1}。仅报告重复，不认定原件，也不会自动修改身份。</sys:String>
     <sys:String x:Key="Instance.Enhancement.IdentityIncomplete">有 {0} 处增强身份信息无法读取或不受支持；未覆盖原记录，身份检查可能不完整。</sys:String>
     <sys:String x:Key="Instance.Enhancement.ClearCache.Title">清理解析缓存</sys:String>
-    <sys:String x:Key="Instance.Enhancement.ClearCache.Confirm">仅清理当前实例可重建的解析报告 resolved.json。组件声明、个人设置记忆、模组集合和事务恢复资料全部保留。下次体检会重新生成报告。</sys:String>
+    <sys:String x:Key="Instance.Enhancement.ClearCache.Confirm">仅清理当前实例的解析缓存（resolved.json），保留配置与模组，下次检查时自动重建。</sys:String>
     <sys:String x:Key="Instance.Enhancement.ClearCache.Preserved">缓存格式未知、损坏或正在使用，已保留原文件。可重新体检生成受支持的解析结果。</sys:String>
     <sys:String x:Key="Instance.Enhancement.ClearCache.Done">当前实例的解析缓存已清理。</sys:String>
     <sys:String x:Key="Instance.Enhancement.ClearCache.Empty">当前实例没有需要清理的解析缓存。</sys:String>
@@ -4333,9 +4336,9 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Lunar.CredentialRisk.Message">Lunar 原版启动器会将 Refresh Token 明文存储。PCL Lite 为兼容 Lunar，同样使用这一账号文件格式。使用此功能可能导致账号凭据泄露；能够读取该账号文件的程序或他人可能获取你的登录凭据。&#10;&#10;请勿分享 Lunar 账号文件。确认知晓后不再提示；可随时取消进入。</sys:String>
     <sys:String x:Key="Lunar.CredentialRisk.Confirm">我已知晓，继续</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.4">自定义</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.4">自定义：使用下方保存的参数，不被推荐配置覆盖。提高采样率、模糊或磨砂度会增加图形与耗电开销。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.4">自定义：使用下方手动调整的参数。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling">桌面采样率（30–240 FPS，最右为不限制）</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling.Hint">独立控制实时桌面画面的采样频率；不改变按钮动效帧数。仅开启实时桌面折射时生效，拖动窗口也遵循此值。提高采样率会增加 CPU/GPU 开销。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling.Hint">控制实时桌面画面的刷新频率，提高帧率会增加 CPU/GPU 开销。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Blur">基础模糊半径（0–32 DIP）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Dispersion">边缘色散（0–100%）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Highlight">边缘高光（0–100%）</sys:String>
@@ -4344,11 +4347,11 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">玻璃染色比例（0–100%，不影响背景透明度）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">启用按钮按压与跟随动效</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Reset">恢复玻璃默认参数</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">确定恢复液态玻璃的默认参数吗？&#10;&#10;将恢复均衡推荐参数，包括 100% 折射、8 DIP 磨砂、1 DIP 基础模糊、60 FPS 动效及桌面采样率、默认色散、高光、漫反射、边缘清晰度、染色比例与按钮动效。&#10;&#10;仅修改玻璃参数；玻璃开关、桌面折射开关和授权记录保持当前状态。账号、主题、背景、实例及其他启动器设置均不改变。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">确定将液态玻璃参数恢复为默认（均衡）吗？&#xA;仅重置玻璃参数，不影响其他设置。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity">卡片染色／不透明度（0–100%）</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">仅调整卡片半透明底色：0% 为透明，100% 为不透明。文字、图标、玻璃染色及窗口背景不受影响；高对比度模式仍使用系统实色。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">调整卡片半透明底色的不透明度（0% 透明，100% 不透明）。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality">桌面采样质量（25–100% 分辨率）</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">100% 为原始分辨率；数值越低越省资源，但细节会减少。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">降低桌面采样分辨率可减少显卡负载，仅影响实时桌面背景。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Brightness">玻璃明暗度（-50～50，默认 0）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardBrightness">卡片明暗度（-50～50，默认 0）</sys:String>
 </ResourceDictionary>

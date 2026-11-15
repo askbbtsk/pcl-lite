@@ -36,7 +36,6 @@ public static partial class ModLunar
         Log($"账号：{identity.DisplayName}（Lunar 身份账号）");
         // 有 refreshToken 才谈得上续期；令牌导入的那种到期只能重新导入
         _canRefreshSession = identity.CanRefresh;
-
         var uuid = NormalizeUuid(identity.Uuid);
         var twin = _accounts.FirstOrDefault(x =>
             string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
@@ -294,19 +293,15 @@ public static partial class ModLunar
 
     /// <summary>
     ///     抢占 Lunar 的 IPC 端口。抢到了就由 PCL 应答游戏的续期请求，
-    ///     抢不到（Lunar 启动器在跑）就把端口原样交给游戏。
+    ///     28190 抢不到时不接管 IPC，也不换端口。
     /// </summary>
     private static async Task<LunarIpcStartResult> StartIpcAsync(string installationId)
     {
         StopIpc();
 
-        // 能自己续期时不要轻易把端口让给 Lunar 启动器：启动器开着但没登录的话，
-        // 游戏找它续期只会失败。28190 抢不到就退到 28191，把端口指给游戏。
-        var fallback = _canRefreshSession ? new[] { LunarIpcServer.DefaultPort + 1 } : null;
-
         var result = await LunarIpcServer
             .StartAsync(LunarIpcServer.DefaultPort, installationId, RefreshLunarAccountAsync, Log,
-                fallbackPorts: fallback, host: IpcHost)
+                host: IpcHost)
             .ConfigureAwait(false);
 
         _ipcServer = result.Server;
@@ -319,12 +314,11 @@ public static partial class ModLunar
         if (!GameSessions.RunIfCurrent(launchSession, () => { previous = _ipcServer; _ipcServer = null; }))
             throw new OperationCanceledException("Lunar launch session has changed.");
         previous?.Dispose();
-        var fallback = _canRefreshSession ? new[] { LunarIpcServer.DefaultPort + 1 } : null;
         var result = await LunarIpcServer.StartAsync(LunarIpcServer.DefaultPort, installationId,
             (uuid, token) => GameSessions.IsCurrent(launchSession)
                 ? RefreshLunarAccountAsync(uuid, token)
                 : Task.FromCanceled<LunarRefreshResult>(new CancellationToken(canceled: true)),
-            message => LogSession(launchSession, message), fallbackPorts: fallback, host: IpcHost).ConfigureAwait(false);
+            message => LogSession(launchSession, message), host: IpcHost).ConfigureAwait(false);
         if (!GameSessions.RunIfCurrent(launchSession, () => _ipcServer = result.Server))
         {
             result.Server?.Dispose();

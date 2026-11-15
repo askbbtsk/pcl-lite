@@ -31,11 +31,14 @@ public sealed class UdpReliablePeer : IAsyncDisposable
     // Leave room for authentication plus IPv6/UDP headers within a 1280-byte packet.
     public const int MaxChunkSize = 1152;
     private const int HeaderSize = 2 + 4 + 1 + 4 + 4 + 4 + 8; // Magic(2)+Token(4)+Type(1)+ConnId(4)+Seq(4)+Ack(4)+SackMask(8) = 27
+    private const long ReachabilityTimeoutMilliseconds = 5000;
+    private const long ReachabilityCheckIntervalMilliseconds = 250;
 
     private readonly uint _token;
     private readonly TunnelAuthentication _authentication;
     private readonly Func<ReadOnlyMemory<byte>, ValueTask> _sendRawAsync;
     private readonly bool _localRequiresOnlineAuth;
+    private readonly Func<(bool Supported, bool Available)>? _localGameServerStatus;
     private readonly ConcurrentDictionary<uint, ReliableStream> _streams = new();
     private readonly ConcurrentDictionary<uint, (uint FinalAck, ulong FinalSack)> _closedStreams = new();
     private readonly CancellationTokenSource _cts = new();
@@ -43,18 +46,25 @@ public sealed class UdpReliablePeer : IAsyncDisposable
 
     private int _nextConnId;
     private long _lastReceivedTicks;
-    private long _lastPongTicks;
+    private long _lastPongTimestamp;
+    private long _nextReachabilityCheck;
+    private int _isReachable;
     private int _rttMs;
     private int _remoteRequiresOnlineAuth;
+    private int _remoteGameServerStatusSupported;
+    private int _remoteGameServerAvailable;
 
     public event Action<ReliableStream>? OnStreamAccepted;
     public event Action<int>? OnConnectedOrHeartbeat;
+    public event Action<bool>? OnReachabilityChanged;
 
-    public bool IsReachable => Volatile.Read(ref _lastPongTicks) != 0;
+    public bool IsReachable => Volatile.Read(ref _isReachable) != 0;
     public int RttMs => Volatile.Read(ref _rttMs);
     public DateTimeOffset LastActivityUtc => new(Volatile.Read(ref _lastReceivedTicks), TimeSpan.Zero);
     public bool LocalRequiresOnlineAuth => _localRequiresOnlineAuth;
     public bool RemoteRequiresOnlineAuth => Volatile.Read(ref _remoteRequiresOnlineAuth) != 0;
+    public bool RemoteGameServerStatusSupported => Volatile.Read(ref _remoteGameServerStatusSupported) != 0;
+    public bool RemoteGameServerAvailable => Volatile.Read(ref _remoteGameServerAvailable) != 0;
 
     public UdpReliablePeer(
         uint token,
@@ -62,12 +72,14 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         ReadOnlySpan<byte> peerId,
         bool isHost,
         Func<ReadOnlyMemory<byte>, ValueTask> sendRawAsync,
-        bool localRequiresOnlineAuth = false)
+        bool localRequiresOnlineAuth = false,
+        Func<(bool Supported, bool Available)>? localGameServerStatus = null)
     {
         _token = token;
         _authentication = new TunnelAuthentication(token, secret, peerId, isHost);
         _sendRawAsync = sendRawAsync;
         _localRequiresOnlineAuth = localRequiresOnlineAuth;
+        _localGameServerStatus = localGameServerStatus;
         _lastReceivedTicks = DateTimeOffset.UtcNow.Ticks;
         _retransmitLoop = Task.Run(() => RetransmitLoopAsync(_cts.Token));
     }
@@ -118,13 +130,33 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                 WriteHeader(pong, TunnelPacketType.Pong, 0, 0, 0, 0);
                 if (packet.Length >= HeaderSize + 8)
                     packet.Slice(HeaderSize, 8).CopyTo(pong.AsSpan(HeaderSize, 8));
-                pong[HeaderSize + 8] = _localRequiresOnlineAuth ? (byte)0x01 : (byte)0x00;
+                var flags = _localRequiresOnlineAuth ? (byte)0x01 : (byte)0x00;
+                if (_localGameServerStatus is not null)
+                {
+                    try
+                    {
+                        var serverStatus = _localGameServerStatus();
+                        if (serverStatus.Supported)
+                        {
+                            flags |= 0x02;
+                            if (serverStatus.Available)
+                                flags |= 0x04;
+                        }
+                    }
+                    catch
+                    {
+                        // A failed local health probe must not stop the tunnel heartbeat.
+                    }
+                }
+                pong[HeaderSize + 8] = flags;
                 _ = SendPacketAsync(pong);
                 break;
             }
             case TunnelPacketType.Pong:
             {
-                Volatile.Write(ref _lastPongTicks, DateTimeOffset.UtcNow.Ticks);
+                Volatile.Write(ref _lastPongTimestamp, Environment.TickCount64);
+                if (Interlocked.Exchange(ref _isReachable, 1) == 0)
+                    OnReachabilityChanged?.Invoke(true);
                 if (packet.Length >= HeaderSize + 8)
                 {
                     var sentTick = BinaryPrimitives.ReadInt64BigEndian(packet.Slice(HeaderSize, 8));
@@ -135,6 +167,8 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                 {
                     var flags = packet[HeaderSize + 8];
                     Volatile.Write(ref _remoteRequiresOnlineAuth, (flags & 0x01) != 0 ? 1 : 0);
+                    Volatile.Write(ref _remoteGameServerStatusSupported, (flags & 0x02) != 0 ? 1 : 0);
+                    Volatile.Write(ref _remoteGameServerAvailable, (flags & 0x04) != 0 ? 1 : 0);
                 }
                 OnConnectedOrHeartbeat?.Invoke(Volatile.Read(ref _rttMs));
                 break;
@@ -233,6 +267,19 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             {
                 await Task.Delay(15, ct).ConfigureAwait(false);
                 var now = Environment.TickCount64;
+                if (now >= Volatile.Read(ref _nextReachabilityCheck))
+                {
+                    Volatile.Write(ref _nextReachabilityCheck, now + ReachabilityCheckIntervalMilliseconds);
+                    var lastPong = Volatile.Read(ref _lastPongTimestamp);
+                    if (Volatile.Read(ref _isReachable) != 0 &&
+                        lastPong != 0 &&
+                        now - lastPong >= ReachabilityTimeoutMilliseconds &&
+                        Interlocked.Exchange(ref _isReachable, 0) != 0)
+                    {
+                        OnReachabilityChanged?.Invoke(false);
+                    }
+                }
+
                 foreach (var kv in _streams)
                 {
                     await kv.Value.PumpRetransmitsAsync(now).ConfigureAwait(false);

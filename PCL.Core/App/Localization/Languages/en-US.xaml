@@ -5,7 +5,7 @@
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xml:space="preserve">
     <sys:String x:Key="Theme.Pack.Title">Visual theme packages</sys:String>
-    <sys:String x:Key="Theme.Pack.Description">Customize PCL controls and materials with XAML. Start with “Open annotated example”, edit a copy in Notepad or VS Code, save as a UTF-8 .xaml file, then drop it here to install. For later edits, open the theme folder, edit the installed copy, then choose “Reload and preview”. Confirm within 15 seconds or the previous theme returns. Reopening the example never overwrites your edits.</sys:String>
+    <sys:String x:Key="Theme.Pack.Description">Customize appearance with XAML. Edit the commented example and drag the .xaml file here to preview.</sys:String>
     <sys:String x:Key="Theme.Pack.OpenExample">Open annotated example</sys:String>
     <sys:String x:Key="Theme.Pack.BuiltIn">Built-in theme</sys:String>
     <sys:String x:Key="Theme.Pack.OpenFolder">Open theme folder</sys:String>
@@ -17,40 +17,40 @@
     <sys:String x:Key="Theme.Pack.Revert">Restore previous theme</sys:String>
     <sys:String x:Key="Theme.Pack.Force">Force load and preview</sys:String>
     <sys:String x:Key="Theme.Pack.Undeclared">Not declared</sys:String>
-    <sys:String x:Key="Theme.Pack.InstallPrompt">Theme: {0}&#xA;Author: {1}&#xA;Version: {2}&#xA;Launcher compatibility: {3}&#xA;Source: {4}&#xA;&#xA;Install and preview now? You can still restore the previous theme.</sys:String>
-    <sys:String x:Key="Theme.Pack.ReplacePrompt">“{0}” is already installed. Replace it with this package? Replacement happens only after validation; source files are not moved or modified.</sys:String>
-    <sys:String x:Key="Theme.Pack.Incompatible">“{0}” declares support for {2}; this launcher is {1}. Visual or interaction issues may occur. Force load a preview? Consent applies only to this launcher version and theme content.</sys:String>
+    <sys:String x:Key="Theme.Pack.InstallPrompt">Theme: {0}&#xA;Author: {1}&#xA;Version: {2}&#xA;Target version: {3}&#xA;Source: {4}&#xA;&#xA;Install and preview now?</sys:String>
+    <sys:String x:Key="Theme.Pack.ReplacePrompt">"{0}" is already installed. Replace it?</sys:String>
+    <sys:String x:Key="Theme.Pack.Incompatible">"{0}" targets {2}, which may be incompatible with {1}. Force preview anyway?</sys:String>
     <sys:String x:Key="Theme.Pack.Failed">The theme could not load. The previous theme has been preserved or restored.&#xA;&#xA;{0}</sys:String>
-    <sys:String x:Key="Theme.Pack.Recovered">The previous theme load or preview did not finish. The launcher started with its built-in theme. Select the theme again to retry.</sys:String>
-    <sys:String x:Key="Theme.Pack.ChangedOnDisk">The theme content or launcher version changed. The launcher started with its built-in theme. Select the theme again and confirm a preview.</sys:String>
-    <sys:String x:Key="Theme.Pack.PreviewCountdown">Previewing “{0}”. Confirm within {1} seconds to keep it; otherwise the previous theme returns.</sys:String>
+    <sys:String x:Key="Theme.Pack.Recovered">Previous theme preview did not finish; reverted to the built-in theme.</sys:String>
+    <sys:String x:Key="Theme.Pack.ChangedOnDisk">Theme files or launcher version changed; reverted to the built-in theme. Re-select to preview.</sys:String>
+    <sys:String x:Key="Theme.Pack.PreviewCountdown">Previewing "{0}" (auto-reverts in {1}s unless kept).</sys:String>
     <sys:String x:Key="Theme.Pack.Information">{0} · {1}&#xA;Author: {2}&#xA;Compatibility: {3}&#xA;{4}</sys:String>
-    <sys:String x:Key="Theme.Pack.GlassSupported">Supports liquid glass; existing user settings and consent still apply.</sys:String>
-    <sys:String x:Key="Theme.Pack.GlassPaused">This theme does not declare glass support. Glass is paused while it is active; your settings are preserved.</sys:String>
+    <sys:String x:Key="Theme.Pack.GlassSupported">Supports Liquid Glass.</sys:String>
+    <sys:String x:Key="Theme.Pack.GlassPaused">Liquid Glass is not supported by this theme and will be paused while active.</sys:String>
     <sys:String x:Key="Lunar.Status.NativeMemoryFailure">Java could not allocate native memory. Free system memory and check the Windows page file; reducing game heap allocation may leave more room for native memory. See hs_err_pid*.log in the game directory for details. This is separate from native-library files being in use.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">Recommended settings (manual changes become custom)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">Low power</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">Balanced</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.2">High quality</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.3">Ultra</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.0">Low: lower blur and frame rate for reduced resource use.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.1">Balanced: recommended for everyday use.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">High: sharper effects with higher resource use.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">Ultra: strongest effects and highest resource use.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.0">Low: minimal effects, 30 FPS default, lowest resource usage.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.1">Balanced: light frost and motion, 60 FPS default, good for daily use.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">High: stronger frost and effects, 90 FPS default, higher GPU load.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">Ultra: maximum quality and motion, 120 FPS default, highest power draw.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">Effect frame cap (30–240 FPS; far right is unlimited)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Frost">Glass frosting</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction">Edge refraction strength</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">0–200%. 100% is the default; higher values make refraction stronger.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 is clear; higher values soften the glass and use more resources.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">Adjusts edge refraction strength (0–200%) on the background only.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">Adjusts background frost blur (default 8); higher values cost more GPU.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">Unlimited (may significantly increase power use)</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">Enable liquid glass?&#xA;Preset: {0}; effect frame cap: {1}.&#xA;{2}&#xA;This increases CPU/GPU, memory and power use. It takes effect immediately.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction uses more CPU/GPU. Desktop images are not saved or uploaded. Enable it?</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">Enable Liquid Glass? (Preset: {0}, FPS cap: {1})&#xA;{2}&#xA;Takes effect immediately.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Enable live desktop refraction?&#xA;Samples the desktop behind the window locally (never saved or uploaded), adding CPU/GPU load.</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">Mod dependency index</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.Description">Index every instance in all Minecraft folders discovered by PCL, including unselected and hidden instances. Shared mod folders with the same parser context are scanned once. Idle browsing does not build indexes; mod downloads still update them.</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">Discovering instances across all Minecraft folders. You can cancel. Your home-page selection will stay unchanged.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Description">Builds mod dependency indexes for all discovered Minecraft instances. Existing versions must be indexed manually; future mod downloads update automatically.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">Scanning instances across Minecraft folders (cancellable).</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllProgress">Instances processed: {0} / {1}&#xA;Current instance: {2}&#xA;Mod files processed for this instance: {3}</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">Indexing ended: saved indexes for {0} instances ({1} with skipped files), skipped {2} mod files; {3} directory or save failures. Completed entries are kept on cancellation.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">Indexing finished: {0} instances saved ({1} with skips), {2} mods skipped, {3} failed.</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Partial">Saved indexes for {0} mods and skipped {1} unreadable files. Other indexes remain usable.</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Skipped">These mod files were skipped and were not changed or deleted. Indexes for other files were saved and remain usable. Nested dependencies for the listed files are still incomplete:</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.FileUnavailable">The file is missing, unreadable, or is not a supported mod archive.</sys:String>
@@ -904,13 +904,13 @@
     <!-- Instance.Export.Advanced -->
 
     <sys:String x:Key="Instance.Export.Advanced.BundleFiles">Bundle resource files to avoid downloading them on import</sys:String>
-    <sys:String x:Key="Instance.Export.Advanced.BundleFiles.ToolTip">Place Mods, resource packs, and shader packs directly into the modpack so they do not need to be downloaded during import.&#xA;Only consider this when you cannot reliably connect to CurseForge or Modrinth.</sys:String>
+    <sys:String x:Key="Instance.Export.Advanced.BundleFiles.ToolTip">Bundles mods, resource packs, and shaders inside the modpack for offline import.</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.BundleHint">Only bundle resource files when you cannot reliably connect to CurseForge or Modrinth.&#xA;Do not publicly distribute modpacks with bundled resource files, as this may violate some mods' ToS!</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.ConfigHint">The configuration file contains more advanced options, such as precise control over exported files and modpack storage location.&#xA;To modify these options, click "Save config" first, then import after editing the configuration file.</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.ExportConfig">Export config</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.ImportConfig">Import config</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.Modrinth">Modrinth upload mode</sys:String>
-    <sys:String x:Key="Instance.Export.Advanced.Modrinth.ToolTip">Enable this if you plan to upload to Modrinth to generate fully Modrinth-compliant modpack files.&#xA;Due to Modrinth requirements, resources only available from CurseForge cannot be downloaded online and will be bundled directly.&#xA;Additionally, the PCL Lite launcher files cannot be included in the modpack when this is enabled.</sys:String>
+    <sys:String x:Key="Instance.Export.Advanced.Modrinth.ToolTip">Exports a Modrinth-compliant modpack (CurseForge-only files are bundled directly; excludes launcher files).</sys:String>
     <sys:String x:Key="Instance.Export.Advanced.Title">Advanced options</sys:String>
 
     <!-- Instance.Export.Config -->
@@ -1083,7 +1083,7 @@
     <sys:String x:Key="Instance.PackUpdate.Card.Button">Check for updates</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Local.Button">Update from file</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Local.Title">Confirm local pack source</sys:String>
-    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">The launcher cannot verify that this archive belongs to the current modpack. If you continue, it will be used as the current pack's new version while retaining the existing marketplace project link. Choose only a trusted archive that you know belongs to this same modpack.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">Cannot verify whether this archive belongs to the current modpack; continuing will overwrite it as a new version and keep the current market project link. Proceed only if trusted.</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task">Update modpack</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task.Download">Download modpack version</sys:String>
     <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">Select modpack version</sys:String>
@@ -2329,7 +2329,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Minecraft.Launch.ExportScript.Cancelled">Exporting launch script canceled!</sys:String>
     <sys:String x:Key="Minecraft.Launch.ExportScript.Success">Launch script exported successfully!</sys:String>
     <sys:String x:Key="Minecraft.Launch.PurchaseHint.Later">Nah, maybe next time</sys:String>
-    <sys:String x:Key="Minecraft.Launch.PurchaseHint.Message">It looks like you haven't purchased the game...&#xA;If you think Minecraft is good, consider purchasing it to support the developers... Don't keep freeloading.&#xA;&#xA;This prompt will no longer appear after you verify a valid Microsoft account!</sys:String>
+    <sys:String x:Key="Minecraft.Launch.PurchaseHint.Message">No official Microsoft account detected. Consider supporting Minecraft; this prompt hides once verified.</sys:String>
     <sys:String x:Key="Minecraft.Launch.PurchaseHint.Purchase">Purchase!</sys:String>
     <sys:String x:Key="Minecraft.Launch.PurchaseHint.Title">Purchase the game?</sys:String>
     <sys:String x:Key="Minecraft.Launch.Success">{0} launched successfully!</sys:String>
@@ -2808,7 +2808,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
 
     <sys:String x:Key="Setup.GameManage.Download.AutoSelectInstance">Auto-select the instance after installation</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.FixAuthlib">Upgrade Authlib for some versions</sys:String>
-    <sys:String x:Key="Setup.GameManage.Download.FixAuthlib.ToolTip">Some Minecraft versions, such as 1.16.5, have a bug that may cause multiplayer to be disabled when using offline login.&#xA;PCL Lite can try to upgrade the Authlib support library for these versions to fix the issue.&#xA;This setting only applies to newly installed instances.</sys:String>
+    <sys:String x:Key="Setup.GameManage.Download.FixAuthlib.ToolTip">Fixes offline-mode multiplayer on older versions like 1.16.5 (new installs only).</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.InstallBehavior">Install behavior</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.SpeedLimit">Speed limit</sys:String>
     <sys:String x:Key="Setup.GameManage.Download.SpeedLimit.ToolTip">Set a download speed cap to prevent other programs that depend on the internet from freezing during downloads.</sys:String>
@@ -2860,7 +2860,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Setup.Language.Banner.TitlePrefix">Let</sys:String>
     <sys:String x:Key="Setup.Language.Banner.TitleSuffix">Go Internationalized.</sys:String>
     <sys:String x:Key="Setup.Language.Banner.DescriptionLine1">With the support of the community, PCL Lite is entering a new chapter in its journey toward internationalization.</sys:String>
-    <sys:String x:Key="Setup.Language.Banner.DescriptionLine2">You can help shape that journey by submitting pull requests to our GitHub repository, making PCL Lite more accessible to users around the world.</sys:String>
+    <sys:String x:Key="Setup.Language.Banner.DescriptionLine2">Contributions via GitHub Pull Requests are welcome to improve translations.</sys:String>
     <sys:String x:Key="Setup.Language.Banner.DescriptionLine3">Thank you to everyone who contributes translations, reviews, and improvements—your support makes PCL Lite better for everyone.</sys:String>
     <sys:String x:Key="Setup.Language.Banner.SubmitPullRequest">Submit pull request</sys:String>
     <sys:String x:Key="Setup.Language.Reset.Success">Language page settings initialized!</sys:String>
@@ -2883,13 +2883,13 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableJlw">Disable Java Launch Wrapper</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableJlw.Arm64Notice">Do not wrap with Java Wrapper when launching the game.&#xA;Java Wrapper has been forcibly disabled because the system is ARM64 architecture.</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableJlw.Arm64ToolTip">Do not use Java Wrapper when launching the game.&#xA;Java Wrapper is disabled because this system uses ARM64 architecture.</sys:String>
-    <sys:String x:Key="Setup.Launch.Advanced.DisableJlw.ToolTip">PCL Lite uses Java Launch Wrapper to fix issues where older Java versions cannot launch from paths containing Chinese characters.&#xA;If it is blocked by anti-cheat or causes other issues, you can disable it.</sys:String>
+    <sys:String x:Key="Setup.Launch.Advanced.DisableJlw.ToolTip">Fixes legacy Java launch failures on non-ASCII paths; disable if flagged by anti-cheat.</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableLF">Disable LegacyFix</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableLF.ToolTip">PCL Lite uses LegacyFix when launching version 1.5.x and below to improve legacy version gameplay experience and fix compatibility issues.</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.LockMemory">Lock memory allocation (-Xms = -Xmx)</sys:String>
-    <sys:String x:Key="Setup.Launch.Advanced.LockMemory.ToolTip">When enabled, the launcher additionally appends -Xms equal to the maximum heap (-Xmx), fixing the heap size. This implicitly disables heap memory uncommit, reducing latency jitter caused by the OS unmapping and remapping memory pages, and helps ZGC's collection prediction. The trade-off is that the game holds close to the maximum allocated memory for its entire runtime.</sys:String>
+    <sys:String x:Key="Setup.Launch.Advanced.LockMemory.ToolTip">Sets -Xms equal to -Xmx to reduce allocation jitter, reserving all configured RAM upfront.</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.DisableLwjglUnsafeAgent">Disable LWJGL Unsafe Agent</sys:String>
-    <sys:String x:Key="Setup.Launch.Advanced.DisableLwjglUnsafeAgent.ToolTip">Minecraft 26.1 uses LWJGL 3.4.1, which uses the FFM API to access native memory on JDK 25+. Due to JDK optimization limitations, this may cause severe performance issues in some cases.&#xA;PCL Lite uses LWJGL Unsafe Agent to fix this issue and avoid possible performance problems.&#xA;There is generally no need to disable this option, but if you encounter additional issues, you can try temporarily disabling it for troubleshooting.&#xA;&#xA;This feature only takes effect when the LWJGL version is 3.4.1.</sys:String>
+    <sys:String x:Key="Setup.Launch.Advanced.DisableLwjglUnsafeAgent.ToolTip">Fixes LWJGL 3.4.1 performance issues on Minecraft 26.1; disable only for troubleshooting.</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.GameTail">Game arguments tail</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.GameTail.ToolTip">The content in this text box will be directly appended to the end of the launch arguments.&#xA;For example, entering --demo will start the game in demo mode.&#xA;String replacement tokens from the Minecraft instance JSON, such as ${library_directory}, are supported.</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.GpuPreference">Require Java to use the high-performance GPU</sys:String>
@@ -2910,7 +2910,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.Renderer.Warning.Message">Changing this setting will seriously affect game stability and performance. If you do not know what you are doing, do not change this option!&#xA;Are you sure you want to continue?</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.Title">Advanced launch options</sys:String>
     <sys:String x:Key="Setup.Launch.Advanced.UseJavaExe">Use java.exe instead of javaw.exe</sys:String>
-    <sys:String x:Key="Setup.Launch.Advanced.UseJavaExe.ToolTip">If the game window does not appear for a long time, try enabling this option. PCL Lite will use java.exe to run the game, giving the game process standard input/output streams to avoid possible issues when logs are printed.&#xA;&#xA;Depending on the behavior of different Java distributions, java.exe may not support features that depend on operating system support, such as HDR colors. Therefore, do not enable this option if everything works normally.</sys:String>
+    <sys:String x:Key="Setup.Launch.Advanced.UseJavaExe.ToolTip">Uses java.exe instead of javaw.exe; enable only when troubleshooting missing windows or console I/O.</sys:String>
 
     <!-- Setup.Launch.Memory -->
 
@@ -2938,10 +2938,10 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Setup.Launch.Options.IpStack.Ipv6">IPv6 preferred</sys:String>
     <sys:String x:Key="Setup.Launch.Options.IpStack.JavaDefault">Java default</sys:String>
     <sys:String x:Key="Setup.Launch.Options.IpStack.Label">IP protocol preference</sys:String>
-    <sys:String x:Key="Setup.Launch.Options.IpStack.ToolTip">Set the Minecraft IP protocol preference through JVM arguments.&#xA;In general, IPv4 preferred is recommended to ensure that the PCL Lite lobby works properly.&#xA;If you need manual IPv6 networking, you can choose another option.&#xA;&#xA;IPv4 preferred: -Djava.net.preferIPv4Stack=true&#xA;Default: no extra arguments&#xA;IPv6 preferred: -Djava.net.preferIPv6Stack=true</sys:String>
+    <sys:String x:Key="Setup.Launch.Options.IpStack.ToolTip">Sets IP protocol preference for Minecraft (IPv4 preferred recommended):&#xA;IPv4 first: -Djava.net.preferIPv4Stack=true&#xA;IPv6 first: -Djava.net.preferIPv6Stack=true</sys:String>
     <sys:String x:Key="Setup.Launch.Options.MsAuth.DeviceCode">Device Code Flow</sys:String>
     <sys:String x:Key="Setup.Launch.Options.MsAuth.Label">Microsoft login method</sys:String>
-    <sys:String x:Key="Setup.Launch.Options.MsAuth.ToolTip">The Web Account Manager has a simpler Microsoft login flow, while the Device Code Flow allows you to authenticate on any device with a web browser.&#xA;If you encounter issues with the Web Account Manager, try using the Device Code Flow.&#xA;If you are temporarily logging in on a public computer, Device Code Flow is recommended.&#xA;&#xA;Due to issues with some dependencies, this option is temporarily forced to Device Code Flow.</sys:String>
+    <sys:String x:Key="Setup.Launch.Options.MsAuth.ToolTip">Currently forced to Device Code Flow for Microsoft sign-in (works in any browser).</sys:String>
     <sys:String x:Key="Setup.Launch.Options.MsAuth.WebManager">Web Account Manager (temporarily forced to Device Code Flow)</sys:String>
     <sys:String x:Key="Setup.Launch.Options.Priority.AboveNormal">High (prioritizes game performance, but may cause other programs to lag)</sys:String>
     <sys:String x:Key="Setup.Launch.Options.Priority.BelowNormal">Low (prioritizes other programs, but may cause the game to lag; suitable for running in the background)</sys:String>
@@ -3255,19 +3255,19 @@ This corroborates the current asset against the Release record; it does not veri
 
     <sys:String x:Key="Setup.Ui.Tahoe.Title">Liquid Glass · LiquidGlass</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Stopped">Desktop refraction is off.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Starting">Waiting for the desktop frame. Showing a static material.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Starting">Initializing desktop refraction…</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Live">Refracting the desktop live.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">Desktop capture is active. This device uses the blur compatibility material.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">Desktop capture was interrupted. Recovering; unavailable areas use a static material.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Compatibility">Using compatibility blur material.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Recovering">Desktop capture interrupted; recovering…</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Suspended">Desktop capture is paused until the window is visible again.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">Moving or resizing: glass and live sampling remain active at the configured frame rate.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Moving">Moving or resizing window…</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">Desktop capture is unsupported. Showing a static material.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">Desktop capture could not recover. Showing a static material. Toggle “Refract the desktop directly” to retry.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">Desktop refraction failed to recover; toggle it off and on to retry.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">Use the Liquid Glass interface</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Description">Adjust glass quality and frame rate below.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Uses your desktop as the glass background and increases system resource use.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">Requires Windows 10 version 2004 or later. If unavailable, a static or blurred background is used.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Description">Enables the translucent Liquid Glass UI with some performance cost.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction (allows screenshots and recording)</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Refracts the live desktop behind the window locally (adds GPU load).</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">Requires Windows 10 2004 or later; falls back to static blur if unsupported.</sys:String>
 
     <!-- Setup.Ui.Basic -->
 
@@ -3279,9 +3279,9 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Basic.BlueHint">Blue, blue, and more blue! Want to escape from the blue dilemma? Use the official snapshot build!</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurMethod">Blur method</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Box">Box blur</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Box.ToolTip">Uses linear average sampling over a small area around each pixel, which is faster but may produce color blocks.&#xA;This blur may lose detail information but has better performance. It can be used on devices with poor performance.</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Box.ToolTip">Faster, slightly coarser blur; suited for lower-end devices.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Gaussian">Gaussian blur</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Gaussian.ToolTip">Uses weighted average sampling with a Gaussian convolution algorithm over a large area around each pixel, which is slower.&#xA;This blur has higher quality and handles details more finely. Recommended for devices with better performance.</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.BlurMethod.Gaussian.ToolTip">Smoother blur with higher GPU cost.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurMethod.ToolTip">Sets the blur method.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurRadius">Blur radius</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.BlurRadius.ToolTip">Sets the sampling radius of the blur effect. Larger values produce stronger blur.</sys:String>
@@ -3304,7 +3304,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">Hide the floating search button while keeping Ctrl+K available. Takes effect immediately.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">Show "Trivia" when launching the game</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">Mask user folder names in the UI</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">Show the folder name after C:\Users\ as ***** so screenshots do not leak your Windows user name. Display only; no folders or files are changed.</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">Masks your Windows username in displayed paths as *****; display-only.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">Basics</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">Top bar page overflow</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">When the title bar runs short of space, selected pages are folded into the right-side overflow area first. All pages remain visible when there is enough room.</sys:String>
@@ -3419,7 +3419,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Music.Refresh.ToolTip">Refresh the playlist and play music on the list.</sys:String>
     <sys:String x:Key="Setup.Ui.Music.Shuffle">Shuffle playing</sys:String>
     <sys:String x:Key="Setup.Ui.Music.Smtc">Integrate with System Media Transport Controls (SMTC)</sys:String>
-    <sys:String x:Key="Setup.Ui.Music.Smtc.ToolTip">When enabled, you can use the system control center and shortcuts to control PCL Lite's media playback.&#xA;Can be used with software such as Lyricify Lite or FluentFlyout.</sys:String>
+    <sys:String x:Key="Setup.Ui.Music.Smtc.ToolTip">Control playback via Windows media controls and media keys.</sys:String>
     <sys:String x:Key="Setup.Ui.Music.StartInGame">Play while an instance is running</sys:String>
     <sys:String x:Key="Setup.Ui.Music.StopInGame">Play while no instance is running</sys:String>
     <sys:String x:Key="Setup.Ui.Music.Title">Musics</sys:String>
@@ -3514,10 +3514,10 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Update.Channel.Preview.ToolTip">The most conservative of the three. Receives stable releases plus previews (pre / beta) that come before them. For people who want an early look without living on the edge.</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Snapshot">Snapshot</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Snapshot.ToolTip">One step more aggressive than Preview. Also receives snapshots — intermediate builds from development, which may be half-finished.</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Snapshot.Warning.Message">You are switching the update channel to Snapshot.&#xA;Besides stable and preview builds, this channel also receives snapshots: intermediate builds from ongoing development that may be incomplete or broken.&#xA;&#xA;You will still be upgraded to stable releases when they ship. If you are building a modpack, use Preview or a stable build instead!</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Snapshot.Warning.Message">Switching to Snapshot delivers work-in-progress builds that may be unstable; you will still receive future stable releases.</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest">Always latest</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest.ToolTip">The most aggressive option. Everything is delivered: stable, preview, snapshot and nightly builds. Half-finished features may show up at any time.</sys:String>
-    <sys:String x:Key="Setup.Update.Channel.Latest.Warning.Message">You are switching the update channel to Always latest.&#xA;This channel delivers everything, including nightly builds made straight from the newest commits. They may fail to start at all.&#xA;&#xA;You will still be upgraded to stable releases when they ship. Only pick this if you are willing to help track down problems.</sys:String>
+    <sys:String x:Key="Setup.Update.Channel.Latest.Warning.Message">Switching to Latest delivers every new build including unstable ones; recommended for testing only.</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Title">Final confirmation</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.Message">Switch to Always latest?&#xA;You will receive nightly builds that may be completely unusable.&#xA;&#xA;Type '{0}' to confirm.</sys:String>
     <sys:String x:Key="Setup.Update.Channel.Latest.FinalConfirm.ExpectedInput">I understand the risks and want to switch</sys:String>
@@ -3574,7 +3574,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Bedrock.Kind.Gdk">GDK portable</sys:String>
     <sys:String x:Key="Bedrock.Error.OperationFailed">The Bedrock page failed to perform that action. Check the error details.</sys:String>
     <sys:String x:Key="Bedrock.Download.Title">Download Bedrock</sys:String>
-    <sys:String x:Key="Bedrock.Download.Description">Every Bedrock package published to the Microsoft Store is listed here, including Release, Preview and Beta builds. Pick a version and click the button on the right: PCL Lite downloads the official package and installs it. Store packages (UWP) are registered with Windows and need Developer Mode; GDK packages are extracted into the launcher's own folder, so several versions can coexist.</sys:String>
+    <sys:String x:Key="Bedrock.Download.Description">Lists Microsoft Store Bedrock builds (Release / Preview). UWP requires Developer Mode; GDK unpacks locally for multi-version support.</sys:String>
     <sys:String x:Key="Bedrock.Download.Refresh">Refresh list</sys:String>
     <sys:String x:Key="Bedrock.Download.OpenFolder">Open download folder</sys:String>
     <sys:String x:Key="Bedrock.Download.ChooseDir">Choose download folder</sys:String>
@@ -3618,13 +3618,13 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Bedrock.Download.Cik">Content key</sys:String>
     <sys:String x:Key="Bedrock.Download.State.NeedCik">Needs content key</sys:String>
     <sys:String x:Key="Bedrock.Cik.Title">GDK content key</sys:String>
-    <sys:String x:Key="Bedrock.Cik.Description">GDK packages are encrypted .msixvc containers; extracting them needs the content key (CIK) delivered by the Store. The key is not shipped with the launcher — paste the one you already have (hexadecimal, at least 48 bytes). Leave it empty to skip: GDK versions can then be downloaded but not installed. Store packages (UWP) are unaffected.</sys:String>
+    <sys:String x:Key="Bedrock.Cik.Description">GDK packages require a hex Content Key (CIK, ≥48 bytes) to unpack; leave blank to download only.</sys:String>
     <sys:String x:Key="Bedrock.Cik.Hint">Hex string, spaces and dashes allowed</sys:String>
     <sys:String x:Key="Bedrock.Cik.Invalid">Invalid key format: expected at least {0} bytes of hexadecimal.</sys:String>
     <sys:String x:Key="Bedrock.Cik.Saved">Content key saved.</sys:String>
     <sys:String x:Key="Bedrock.Cik.Skipped">No content key, install cancelled. Store packages (UWP) do not need one.</sys:String>
     <sys:String x:Key="Bedrock.Cik.PreviewTitle">Preview GDK content key</sys:String>
-    <sys:String x:Key="Bedrock.Cik.PreviewDescription">Preview (Beta) GDK packages are encrypted with a different content key than Release, so the Release key cannot decrypt them.&#10;Enter the key for the Preview channel (hex, at least 48 bytes). Leave it empty to skip: Preview builds can then be downloaded but not installed. Release GDK and Store packages are unaffected.</sys:String>
+    <sys:String x:Key="Bedrock.Cik.PreviewDescription">Preview GDK builds require a preview-specific CIK; leave blank to download only.</sys:String>
     <sys:String x:Key="Bedrock.Cik.PreviewSkipped">No Preview content key; installation cancelled. Release GDK and Store packages are unaffected.</sys:String>
     <sys:String x:Key="Bedrock.Install.Extracting">Extracting the package…</sys:String>
     <sys:String x:Key="Bedrock.Install.ExtractFailed">Failed to extract the package: {0}</sys:String>
@@ -3637,7 +3637,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Bedrock.Install.VerifyFailed">Extraction verification failed: {0} executable file(s) are invalid.&#10;This usually means the content key does not match this release channel - Preview/Beta uses a different key from Release.&#10;Use a Release build instead, or provide the Preview key for this channel.</sys:String>
     <sys:String x:Key="Bedrock.Install.KeyMismatch">The content key does not match this package; extracting with it would produce garbage files.&#10;This package requires: {0}&#10;Current key: {1}&#10;Each GDK package has its own key (identified by GUID). Keys are not shared between versions, nor between Release and Preview.</sys:String>
     <sys:String x:Key="Bedrock.Launch.Title">Launch Bedrock</sys:String>
-    <sys:String x:Key="Bedrock.Launch.Description">Every launchable Bedrock installation on this PC is listed here: the Release and Preview builds from the Store, versions extracted on the Download page, and any GDK folders you added manually. Select one and click Launch; no administrator rights needed.</sys:String>
+    <sys:String x:Key="Bedrock.Launch.Description">Lists installed Store, unpacked, and custom GDK Bedrock builds ready to launch.</sys:String>
     <sys:String x:Key="Bedrock.Launch.List.Title">Launchable installations</sys:String>
     <sys:String x:Key="Bedrock.Launch.Detecting">Looking for Bedrock installations…</sys:String>
     <sys:String x:Key="Bedrock.Launch.DetectFailed">Failed to detect Bedrock installations: {0}</sys:String>
@@ -3698,7 +3698,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Tools.Test.Dependency.MissingMessage">Required dependency "{0}" is missing.&#xA;&#xA;Click OK to open Microsoft Store.</sys:String>
     <sys:String x:Key="Tools.Test.Dependency.Title">Dependency check</sys:String>
     <sys:String x:Key="Tools.Test.Error.OperationFailed">A test utility operation failed. See the details below.</sys:String>
-    <sys:String x:Key="Tools.Test.LaunchCount.Message">PCL Lite has successfully launched games {0} times (Java, Bedrock and Lunar). Your existing total is preserved; previously unrecorded Bedrock and Lunar launches are not reconstructed.</sys:String>
+    <sys:String x:Key="Tools.Test.LaunchCount.Message">Launched games {0} times.</sys:String>
     <sys:String x:Key="Tools.Test.LaunchCount.Title">View launch count</sys:String>
     <sys:String x:Key="Tools.Test.ServerQuery.Title">Check server</sys:String>
     <sys:String x:Key="Tools.Test.Title">Utilities</sys:String>
@@ -3902,7 +3902,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Lunar.Social.Me">Me</sys:String>
     <sys:String x:Key="Lunar.Social.Placeholder">Type a message, Enter to send…</sys:String>
     <sys:String x:Key="Lunar.Card.Notes">Notes</sys:String>
-    <sys:String x:Key="Lunar.Note.Brief">PCL launches Lunar Client directly, without the official launcher. Files are downloaded and verified by PCL; accounts, memory and JVM arguments are configured on this page or in Settings → Lunar Client.</sys:String>
+    <sys:String x:Key="Lunar.Note.Brief">Launches Lunar Client directly with auto-verified assets; configure accounts, RAM, and JVM args here or in Settings.</sys:String>
     <sys:String x:Key="Lunar.Note.Docs">Read the full guide →</sys:String>
     <sys:String x:Key="Lunar.Card.Log">Log</sys:String>
     <sys:String x:Key="Lunar.Log.Desc">Startup and game output</sys:String>
@@ -4038,37 +4038,40 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Link.Sidebar.HostPeersCount">{0} connected · Port {1}</sys:String>
     <sys:String x:Key="Link.Sidebar.HostWaiting">Waiting for friends · Port {0}</sys:String>
     <sys:String x:Key="Link.Sidebar.GuestConnected">Connected to host</sys:String>
+    <sys:String x:Key="Link.Sidebar.GuestDisconnected">Host connection lost</sys:String>
+    <sys:String x:Key="Link.Sidebar.GuestDisconnectedDetail">Reconnect to join the room again</sys:String>
     <sys:String x:Key="Link.Sidebar.GuestConnecting">Connecting to host…</sys:String>
     <sys:String x:Key="Link.Sidebar.Ipv6Ready">Ready to connect</sys:String>
     <sys:String x:Key="Link.Sidebar.Ipv6ReadyDetail">Network ready for hosting or joining</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6">No public IPv6</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6Detail">Some routers or campus Wi-Fi disable IPv6; mobile hotspots usually work.</sys:String>
     <sys:String x:Key="Link.Env.NoIpv6Title">No public IPv6 address found</sys:String>
-    <sys:String x:Key="Link.Env.NoIpv6Desc">Direct link runs over IPv6 without a relay server. Enable IPv6 on your router or switch to a 5G hotspot, then re-check.</sys:String>
-    <sys:String x:Key="Link.Host.Step1Title">1. Open Room &amp; Share Invite</sys:String>
+    <sys:String x:Key="Link.Env.NoIpv6Desc">Direct link requires IPv6; enable IPv6 on your router or try a mobile hotspot, then re-check.</sys:String>
+    <sys:String x:Key="Link.Host.Step1Title">1. Open a Room</sys:String>
     <sys:String x:Key="Link.Host.LanWaiting">Click "Open to LAN" inside your world to fill the port automatically, or type a server port.</sys:String>
-    <sys:String x:Key="Link.Host.LanCaptured">Captured LAN world "{0}" on port {1}</sys:String>
+    <sys:String x:Key="Link.Host.LanCaptured">Found LAN world "{0}" on port {1}</sys:String>
     <sys:String x:Key="Link.Host.PortLabel">Game port:</sys:String>
     <sys:String x:Key="Link.Host.PortPlaceholder">Port (e.g. 25565)</sys:String>
-    <sys:String x:Key="Link.Host.StartBtn">Start Room &amp; Copy Invite</sys:String>
+    <sys:String x:Key="Link.Host.StartBtn">Open a Room</sys:String>
     <sys:String x:Key="Link.Host.StopBtn">Close Room</sys:String>
-    <sys:String x:Key="Link.Host.InviteHint">Invite copied: 30 characters (BSK- plus 26 common Chinese characters). Send the original text through a trusted chat channel. Both sides need the updated launcher:</sys:String>
+    <sys:String x:Key="Link.Host.InviteHint">Copy the invite and send it to your friend. They can click “Join Room” to connect.</sys:String>
     <sys:String x:Key="Link.Host.CopyAgain">Copy Again</sys:String>
-    <sys:String x:Key="Link.Host.Step2Title">2. Enter a Friend's ACK Code (If Direct Join Fails)</sys:String>
-    <sys:String x:Key="Link.Host.AckDesc">Each friend must send their own ACK- code through a trusted chat channel after entering the BSK- invite. Paste and allow each code to add more friends without interrupting existing connections. Repeating the same ACK does not add a duplicate.</sys:String>
-    <sys:String x:Key="Link.Host.AckPlaceholder">Copy friend's ACK- code and click the button to paste &amp; allow</sys:String>
+    <sys:String x:Key="Link.Host.Step2Title">2. Enter Your Friend's ACK Code</sys:String>
+    <sys:String x:Key="Link.Host.AckDesc">Paste your friend's ACK- code here and allow the connection.</sys:String>
+    <sys:String x:Key="Link.Host.AckPlaceholder">Paste your friend's ACK- code</sys:String>
     <sys:String x:Key="Link.Host.PasteAndAccept">Paste &amp; Allow</sys:String>
-    <sys:String x:Key="Link.Host.PeersTitle">Friends in Room</sys:String>
-    <sys:String x:Key="Link.Host.NoPeers">No friends connected yet.</sys:String>
+    <sys:String x:Key="Link.Host.PeersTitle">Connected Friends</sys:String>
+    <sys:String x:Key="Link.Host.NoPeers">No friends connected</sys:String>
     <sys:String x:Key="Link.Host.DisconnectPeer">Disconnect Friend</sys:String>
     <sys:String x:Key="Link.Guest.Step1Title">1. Enter Host Invite</sys:String>
-    <sys:String x:Key="Link.Guest.InviteHint">Copy the BSK- invite code from your friend and click Paste &amp; Connect:</sys:String>
-    <sys:String x:Key="Link.Guest.InvitePlaceholder">Click the button to read BSK- from clipboard automatically</sys:String>
-    <sys:String x:Key="Link.Guest.PasteAndConnect">Paste &amp; Connect</sys:String>
+    <sys:String x:Key="Link.Guest.InviteHint">Paste the invite from your friend, then connect to join the room.</sys:String>
+    <sys:String x:Key="Link.Guest.InvitePlaceholder">Paste your friend's BSK- invite</sys:String>
+    <sys:String x:Key="Link.Guest.ConnectBtn">Connect</sys:String>
     <sys:String x:Key="Link.Guest.DisconnectBtn">Disconnect</sys:String>
     <sys:String x:Key="Link.Guest.Step2Title">2. Join Game</sys:String>
     <sys:String x:Key="Link.Guest.Connecting">Trying to reach host directly…</sys:String>
-    <sys:String x:Key="Link.Guest.NeedAckStatus">Waiting for host approval. Your ACK- code was copied automatically. Send it through a trusted chat channel and ask the host to click Paste &amp; Allow. Keep this page open while connecting:</sys:String>
+    <sys:String x:Key="Link.Guest.NeedAckStatus">Click Copy ACK Code below, send it to the host, and keep this page open:</sys:String>
+    <sys:String x:Key="Link.Guest.ConnectionLost">Connection to the host was lost. Disconnect and join the room again.</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">Connected ({0} ms)! Open Multiplayer in Minecraft and look at the bottom of the list.</sys:String>
     <sys:String x:Key="Link.Guest.AckExplain">Your ACK (ACK- plus 26 common Chinese characters, 30 characters total):</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">Copy Ack</sys:String>
@@ -4257,7 +4260,7 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Instance.Enhancement.IdentityDuplicate">Enhancement identity {0} also appears in these other instances: {1}. Duplicates are reported without choosing an original or automatically changing identities.</sys:String>
     <sys:String x:Key="Instance.Enhancement.IdentityIncomplete">{0} enhancement identity records could not be read or use unsupported formats. Original records were preserved; this check may be incomplete.</sys:String>
     <sys:String x:Key="Instance.Enhancement.ClearCache.Title">Clear resolution cache</sys:String>
-    <sys:String x:Key="Instance.Enhancement.ClearCache.Confirm">Clear only this instance's rebuildable resolved.json report. Component declarations, personal settings memory, mod collections and transaction recovery data are kept. The next check regenerates the report.</sys:String>
+    <sys:String x:Key="Instance.Enhancement.ClearCache.Confirm">Clears only resolved.json cache for this instance; settings and mods remain intact.</sys:String>
     <sys:String x:Key="Instance.Enhancement.ClearCache.Preserved">The cache is unsupported, damaged or in use, so it was preserved. Run another check to produce a supported resolution report.</sys:String>
     <sys:String x:Key="Instance.Enhancement.ClearCache.Done">This instance's resolution cache was cleared.</sys:String>
     <sys:String x:Key="Instance.Enhancement.ClearCache.Empty">This instance has no resolution cache to clear.</sys:String>
@@ -4330,9 +4333,9 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Lunar.CredentialRisk.Message">The original Lunar launcher stores Refresh Tokens in plain text. For compatibility, PCL Lite uses the same account file format. Using this feature may expose your account credentials: programs or other people able to read that file may obtain your login credentials.&#10;&#10;Do not share Lunar account files. This notice will not appear again after you acknowledge it. You can cancel entry at any time.</sys:String>
     <sys:String x:Key="Lunar.CredentialRisk.Confirm">I understand, continue</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.4">Custom</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.4">Custom: uses your settings below. Higher rates and blur use more resources.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.4">Custom: uses your manual settings below.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling">Desktop sampling rate (30–240 FPS; far right is unlimited)</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling.Hint">Controls live desktop update rate. Higher rates look smoother and use more CPU/GPU.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Sampling.Hint">Controls desktop capture rate; higher values increase CPU/GPU load.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Blur">Base blur radius (0–32 DIP)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Dispersion">Edge dispersion (0–100%)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Highlight">Edge highlight (0–100%)</sys:String>
@@ -4341,11 +4344,11 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">Glass tint scale (0–100%; separate from background opacity)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">Enable button press and follow animations</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Reset">Restore glass defaults</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">Restore the default liquid glass parameters?&#10;&#10;This restores the Balanced recommendation: 100% refraction, 8 DIP frosting, 1 DIP base blur, 60 FPS animation and desktop sampling, and default dispersion, highlights, diffuse lighting, edge sharpness, tint and button motion.&#10;&#10;Only glass parameters change. Glass and desktop-refraction switches and consent remain unchanged. Accounts, themes, backgrounds, instances and all other launcher settings remain unchanged.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">Reset Liquid Glass parameters to Balanced defaults?&#xA;Only glass parameters are reset.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity">Card tint / opacity (0–100%)</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">Changes only the card surface: 0% is transparent and 100% is opaque. Text, icons, glass tint and window background are unchanged. High-contrast mode retains solid system colors.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">Adjusts card background opacity (0% transparent, 100% opaque).</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality">Desktop sampling quality (25–100% resolution)</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">100% uses the original resolution. Lower values use fewer resources but show less detail.</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">Lower capture resolution reduces GPU load for the live desktop background.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Brightness">Glass brightness (-50 to 50; default 0)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardBrightness">Card brightness (-50 to 50; default 0)</sys:String>
 </ResourceDictionary>

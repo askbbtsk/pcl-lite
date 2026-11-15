@@ -3715,6 +3715,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Link.Host.PasteAndAccept">粘贴并放行</sys:String>
     <sys:String x:Key="Link.Host.PeersTitle">连进来的好友</sys:String>
     <sys:String x:Key="Link.Host.NoPeers">还没人连进来。</sys:String>
+    <sys:String x:Key="Link.Host.DisconnectPeer">断开此好友</sys:String>
     <sys:String x:Key="Link.Guest.Step1Title">1. 粘房主的邀请码</sys:String>
     <sys:String x:Key="Link.Guest.InviteHint">先复制房主发给你的 BSK- 邀请码，不用手动粘，直接点右边「粘贴并连接」就行：</sys:String>
     <sys:String x:Key="Link.Guest.InvitePlaceholder">点右边可直接从剪贴板读取 BSK- 邀请码</sys:String>

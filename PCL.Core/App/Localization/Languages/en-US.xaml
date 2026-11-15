@@ -4061,6 +4061,7 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Link.Host.PasteAndAccept">Paste &amp; Allow</sys:String>
     <sys:String x:Key="Link.Host.PeersTitle">Friends in Room</sys:String>
     <sys:String x:Key="Link.Host.NoPeers">No friends connected yet.</sys:String>
+    <sys:String x:Key="Link.Host.DisconnectPeer">Disconnect Friend</sys:String>
     <sys:String x:Key="Link.Guest.Step1Title">1. Enter Host Invite</sys:String>
     <sys:String x:Key="Link.Guest.InviteHint">Copy the BSK- invite code from your friend and click Paste &amp; Connect:</sys:String>
     <sys:String x:Key="Link.Guest.InvitePlaceholder">Click the button to read BSK- from clipboard automatically</sys:String>

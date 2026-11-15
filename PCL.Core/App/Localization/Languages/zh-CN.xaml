@@ -3709,7 +3709,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Link.Host.StopBtn">关闭房间</sys:String>
     <sys:String x:Key="Link.Host.InviteHint">邀请码已自动复制，共 30 字符（BSK- 加 26 个常用汉字）。请通过可信聊天渠道把原文发给好友，双方需使用新版：</sys:String>
     <sys:String x:Key="Link.Host.CopyAgain">再复制一次</sys:String>
-    <sys:String x:Key="Link.Host.Step2Title">2. 好友连不上点这里（能直接进就不用管）</sys:String>
+    <sys:String x:Key="Link.Host.Step2Title">2. 输入好友的回执码（好友无法直接进入时）</sys:String>
     <sys:String x:Key="Link.Host.AckDesc">每位好友粘贴 BSK- 邀请码后，都需通过可信聊天渠道把自己的 ACK- 回执码发给你。逐个粘贴并放行，可继续添加多位好友，不影响已连接的人；重复放行同一个回执不会重复添加。</sys:String>
     <sys:String x:Key="Link.Host.AckPlaceholder">复制好友发的 ACK- 回执码，可直接点右边粘进来</sys:String>
     <sys:String x:Key="Link.Host.PasteAndAccept">粘贴并放行</sys:String>

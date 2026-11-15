@@ -320,7 +320,13 @@ public partial class PageToolsDirectLink
         LabHostAuthMode.Text = string.Empty;
         TextInviteCode.Text = string.Empty;
         TextHostAckInput.Text = string.Empty;
-        LabHostPeers.Text = Lang.Text("Link.Host.NoPeers");
+        PanelHostPeers.Children.Clear();
+        PanelHostPeers.Children.Add(new TextBlock
+        {
+            Text = Lang.Text("Link.Host.NoPeers"),
+            TextWrapping = TextWrapping.Wrap,
+            LineHeight = 22
+        });
         BtnHostToggle.Text = Lang.Text("Link.Host.StartBtn");
         BtnHostToggle.ColorType = MyButton.ColorState.Highlight;
         ClearTransientHostPortState();
@@ -336,34 +342,86 @@ public partial class PageToolsDirectLink
             return;
         }
         var peers = _hostSession.GetPeers();
+        PanelHostPeers.Children.Clear();
         if (peers.Count == 0)
         {
             StopHostPunchTimer();
-            LabHostPeers.Text = Lang.Text("Link.Host.NoPeers");
+            PanelHostPeers.Children.Add(new TextBlock
+            {
+                Text = Lang.Text("Link.Host.NoPeers"),
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 22
+            });
             return;
         }
 
         var now = DateTimeOffset.UtcNow;
         var hasPunching = false;
-        var lines = peers.Select(p =>
+        foreach (var peer in peers)
         {
-            var peerLabel = p.VirtualId > 0 ? $"好友 #{p.VirtualId}" : "好友";
-            if (p.State == DirectPeerState.Connected)
-                return $"• {peerLabel}  已连上 · {p.RttMs} ms{(p.IsDirectNoAck ? "（直连）" : "")}";
+            var label = peer.VirtualId > 0 ? $"好友 #{peer.VirtualId}" : "好友";
+            string status;
+            if (peer.State == DirectPeerState.Connected)
+            {
+                status = $"已连上 · {peer.RttMs} ms{(peer.IsDirectNoAck ? "（直连）" : "")}";
+            }
+            else
+            {
+                hasPunching = true;
+                var elapsedSec = peer.AddedUtc == default ? 0 : Math.Max(0, (int)(now - peer.AddedUtc).TotalSeconds);
+                status = elapsedSec >= 8
+                    ? $"仍在打洞（已尝试 {elapsedSec}s，请检查双方 Windows 防火墙及路由器 IPv6 入站放行，并在日志查看报错详情）"
+                    : $"正在打洞，已尝试 {elapsedSec}s…";
+            }
 
-            hasPunching = true;
-            var elapsedSec = p.AddedUtc == default ? 0 : Math.Max(0, (int)(now - p.AddedUtc).TotalSeconds);
-            var status = elapsedSec >= 8
-                ? $"仍在打洞（已尝试 {elapsedSec}s，请检查双方 Windows 防火墙及路由器 IPv6 入站放行，并在日志查看报错详情）"
-                : $"正在打洞，已尝试 {elapsedSec}s…";
-            return $"• {peerLabel}  {status}";
-        });
-        LabHostPeers.Text = string.Join(Environment.NewLine, lines);
+            var row = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.Children.Add(new TextBlock
+            {
+                Text = $"• {label}  {status}",
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 22,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            var disconnectButton = new MyButton
+            {
+                Text = Lang.Text("Link.Host.DisconnectPeer"),
+                Tag = peer.VirtualId,
+                MinWidth = 105,
+                Height = 34,
+                Margin = new Thickness(12, 0, 0, 0),
+                ColorType = MyButton.ColorState.Red
+            };
+            disconnectButton.Click += BtnDisconnectPeer_Click;
+            Grid.SetColumn(disconnectButton, 1);
+            row.Children.Add(disconnectButton);
+            PanelHostPeers.Children.Add(row);
+        }
 
         if (hasPunching)
             EnsureHostPunchTimerRunning();
         else
             StopHostPunchTimer();
+    }
+
+    private async void BtnDisconnectPeer_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not MyButton button ||
+            button.Tag is not int virtualId ||
+            _hostSession is not { } session)
+            return;
+
+        if (!await session.DisconnectPeerAsync(virtualId))
+        {
+            HintService.Hint("该好友已断开或房间已关闭。", HintType.Error);
+            UpdateHostPeersUi();
+            return;
+        }
+
+        UpdateHostPeersUi();
+        PushSidebarStatus();
+        HintService.Hint($"已断开好友 #{virtualId}。", HintType.Success);
     }
 
     private void EnsureHostPunchTimerRunning()

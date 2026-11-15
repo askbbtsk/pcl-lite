@@ -4002,6 +4002,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Link.Host.PasteAndAccept">貼上並放行</sys:String>
     <sys:String x:Key="Link.Host.PeersTitle">連進來的好友</sys:String>
     <sys:String x:Key="Link.Host.NoPeers">還沒人連進來。</sys:String>
+    <sys:String x:Key="Link.Host.DisconnectPeer">中斷此好友</sys:String>
     <sys:String x:Key="Link.Guest.Step1Title">1. 貼房主的邀請碼</sys:String>
     <sys:String x:Key="Link.Guest.InviteHint">請手動貼上房主本次產生的 BSK- 邀請碼，再點擊「連線」；不會記住舊輸入或自動讀取剪貼簿：</sys:String>
     <sys:String x:Key="Link.Guest.InvitePlaceholder">請手動貼上本次 BSK- 邀請碼</sys:String>

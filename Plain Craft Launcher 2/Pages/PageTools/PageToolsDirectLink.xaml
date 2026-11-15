@@ -82,8 +82,9 @@
                 <local:MyCard x:Name="CardHostPeers" Margin="0,0,0,20" Visibility="Collapsed"
                               Title="{DynamicResource Link.Host.PeersTitle}">
                     <StackPanel Margin="25,40,25,20">
-                        <TextBlock x:Name="LabHostPeers" TextWrapping="Wrap" LineHeight="22"
-                                   Text="{DynamicResource Link.Host.NoPeers}" />
+                        <StackPanel x:Name="PanelHostPeers">
+                            <TextBlock Text="{DynamicResource Link.Host.NoPeers}" TextWrapping="Wrap" LineHeight="22" />
+                        </StackPanel>
                     </StackPanel>
                 </local:MyCard>
             </StackPanel>

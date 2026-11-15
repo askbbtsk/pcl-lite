@@ -116,6 +116,35 @@ public class Ipv6MultiGuestTest
         Assert.AreEqual(accepted.VirtualId, host.GetPeers().Single().VirtualId);
     }
 
+    [TestMethod]
+    public async Task HostCanDisconnectOneGuestWithoutAffectingOtherGuests()
+    {
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var ct = deadline.Token;
+        await using var server = new EchoServer();
+        await using var host = Ipv6HostSession.Start(IPAddress.IPv6Loopback, server.Port);
+        Assert.IsTrue(InviteCodeCodec.TryDecode(host.InviteCode, out var invite, out var error), error);
+        await using var guest1 = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
+        await using var guest2 = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
+
+        Assert.IsTrue(host.TryAcceptGuestAck(guest1.AckCode, out var message), message);
+        Assert.IsTrue(host.TryAcceptGuestAck(guest2.AckCode, out message), message);
+        await WaitUntilAsync(() => guest1.IsConnected && guest2.IsConnected, ct);
+        var peers = host.GetPeers().OrderBy(peer => peer.VirtualId).ToArray();
+        Assert.AreEqual(2, peers.Length);
+        var disconnectedId = peers[0].VirtualId;
+        var retainedId = peers[1].VirtualId;
+
+        Assert.IsTrue(await host.DisconnectPeerAsync(disconnectedId));
+        Assert.AreEqual(retainedId, host.GetPeers().Single().VirtualId);
+        Assert.IsFalse(host.TryAcceptGuestAck(guest1.AckCode, out _), "A revoked ACK must not immediately recreate the removed peer.");
+        Assert.IsTrue(host.TryAcceptGuestAck(guest2.AckCode, out message), message);
+
+        using var retainedClient = new TcpClient();
+        await retainedClient.ConnectAsync(IPAddress.Loopback, guest2.LocalProxyPort, ct);
+        await EchoAsync(retainedClient, 8192, ct);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> predicate, CancellationToken ct)
     {
         while (!predicate()) await Task.Delay(15, ct);

@@ -46,6 +46,7 @@ public sealed class Ipv6HostSession : IAsyncDisposable
     private readonly bool _requireOnlineAuth;
     private readonly ConcurrentDictionary<IPEndPoint, PeerEntry> _peers = new();
     private readonly object _peerCreateLock = new();
+    private readonly HashSet<string> _revokedPeerIds = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<int, byte> _loggedErrors = new();
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _recvTask;
@@ -131,6 +132,11 @@ public sealed class Ipv6HostSession : IAsyncDisposable
         bool alreadyAccepted;
         lock (_peerCreateLock)
         {
+            if (_revokedPeerIds.Contains(Convert.ToHexString(payload.PeerId!)))
+            {
+                message = "该好友已被房主断开，请好友重新连接并发送新的回执码。";
+                return false;
+            }
             alreadyAccepted = _peers.TryGetValue(ep, out var known);
             if (known is not null && !known.PeerId.AsSpan().SequenceEqual(payload.PeerId))
             {
@@ -167,6 +173,23 @@ public sealed class Ipv6HostSession : IAsyncDisposable
                 kv.Value.VirtualId))
             .OrderBy(p => p.VirtualId)
             .ToList();
+    }
+
+    public async ValueTask<bool> DisconnectPeerAsync(int virtualId)
+    {
+        PeerEntry? entry;
+        lock (_peerCreateLock)
+        {
+            var match = _peers.FirstOrDefault(kv => kv.Value.VirtualId == virtualId);
+            if (match.Value is null || !_peers.TryRemove(match.Key, out entry))
+                return false;
+            _revokedPeerIds.Add(Convert.ToHexString(entry.PeerId));
+        }
+
+        await entry!.Peer.DisposeAsync().ConfigureAwait(false);
+        LogWrapper.Info("Link", $"[Host] 已手动断开 好友 #{virtualId}");
+        StateChanged?.Invoke();
+        return true;
     }
 
     private PeerEntry GetOrCreatePeerEntry(IPEndPoint ep, bool directNoAck, byte[] peerId)
@@ -327,9 +350,14 @@ public sealed class Ipv6HostSession : IAsyncDisposable
     {
         _cts.Cancel();
         _udp.Dispose();
-        foreach (var kv in _peers)
-            await kv.Value.Peer.DisposeAsync().ConfigureAwait(false);
-        _peers.Clear();
+        PeerEntry[] peers;
+        lock (_peerCreateLock)
+        {
+            peers = _peers.Values.ToArray();
+            _peers.Clear();
+        }
+        foreach (var peer in peers)
+            await peer.Peer.DisposeAsync().ConfigureAwait(false);
         try { await _recvTask.ConfigureAwait(false); } catch { }
         try { await _probeTask.ConfigureAwait(false); } catch { }
         _cts.Dispose();

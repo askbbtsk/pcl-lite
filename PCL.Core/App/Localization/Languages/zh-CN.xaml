@@ -27,25 +27,24 @@
     <sys:String x:Key="Theme.Pack.Information">{0} · {1}&#xA;作者：{2}&#xA;适用版本：{3}&#xA;{4}</sys:String>
     <sys:String x:Key="Theme.Pack.GlassSupported">支持液态玻璃；仍按用户已有开关和授权启用。</sys:String>
     <sys:String x:Key="Theme.Pack.GlassPaused">该主题未声明玻璃支持，使用期间暂停玻璃，原有设置保持不变。</sys:String>
-    <sys:String x:Key="Setup.About.ReleaseDescription">1.7.8 pre-1：修复 Soft Slate 等自定义主题的选择框无法用鼠标展开，导致看不到“内置主题”的问题。主题恢复选择框固定使用内置 PCL 样式，首项始终保留可用的“内置主题”；兼容已安装的旧主题模板，不改写用户主题文件。补充鼠标展开、默认项顺序及损坏主题记录的回归检查。</sys:String>
     <sys:String x:Key="Lunar.Status.NativeMemoryFailure">Java 原生内存分配失败。请释放系统内存并检查分页文件；可适当降低游戏分配内存，为堆外内存留出空间。具体原因请查看游戏目录的 hs_err_pid*.log；这与原生库文件占用是不同问题。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset">推荐配置（手动调整后为自定义）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.0">低消耗</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.1">均衡</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.2">高画质</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Preset.3">极致</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.0">低消耗：0 DIP 模糊、关闭色散和按压动效，默认 30 FPS。预计开销最低，仍取决于分辨率、背景和设备。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.1">均衡：1 DIP 模糊、0.08 色散、按压动效，默认 60 FPS。预计适合日常使用，集成显卡也可能增加负载。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">高画质：2 DIP 模糊、0.20 色散、按压动效，默认 90 FPS。预计负载较高，高分屏或多屏下尤其明显。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">极致：3 DIP 模糊、0.30 色散、增强高光和按压动效，默认 120 FPS。预计负载最高，可能增加功耗、温度和卡顿。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.0">低消耗：低模糊、低帧率，适合降低占用。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.1">均衡：日常使用的推荐配置。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.2">高画质：更清晰，开销更高。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Cost.3">极致：效果最强，开销最高。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.FrameRate">效果最高帧率（30–240 FPS，最右为不限制）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Frost">玻璃磨砂度</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction">边缘折射强度</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">范围 0–200%。0% 不产生折射位移，100% 保留默认强度，200% 为两倍强度；不改变文字或图标。修改后保存在自定义配置中。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 为通透玻璃，向右增加柔和高斯模糊，只影响玻璃背景，不影响文字和图标。默认 8 DIP；更高数值会增加图形开销。选择推荐配置会填入相应参数。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Refraction.Hint">0–200%。100% 为默认强度，数值越高折射越明显。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 为透明玻璃，数值越高越柔和；更高数值会增加开销。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">不限制（可能显著增加功耗）</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">是否开启液态玻璃？&#xA;预设：{0}；效果帧率上限：{1}。&#xA;{2}&#xA;会增加 CPU/GPU、内存和电量开销；这些是相对预估，不是设备实测或流畅度保证。默认使用可截图的背景模式。若另行开启实时桌面折射，启动器会从截图和录屏中排除。无需等待，确认后立即生效。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">实时桌面折射会持续采集启动器背后的桌面画面，增加 GPU/CPU 开销，不保存或上传画面。采样仅排除启动器自身，不阻止截图和录屏，也不使用 WGC 黄色采集边框。拖动时保留玻璃和实时更新，采样帧率遵守下方设置，包括不限制。背景不透明度只影响底色和图片/视频，不改变实时桌面、玻璃、文字和徽标。仍要启用吗？</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">是否开启液态玻璃？&#xA;预设：{0}；效果帧率上限：{1}。&#xA;{2}&#xA;会增加 CPU/GPU、内存和电量开销。确认后立即生效。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">实时桌面折射会增加 CPU/GPU 开销，桌面画面不会保存或上传。拖动窗口时仍会保持玻璃效果。要开启吗？</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">模组依赖索引</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">为 PCL 已发现的所有 Minecraft 目录中的实例创建索引，包括未选中和隐藏的实例。相同解析环境下的共享模组目录只扫描一次。待机和浏览时不自动补建；下载模组后仍自动更新。</sys:String>
@@ -3265,10 +3264,10 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.State.Unsupported">系统不支持桌面采样，当前显示静态材质。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">桌面采样恢复失败，当前显示静态材质；可重新开启“直接折射桌面”重试。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液态玻璃界面</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Description">独立的液态玻璃效果，不属于高级材质。默认折射启动器背景，可正常截图；开启前需确认性能开销，下方可调整画质与帧率。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">实时桌面折射（支持截图和录屏）</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">通过独立采样窗口获取启动器背后的桌面，采样仅排除启动器自身，不设置全局截图排除，不产生 WGC 黄色采集边框。上方“背景 / 窗口不透明度”只调节底色和图片/视频，不调节实时桌面、玻璃、文字或徽标；深浅色材质跟随主题。拖动时保留玻璃并持续采样，帧率与设置相同，包括不限制。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">桌面采样需要 Windows 10 2004 或更高版本。采样不可用时显示静态材质；不支持 Pixel Shader 3.0 时使用模糊材质。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Description">液态玻璃效果，可在下方调整画质和帧率。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">实时桌面折射</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">使用桌面画面作为玻璃背景，会增加性能开销。拖动窗口时仍保持实时更新。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">需要 Windows 10 2004 或更高版本；不可用时使用静态或模糊材质。</sys:String>
 
     <!-- Setup.Ui.Basic -->
 
@@ -4349,7 +4348,7 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity">卡片染色／不透明度（0–100%）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">仅调整卡片半透明底色：0% 为透明，100% 为不透明。文字、图标、玻璃染色及窗口背景不受影响；高对比度模式仍使用系统实色。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality">桌面采样质量（25–100% 分辨率）</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">按原始宽高比例缩小桌面采样图像，100% 为原始分辨率，50% 为宽高各一半、像素数四分之一。降低可减少画面传输和上传量，细节也会减少；Windows 捕获仍保留原尺寸中间画面。仅影响实时桌面，不影响文字、按钮动效或采样帧率。</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">100% 为原始分辨率；数值越低越省资源，但细节会减少。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Brightness">玻璃明暗度（-50～50，默认 0）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardBrightness">卡片明暗度（-50～50，默认 0）</sys:String>
 </ResourceDictionary>

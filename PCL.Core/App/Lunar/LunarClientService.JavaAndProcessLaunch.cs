@@ -180,6 +180,13 @@ public static partial class LunarClientService
         // 代理必须在官方参数之后：这些是 -D 系统属性，不冲突，但保持「后写覆盖」的语义
         arguments.AddRange(BuildProxyArguments());
 
+        // Genesis 默认复用预烘焙类；旧缓存不包含本次 agent 的转换结果。
+        // 自定义 Lunar 根目录也不在部分 agent 自行清缓存的范围内。使用其原生
+        // 开关跳过缓存，避免删除共享文件；后面的显式用户参数仍可覆盖此默认值。
+        if (options.ExtraJvmArguments.Any(argument =>
+                argument.StartsWith("-javaagent:", StringComparison.Ordinal)))
+            arguments.Add("-Dichor.prebakeClasses=false");
+
         // 用户自己写的参数放在最末：JVM 对重复参数取最后一次，这样 -Xmx、-XX:+UseZGC
         // 之类的设置才能盖掉上面那些默认值和官方值
         if (options.ExtraJvmArguments.Count > 0)

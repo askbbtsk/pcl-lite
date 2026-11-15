@@ -1,0 +1,10 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarClientService.JavaAndProcessLaunch.cs",
+    "Sha256": "CC28BE6EA3DE57C3ABA5E0B117C9548928EE09C87D8C1AB3C238B405E9469912",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarClientService::MethodDeclaration::BuildStartInfo(\n        LunarLaunchData data,\n        LunarLaunchOptions options,\n        string javaPath,\n        string cacheDirectory,\n        string nativesDirectory)"
+    ],
+    "Reason": "1.8.0-early-2: disable Genesis baked-class reuse when an explicit -javaagent is supplied, including custom Lunar roots that third-party agents do not clear. Preserve ordinary-launch caching and let later explicit user properties override the compatibility default. Six argument-pipeline regression tests cover forwarding, quoted paths, multiple agents, precedence and no-agent behavior."
+  }
+]

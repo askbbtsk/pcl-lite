@@ -3996,7 +3996,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Link.Host.StopBtn">關閉房間</sys:String>
     <sys:String x:Key="Link.Host.InviteHint">邀請碼僅在本次房間工作階段顯示。按右側按鈕後再透過可信聊天管道傳送，共 30 字元（BSK- 加 26 個常用漢字）：</sys:String>
     <sys:String x:Key="Link.Host.CopyAgain">再複製一次</sys:String>
-    <sys:String x:Key="Link.Host.Step2Title">2. 好友連不上點這裡（能直接進就不用管）</sys:String>
+    <sys:String x:Key="Link.Host.Step2Title">2. 輸入好友的回執碼（好友無法直接加入時）</sys:String>
     <sys:String x:Key="Link.Host.AckDesc">每位好友貼上 BSK- 邀請碼後，都需透過可信聊天管道將自己的 ACK- 回執碼傳給你。逐一貼上並放行，可繼續加入多位好友，不影響已連線的人；重複放行同一回執不會重複加入。</sys:String>
     <sys:String x:Key="Link.Host.AckPlaceholder">請手動貼上好友本次產生的 ACK- 回執碼</sys:String>
     <sys:String x:Key="Link.Host.PasteAndAccept">貼上並放行</sys:String>

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading;
@@ -15,6 +16,42 @@ namespace PCL.Core.Test;
 [TestClass]
 public class Ipv6MultiGuestTest
 {
+    [TestMethod]
+    public async Task GuestProxyAcceptsMinecraftLanConnectionThroughLocalIpv4Address()
+    {
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var ct = deadline.Token;
+        var localAddress = NetworkInterface.GetAllNetworkInterfaces()
+            .Where(network => network.OperationalStatus == OperationalStatus.Up)
+            .SelectMany(network => network.GetIPProperties().UnicastAddresses)
+            .Select(unicast => unicast.Address)
+            .FirstOrDefault(address =>
+                address.AddressFamily == AddressFamily.InterNetwork &&
+                !IPAddress.IsLoopback(address) &&
+                !address.IsIPv6LinkLocal);
+        if (localAddress is null)
+            Assert.Inconclusive("This runner has no active non-loopback IPv4 address for Minecraft LAN discovery.");
+
+        await using var server = new EchoServer();
+        await using var host = Ipv6HostSession.Start(IPAddress.IPv6Loopback, server.Port);
+        Assert.IsTrue(InviteCodeCodec.TryDecode(host.InviteCode, out var invite, out var error), error);
+        await using var guest = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
+        Assert.IsTrue(host.TryAcceptGuestAck(guest.AckCode, out var message), message);
+        await WaitUntilAsync(() => guest.IsConnected, ct);
+
+        using var client = new TcpClient(AddressFamily.InterNetwork);
+        await client.ConnectAsync(localAddress, guest.LocalProxyPort, ct);
+        await EchoAsync(client, 16384, ct);
+        Assert.AreEqual(1, server.AcceptedConnections);
+    }
+
+    [TestMethod]
+    public void GuestProxyRejectsNonLocalSourceAddresses()
+    {
+        Assert.IsTrue(TunnelBridgeHelper.IsLocalProxyClient(IPAddress.Loopback));
+        Assert.IsFalse(TunnelBridgeHelper.IsLocalProxyClient(IPAddress.Parse("203.0.113.17")));
+    }
+
     [TestMethod]
     public async Task ThreeGuestsRequireIndividualAcksAndTransferIndependently()
     {

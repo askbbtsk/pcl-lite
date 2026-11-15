@@ -40,6 +40,8 @@ public partial class PageToolsDirectLink
 
     public void SetMode(FormMain.PageSubType mode)
     {
+        TextGuestInviteInput.Text = string.Empty;
+        TextHostAckInput.Text = string.Empty;
         _currentMode = mode == FormMain.PageSubType.LinkGuest
             ? FormMain.PageSubType.LinkGuest
             : FormMain.PageSubType.LinkHost;
@@ -54,6 +56,10 @@ public partial class PageToolsDirectLink
         RefreshIpv6Status();
         if (_hostSession is null)
             ClearTransientHostPortState();
+        else
+            TextInviteCode.Text = _hostSession.InviteCode;
+        if (_guestSession is not null)
+            TextGuestAckCode.Text = _guestSession.AckCode;
         StartLanListener();
         UpdateHostPeersUi();
         UpdateGuestUi();
@@ -61,6 +67,9 @@ public partial class PageToolsDirectLink
 
     private void PageToolsDirectLink_Unloaded(object sender, RoutedEventArgs e)
     {
+        TextGuestInviteInput.Text = string.Empty;
+        TextHostAckInput.Text = string.Empty;
+        TextGuestAckCode.Text = string.Empty;
         // 只停止 LAN 多播扫描与页面刷新定时器；若联机正在进行，切去启动游戏时保持隧道不断开。
         _lanListenCts?.Cancel();
         _lanListenCts?.Dispose();
@@ -94,14 +103,13 @@ public partial class PageToolsDirectLink
         if (_hostSession is not null)
         {
             var connectedCount = _hostSession.GetPeers().Count(p => p.State == DirectPeerState.Connected);
-            var authTag = _hostSession.RequireOnlineAuth ? "正版验证" : "允许离线";
             var detail = connectedCount > 0
                 ? Lang.Text("Link.Sidebar.HostPeersCount", connectedCount, _hostSession.McPort)
                 : Lang.Text("Link.Sidebar.HostWaiting", _hostSession.McPort);
             ModMain.frmLinkLeft.UpdateSidebarStatus(
                 true,
                 Lang.Text("Link.Sidebar.HostRunning"),
-                $"{detail}\n{authTag}");
+                $"{detail}\n房主 PCL 账户：{(_hostSession.RequireOnlineAuth ? "在线/外置" : "离线")}");
             return;
         }
 
@@ -263,23 +271,12 @@ public partial class PageToolsDirectLink
             return;
         }
 
-        // 每次开房都弹窗询问是否开启正版验证，不记忆上次选择
-        var authChoice = ModMain.MyMsgBox(
-            "是否要为本次联机开启正版验证？\n\n" +
-            "• 开启正版验证：在联机状态中标记为正版验证；房客若使用离线账号将收到提示。\n" +
-            "• 关闭正版验证（允许离线）：在联机状态中标记为允许离线/第三方账号。\n\n" +
-            "提示：本直连通道仅负责转发游戏流量；原版 Minecraft 的「对局域网开放」默认仍由游戏端校验正版（离线好友需房主在游戏内使用离线局域网 Mod 或服务端设置 online-mode=false）。",
-            "选择本次联机验证方式",
-            button1: "开启正版验证",
-            button2: "关闭正版验证（允许离线）",
-            button3: "取消");
-        if (authChoice is not (1 or 2))
-            return;
-
-        var requireOnlineAuth = authChoice == 1;
-
         try
         {
+            // Mirror the currently selected PCL profile for compatibility metadata.
+            // The tunnel does not change Minecraft's authentication policy.
+            var profileType = ProfileService.Current?.ProfileType;
+            var requireOnlineAuth = profileType is ProfileType.Microsoft or ProfileType.Authlib or ProfileType.YggdrasilConnect;
             _hostSession = Ipv6HostSession.Start(_ipv6Candidates[0].Address, mcPort, requireOnlineAuth);
             _hostSession.StateChanged += () => Dispatcher.BeginInvoke(() =>
             {
@@ -287,9 +284,10 @@ public partial class PageToolsDirectLink
                 PushSidebarStatus();
             });
 
-            LabHostAuthMode.Text = requireOnlineAuth
-                ? "验证方式：本次已开启正版验证（房客需使用正版或对应外置登录）"
-                : "验证方式：本次已关闭正版验证（允许离线 / 第三方登录；请确保游戏内局域网同样关闭正版验证）";
+            LabHostAuthMode.Text = (requireOnlineAuth
+                ? "房主 PCL 当前选择在线/外置账户。"
+                : "房主 PCL 当前选择离线账户。") +
+                " 是否允许离线玩家进入仍由 Minecraft 游戏端决定。";
             TextInviteCode.Text = _hostSession.InviteCode;
             PanHostInviteRow.Visibility = Visibility.Visible;
             CardHostAck.Visibility = Visibility.Visible;
@@ -299,8 +297,7 @@ public partial class PageToolsDirectLink
             UpdateHostPeersUi();
             PushSidebarStatus();
 
-            TrySetClipboard(_hostSession.InviteCode);
-            HintService.Hint("房间开好了，邀请码已经自动复制，直接去聊天框粘贴发给好友。", HintType.Success);
+            HintService.Hint("房间已开启。需要分享邀请码时，请点“复制邀请码”。", HintType.Success);
         }
         catch (Exception ex)
         {
@@ -311,6 +308,7 @@ public partial class PageToolsDirectLink
     private async Task StopHostAsync()
     {
         StopHostPunchTimer();
+        TextHostAckInput.Text = string.Empty;
         if (_hostSession is null)
             return;
         var session = _hostSession;
@@ -402,19 +400,11 @@ public partial class PageToolsDirectLink
             return;
         }
 
-        // 输入框为空时自动从剪贴板读，省去手动 Ctrl+V 的一步
         var raw = TextHostAckInput.Text.Trim();
-        if (string.IsNullOrEmpty(raw) && TryGetClipboardText(out var clip) &&
-            clip.Trim().StartsWith(InviteCodeCodec.GuestAckPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            raw = clip.Trim();
-            TextHostAckInput.Text = raw;
-        }
-
+        TextHostAckInput.Text = string.Empty;
         var ok = _hostSession.TryAcceptGuestAck(raw, out var msg);
         if (ok)
         {
-            TextHostAckInput.Text = string.Empty;
             TextHostAckInput.Focus();
             UpdateHostPeersUi();
             PushSidebarStatus();
@@ -441,16 +431,8 @@ public partial class PageToolsDirectLink
             return;
         }
 
-        // 若输入框为空或无效，尝试直接从剪贴板读 BSK- 邀请码
         var input = TextGuestInviteInput.Text.Trim();
-        if ((string.IsNullOrEmpty(input) || !input.StartsWith(InviteCodeCodec.HostPrefix, StringComparison.OrdinalIgnoreCase)) &&
-            TryGetClipboardText(out var clip) &&
-            clip.Trim().StartsWith(InviteCodeCodec.HostPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            input = clip.Trim();
-            TextGuestInviteInput.Text = input;
-        }
-
+        TextGuestInviteInput.Text = string.Empty;
         if (!InviteCodeCodec.TryDecode(input, out var invite, out var error))
         {
             HintService.Hint(error, HintType.Error);
@@ -482,8 +464,7 @@ public partial class PageToolsDirectLink
             BtnGuestToggle.ColorType = MyButton.ColorState.Red;
             PushSidebarStatus();
 
-            TrySetClipboard(_guestSession.AckCode);
-            HintService.Hint("已复制回执码，请通过可信聊天渠道发给房主放行。每位好友都需要单独放行。", HintType.Success);
+            HintService.Hint("连接请求已发出。请点“复制回传码”并通过聊天平台发送给房主。", HintType.Success);
         }
         catch (Exception ex)
         {
@@ -493,6 +474,8 @@ public partial class PageToolsDirectLink
 
     private async Task StopGuestAsync()
     {
+        TextGuestInviteInput.Text = string.Empty;
+        TextGuestAckCode.Text = string.Empty;
         if (_guestSession is null)
             return;
 
@@ -503,7 +486,7 @@ public partial class PageToolsDirectLink
         PanGuestAck.Visibility = Visibility.Collapsed;
         PanGuestConnected.Visibility = Visibility.Collapsed;
         TextLocalAddr.Text = string.Empty;
-        BtnGuestToggle.Text = Lang.Text("Link.Guest.PasteAndConnect");
+        BtnGuestToggle.Text = Lang.Text("Link.Guest.ConnectBtn");
         BtnGuestToggle.ColorType = MyButton.ColorState.Highlight;
         PushSidebarStatus();
         HintService.Hint("已断开联机。");
@@ -520,18 +503,11 @@ public partial class PageToolsDirectLink
             PanGuestConnected.Visibility = Visibility.Visible;
 
             var statusText = Lang.Text("Link.Guest.ConnectedStatus", _guestSession.RttMs);
-            if (_guestSession.HostRequiresOnlineAuth)
-            {
-                var isOfflineProfile = ProfileService.Current?.ProfileType == ProfileType.Offline;
-                statusText += isOfflineProfile
-                    ? "\n⚠️ 房主本次开启了正版验证，你当前使用离线账号，进服可能会被拒绝，请切换正版/外置账号。"
-                    : "\n验证方式：房主本次开启了正版验证。";
-            }
-            else
-            {
-                statusText += "\n验证方式：房主本次允许离线（请确保房主游戏内局域网已关闭正版验证）。";
-            }
-            LabGuestStatus.Text = statusText;
+            var profileHint = _guestSession.HostRequiresOnlineAuth
+                ? "房主 PCL 当前选择在线/外置账户。"
+                : "房主 PCL 当前选择离线账户。";
+            LabGuestStatus.Text = statusText + "\n" + profileHint +
+                " 能否进入游戏仍由 Minecraft 游戏端决定。";
         }
     }
 
@@ -561,19 +537,4 @@ public partial class PageToolsDirectLink
         }
     }
 
-    private static bool TryGetClipboardText(out string text)
-    {
-        text = string.Empty;
-        try
-        {
-            if (!Clipboard.ContainsText())
-                return false;
-            text = Clipboard.GetText();
-            return !string.IsNullOrWhiteSpace(text);
-        }
-        catch
-        {
-            return false;
-        }
-    }
 }

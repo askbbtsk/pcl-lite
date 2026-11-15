@@ -90,7 +90,7 @@ public sealed class Ipv6HostSession : IAsyncDisposable
 
         var actualLocal = _udp.LocalEndPoint as IPEndPoint;
         LogWrapper.Info("Link",
-            $"[Host] 房间已启动：本机 IPv6 已脱敏，UDP 监听端口 {actualLocal?.Port ?? udpPort}，目标 MC 端口 {mcPort}，正版验证={(requireOnlineAuth ? "开启" : "关闭")}");
+            $"[Host] 房间已启动：本机 IPv6 已脱敏，UDP 监听端口 {actualLocal?.Port ?? udpPort}，目标 MC 端口 {mcPort}，PCL 账户标记={(requireOnlineAuth ? "在线/外置" : "离线")}");
 
         _recvTask = Task.Run(() => ReceiveLoopAsync(_cts.Token));
         _probeTask = Task.Run(() => ProbeLoopAsync(_cts.Token));
@@ -381,7 +381,7 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
             if (Interlocked.Exchange(ref _connectedLogged, 1) == 0)
             {
                 LogWrapper.Info("Link",
-                    $"[Guest] 已与 房主 #1 连通，延迟 {rtt} ms，本地代理 127.0.0.1:{LocalProxyPort}，正版验证={(_peer.RemoteRequiresOnlineAuth ? "开启" : "关闭")}");
+                    $"[Guest] 已与 房主 #1 连通，延迟 {rtt} ms，本地代理端口 {LocalProxyPort}，房主 PCL 账户标记={(_peer.RemoteRequiresOnlineAuth ? "在线/外置" : "离线")}");
             }
             StateChanged?.Invoke();
         };
@@ -406,7 +406,10 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
         var udp = TunnelBridgeHelper.BindUdpSocket(localPublicIpv6, "[Guest]");
         var localUdpPort = (ushort)((IPEndPoint)udp.LocalEndPoint!).Port;
 
-        var localProxy = TunnelBridgeHelper.BindRandomLoopbackTcpListener();
+        // Minecraft's LAN discovery can connect back through a non-loopback address
+        // of this same machine. The accept loop filters remote endpoints to local
+        // addresses before opening an authenticated tunnel stream.
+        var localProxy = TunnelBridgeHelper.BindRandomLocalTcpListener();
 
         return new Ipv6GuestSession(udp, localPublicIpv6, localUdpPort, hostInvite, localProxy);
     }
@@ -501,6 +504,12 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
             try
             {
                 var tcp = await _localProxy.AcceptTcpClientAsync(ct).ConfigureAwait(false);
+                if (tcp.Client.RemoteEndPoint is not IPEndPoint remote ||
+                    !TunnelBridgeHelper.IsLocalProxyClient(remote.Address))
+                {
+                    tcp.Dispose();
+                    continue;
+                }
                 tcp.NoDelay = true;
                 _ = Task.Run(async () =>
                 {
@@ -510,7 +519,7 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
                         var tunnel = _peer.OpenStream();
                         await TunnelBridgeHelper.PumpBidirectionalAsync(tcp, netStream, tunnel, ct).ConfigureAwait(false);
                     }
-                }, ct);
+                });
             }
             catch (OperationCanceledException)
             {
@@ -581,7 +590,7 @@ internal static class TunnelBridgeHelper
         return occupied;
     }
 
-    public static TcpListener BindRandomLoopbackTcpListener()
+    public static TcpListener BindRandomLocalTcpListener()
     {
         var occupied = GetOccupiedPorts(includeTcp: true, includeUdp: true);
         for (var attempt = 0; attempt < 64; attempt++)
@@ -590,21 +599,13 @@ internal static class TunnelBridgeHelper
             if (occupied.Contains(port))
                 continue;
 
-            var listener = new TcpListener(IPAddress.Loopback, port)
+            var listener = new TcpListener(IPAddress.Any, port)
             {
                 ExclusiveAddressUse = true
             };
             try
             {
                 listener.Start();
-                if (Socket.OSSupportsIPv6)
-                {
-                    using var v6Probe = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp)
-                    {
-                        ExclusiveAddressUse = true
-                    };
-                    v6Probe.Bind(new IPEndPoint(IPAddress.IPv6Loopback, port));
-                }
                 return listener;
             }
             catch (SocketException)
@@ -614,12 +615,42 @@ internal static class TunnelBridgeHelper
             }
         }
 
-        var fallback = new TcpListener(IPAddress.Loopback, 0)
+        var fallback = new TcpListener(IPAddress.Any, 0)
         {
             ExclusiveAddressUse = true
         };
         fallback.Start();
         return fallback;
+    }
+
+    internal static bool IsLocalProxyClient(IPAddress address)
+    {
+        if (IPAddress.IsLoopback(address))
+            return true;
+        if (address.IsIPv4MappedToIPv6)
+            address = address.MapToIPv4();
+
+        try
+        {
+            foreach (var network in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (network.OperationalStatus != OperationalStatus.Up)
+                    continue;
+                foreach (var unicast in network.GetIPProperties().UnicastAddresses)
+                {
+                    var local = unicast.Address.IsIPv4MappedToIPv6
+                        ? unicast.Address.MapToIPv4()
+                        : unicast.Address;
+                    if (local.Equals(address))
+                        return true;
+                }
+            }
+        }
+        catch
+        {
+            // If local interface enumeration is unavailable, fail closed.
+        }
+        return false;
     }
 
     private static Socket BindRandomUdpSocket(IPAddress bindAddress, HashSet<int> occupied)

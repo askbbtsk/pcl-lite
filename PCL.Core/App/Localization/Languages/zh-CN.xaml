@@ -48,7 +48,7 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">是否开启实时桌面折射？&#xA;将实时采样窗口后方的桌面画面（仅本地渲染，不保存或上传），会额外增加 CPU/GPU 开销。</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">模组依赖索引</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.Description">为所有已发现的实例建立模组依赖索引，后续下载模组时会自动更新。</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Description">为 PCL 已发现的所有 Minecraft 实例建立模组依赖索引；已有版本需手动创建索引，后续下载模组时会自动更新。</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">正在扫描所有 Minecraft 目录中的实例，可随时取消。</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllProgress">已处理实例：{0} / {1}&#xA;当前实例：{2}&#xA;当前实例已处理模组文件：{3}</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">索引完成：已保存 {0} 个实例（{1} 个含跳过项），跳过 {2} 个模组，{3} 项失败。</sys:String>
@@ -1084,7 +1084,7 @@
     <sys:String x:Key="Instance.PackUpdate.Card.Button">检查更新</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Local.Button">从本地文件更新</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Local.Title">确认本地整合包来源</sys:String>
-    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">无法验证该压缩包是否属于当前整合包，继续将直接作为新版本覆盖更新，请确认来源可信。</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">无法验证该压缩包是否属于当前整合包；继续后将作为新版本覆盖更新并保留当前市场项目关联，请确认来源可信。</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task">更新整合包</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task.Download">下载整合包版本</sys:String>
     <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">选择整合包版本</sys:String>
@@ -3723,7 +3723,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Link.Guest.DisconnectBtn">断开连接</sys:String>
     <sys:String x:Key="Link.Guest.Step2Title">2. 进游戏</sys:String>
     <sys:String x:Key="Link.Guest.Connecting">正在连房主，等 1 秒看看能不能直接通…</sys:String>
-    <sys:String x:Key="Link.Guest.NeedAckStatus">直连受阻，已自动复制 ACK- 回执码。请发给房主放行，保持本页开启即可自动连通：</sys:String>
+    <sys:String x:Key="Link.Guest.NeedAckStatus">请点击下方「复制回执码」发给房主放行，保持本页开启即可自动连通：</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">已经连上房主（延迟 {0} ms）！打开游戏点「多人游戏」，拉到最底下就能进。</sys:String>
     <sys:String x:Key="Link.Guest.AckExplain">你的回执码（ACK- 加 26 个常用汉字，共 30 字符）：</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">复制回执码</sys:String>

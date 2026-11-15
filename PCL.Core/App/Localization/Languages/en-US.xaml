@@ -48,7 +48,7 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Enable live desktop refraction?&#xA;Samples the desktop behind the window locally (never saved or uploaded), adding CPU/GPU load.</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">Mod dependency index</sys:String>
-    <sys:String x:Key="Setup.GameManage.ModIndex.Description">Indexes mod dependencies across discovered instances; updates automatically on new downloads.</sys:String>
+    <sys:String x:Key="Setup.GameManage.ModIndex.Description">Builds mod dependency indexes for all discovered Minecraft instances. Existing versions must be indexed manually; future mod downloads update automatically.</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Discovering">Scanning instances across Minecraft folders (cancellable).</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllProgress">Instances processed: {0} / {1}&#xA;Current instance: {2}&#xA;Mod files processed for this instance: {3}</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.AllResult">Indexing finished: {0} instances saved ({1} with skips), {2} mods skipped, {3} failed.</sys:String>
@@ -1084,7 +1084,7 @@
     <sys:String x:Key="Instance.PackUpdate.Card.Button">Check for updates</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Local.Button">Update from file</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Local.Title">Confirm local pack source</sys:String>
-    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">Cannot verify whether this archive belongs to the current modpack. Continue only if you trust the source.</sys:String>
+    <sys:String x:Key="Instance.PackUpdate.Local.UnverifiedMessage">Cannot verify whether this archive belongs to the current modpack; continuing will overwrite it as a new version and keep the current market project link. Proceed only if trusted.</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task">Update modpack</sys:String>
     <sys:String x:Key="Instance.PackUpdate.Task.Download">Download modpack version</sys:String>
     <sys:String x:Key="Instance.PackUpdate.SelectVersion.Title">Select modpack version</sys:String>
@@ -4069,7 +4069,7 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Link.Guest.DisconnectBtn">Disconnect</sys:String>
     <sys:String x:Key="Link.Guest.Step2Title">2. Join Game</sys:String>
     <sys:String x:Key="Link.Guest.Connecting">Trying to reach host directly…</sys:String>
-    <sys:String x:Key="Link.Guest.NeedAckStatus">Direct connection blocked; your ACK- code has been copied. Send it to the host and keep this page open:</sys:String>
+    <sys:String x:Key="Link.Guest.NeedAckStatus">Click Copy ACK Code below, send it to the host, and keep this page open:</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">Connected ({0} ms)! Open Multiplayer in Minecraft and look at the bottom of the list.</sys:String>
     <sys:String x:Key="Link.Guest.AckExplain">Your ACK (ACK- plus 26 common Chinese characters, 30 characters total):</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">Copy Ack</sys:String>

@@ -44,7 +44,7 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 為透明玻璃，數值越高越柔和；較高數值會增加開銷。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">不限制（可能顯著增加耗電）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">是否啟用液態玻璃？&#xA;預設：{0}；效果影格率上限：{1}。&#xA;{2}&#xA;會增加 CPU/GPU、記憶體與耗電開銷。確認後立即生效。</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">即時桌面折射會增加 CPU/GPU 開銷，桌面畫面不會儲存或上傳。拖曳視窗時仍會保持玻璃效果。要啟用嗎？</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">即時桌面折射會增加 CPU/GPU 開銷，桌面畫面不會儲存或上傳。要啟用嗎？</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">模組相依索引</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">為 PCL 已發現的所有 Minecraft 目錄中的實例建立索引，包括未選擇與隱藏的實例。相同解析環境下的共用模組目錄只掃描一次。待機與瀏覽時不自動補建；下載模組後仍自動更新。</sys:String>
@@ -3209,7 +3209,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液態玻璃介面</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">液態玻璃效果，可在下方調整畫質與影格率。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop">即時桌面折射</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">使用桌面畫面作為玻璃背景，會增加效能開銷。拖曳視窗時仍保持即時更新。</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">使用桌面畫面作為玻璃背景，會增加效能開銷。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">需要 Windows 10 2004 或更新版本；無法使用時改用靜態或模糊材質。</sys:String>
 
     <!-- Setup.Ui.Basic -->

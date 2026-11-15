@@ -44,7 +44,7 @@
     <sys:String x:Key="Setup.Ui.LiquidGlass.Frost.Hint">0 is clear; higher values soften the glass and use more resources.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Unlimited">Unlimited (may significantly increase power use)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Confirm">Enable liquid glass?&#xA;Preset: {0}; effect frame cap: {1}.&#xA;{2}&#xA;This increases CPU/GPU, memory and power use. It takes effect immediately.</sys:String>
-    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction uses more CPU/GPU. Desktop images are not saved or uploaded. Glass keeps updating while the window moves. Enable it?</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.DesktopConfirm">Live desktop refraction uses more CPU/GPU. Desktop images are not saved or uploaded. Enable it?</sys:String>
 
     <sys:String x:Key="Setup.GameManage.ModIndex.Title">Mod dependency index</sys:String>
     <sys:String x:Key="Setup.GameManage.ModIndex.Description">Index every instance in all Minecraft folders discovered by PCL, including unselected and hidden instances. Shared mod folders with the same parser context are scanned once. Idle browsing does not build indexes; mod downloads still update them.</sys:String>
@@ -3266,7 +3266,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">Use the Liquid Glass interface</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">Adjust glass quality and frame rate below.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Uses your desktop as the glass background and updates while moving the window. This uses more system resources.</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Uses your desktop as the glass background and increases system resource use.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">Requires Windows 10 version 2004 or later. If unavailable, a static or blurred background is used.</sys:String>
 
     <!-- Setup.Ui.Basic -->

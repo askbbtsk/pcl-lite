@@ -206,12 +206,14 @@ public static partial class ModLunar
 
     private static Task LaunchCoreAsync(string gameDirectory)
     {
-        var session = GameSessions.TryBegin(() => { _isBusy = true; _stopRequested = false; });
+        var session = BeginLaunchSession();
         return session == 0 ? Task.CompletedTask : LaunchCoreAsync(gameDirectory, session);
     }
 
     private static async Task LaunchCoreAsync(string gameDirectory, long launchSession)
     {
+        var previousLogSession = LaunchLogSession.Value;
+        LaunchLogSession.Value = launchSession;
         try
         {
             if (!GameSessions.IsCurrent(launchSession)) return;
@@ -330,7 +332,6 @@ public static partial class ModLunar
             InstallPercent = -1;
             RaiseStateChanged();
 
-            lock (_recentOutputLock) _recentOutput.Clear();
             var startedAt = DateTime.Now;
             // 上一轮的时间戳留着会让看门狗以为「刚吐过字」，必须归零
             Interlocked.Exchange(ref _lastOutputTicks, Environment.TickCount64);
@@ -435,6 +436,10 @@ public static partial class ModLunar
                 StateChanged?.Invoke();
                 ModBase.Log(ex, "[Lunar] 启动失败", ModBase.LogLevel.Msgbox, userSummary: GetLaunchFailureMessage(ex));
             }, completed: true);
+        }
+        finally
+        {
+            LaunchLogSession.Value = previousLogSession;
         }
     }
 

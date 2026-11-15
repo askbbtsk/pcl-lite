@@ -12,6 +12,25 @@ public static partial class ModLunar
     private static readonly LunarSessionCoordinator GameSessions = new();
     private static long _processSession;
     private static Process? _stoppingProcess;
+    private static readonly AsyncLocal<long?> LaunchLogSession = new();
+
+    public static event Action? LogResetRequested;
+
+    private static long BeginLaunchSession()
+    {
+        var session = GameSessions.TryBegin(() =>
+        {
+            _isBusy = true;
+            _stopRequested = false;
+            lock (_recentOutputLock) _recentOutput.Clear();
+            LastCommandLine = "";
+            Interlocked.Exchange(ref _lastOutputTicks, Environment.TickCount64);
+            _lastCpuTime = TimeSpan.Zero;
+        });
+        if (session != 0)
+            QueueSessionNotification(session, () => LogResetRequested?.Invoke(), completed: true);
+        return session;
+    }
 
     // Always queue notifications: never invoke UI subscribers or message boxes while holding the session gate.
     private static void QueueSessionNotification(long session, Action callback, bool completed = false)

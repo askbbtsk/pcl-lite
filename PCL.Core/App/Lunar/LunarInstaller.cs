@@ -596,6 +596,7 @@ public static class LunarInstaller
             {
                 var name = Path.GetFileName(path);
                 if (!string.Equals(name, "latest.log", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(name, "ichor-boot.log", StringComparison.OrdinalIgnoreCase) &&
                     !name.EndsWith(".log.gz", StringComparison.OrdinalIgnoreCase))
                     continue;
 

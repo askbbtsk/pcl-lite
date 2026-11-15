@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -135,20 +136,87 @@ public class LunarInstallerTest
             Directory.CreateDirectory(directory);
             var configPath = Path.Combine(directory, "config.xml");
             var latestPath = Path.Combine(directory, "latest.log");
+            var bootPath = Path.Combine(directory, "ICHOR-BOOT.LOG");
             var archivedPath = Path.Combine(directory, "2026-11-15-1.log.gz");
             var unrelatedPath = Path.Combine(directory, "notes.txt");
+            var customLogPath = Path.Combine(directory, "custom.log");
+            var nestedLogPath = Path.Combine(directory, "other", "latest.log");
+            Directory.CreateDirectory(Path.GetDirectoryName(nestedLogPath)!);
             File.WriteAllText(configPath, "user log config");
             File.WriteAllText(latestPath, "previous run");
+            File.WriteAllText(bootPath, "previous boot");
             File.WriteAllText(archivedPath, "previous archive");
             File.WriteAllText(unrelatedPath, "unrelated");
+            File.WriteAllText(customLogPath, "unrelated log");
+            File.WriteAllText(nestedLogPath, "nested log");
 
             LunarInstaller.ClearPreviousGameLogs(root);
 
             Assert.IsTrue(File.Exists(configPath));
             Assert.AreEqual("user log config", File.ReadAllText(configPath));
             Assert.IsFalse(File.Exists(latestPath));
+            Assert.IsFalse(File.Exists(bootPath));
             Assert.IsFalse(File.Exists(archivedPath));
-            Assert.IsTrue(File.Exists(unrelatedPath));
+            Assert.AreEqual("unrelated", File.ReadAllText(unrelatedPath));
+            Assert.AreEqual("unrelated log", File.ReadAllText(customLogPath));
+            Assert.AreEqual("nested log", File.ReadAllText(nestedLogPath));
+        }
+        finally
+        {
+            DeleteTempRoot(root);
+        }
+    }
+
+    [TestMethod]
+    public void ClearPreviousGameLogs_MissingDirectoryDoesNotCreateIt()
+    {
+        var root = CreateTempRoot();
+        var warnings = new List<string>();
+        try
+        {
+            LunarInstaller.ClearPreviousGameLogs(root, warnings.Add);
+
+            Assert.IsFalse(Directory.Exists(root));
+            Assert.IsEmpty(warnings);
+        }
+        finally
+        {
+            DeleteTempRoot(root);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("latest.log")]
+    [DataRow("ichor-boot.log")]
+    [DataRow("2026-11-15-1.log.gz")]
+    public void ClearPreviousGameLogs_LockedLogDoesNotPreventOtherCleanup(string lockedName)
+    {
+        var root = CreateTempRoot();
+        try
+        {
+            var directory = LunarClientService.GameLogsDirectory(root);
+            Directory.CreateDirectory(directory);
+            var names = new[] { "latest.log", "ichor-boot.log", "2026-11-15-1.log.gz" };
+            foreach (var name in names)
+                File.WriteAllText(Path.Combine(directory, name), "previous run");
+            var lockedPath = Path.Combine(directory, lockedName);
+            var warnings = new List<string>();
+
+            using (new FileStream(lockedPath, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                LunarInstaller.ClearPreviousGameLogs(root, warnings.Add);
+
+                Assert.IsTrue(File.Exists(lockedPath));
+                foreach (var name in names.Where(name => name != lockedName))
+                    Assert.IsFalse(File.Exists(Path.Combine(directory, name)), name);
+                Assert.HasCount(1, warnings);
+                StringAssert.Contains(warnings[0], lockedName);
+            }
+
+            Assert.AreEqual("previous run", File.ReadAllText(lockedPath));
+
+            LunarInstaller.ClearPreviousGameLogs(root);
+            Assert.IsFalse(File.Exists(lockedPath));
         }
         finally
         {

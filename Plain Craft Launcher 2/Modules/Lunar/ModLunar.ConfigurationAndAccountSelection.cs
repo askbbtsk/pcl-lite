@@ -348,6 +348,11 @@ public static partial class ModLunar
 
     private static void Log(string message)
     {
+        if (LaunchLogSession.Value is { } session)
+        {
+            LogSession(session, message);
+            return;
+        }
         ModBase.Log("[Lunar] " + message);
         LogReceived?.Invoke(message);
     }
@@ -512,7 +517,7 @@ public static partial class ModLunar
         var gameDirectory = ResolveGameDirectory();
 
         // IsBusy 在 UI 线程上先占位，防止连点两次起两个进程
-        var session = GameSessions.TryBegin(() => { _isBusy = true; _stopRequested = false; });
+        var session = BeginLaunchSession();
         if (session == 0) return;
         RaiseStateChanged();
         _ = Task.Run(() => LaunchCoreAsync(gameDirectory, session));

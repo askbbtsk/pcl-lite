@@ -42,6 +42,7 @@ public partial class PageLunarLaunch
         if (_subscribed) return;
         ModLunar.StateChanged += RefreshPage;
         ModLunar.LogReceived += AppendLog;
+        ModLunar.LogResetRequested += ResetLaunchLog;
         _subscribed = true;
         SubscribeSocial();
         _ = ConnectSocialOnPageOpenedAsync();
@@ -93,6 +94,7 @@ public partial class PageLunarLaunch
         if (!_subscribed) return;
         ModLunar.StateChanged -= RefreshPage;
         ModLunar.LogReceived -= AppendLog;
+        ModLunar.LogResetRequested -= ResetLaunchLog;
         UnsubscribeSocial();
         _subscribed = false;
     }
@@ -686,6 +688,12 @@ public partial class PageLunarLaunch
         }
     }
 
+
+    private void ResetLaunchLog()
+    {
+        if (TextLog.Dispatcher.CheckAccess()) TextLog.Clear();
+        else TextLog.Dispatcher.Invoke(() => TextLog.Clear());
+    }
 
     private void AppendLog(string line)
     {

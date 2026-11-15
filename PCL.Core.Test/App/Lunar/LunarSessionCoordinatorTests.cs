@@ -73,6 +73,45 @@ public sealed class LunarSessionCoordinatorTests
     }
 
     [TestMethod]
+    public void QueuedLaunchResetStillRunsAfterImmediatePreparationFailure()
+    {
+        var sessions = new LunarSessionCoordinator();
+        var pending = new Queue<Action>();
+        var log = new List<string> { "previous launch output" };
+        var session = sessions.TryBegin(() => { });
+        pending.Enqueue(() => { if (sessions.IsLatest(session)) log.Clear(); });
+        Assert.IsTrue(sessions.Complete(session, () => { }));
+        pending.Enqueue(() => { if (sessions.IsLatest(session)) log.Add("preparation failed"); });
+
+        // A launch can fail before the UI dispatcher handles its first notification.
+        // The reset must survive completion, but must precede this launch's failure log.
+        Assert.IsFalse(sessions.IsCurrent(session));
+        Assert.IsTrue(sessions.IsLatest(session));
+        while (pending.TryDequeue(out var notification)) notification();
+
+        CollectionAssert.AreEqual(new[] { "preparation failed" }, log);
+    }
+
+    [TestMethod]
+    public void QueuedResetFromOlderSessionCannotClearReplacementLog()
+    {
+        var sessions = new LunarSessionCoordinator();
+        var log = new List<string> { "previous launch output" };
+        var old = sessions.TryBegin(() => { });
+        Action delayedOldReset = () => { if (sessions.IsLatest(old)) log.Clear(); };
+        Assert.IsTrue(sessions.Complete(old, () => { }));
+        var replacement = sessions.TryBegin(() => { });
+
+        if (sessions.IsLatest(replacement)) log.Clear();
+        Assert.IsTrue(sessions.RunIfCurrent(replacement, () => log.Add("replacement output")));
+        delayedOldReset();
+        Assert.IsFalse(sessions.RunIfCurrent(old, () => log.Add("stale output")));
+
+        CollectionAssert.AreEqual(new[] { "replacement output" }, log);
+        Assert.IsTrue(sessions.IsCurrent(replacement));
+    }
+
+    [TestMethod]
     public async Task CompletionDoesNotHoldGateDuringLaterNotificationOrDialog()
     {
         var sessions = new LunarSessionCoordinator();

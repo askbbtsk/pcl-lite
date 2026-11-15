@@ -1,0 +1,30 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.ConfigurationAndAccountSelection.cs",
+    "Sha256": "1A711128AF2EEF3B0101DE4E97DC05B0225CBB6ACE82A638D58D3E59A638493A",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::Launch()",
+      "PCL.ModLunar::MethodDeclaration::Log(string message)"
+    ],
+    "Reason": "1.8.0 Lunar launch log reset: begin the log session before launch preparation and route asynchronous launch logs through their owning session, preserving existing launch entry points."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
+    "Sha256": "D293C2654648BEE8CA867C6B2662EF50D0C1A4036F6DEE60038099E8751170BF",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ConnectSocialAsync()",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory)",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory, long launchSession)"
+    ],
+    "Reason": "1.8.0 Lunar launch log reset: initialize the new session before preparation, bind launch logging to that session and remove the later duplicate diagnostic reset. Retain the previously reviewed friend-system connection behavior."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.ProgressAndSessionPresentation.cs",
+    "Sha256": "0EF0B8C7FD6EA6059C7EA9AEEA9284C1549B3727FA09113B49171818AA650A1F",
+    "Members": [
+      "PCL.PageLunarLaunch::MethodDeclaration::Subscribe()",
+      "PCL.PageLunarLaunch::MethodDeclaration::Unsubscribe()"
+    ],
+    "Reason": "1.8.0 Lunar launch log reset: subscribe and unsubscribe the launch-log reset notification with the page lifecycle so a new accepted launch clears visible old logs."
+  }
+]

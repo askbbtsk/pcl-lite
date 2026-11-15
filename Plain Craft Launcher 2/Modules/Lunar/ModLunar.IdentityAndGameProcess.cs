@@ -35,6 +35,7 @@ public static partial class ModLunar
     {
         Log($"账号：{identity.DisplayName}（Lunar 身份账号）");
         // 有 refreshToken 才谈得上续期；令牌导入的那种到期只能重新导入
+        _canRefreshSession = identity.CanRefresh;
         var uuid = NormalizeUuid(identity.Uuid);
         var twin = _accounts.FirstOrDefault(x =>
             string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));

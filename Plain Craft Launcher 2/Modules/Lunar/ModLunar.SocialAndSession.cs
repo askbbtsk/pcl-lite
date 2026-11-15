@@ -672,6 +672,7 @@ public static partial class ModLunar
     {
         RefreshAccounts();
         _launchedLocalId = string.Empty;
+        _canRefreshSession = false;
 
         // ① 用户在账号下拉框里明确点了「Lunar 身份账号」—— 那是本页登录出来的，
         //    和 PCL 主页面的账号完全是两套，互不影响
@@ -702,6 +703,7 @@ public static partial class ModLunar
             if (await RefreshAccountTokenAsync(account, CancellationToken.None).ConfigureAwait(false)
                 is { } fresh)
             {
+                _canRefreshSession = true;
                 Log($"Minecraft 令牌：{fresh.Message}");
                 return (account.DisplayName, uuid, fresh.Token);
             }

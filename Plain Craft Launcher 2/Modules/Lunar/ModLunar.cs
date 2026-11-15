@@ -145,6 +145,9 @@ public static partial class ModLunar
     /// </summary>
     private static string _launchedLocalId = string.Empty;
 
+    // 保留旧字段供现有反射与源码契约使用；IPC 端口不再根据此标记切换。
+    private static bool _canRefreshSession;
+
     /// <summary>
     ///     账号选择里「Lunar 身份账号」的前缀，和 Lunar 账户库的 <c>localId</c> 区分开。
     ///     <para>

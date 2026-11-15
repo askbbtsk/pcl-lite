@@ -145,6 +145,55 @@ public class Ipv6MultiGuestTest
         await EchoAsync(retainedClient, 8192, ct);
     }
 
+    [TestMethod]
+    public async Task HostLanWorldDisappearanceIsReportedAndCanRecover()
+    {
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+        var ct = deadline.Token;
+        await using var server = new EchoServer();
+        await using var host = Ipv6HostSession.Start(IPAddress.IPv6Loopback, server.Port);
+        host.SetLanServerAvailability(server.Port, available: true);
+        Assert.IsTrue(InviteCodeCodec.TryDecode(host.InviteCode, out var invite, out var error), error);
+        await using var guest = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
+
+        Assert.IsTrue(host.TryAcceptGuestAck(guest.AckCode, out var message), message);
+        await WaitUntilAsync(() => guest.IsConnected, ct);
+        Assert.IsTrue(guest.HasConnected);
+
+        host.SetLanServerAvailability(server.Port, available: false);
+        await WaitUntilAsync(() => !guest.IsConnected, ct);
+        Assert.IsTrue(guest.HasConnected, "Closing the Minecraft world must not drop the room credentials.");
+
+        host.SetLanServerAvailability(server.Port, available: true);
+        await WaitUntilAsync(() => guest.IsConnected, ct);
+    }
+
+    [TestMethod]
+    public async Task HostLanWorldDisappearanceIsReportedToConnectedGuests()
+    {
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+        var ct = deadline.Token;
+        await using var server = new EchoServer();
+        await using var host = Ipv6HostSession.Start(IPAddress.IPv6Loopback, server.Port);
+        host.SetLanServerAvailability(server.Port, available: true);
+        Assert.IsTrue(InviteCodeCodec.TryDecode(host.InviteCode, out var invite, out var error), error);
+        await using var guest1 = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
+        await using var guest2 = Ipv6GuestSession.Start(IPAddress.IPv6Loopback, invite);
+
+        Assert.IsTrue(host.TryAcceptGuestAck(guest1.AckCode, out var message), message);
+        Assert.IsTrue(host.TryAcceptGuestAck(guest2.AckCode, out message), message);
+        await WaitUntilAsync(() => guest1.IsConnected && guest2.IsConnected, ct);
+
+        host.SetLanServerAvailability(server.Port, available: false);
+        await WaitUntilAsync(() => !guest1.IsConnected && !guest2.IsConnected, ct);
+        Assert.IsTrue(guest1.HasConnected);
+        Assert.IsTrue(guest2.HasConnected);
+
+        // The host can reopen the same LAN world without requiring a new ACK.
+        host.SetLanServerAvailability(server.Port, available: true);
+        await WaitUntilAsync(() => guest1.IsConnected && guest2.IsConnected, ct);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> predicate, CancellationToken ct)
     {
         while (!predicate()) await Task.Delay(15, ct);

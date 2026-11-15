@@ -1,9 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.Link.Ipv6Direct;
@@ -13,6 +15,11 @@ namespace PCL.Core.Test;
 [TestClass]
 public class Ipv6DirectTest
 {
+    static Ipv6DirectTest()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
     [TestMethod]
     public void InviteCode_RoundTrip_HostAndAck()
     {
@@ -70,6 +77,17 @@ public class Ipv6DirectTest
         Assert.AreEqual("Steve 的世界", motd);
         Assert.AreEqual((ushort)51234, port);
         Assert.IsFalse(LanBroadcastHelper.TryParseAnnouncement("[MOTD]bad[/MOTD][AD]0[/AD]", out _, out _));
+    }
+
+    [TestMethod]
+    public void LanBroadcastHelper_DecodesLegacyChineseWindowsAnnouncement()
+    {
+        var bytes = Encoding.GetEncoding(936)
+            .GetBytes("[MOTD]lyricify - 新的世界[/MOTD][AD]51234[/AD]");
+
+        Assert.IsTrue(LanBroadcastHelper.TryParseAnnouncement(bytes, out var motd, out var port, legacyCodePage: 936));
+        Assert.AreEqual("lyricify - 新的世界", motd);
+        Assert.AreEqual((ushort)51234, port);
     }
 
     [TestMethod]
@@ -219,6 +237,56 @@ public class Ipv6DirectTest
         finally
         {
             AppDomain.CurrentDomain.FirstChanceException -= onFirstChance;
+        }
+    }
+
+    [TestMethod]
+    public async Task UdpReliablePeer_MarksHostDisconnectedAfterHeartbeatsExpire()
+    {
+        const uint token = 0x24681357;
+        var secret = TunnelSecret.Create();
+        var peerId = RandomNumberGenerator.GetBytes(TunnelAuthentication.PeerIdSize);
+        var hostResponding = 1;
+        UdpReliablePeer? hostPeer = null;
+        UdpReliablePeer? guestPeer = null;
+
+        hostPeer = new UdpReliablePeer(token, secret, peerId, isHost: true, packet =>
+        {
+            if (Volatile.Read(ref hostResponding) != 0)
+            {
+                var copy = packet.ToArray();
+                _ = Task.Run(() => guestPeer!.HandleIncomingPacket(copy));
+            }
+            return ValueTask.CompletedTask;
+        });
+        guestPeer = new UdpReliablePeer(token, secret, peerId, isHost: false, packet =>
+        {
+            var copy = packet.ToArray();
+            _ = Task.Run(() => hostPeer.HandleIncomingPacket(copy));
+            return ValueTask.CompletedTask;
+        });
+
+        await using (hostPeer)
+        await using (guestPeer)
+        {
+            var reachabilityChanges = new ConcurrentQueue<bool>();
+            guestPeer.OnReachabilityChanged += reachabilityChanges.Enqueue;
+            await guestPeer.SendPingAsync();
+
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            while (!guestPeer.IsReachable)
+                await Task.Delay(20, timeout.Token);
+            Assert.IsTrue(guestPeer.IsReachable);
+            CollectionAssert.Contains(reachabilityChanges.ToArray(), true);
+
+            // Simulate the host process exiting: outgoing responses stop, then
+            // verify an old successful PONG does not leave the UI online forever.
+            Volatile.Write(ref hostResponding, 0);
+            while (guestPeer.IsReachable)
+                await Task.Delay(20, timeout.Token);
+
+            Assert.IsFalse(guestPeer.IsReachable);
+            CollectionAssert.Contains(reachabilityChanges.ToArray(), false);
         }
     }
 

@@ -70,11 +70,15 @@ public partial class PageToolsDirectLink
         TextGuestInviteInput.Text = string.Empty;
         TextHostAckInput.Text = string.Empty;
         TextGuestAckCode.Text = string.Empty;
-        // 只停止 LAN 多播扫描与页面刷新定时器；若联机正在进行，切去启动游戏时保持隧道不断开。
-        _lanListenCts?.Cancel();
-        _lanListenCts?.Dispose();
-        _lanListenCts = null;
-        StopLanExpireTimer();
+        // Keep watching the host's LAN announcement while the room is active so
+        // guests learn when the Minecraft world closes, even if this page is hidden.
+        if (_hostSession is null)
+        {
+            _lanListenCts?.Cancel();
+            _lanListenCts?.Dispose();
+            _lanListenCts = null;
+            StopLanExpireTimer();
+        }
         StopHostPunchTimer();
         if (_hostSession is null)
             ClearTransientHostPortState();
@@ -122,6 +126,13 @@ public partial class PageToolsDirectLink
                     Lang.Text("Link.Sidebar.GuestConnected"),
                     $"127.0.0.1:{_guestSession.LocalProxyPort} · {_guestSession.RttMs} ms");
             }
+            else if (_guestSession.HasConnected)
+            {
+                ModMain.frmLinkLeft.UpdateSidebarStatus(
+                    false,
+                    Lang.Text("Link.Sidebar.GuestDisconnected"),
+                    Lang.Text("Link.Sidebar.GuestDisconnectedDetail"));
+            }
             else
             {
                 ModMain.frmLinkLeft.UpdateSidebarStatus(
@@ -167,6 +178,7 @@ public partial class PageToolsDirectLink
                     _lastAutoFilledLanPort = info.Port;
                     SetHostPortProgrammatic(info.Port.ToString());
                     _hostSession.McPort = info.Port;
+                    _hostSession.SetLanServerAvailability(info.Port, available: true);
                     PushSidebarStatus();
                 }
                 else if (!_hasUserEditedHostPort && _lastAutoFilledLanPort != info.Port)
@@ -204,9 +216,11 @@ public partial class PageToolsDirectLink
         if (DateTimeOffset.UtcNow - _lastLanWorld.LastSeenUtc <= LanWorldExpireTimeout)
             return;
 
+        var expiredPort = _lastLanWorld.Port;
         _lastLanWorld = null;
         _lastAutoFilledLanPort = 0;
         LabLanDetected.Text = Lang.Text("Link.Host.LanWaiting");
+        _hostSession?.SetLanServerAvailability(expiredPort, available: false);
         if (_hostSession is null && !_hasUserEditedHostPort)
             SetHostPortProgrammatic(string.Empty);
     }
@@ -246,6 +260,12 @@ public partial class PageToolsDirectLink
         if (_hostSession is not null && ushort.TryParse(TextHostPort.Text.Trim(), out var port) && port > 0)
         {
             _hostSession.McPort = port;
+            if (_lastLanWorld is { } detectedWorld &&
+                detectedWorld.Port == port &&
+                DateTimeOffset.UtcNow - detectedWorld.LastSeenUtc <= LanWorldExpireTimeout)
+                _hostSession.SetLanServerAvailability(port, available: true);
+            else
+                _hostSession.ClearLanServerAvailability();
             PushSidebarStatus();
         }
     }
@@ -283,6 +303,13 @@ public partial class PageToolsDirectLink
                 UpdateHostPeersUi();
                 PushSidebarStatus();
             });
+            EnsureLanExpireTimerRunning();
+            if (_lanListenCts is null)
+                StartLanListener();
+            if (_lastLanWorld is { } detectedWorld &&
+                detectedWorld.Port == mcPort &&
+                DateTimeOffset.UtcNow - detectedWorld.LastSeenUtc <= LanWorldExpireTimeout)
+                _hostSession.SetLanServerAvailability(mcPort, available: true);
 
             LabHostAuthMode.Text = (requireOnlineAuth
                 ? "房主 PCL 当前选择在线/外置账户。"
@@ -566,6 +593,18 @@ public partial class PageToolsDirectLink
                 : "房主 PCL 当前选择离线账户。";
             LabGuestStatus.Text = statusText + "\n" + profileHint +
                 " 能否进入游戏仍由 Minecraft 游戏端决定。";
+        }
+        else if (_guestSession.HasConnected)
+        {
+            PanGuestAck.Visibility = Visibility.Collapsed;
+            PanGuestConnected.Visibility = Visibility.Collapsed;
+            LabGuestStatus.Text = Lang.Text("Link.Guest.ConnectionLost");
+        }
+        else
+        {
+            PanGuestAck.Visibility = Visibility.Visible;
+            PanGuestConnected.Visibility = Visibility.Collapsed;
+            LabGuestStatus.Text = Lang.Text("Link.Guest.NeedAckStatus");
         }
     }
 

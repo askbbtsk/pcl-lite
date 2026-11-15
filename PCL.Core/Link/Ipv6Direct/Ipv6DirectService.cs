@@ -55,6 +55,8 @@ public sealed class Ipv6HostSession : IAsyncDisposable
     private int _mcPort;
     private int _mcConnectWarned;
     private int _nextPeerId;
+    private int _lanServerStatusKnown;
+    private int _lanServerAvailable;
 
     public string InviteCode { get; }
     public IPAddress PublicAddress => _publicAddress;
@@ -63,10 +65,31 @@ public sealed class Ipv6HostSession : IAsyncDisposable
     public int McPort
     {
         get => Volatile.Read(ref _mcPort);
-        set => Volatile.Write(ref _mcPort, Math.Clamp(value, 1, 65535));
+        set
+        {
+            var port = Math.Clamp(value, 1, 65535);
+            if (Interlocked.Exchange(ref _mcPort, port) != port)
+                ClearLanServerAvailability();
+        }
     }
 
     public event Action? StateChanged;
+
+    public void SetLanServerAvailability(int port, bool available)
+    {
+        if (port != McPort)
+            return;
+        Volatile.Write(ref _lanServerAvailable, available ? 1 : 0);
+        Volatile.Write(ref _lanServerStatusKnown, 1);
+        StateChanged?.Invoke();
+    }
+
+    public void ClearLanServerAvailability()
+    {
+        Volatile.Write(ref _lanServerStatusKnown, 0);
+        Volatile.Write(ref _lanServerAvailable, 0);
+        StateChanged?.Invoke();
+    }
 
     private Ipv6HostSession(
         Socket udp,
@@ -211,12 +234,16 @@ public sealed class Ipv6HostSession : IAsyncDisposable
                     _token,
                     _secret, peerId, isHost: true,
                     data => SendToAsync(ep, virtualId, data),
-                    localRequiresOnlineAuth: _requireOnlineAuth),
+                    localRequiresOnlineAuth: _requireOnlineAuth,
+                    localGameServerStatus: () =>
+                        (Volatile.Read(ref _lanServerStatusKnown) != 0,
+                            Volatile.Read(ref _lanServerAvailable) != 0)),
                 PeerId = peerId.ToArray(),
                 DirectNoAck = directNoAck,
                 AddedUtc = DateTimeOffset.UtcNow
             };
             created.Peer.OnStreamAccepted += stream => _ = BridgeStreamToLocalMcAsync(stream, _cts.Token);
+            created.Peer.OnReachabilityChanged += _ => StateChanged?.Invoke();
             created.Peer.OnConnectedOrHeartbeat += rtt =>
             {
                 if (Interlocked.Exchange(ref created.ConnectedLogged, 1) == 0)
@@ -378,11 +405,15 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
     private readonly Task _lanAnnounceTask;
 
     private int _connectedLogged;
+    private int _hasConnected;
 
     public string AckCode { get; }
     public IPEndPoint HostEndpoint => _hostEndpoint;
     public ushort LocalProxyPort { get; }
-    public bool IsConnected => _peer.IsReachable;
+    public bool IsConnected =>
+        _peer.IsReachable &&
+        (!_peer.RemoteGameServerStatusSupported || _peer.RemoteGameServerAvailable);
+    public bool HasConnected => Volatile.Read(ref _hasConnected) != 0;
     public int RttMs => _peer.RttMs;
     public bool HostRequiresOnlineAuth => _peer.RemoteRequiresOnlineAuth;
 
@@ -404,8 +435,16 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
         AckCode = InviteCodeCodec.Encode(InviteCodeCodec.CreateGuestAck(hostInvite, localPublicIpv6, localUdpPort, peerId));
 
         _peer = new UdpReliablePeer(hostInvite.Token, hostInvite.Secret!, peerId, isHost: false, SendToHostAsync);
+        _peer.OnReachabilityChanged += reachable =>
+        {
+            if (reachable)
+                Interlocked.Exchange(ref _hasConnected, 1);
+            StateChanged?.Invoke();
+        };
         _peer.OnConnectedOrHeartbeat += rtt =>
         {
+            if (IsConnected)
+                Interlocked.Exchange(ref _hasConnected, 1);
             if (Interlocked.Exchange(ref _connectedLogged, 1) == 0)
             {
                 LogWrapper.Info("Link",
@@ -512,7 +551,7 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
         {
             try
             {
-                await Task.Delay(IsConnected ? 1200 : 300, ct).ConfigureAwait(false);
+                await Task.Delay(_peer.IsReachable ? 1200 : 300, ct).ConfigureAwait(false);
                 await _peer.SendPingAsync().ConfigureAwait(false);
             }
             catch (OperationCanceledException)

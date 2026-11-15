@@ -146,15 +146,6 @@ public static partial class ModLunar
     private static string _launchedLocalId = string.Empty;
 
     /// <summary>
-    ///     本次启动能不能由 PCL 自己给账号续期（PCL 里有同一个账号的登录）。
-    ///     <para>
-    ///         能续期时就不把 IPC 端口让给 Lunar 启动器 —— 启动器开着但没登录时它续不了，
-    ///         游戏照样会弹 Invalid session。抢不到 28190 就退到 28191，把端口指给游戏。
-    ///     </para>
-    /// </summary>
-    private static bool _canRefreshSession;
-
-    /// <summary>
     ///     账号选择里「Lunar 身份账号」的前缀，和 Lunar 账户库的 <c>localId</c> 区分开。
     ///     <para>
     ///         带这个前缀的账号是用户在 Lunar 页面用 Lunar 的 client id 登录出来的，

@@ -135,17 +135,11 @@ public sealed class LunarIpcServer : IDisposable
     /// <summary>
     ///     抢占 <paramref name="port" /> 并开始监听。
     ///     <para>
-    ///         端口被占用时不算错误：先探一下对方是不是 WebSocket 服务（Lunar 启动器就是），
-    ///         是的话把端口原样交给游戏，由启动器负责续期；不是的话让游戏别连，
-    ///         免得连到不相干的东西上。
-    ///     </para>
-    ///     <para>
-    ///         <paramref name="fallbackPorts" /> 用于「PCL 能自己续期，不想让位」的场景：
-    ///         主端口被占就依次试这些端口，抢到哪个就把哪个交给游戏。全部失败才回退到
-    ///         上面那套让位逻辑。
+    ///         端口被占用时按 Lunar 启动器已占用处理：把固定端口交给游戏使用，
+    ///         PCL 不接管服务，也不尝试其它端口。
     ///     </para>
     /// </summary>
-    public static async Task<LunarIpcStartResult> StartAsync(
+    public static Task<LunarIpcStartResult> StartAsync(
         int port,
         string installationId,
         Func<Guid, CancellationToken, Task<LunarRefreshResult>> refresh,
@@ -154,43 +148,28 @@ public sealed class LunarIpcServer : IDisposable
         ILunarIpcHost? host = null,
         CancellationToken cancellationToken = default)
     {
-        var candidates = new List<int> { port };
-        if (fallbackPorts is not null)
-            foreach (var candidate in fallbackPorts)
-                if (candidate > 0 && !candidates.Contains(candidate))
-                    candidates.Add(candidate);
-
-        foreach (var candidate in candidates)
+        // Kept for source compatibility. Lunar IPC must never move to a different port.
+        _ = fallbackPorts;
+        cancellationToken.ThrowIfCancellationRequested();
+        try
         {
-            try
-            {
-                var listener = new TcpListener(IPAddress.Loopback, candidate);
-                listener.Start();
-                var server = new LunarIpcServer(listener, candidate, installationId, refresh, log, host);
-                server.StartAcceptLoop();
-                return new LunarIpcStartResult(server, candidate, LunarIpcPortState.Served,
-                    candidate == port
-                        ? $"已在 127.0.0.1:{candidate} 接管 Lunar IPC"
-                        : $"端口 {port} 被占用，改在 127.0.0.1:{candidate} 接管 Lunar IPC，续期由 PCL 处理");
-            }
-            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
-            {
-                // 换下一个候选端口
-            }
-            catch (Exception ex) when (ex is SocketException or UnauthorizedAccessException)
-            {
-                return new LunarIpcStartResult(null, 0, LunarIpcPortState.TakenByOther,
-                    $"无法监听端口 {candidate}：{ex.Message}");
-            }
+            var listener = new TcpListener(IPAddress.Loopback, port);
+            listener.Start();
+            var server = new LunarIpcServer(listener, port, installationId, refresh, log, host);
+            server.StartAcceptLoop();
+            return Task.FromResult(new LunarIpcStartResult(server, port, LunarIpcPortState.Served,
+                $"已在 127.0.0.1:{port} 接管 Lunar IPC"));
         }
-
-        var isWebSocket = await LooksLikeWebSocketAsync(port, cancellationToken).ConfigureAwait(false);
-        return isWebSocket
-            ? new LunarIpcStartResult(null, port, LunarIpcPortState.TakenByLauncher,
-                $"端口 {port} 已被占用，且对方是 WebSocket 服务 —— 应该是 Lunar 启动器在运行，" +
-                "续期交给它处理")
-            : new LunarIpcStartResult(null, 0, LunarIpcPortState.TakenByOther,
-                $"端口 {port} 被其他程序占用，且不响应 WebSocket，本次不启用 IPC");
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
+        {
+            return Task.FromResult(new LunarIpcStartResult(null, port, LunarIpcPortState.TakenByLauncher,
+                $"端口 {port} 被占用，不接管 Lunar IPC"));
+        }
+        catch (Exception ex) when (ex is SocketException or UnauthorizedAccessException)
+        {
+            return Task.FromResult(new LunarIpcStartResult(null, 0, LunarIpcPortState.TakenByOther,
+                $"无法监听端口 {port}：{ex.Message}"));
+        }
     }
 
     private void StartAcceptLoop() => _ = Task.Run(AcceptLoopAsync);
@@ -602,39 +581,6 @@ public sealed class LunarIpcServer : IDisposable
 
     #endregion
 
-    /// <summary>
-    ///     端口被占时判断对方是不是 WebSocket 服务。Lunar 启动器的 IPC 服务就是，
-    ///     探测完立刻断开，它那边只会记一条「连接已关闭」。
-    /// </summary>
-    private static async Task<bool> LooksLikeWebSocketAsync(int port, CancellationToken token)
-    {
-        try
-        {
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
-            timeout.CancelAfter(TimeSpan.FromSeconds(1));
-
-            using var client = new TcpClient();
-            await client.ConnectAsync(IPAddress.Loopback, port, timeout.Token).ConfigureAwait(false);
-
-            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
-            var request = $"GET / HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n" +
-                          "Upgrade: websocket\r\nConnection: Upgrade\r\n" +
-                          $"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n";
-
-            var stream = client.GetStream();
-            await stream.WriteAsync(Encoding.ASCII.GetBytes(request), timeout.Token).ConfigureAwait(false);
-
-            var buffer = new byte[16];
-            var read = await stream.ReadAsync(buffer, timeout.Token).ConfigureAwait(false);
-            return read >= 12 &&
-                   Encoding.ASCII.GetString(buffer, 0, read).Contains("101", StringComparison.Ordinal);
-        }
-        catch (Exception ex) when (ex is SocketException or OperationCanceledException or IOException)
-        {
-            return false;
-        }
-    }
-
     private static bool TryDecodeBase64(string value, out byte[] bytes)
     {
         try
@@ -701,10 +647,10 @@ public enum LunarIpcPortState
     /// <summary>端口空闲，PCL 自己接管了 IPC。</summary>
     Served,
 
-    /// <summary>端口被一个 WebSocket 服务占着，几乎一定是 Lunar 启动器。</summary>
+    /// <summary>固定端口被 Lunar 启动器占用，由游戏直接使用。</summary>
     TakenByLauncher,
 
-    /// <summary>端口被占，但对方不像 WebSocket 服务。</summary>
+    /// <summary>端口不可用或监听被系统拒绝。</summary>
     TakenByOther
 }
 

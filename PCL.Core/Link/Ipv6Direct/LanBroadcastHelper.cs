@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,11 +16,52 @@ public sealed record LanWorldInfo(string Motd, ushort Port, DateTimeOffset LastS
 /// </summary>
 public static partial class LanBroadcastHelper
 {
+    private static readonly UTF8Encoding StrictUtf8 = new(false, true);
+
+    static LanBroadcastHelper() => Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
     public static readonly IPAddress MulticastAddress = IPAddress.Parse("224.0.2.60");
     public const int MulticastPort = 4445;
 
     [GeneratedRegex(@"\[MOTD\](?<motd>.*?)\[/MOTD\]\s*\[AD\](?<port>\d+)\[/AD\]", RegexOptions.Singleline)]
     private static partial Regex LanRegex();
+
+    internal static bool TryParseAnnouncement(
+        ReadOnlySpan<byte> message,
+        out string motd,
+        out ushort port,
+        int? legacyCodePage = null)
+    {
+        string text;
+        try
+        {
+            text = StrictUtf8.GetString(message);
+        }
+        catch (DecoderFallbackException)
+        {
+            // Older Java runtimes on Windows may broadcast MOTD bytes in the
+            // Windows ANSI code page rather than UTF-8.
+            try
+            {
+                var codePage = legacyCodePage ?? checked((int)GetACP());
+                var legacyEncoding = CodePagesEncodingProvider.Instance.GetEncoding(codePage);
+                if (legacyEncoding is null)
+                    throw new DecoderFallbackException($"Unsupported Windows code page {codePage}.");
+                var strictLegacyEncoding = (Encoding)legacyEncoding.Clone();
+                strictLegacyEncoding.DecoderFallback = DecoderFallback.ExceptionFallback;
+                text = strictLegacyEncoding.GetString(message);
+            }
+            catch (Exception error) when (error is DecoderFallbackException or ArgumentException or DllNotFoundException)
+            {
+                text = Encoding.UTF8.GetString(message);
+            }
+        }
+
+        return TryParseAnnouncement(text, out motd, out port);
+    }
+
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    private static extern uint GetACP();
 
     public static bool TryParseAnnouncement(string message, out string motd, out ushort port)
     {
@@ -55,8 +97,7 @@ public static partial class LanBroadcastHelper
             try
             {
                 var result = await udp.ReceiveAsync(ct).ConfigureAwait(false);
-                var text = Encoding.UTF8.GetString(result.Buffer);
-                if (TryParseAnnouncement(text, out var motd, out var port))
+                if (TryParseAnnouncement(result.Buffer, out var motd, out var port))
                 {
                     // 忽略自己发出的 IPv6 直连转发广播，避免房客端误识别成房主端口
                     if (motd.Contains("[IPv6直连]", StringComparison.Ordinal))

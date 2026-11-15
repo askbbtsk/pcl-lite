@@ -580,5 +580,40 @@ public static class LunarInstaller
         return path;
     }
 
+    /// <summary>
+    ///     Clear game logs from the previous launch while preserving Lunar's log4j config
+    ///     and unrelated files in the directory.
+    /// </summary>
+    public static void ClearPreviousGameLogs(string lunarRoot, Action<string>? log = null)
+    {
+        var directory = LunarClientService.GameLogsDirectory(lunarRoot);
+        try
+        {
+            if (!Directory.Exists(directory))
+                return;
+
+            foreach (var path in Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly))
+            {
+                var name = Path.GetFileName(path);
+                if (!string.Equals(name, "latest.log", StringComparison.OrdinalIgnoreCase) &&
+                    !name.EndsWith(".log.gz", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                try
+                {
+                    File.Delete(path);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    log?.Invoke($"清理上次 Lunar 游戏日志失败（{name}）：{ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            log?.Invoke("枚举上次 Lunar 游戏日志失败（不影响启动）：" + ex.Message);
+        }
+    }
+
     #endregion
 }

@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using PCL.Core.App.Localization;
+using PCL.Core.UI;
 
 namespace PCL;
 
@@ -43,16 +44,28 @@ internal static class NativeWorkDialog
             if (control is not null) control.Btn2_Click(null!, null!);
             else { converter.IsExited = true; converter.WaitFrame.Continue = false; ModMain.WaitingMyMsgBox.Remove(converter); }
         }
-        var progress = new Progress<string>(value =>
+        // A large index can report thousands of files per second. Posting each report
+        // to the dispatcher at Normal priority starves mouse input (including Cancel).
+        // Keep only the latest message; the UI timer consumes it at a bounded rate.
+        var progress = new LatestStatusProgress();
+        converter.Button1Action = () =>
         {
-            if (!converter.IsExited && contextIsCurrent()) Control()?.SetWorkMessage(value);
-        });
+            if (cancellation.IsCancellationRequested) return;
+            cancellation.Cancel();
+            if (Control() is { } control)
+            {
+                control.Btn1.IsEnabled = false;
+                control.SetWorkMessage(Lang.Text("Common.Status.Cancelling"));
+            }
+        };
         var work = Task.Run(() => execute(cancellation.Token, progress));
-        var timer = new DispatcherTimer(DispatcherPriority.Normal, window.Dispatcher) { Interval = TimeSpan.FromMilliseconds(100) };
+        var timer = new DispatcherTimer(DispatcherPriority.Background, window.Dispatcher) { Interval = TimeSpan.FromMilliseconds(100) };
         EventHandler tick = (_, _) =>
         {
             if (!contextIsCurrent() || window.Dispatcher.HasShutdownStarted)
             { cancellation.Cancel(); Finish(); return; }
+            if (!cancellation.IsCancellationRequested && progress.TakeLatest() is { } message)
+                Control()?.SetWorkMessage(message);
             if (!work.IsCompleted) return;
             try { succeeded = work.GetAwaiter().GetResult(); }
             catch (OperationCanceledException) { }

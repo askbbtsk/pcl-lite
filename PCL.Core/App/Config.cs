@@ -278,6 +278,10 @@ public static partial class Config
             [ConfigItem<bool>("LunarCredentialRiskAcknowledged", false, ConfigSource.Local)]
             public partial bool CredentialRiskAcknowledged { get; set; }
 
+            /// <summary>已提示首次创建官方兼容的共享安装标识。</summary>
+            [ConfigItem<bool>("LunarInstallationIdentityNoticeShown", false, ConfigSource.Local)]
+            public partial bool InstallationIdentityNoticeShown { get; set; }
+
             /// <summary>
             /// 启动前校验物料文件的 SHA-1。
             /// <para>
@@ -474,6 +478,13 @@ public static partial class Config
         /// </summary>
         [ConfigGroup("Background")] partial class BackgroundConfigGroup
         {
+            [ConfigItem<bool>("UiWallpaperEngineFollow", false, ConfigSource.Local)]
+            public partial bool FollowWallpaperEngine { get; set; }
+            [ConfigItem<int>("UiWallpaperEngineQuality", 50, ConfigSource.Local)]
+            public partial int WallpaperEngineQuality { get; set; }
+            [ConfigItem<string>("UiWallpaperEngineDirectory", "", ConfigSource.Local)]
+            public partial string WallpaperEngineDirectory { get; set; }
+
             /// <summary>
             /// 彩色底部填充。
             /// </summary>

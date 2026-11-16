@@ -451,6 +451,20 @@
             </local:MyCard>
             <local:MyCard x:Name="CardBackground" Margin="0,0,0,15" Title="{DynamicResource Setup.Ui.Background.TitleDefault}">
                 <StackPanel Margin="25,40,25,20">
+                    <local:MyCheckBox x:Name="CheckWallpaperEngine" MinHeight="38" Margin="-1,0,0,6"
+                        Text="{DynamicResource Setup.Ui.WallpaperEngine.Follow}" Change="WallpaperEngineChanged" />
+                    <StackPanel x:Name="PanWallpaperEngine" Visibility="Collapsed" Margin="0,0,0,12">
+                        <TextBlock Text="{DynamicResource Setup.Ui.WallpaperEngine.Description}" TextWrapping="Wrap"
+                            Foreground="{DynamicResource ColorBrush1}" Margin="0,0,0,8" />
+                        <Grid MinHeight="38">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{DynamicResource Setup.Ui.WallpaperEngine.Quality}" VerticalAlignment="Center" Margin="0,0,25,0" />
+                            <local:MySlider x:Name="SliderWallpaperEngineQuality" Grid.Column="1" MaxValue="75"
+                                VerticalAlignment="Center" Change="WallpaperEngineQualityChanged" />
+                        </Grid>
+                        <TextBlock x:Name="TextWallpaperEngineStatus" TextWrapping="Wrap"
+                            Foreground="{DynamicResource ColorBrush1}" Margin="0,5,0,0" />
+                    </StackPanel>
                     <Grid x:Name="PanBackgroundSuit" Height="28" Margin="0,0,0,10" Visibility="Collapsed">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />

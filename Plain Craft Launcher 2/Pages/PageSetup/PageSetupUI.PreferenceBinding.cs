@@ -308,7 +308,7 @@ public partial class PageSetupUI
     {
         if (PanBackgroundOpacity is null)
             return;
-        if (show)
+        if (show || WallpaperEngineBackground.IsActive)
         {
             PanBackgroundOpacity.Visibility = Visibility.Visible;
             PanBackgroundBlur.Visibility = Visibility.Visible;

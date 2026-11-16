@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
@@ -20,6 +21,15 @@ public partial class FormMain
                 Lang.Text("Lunar.CredentialRisk.Title"),
                 Lang.Text("Lunar.CredentialRisk.Confirm"), seconds: seconds) == 1,
             () => Config.Preference.Lunar.CredentialRiskAcknowledged = true);
+        if (accepted && !Config.Preference.Lunar.InstallationIdentityNoticeShown &&
+            !File.Exists(Path.Combine(ModLunar.OfficialLunarRoot, "launcher-cache", "installation-id")))
+        {
+            accepted = ModMain.MyMsgBox(
+                Lang.Text("Lunar.InstallationIdentity.Message"),
+                Lang.Text("Lunar.InstallationIdentity.Title"),
+                Lang.Text("Common.Action.Continue"), Lang.Text("Common.Action.Cancel")) == 1;
+            if (accepted) Config.Preference.Lunar.InstallationIdentityNoticeShown = true;
+        }
         if (accepted) return true;
 
         // The clicked title radio can already be selected. Cancel must restore

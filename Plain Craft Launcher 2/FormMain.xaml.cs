@@ -132,6 +132,7 @@ public partial class FormMain
         ModBase.frmHandle = new WindowInteropHelper(this).Handle;
         // 读取设置
         PageSetupUI.BackgroundRefresh(false, true);
+        WallpaperEngineBackground.Attach(this);
         ModMusic.MusicRefreshPlay(false, true);
         // 扩展按钮
         BtnExtraUpdateRestart.showCheck = BtnExtraUpdateRestart_ShowCheck;

@@ -3265,7 +3265,20 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">Desktop refraction failed to recover; toggle it off and on to retry.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">Use the Liquid Glass interface</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">Enables the translucent Liquid Glass UI with some performance cost.</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction (allows screenshots and recording)</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">Live desktop refraction</sys:String>
+    <sys:String x:Key="Common.Status.Cancelling">Cancelling…</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Follow">Follow Wallpaper Engine wallpaper</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Description">Supports video, scene and web wallpapers. Wallpaper Engine plays a separate copy, which may differ from the desktop playback and uses additional resources.</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Quality">Wallpaper quality</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Off">Disabled</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Connecting">Loading wallpaper…</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Live">Wallpaper loaded</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Paused">Wallpaper paused</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.NotRunning">Wallpaper Engine not detected</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Unavailable">Wallpaper unavailable. Retrying shortly.</sys:String>
+    <sys:String x:Key="Lunar.InstallationIdentity.Title">First time using Lunar</sys:String>
+    <sys:String x:Key="Lunar.InstallationIdentity.Message">No Lunar installation ID was found. PCL Lite will create one for in-game account switching. The official launcher is not required.</sys:String>
+    <sys:String x:Key="Lunar.Error.InstallationIdentity">Could not read or save the Lunar installation ID. Check the Lunar directory permissions and launcher-cache/installation-id file.</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">Refracts the live desktop behind the window locally (adds GPU load).</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">Requires Windows 10 2004 or later; falls back to static blur if unsupported.</sys:String>
 

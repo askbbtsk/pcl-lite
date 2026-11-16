@@ -133,12 +133,17 @@
                     <Image x:Name="TahoeDesktopImage" Grid.RowSpan="2" Stretch="Fill" Visibility="Collapsed" />
                     <Border x:Name="LauncherBackgroundLayer" Grid.RowSpan="2" />
                 <Border x:Name="TahoeWallpaperHost" Grid.Row="1">
+                <Grid>
                 <Canvas x:Name="ImgBack" IsHitTestVisible="False"
                         RenderOptions.BitmapScalingMode="LowQuality">
                     <MediaElement x:Name="VideoBack" LoadedBehavior="Manual" UnloadedBehavior="Stop"
                                   Stretch="UniformToFill" IsHitTestVisible="False" Visibility="Visible"
                                   MediaEnded="VideoEnded" Volume="0" />
                 </Canvas>
+                <Image x:Name="WallpaperEngineBack" Stretch="UniformToFill" IsHitTestVisible="False"
+                       Visibility="Collapsed" Opacity="{Binding Opacity, ElementName=ImgBack}"
+                       Effect="{Binding Effect, ElementName=ImgBack}" />
+                </Grid>
                 </Border>
                 </Grid>
                 <local:TahoeGlassSurface x:Name="TahoeWindowGlass" Grid.RowSpan="2" CornerRadius="22" Visibility="Collapsed" />

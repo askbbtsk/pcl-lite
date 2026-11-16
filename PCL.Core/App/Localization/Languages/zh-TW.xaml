@@ -3208,7 +3208,20 @@ Release 發布時間：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.State.Failed">桌面折射恢復失敗，可重新開啟「即時桌面折射」重試。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液態玻璃介面</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">啟用液態玻璃介面，會帶來一定效能開銷。</sys:String>
-    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">即時桌面折射（支援截圖與錄影）</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.Desktop">即時桌面折射</sys:String>
+    <sys:String x:Key="Common.Status.Cancelling">正在取消…</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Follow">跟隨 Wallpaper Engine 桌布</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Description">支援影片、場景和網頁桌布。由 Wallpaper Engine 獨立播放，進度可能與桌面不同，會增加資源用量。</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Quality">桌布清晰度</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Off">已關閉</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Connecting">正在載入桌布…</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Live">桌布已載入</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Paused">桌布已暫停</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.NotRunning">未偵測到 Wallpaper Engine</sys:String>
+    <sys:String x:Key="Setup.Ui.WallpaperEngine.Unavailable">桌布暫時無法使用，稍後重試。</sys:String>
+    <sys:String x:Key="Lunar.InstallationIdentity.Title">首次使用 Lunar</sys:String>
+    <sys:String x:Key="Lunar.InstallationIdentity.Message">找不到 Lunar 安裝識別碼。PCL Lite 將自動建立，供遊戲內切換帳號使用，無需安裝官方啟動器。</sys:String>
+    <sys:String x:Key="Lunar.Error.InstallationIdentity">無法讀取或儲存 Lunar 安裝識別碼。請檢查 Lunar 目錄的權限及 launcher-cache/installation-id 檔案。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop.Description">即時折射視窗後方的桌面畫面（僅本機算繪，會額外增加顯示卡負載）。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Compatibility">需要 Windows 10 2004 及以上版本；不支援時自動回退為靜態模糊。</sys:String>
 

@@ -84,7 +84,7 @@ public static class ModVideoBack
     {
         ModBase.RunInUi(() =>
         {
-            if (ModMain.frmMain.VideoBack.Source is not null && !isMinimized)
+            if (!WallpaperEngineBackground.IsActive && ModMain.frmMain.VideoBack.Source is not null && !isMinimized)
                 if (!IsGaming || ForcePlay)
                     try
                     {

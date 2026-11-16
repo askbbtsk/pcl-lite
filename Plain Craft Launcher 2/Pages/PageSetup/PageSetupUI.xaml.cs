@@ -21,6 +21,8 @@ public partial class PageSetupUI
     public PageSetupUI()
     {
         InitializeComponent();
+        Loaded += WallpaperEngineSettingsLoaded;
+        Unloaded += WallpaperEngineSettingsUnloaded;
         Loaded += InitializeThemePackages;
         CheckHiddenPageSetup.Change += HiddenSetupMain;
         foreach (var check in new[] { CheckHiddenSetupLaunch, CheckHiddenSetupUI,

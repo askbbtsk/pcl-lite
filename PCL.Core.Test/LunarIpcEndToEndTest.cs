@@ -288,6 +288,57 @@ public class LunarIpcEndToEndTest
     }
 
     [TestMethod]
+    public async Task GameRefreshSelectionIsWrittenBeforeTheSuccessResponseAndCanSwitchBack()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunar-ipc-switch-" + Guid.NewGuid().ToString("N"));
+        string file = LunarAccountStore.FilePath(root);
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        var first = Guid.Parse("11111111-1111-4111-8111-111111111111");
+        var second = Guid.Parse("22222222-2222-4222-8222-222222222222");
+        File.WriteAllText(file, """
+            {"activeAccountLocalId":"first","accounts":{
+              "first":{"accessToken":"first-token","minecraftProfile":{"id":"11111111111141118111111111111111","name":"First"}},
+              "second":{"accessToken":"second-token","minecraftProfile":{"id":"22222222222242228222222222222222","name":"Second"}}}}
+            """);
+        try
+        {
+            var server = await LunarIpcServer.StartAsync(FindFreePort(), "test-installation",
+                (uuid, _) => Task.FromResult(LunarAccountStore.SelectRefreshedGameAccount(root,
+                        uuid == first ? "first" : "second", uuid)
+                    ? LunarRefreshResult.Ok("selected")
+                    : LunarRefreshResult.Fail(LunarAccountError.Unspecified, "selection failed")), _ => { });
+            using (server.Server)
+            using (var client = new TcpClient())
+            {
+                Assert.IsNotNull(server.Server);
+                var stream = await HandshakeAsync(client, server.Server.Port);
+                foreach (var uuid in new[] { second, first, second })
+                {
+                    string hex = uuid.ToString("N");
+                    using var inner = new MemoryStream();
+                    inner.WriteByte(0x09);
+                    inner.Write(BitConverter.GetBytes(Convert.ToUInt64(hex[..16], 16)));
+                    inner.WriteByte(0x11);
+                    inner.Write(BitConverter.GetBytes(Convert.ToUInt64(hex[16..], 16)));
+                    using var input = new MemoryStream();
+                    LunarIpcProtocol.WriteMessageField(input, 1, inner.ToArray());
+                    await WriteMaskedFrameAsync(stream, BuildRequest([1, 2, 3, 4],
+                        LunarIpcProtocol.AuthService, LunarIpcProtocol.RefreshAccountMethod, input.ToArray()));
+                    var response = await ReadServerFrameAsync(stream).WaitAsync(TimeSpan.FromSeconds(5));
+                    Assert.IsNotNull(response);
+                    Assert.IsTrue(LunarIpcProtocol.TryGetMessage(response, 1, out var envelope));
+                    Assert.IsTrue(LunarIpcProtocol.TryGetMessage(envelope, 2, out var output));
+                    CollectionAssert.AreEqual(new byte[] { 8, 1 }, output);
+                    var snapshot = LunarAccountStore.Read(root);
+                    Assert.AreEqual(uuid == first ? "first" : "second", snapshot.ActiveLocalId,
+                        "The game must see the requested account as soon as it receives success.");
+                }
+            }
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [TestMethod]
     public async Task SendPush_ShouldReturnZeroWhenNobodyConnected()
     {
         var port = FindFreePort();

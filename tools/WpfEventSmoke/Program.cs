@@ -76,6 +76,7 @@ internal static class Program
                     System.Windows.Input.Keyboard.PrimaryDevice, source, 0, key)]);
             Console.WriteLine("Partial-window mouse and keyboard input guards passed.");
             VerifyPaletteInput(source);
+            VerifyLunarLogWheel();
             if (args is ["--input-only"]) return 0;
             VerifyNavigationGlass(main);
             VerifyLegacyShadow();
@@ -172,6 +173,42 @@ internal static class Program
             Console.WriteLine("Actual glass appearance binding: legacy corner shadow absent; normal shadow restored pixel-for-pixel across three toggles.");
         }
         finally { appearance.IsEnabled = original; window.Close(); }
+    }
+
+    private static void VerifyLunarLogWheel()
+    {
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var document = XDocument.Load("Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.xaml");
+        var node = new XElement(document.Descendants().Single(element => (string?)element.Attribute(xaml + "Name") == "TextLog"));
+        node.SetAttributeValue(XNamespace.Xmlns + "x", xaml.NamespaceName);
+        var log = (System.Windows.Controls.TextBox)System.Windows.Markup.XamlReader.Parse(node.ToString());
+        log.Text = string.Join(Environment.NewLine, Enumerable.Range(0, 200).Select(index => $"Log line {index}"));
+        var content = new System.Windows.Controls.StackPanel();
+        content.Children.Add(log);
+        content.Children.Add(new System.Windows.Controls.Border { Height = 1000 });
+        var outer = new MyScrollViewer { Content = content, Width = 500, Height = 300 };
+        // An unattached layout tree exercises real routed input without opening
+        // a window, scanning games, or invoking the launcher page constructor.
+        outer.Measure(new System.Windows.Size(500, 300));
+        outer.Arrange(new System.Windows.Rect(0, 0, 500, 300));
+        outer.UpdateLayout();
+        log.ApplyTemplate();
+        if (outer.ScrollableHeight <= 0 || log.ExtentHeight <= log.ViewportHeight)
+            throw new InvalidDataException("Lunar log wheel fixture has no nested overflow.");
+        var editor = (System.Windows.UIElement?)log.Template.FindName("PART_ContentHost", log)
+            ?? throw new InvalidDataException("Lunar log editing viewport is missing.");
+        var preview = new System.Windows.Input.MouseWheelEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, -120)
+        { RoutedEvent = System.Windows.Input.Mouse.PreviewMouseWheelEvent };
+        editor.RaiseEvent(preview);
+        if (preview.Handled)
+            throw new InvalidDataException("The outer page intercepted the log's wheel input.");
+        double previous = outer.VerticalOffset;
+        editor.RaiseEvent(new System.Windows.Input.MouseWheelEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, -120)
+        { RoutedEvent = System.Windows.Input.Mouse.MouseWheelEvent });
+        outer.UpdateLayout();
+        if (log.VerticalOffset <= 0 || outer.VerticalOffset != previous)
+            throw new InvalidDataException("Wheel input failed to scroll the log independently.");
+        Console.WriteLine("Lunar log wheel: production XAML scrolls locally and preserves the outer page offset.");
     }
 
     private static void VerifyNavigationGlass(FormMain main)

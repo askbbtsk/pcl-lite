@@ -302,7 +302,7 @@
                         才不会把左键拖动选中抢走。
                     -->
                     <Border Style="{StaticResource TahoeInsetFormStyle}" Padding="10">
-                        <TextBox x:Name="TextLog" Height="230" IsReadOnly="True" BorderThickness="0"
+                        <TextBox x:Name="TextLog" Height="230" IsReadOnly="True" AcceptsReturn="True" BorderThickness="0"
                                  Background="Transparent" FontFamily="Consolas" FontSize="11.5"
                                  Foreground="{DynamicResource ColorBrush1}"
                                  CaretBrush="{DynamicResource ColorBrush1}"

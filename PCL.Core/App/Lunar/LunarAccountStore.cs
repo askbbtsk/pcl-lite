@@ -179,6 +179,55 @@ public static class LunarAccountStore
     }
 
     /// <summary>
+    /// Complete a game-initiated RefreshAccount request. The game rereads the active
+    /// account from disk after success, including when its token did not need renewing.
+    /// Background token refreshes must not use this method.
+    /// </summary>
+    public static bool SelectRefreshedGameAccount(string lunarRoot, string localId, Guid minecraftUuid)
+    {
+        if (string.IsNullOrWhiteSpace(localId) || minecraftUuid == Guid.Empty) return false;
+        string path = FilePath(lunarRoot);
+        string? temporary = null;
+        try
+        {
+            if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root ||
+                root["accounts"] is not JsonObject accounts ||
+                accounts[localId] is not JsonObject account ||
+                account["minecraftProfile"] is not JsonObject profile ||
+                !Guid.TryParse(profile["id"]?.GetValue<string>(), out var recordedUuid) ||
+                recordedUuid != minecraftUuid ||
+                string.IsNullOrWhiteSpace(account["accessToken"]?.GetValue<string>()))
+                return false;
+            if (root["activeAccountLocalId"]?.GetValue<string>() == localId) return true;
+
+            var backup = path + ".pclbak";
+            if (!File.Exists(backup))
+            {
+                try { File.Copy(path, backup); }
+                catch (IOException) when (File.Exists(backup)) { }
+            }
+            root["activeAccountLocalId"] = localId;
+            temporary = path + ".pcl-" + Guid.NewGuid().ToString("N") + ".tmp";
+            File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temporary, path, overwrite: true);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
+        {
+            return false;
+        }
+        finally
+        {
+            if (temporary is not null)
+            {
+                try { File.Delete(temporary); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+        }
+    }
+
+    /// <summary>
     ///     把某个账号的 <c>accessToken</c> / <c>accessTokenExpiresAt</c>（以及可选的
     ///     <c>refreshToken</c>）换成新的。
     ///     <para>

@@ -46,7 +46,7 @@
   },
   {
     "Path": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.xaml", "Control": "TextBox",
-    "Fingerprint": "39912D10A1CF723417F6CF1C550047CEA329B7E8FDDCB01E70002352E93FCB21", "Count": 1,
+      "Fingerprint": "1F9AF00B5A983A85164120514B687D017E6A25408322F940BEBE5A6C9D5940AA", "Count": 1,
     "Reason": "Existing read-only Lunar log viewer uses explicit PCL foreground, selection colors and inset surface; its text-selection/scrolling behavior is intentional."
   }
 ]

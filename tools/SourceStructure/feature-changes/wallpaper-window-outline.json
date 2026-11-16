@@ -1,0 +1,19 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
+    "Sha256": "BA094E561C41CB41042CF001041EC3FD51D4830BE0ABC76934053629CF6E8912",
+    "Members": [
+      "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::OnClosed(object? sender, EventArgs e)",
+      "PCL.LiquidGlassCore::MethodDeclaration::Refresh()",
+      "PCL.LiquidGlassCore::MethodDeclaration::Restore(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::SetResource(FormMain window, string key, object value)",
+      "PCL.LiquidGlassCore::PropertyDeclaration::BackdropSource",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsDesktopBackdropRequested",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsEnabled",
+      "PCL.LiquidGlassCore::PropertyDeclaration::Profile"
+    ],
+    "Reason": "Centralize native outline lifetime in Refresh: enable it for glass OR a live wallpaper, after selecting the current visual radius. Apply/Restore no longer independently disable the outline when glass is switched off while WE remains active. Other listed members retain previously reviewed behavior and are repinned to the containing source hash. LiquidGlassWindowClipTests now cover both normal 6 and glass 22 corner radii across four DPI scales."
+  }
+]

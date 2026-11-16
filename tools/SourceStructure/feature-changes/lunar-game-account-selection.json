@@ -1,0 +1,23 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarAccountStore.cs",
+    "Sha256": "84ECCF6CCE81A48E6054BF6C71CE6747CD95B041BAA90518B88FAD94AF9F9836",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::UpdateToken(string lunarRoot, string localId, string accessToken,\n        DateTimeOffset? expiresAt, string? refreshToken = null)"
+    ],
+    "Reason": "Repin the unchanged previously reviewed UpdateToken body after adding a separate game-request-only selection commit. Background token renewal still does not switch accounts. LunarGameAccountSelectionTests verify UUID matching, retained unrelated fields, valid-token selection, failed-write cleanup and repeated switches."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.IdentityAndGameProcess.cs",
+    "Sha256": "360C5A0D4B49A1317512C0246C408499DB1FF778D4AA32DC7A96207D1A0DA769",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ReadInstallationId()",
+      "PCL.ModLunar::MethodDeclaration::RefreshAccountTokenAsync(LunarAccount account,\n        CancellationToken cancellationToken)",
+      "PCL.ModLunar::MethodDeclaration::RefreshIdentityAsync(LunarIdentityAccount identity,\n        CancellationToken token)",
+      "PCL.ModLunar::MethodDeclaration::RefreshLunarAccountAsync(Guid minecraftUuid,\n        CancellationToken cancellationToken)",
+      "PCL.ModLunar::MethodDeclaration::StartIpcAsync(string installationId)",
+      "PCL.ModLunar::MethodDeclaration::StartIpcAsync(string installationId, long launchSession)"
+    ],
+    "Reason": "Game-initiated RefreshAccount now selects the resolved account in accounts.json after successful token renewal and before reporting success, matching official game_switch behavior. Retains UUID/local-id target lookup compatibility and does not select on background refresh or failure. Other listed members keep their prior reviewed bodies. Real WebSocket regression verifies disk selection before each success response across repeated switches."
+  }
+]

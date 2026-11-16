@@ -365,10 +365,22 @@ public static partial class ModLunar
 
         // 落盘在 RefreshAccountTokenAsync 里做完了才返回 —— 游戏拿到 success 会立刻重读文件
         var fresh = await RefreshAccountTokenAsync(account, cancellationToken).ConfigureAwait(false);
-        return fresh is { } value
-            ? LunarRefreshResult.Ok(value.Message)
-            : LunarRefreshResult.Fail(LunarAccountError.MissingRefreshToken,
+        if (fresh is not { } value)
+            return LunarRefreshResult.Fail(LunarAccountError.MissingRefreshToken,
                 "没能换到新的 accessToken（详见日志）");
+
+        cancellationToken.ThrowIfCancellationRequested();
+        // Official RefreshAccount calls initAuth(game_switch, requestedUuid), not
+        // merely refreshAccount(token). Success makes the game reread this marker.
+        if (!Guid.TryParse(account.MinecraftUuid, out var selectedUuid) ||
+            !LunarAccountStore.SelectRefreshedGameAccount(
+                LunarClientService.SettingsRoot, account.LocalId, selectedUuid))
+            return LunarRefreshResult.Fail(LunarAccountError.Unspecified,
+                "账号已续期，但无法切换账户库中的当前账号；未向游戏报告成功。");
+        _launchedLocalId = account.LocalId;
+        RefreshAccounts();
+        RaiseStateChanged();
+        return LunarRefreshResult.Ok(value.Message);
     }
 
 

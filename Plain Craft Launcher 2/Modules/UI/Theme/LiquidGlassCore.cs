@@ -103,6 +103,10 @@ public static partial class LiquidGlassCore
                 Restore(window);
                 _applied = false;
             }
+            // The opaque HWND's unused outer margin is visible as a white rim
+            // without glass. A live wallpaper still needs the same native outline,
+            // using the current normal (6) or glass (22) visual corner radius.
+            _windowClip?.SetEnabled(IsEnabled || WallpaperEngineBackground.IsActive);
             Appearance.IsEnabled = IsEnabled;
             Appearance.IsDesktopRequested = IsDesktopBackdropRequested;
             string captureState = _windowMoving && IsDesktopBackdropRequested ? "Moving"
@@ -239,7 +243,6 @@ public static partial class LiquidGlassCore
         window.RectLeftShadow.Opacity = 0;
         window.PanWindowShadow.Visibility = Visibility.Collapsed;
         window.RectForm.RadiusX = window.RectForm.RadiusY = 22;
-        _windowClip?.SetEnabled(true);
         UpdateSidebarClip(window);
 
         ApplySurface(window.TahoeToolbar, palette.ToolbarTint, dark, dark ? .14 : .18, dark ? .26 : .28);
@@ -284,7 +287,6 @@ public static partial class LiquidGlassCore
 
     private static void Restore(FormMain window)
     {
-        _windowClip?.SetEnabled(false);
         _desktopCapture?.Apply(false);
         window.TahoeBackdrop.Visibility = Visibility.Visible;
         window.TahoeWallpaperHost.Visibility = Visibility.Visible;

@@ -12,7 +12,9 @@ public sealed class LiquidGlassWindowClipTests
 {
     // Hidden native windows only: no foreground activation, screen access or visible UI.
     [TestMethod]
-    public void NativeWindowExcludesClientMarginAndAllFourCornersAtEveryDpi()
+    [DataRow(6d)]
+    [DataRow(22d)]
+    public void NativeWindowExcludesClientMarginAndAllFourCornersAtEveryDpi(double radius)
     {
         OnSta(() => WithWindow(window =>
         {
@@ -21,7 +23,7 @@ public sealed class LiquidGlassWindowClipTests
             foreach (int width in new[] { 300, 900, 1400 })
             {
                 var transform = new Matrix(scale, 0, 0, scale, 10 * scale, 10 * scale);
-                lease.SetOutline(new Rect(0, 0, width, 250), 22, 22, transform);
+                lease.SetOutline(new Rect(0, 0, width, 250), radius, radius, transform);
                 WithRegion(window, region =>
                 {
                     Assert.IsFalse(PtInRegion(region, 0, 0), "The unused HWND margin used to protrude as a black block.");

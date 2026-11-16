@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using PCL.Core.UI.WallpaperEngine;
 
 namespace PCL;
 
@@ -59,7 +60,10 @@ internal static class WallpaperEngineWindows
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-        foreach (string argument in arguments) info.ArgumentList.Add(argument);
+        if (arguments is ["-control", "applyProperties", "-location", var name, "-properties", var properties])
+            info.Arguments = WallpaperEngineCommands.PropertiesArguments(name, properties);
+        else
+            foreach (string argument in arguments) info.ArgumentList.Add(argument);
         using var process = Process.Start(info) ?? throw new IOException("Could not start Wallpaper Engine controller.");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(TimeSpan.FromSeconds(5));
@@ -76,7 +80,7 @@ internal static class WallpaperEngineWindows
         string result = await output.ConfigureAwait(false);
         string message = await error.ConfigureAwait(false);
         if (process.ExitCode != 0)
-            throw new IOException($"Wallpaper Engine controller exited with {process.ExitCode}: {message}");
+            throw new IOException($"Wallpaper Engine {arguments.ElementAtOrDefault(1)} exited with {process.ExitCode}: {message}");
         return result;
     }
 
@@ -90,6 +94,11 @@ internal static class WallpaperEngineWindows
 
     internal static void ConfigureOwnedWindow(IntPtr window, int width, int height, bool hideTaskbar)
     {
+        // SetWindowPos is DPI-virtualized for callers without a PMv2 manifest.
+        // Keep render dimensions and screen bounds in physical pixels on every thread.
+        IntPtr previous = SetThreadDpiAwarenessContext(new IntPtr(-4));
+        try
+        {
         // Only our uniquely named pop-out is passed here, never WE's desktop render HWND.
         long style = GetWindowLongPtr(window, -16).ToInt64();
         long nextStyle = (style & ~0x00C40000L) | 0x80000000L;
@@ -100,9 +109,7 @@ internal static class WallpaperEngineWindows
             long next = (extended & ~0x00040000L) | 0x08000080L;
             if (next != extended) SetWindowLongPtr(window, -20, new IntPtr(next));
         }
-        var area = System.Windows.Forms.SystemInformation.VirtualScreen;
-        int x = checked(area.Right + 1024);
-        int y = area.Top;
+        var (x, y) = OffscreenPosition();
         if (!GetWindowRect(window, out var current) || current.Left != x || current.Top != y ||
             current.Right - current.Left != width || current.Bottom - current.Top != height || style != nextStyle)
         {
@@ -111,6 +118,21 @@ internal static class WallpaperEngineWindows
         }
         int square = 1; // DWMWCP_DONOTROUND, on supported Windows versions.
         _ = DwmSetWindowAttribute(window, 33, ref square, sizeof(int));
+        }
+        finally { if (previous != IntPtr.Zero) SetThreadDpiAwarenessContext(previous); }
+    }
+
+    internal static (int X, int Y) OffscreenPosition()
+    {
+        IntPtr previous = SetThreadDpiAwarenessContext(new IntPtr(-4));
+        try
+        {
+            // WE's CLI treats negative coordinates as missing options and falls
+            // back to (0,0). Positive physical coordinates avoid the visible flash.
+            int right = checked(GetSystemMetrics(76) + GetSystemMetrics(78));
+            return (checked(Math.Max(0, right) + 2048), 0);
+        }
+        finally { if (previous != IntPtr.Zero) SetThreadDpiAwarenessContext(previous); }
     }
 
     internal static string ReadSharedText(string path)
@@ -186,6 +208,8 @@ internal static class WallpaperEngineWindows
     }
 
     [DllImport("user32.dll")] internal static extern bool IsWindow(IntPtr window);
+    [DllImport("user32.dll")] private static extern int GetSystemMetrics(int index);
+    [DllImport("user32.dll")] private static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
     [DllImport("user32.dll")] internal static extern bool GetWindowRect(IntPtr window, out Rectangle rectangle);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string? className, string title);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(

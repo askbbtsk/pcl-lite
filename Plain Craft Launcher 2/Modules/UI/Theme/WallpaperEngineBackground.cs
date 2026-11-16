@@ -68,6 +68,7 @@ internal static class WallpaperEngineBackground
         string? current = null;
         long checkedEngine = 0;
         long openedAt = 0;
+        int failures = 0;
         try
         {
             while (!token.IsCancellationRequested)
@@ -104,20 +105,21 @@ internal static class WallpaperEngineBackground
                             var project = WallpaperEngineSource.ResolveProject(selection, WallpaperEngineWindows.ReadSharedText);
                             var size = WallpaperEngineSource.RenderSize(view.Width, view.Height, view.Quality);
                             string key = $"{engine.Started}|{view.Monitor}|{project.File}|{project.PropertiesJson}|{size}";
-                            if (current != key || _capture?.Completion.IsCompleted == true)
+                            if (_capture?.Completion.IsCompleted == true)
+                                throw new IOException("Wallpaper capture ended before the renderer was closed.");
+                            if (IsActive) failures = 0;
+                            if (current != key)
                             {
                                 await StopRendererAsync(window).ConfigureAwait(false);
                                 await SetStatusAsync(window, "Connecting");
                                 _engine = engine;
                                 using var owner = Process.GetCurrentProcess();
                                 _name = $"PCL-Lite-Wallpaper-{owner.Id}-{owner.StartTime.ToUniversalTime().Ticks}-{Guid.NewGuid():N}";
+                                var origin = WallpaperEngineWindows.OffscreenPosition();
                                 await WallpaperEngineWindows.ControlAsync(engine, token,
                                     "-control", "openWallpaper", "-file", project.File, "-playInWindow", _name,
                                     "-width", size.Width.ToString(), "-height", size.Height.ToString(),
-                                    "-x", "-32000", "-y", "-32000", "-borderless").ConfigureAwait(false);
-                                await WallpaperEngineWindows.ControlAsync(engine, token, "-control", "applyProperties",
-                                    "-location", _name, "-properties", "RAW~(" + project.PropertiesJson + ")~END")
-                                    .ConfigureAwait(false);
+                                    "-x", origin.X.ToString(), "-y", origin.Y.ToString(), "-borderless").ConfigureAwait(false);
                                 IntPtr source = IntPtr.Zero;
                                 for (int i = 0; i < 40 && source == IntPtr.Zero; i++)
                                 {
@@ -126,6 +128,9 @@ internal static class WallpaperEngineBackground
                                 }
                                 if (source == IntPtr.Zero) throw new IOException("WE did not create the requested rendering window.");
                                 WallpaperEngineWindows.ConfigureOwnedWindow(source, size.Width, size.Height, hideTaskbar: true);
+                                await WallpaperEngineWindows.ControlAsync(engine, token, "-control", "applyProperties",
+                                    "-location", _name, "-properties", "RAW~(" + project.PropertiesJson + ")~END")
+                                    .ConfigureAwait(false);
                                 int generation = Volatile.Read(ref _generation);
                                 _capture = new WallpaperEngineCapture(source,
                                     (frame, release) => Present(window, generation, frame, release),
@@ -145,7 +150,8 @@ internal static class WallpaperEngineBackground
                     await StopRendererAsync(window).ConfigureAwait(false);
                     current = null;
                     await SetStatusAsync(window, "Unavailable");
-                    await Task.Delay(3000, token).ConfigureAwait(false);
+                    failures = Math.Min(failures + 1, 6);
+                    await Task.Delay(TimeSpan.FromSeconds(failures * 5), token).ConfigureAwait(false);
                 }
                 await Task.Delay(750, token).ConfigureAwait(false);
             }

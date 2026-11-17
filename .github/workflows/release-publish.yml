@@ -93,6 +93,8 @@ jobs:
       contents: read
     # 本地路径复用与发布请求相同提交的完整 CI，不能用其他提交的历史绿灯代替。
     uses: ./.github/workflows/build-test.yml
+    with:
+      run_build: false
 
   build:
     needs: [ci]

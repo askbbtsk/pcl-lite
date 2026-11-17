@@ -44,11 +44,6 @@ public sealed class PagePerformance : MyPageRight
         titleMain.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrush1");
         panel.Children.Add(titleMain);
 
-        var subtitle = _Text(Lang.Text("Welcome.Performance.Subtitle"), 12, false);
-        subtitle.Margin = new Thickness(0, 6, 0, 0);
-        subtitle.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray4");
-        panel.Children.Add(subtitle);
-
         var cpuRow = _BuildMetricRow(Lang.Text("Welcome.Performance.Cpu"), out var cpuValue, out var cpuBar);
         cpuRow.Margin = new Thickness(0, 22, 0, 0);
         panel.Children.Add(cpuRow);

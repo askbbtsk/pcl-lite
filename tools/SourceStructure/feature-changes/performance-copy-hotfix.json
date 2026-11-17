@@ -1,0 +1,8 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLaunch/PagePerformance.cs",
+    "Sha256": "B688CD976A2A0DE0C917356ACD8A9EC1D51E38DF4F3D3F48346B652A040944E3",
+    "Members": ["PCL.PagePerformance::MethodDeclaration::BuildPerformanceCard()"],
+    "Reason": "Remove the redundant local-computation subtitle from the performance card while retaining CPU, memory and available-memory values. UI Smoke and the complete localization key test cover the presentation change."
+  }
+]

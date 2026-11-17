@@ -19,12 +19,19 @@ on:
     paths-ignore: *ignored
   workflow_dispatch:
   workflow_call:
+    inputs:
+      run_build:
+        description: 'Run the two CI architecture builds. Release workflow skips these because it builds the release artifacts below.'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   ui_smoke:
     uses: ./.github/workflows/ui-smoke.yml
 
   build:
+    if: ${{ github.event_name != 'workflow_call' || inputs.run_build }}
     needs: [ui_smoke]
     strategy:
       matrix:

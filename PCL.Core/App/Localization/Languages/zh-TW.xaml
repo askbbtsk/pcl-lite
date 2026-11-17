@@ -1792,7 +1792,6 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Welcome.Recent.Empty">還沒有選擇版本，去「啟動」頁挑一個吧。</sys:String>
     <sys:String x:Key="Welcome.Recent.Launch">啟動遊戲</sys:String>
     <sys:String x:Key="Welcome.Performance.Title">效能狀態</sys:String>
-    <sys:String x:Key="Welcome.Performance.Subtitle">本機即時 · 僅本機計算</sys:String>
     <sys:String x:Key="Welcome.Performance.Cpu">CPU 使用率</sys:String>
     <sys:String x:Key="Welcome.Performance.Memory">記憶體佔用</sys:String>
     <sys:String x:Key="Welcome.Performance.Detail">已用 {0} / {1}  ·  可用 {2}</sys:String>

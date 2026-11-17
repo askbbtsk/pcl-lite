@@ -1837,7 +1837,6 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Welcome.Recent.Empty">No instance selected — pick one on the Launch page.</sys:String>
     <sys:String x:Key="Welcome.Recent.Launch">Launch game</sys:String>
     <sys:String x:Key="Welcome.Performance.Title">Performance</sys:String>
-    <sys:String x:Key="Welcome.Performance.Subtitle">Live from this PC — computed locally</sys:String>
     <sys:String x:Key="Welcome.Performance.Cpu">CPU usage</sys:String>
     <sys:String x:Key="Welcome.Performance.Memory">Memory usage</sys:String>
     <sys:String x:Key="Welcome.Performance.Detail">Used {0} of {1}  ·  {2} available</sys:String>

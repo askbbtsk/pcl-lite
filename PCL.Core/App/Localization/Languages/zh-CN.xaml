@@ -1837,7 +1837,6 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Welcome.Recent.Empty">还没有选中版本，去「启动」页挑一个吧。</sys:String>
     <sys:String x:Key="Welcome.Recent.Launch">启动游戏</sys:String>
     <sys:String x:Key="Welcome.Performance.Title">性能状态</sys:String>
-    <sys:String x:Key="Welcome.Performance.Subtitle">本机实时 · 仅本地计算</sys:String>
     <sys:String x:Key="Welcome.Performance.Cpu">CPU 使用率</sys:String>
     <sys:String x:Key="Welcome.Performance.Memory">内存占用</sys:String>
     <sys:String x:Key="Welcome.Performance.Detail">已用 {0} / {1}  ·  可用 {2}</sys:String>

@@ -39,11 +39,10 @@ public partial class McInstance
                     default:
                     {
                         var realJson = JsonObject is not null ? JsonObject.ToString() : JsonText;
-                        // Legacy versions no longer listed use the existing old-version group.
-                        var storedVersionType = JsonObject?["type"]?.ToString() ?? "";
-                        if (storedVersionType is "fool" or "special" ||
-                            JsonObject is not null && McVersionClassifier.ClassifyVersion(JsonObject) is null)
-                            state = McInstanceState.Old;
+                        // 愚人节与快照版本
+                        if ((JsonObject["type"] ?? "").ToString() == "fool" ||
+                            !string.IsNullOrEmpty(McVersionClassifier.GetMcFoolName(Info.VanillaName)))
+                            state = McInstanceState.Fool;
                         else if (IsSnapshot()) state = McInstanceState.Snapshot;
                         // OptiFine
                         if (realJson.Contains("optifine"))
@@ -203,6 +202,11 @@ public partial class McInstance
                             Logo = ModBase.pathImage + "Blocks/Egg.png";
                             break;
                         }
+                        case McInstanceState.Fool:
+                        {
+                            Logo = ModBase.pathImage + "Blocks/GoldBlock.png";
+                            break;
+                        }
                         case McInstanceState.LabyMod:
                         {
                             Logo = ModBase.pathImage + "Blocks/LabyMod.png";
@@ -227,16 +231,7 @@ public partial class McInstance
                 // 确定实例收藏状态
                 IsStar = States.Instance.Starred[PathInstance];
                 // 确定实例显示种类
-                var storedCardType = States.Instance.CardType[PathInstance];
-                if (storedCardType == 5)
-                {
-                    displayType = McInstanceCardType.Rubbish;
-                    States.Instance.CardType[PathInstance] = (int)displayType;
-                }
-                else
-                {
-                    displayType = (McInstanceCardType)storedCardType;
-                }
+                displayType = (McInstanceCardType)States.Instance.CardType[PathInstance];
                 // 写入缓存
                 if (Directory.Exists(PathInstance))
                 {
@@ -362,6 +357,11 @@ public partial class McInstance
                 case McInstanceState.Old:
                 {
                     info = Lang.Text("Select.Instance.Description.Old");
+                    break;
+                }
+                case McInstanceState.Fool:
+                {
+                    info = Lang.Text("Select.Instance.Description.AprilFools", this.Info.VanillaName);
                     break;
                 }
                 case McInstanceState.Error:

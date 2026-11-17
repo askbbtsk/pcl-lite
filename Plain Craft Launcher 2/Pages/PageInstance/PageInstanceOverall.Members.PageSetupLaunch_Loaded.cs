@@ -47,10 +47,7 @@ public partial class PageInstanceOverall
 
         var instance = PageInstanceLeft.McInstance;
         // 刷新设置项目
-        var storedCardType = States.Instance.CardType[instance.PathInstance];
-        ComboDisplayType.SelectedIndex = storedCardType == 5
-            ? (int)McInstanceCardType.Rubbish
-            : storedCardType;
+        ComboDisplayType.SelectedIndex = States.Instance.CardType[instance.PathInstance];
         BtnDisplayStar.Text = instance.IsStar ? Lang.Text("Instance.Overall.Unfavorite") : Lang.Text("Instance.Overall.Favorite");
         BtnFolderMods.Visibility = instance.Modable ? Visibility.Visible : Visibility.Collapsed;
         BtnManageTestCopy.Visibility = string.Equals(Path.GetFullPath(instance.PathIndie).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), Path.GetFullPath(instance.PathInstance).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.OrdinalIgnoreCase) ? Visibility.Visible : Visibility.Collapsed;

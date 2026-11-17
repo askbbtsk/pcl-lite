@@ -323,6 +323,8 @@ namespace PCL;
             var minor = (int)Math.Round(ModBase.Val(segments[1]));
             if (major == 1) return minor * 10;
             if (major >= 25) return major * 10 + minor;
+            if (major == 2) return 50; //2.0愚人节
+
             return -1;
         }
 

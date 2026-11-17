@@ -8,30 +8,30 @@ namespace PCL.Core.Test.Minecraft;
 public sealed class McVersionClassifierTests
 {
     [TestMethod]
-    public void RemovedSpecialVersionTypeIsOmittedFromSupportedCategories()
+    public void MinecraftSpecialVersionTypeKeepsItsDedicatedCategory()
     {
         var version = new JsonObject
         {
-            ["id"] = "legacy-special",
+            ["id"] = "2.0",
             ["type"] = "special"
         };
 
-        Assert.IsNull(McVersionClassifier.ClassifyVersion(version));
+        Assert.AreEqual(McVersionCategory.AprilFools, McVersionClassifier.ClassifyVersion(version));
     }
 
     [TestMethod]
-    public void RemovedSpecialSnapshotIdsAreNotListed()
+    public void MinecraftSpecialSnapshotKeepsItsGameDescription()
     {
-        foreach (var id in new[] { "2.0", "15w14a", "20w14infinite", "24w14potato", "26w14a" })
+        var version = new JsonObject
         {
-            var version = new JsonObject
-            {
-                ["id"] = id,
-                ["type"] = "snapshot"
-            };
+            ["id"] = "15w14a",
+            ["type"] = "snapshot"
+        };
 
-            Assert.IsNull(McVersionClassifier.ClassifyVersion(version), $"{id} should not be listed");
-        }
+        Assert.AreEqual(McVersionCategory.AprilFools, McVersionClassifier.ClassifyVersion(version));
+        Assert.AreEqual("special", version["type"]?.ToString());
+        Assert.AreEqual(McVersionClassifier.GetMcFoolName("15w14a"), version["lore"]?.ToString());
+        Assert.IsFalse(string.IsNullOrWhiteSpace(version["lore"]?.ToString()));
     }
 
     [TestMethod]

@@ -826,6 +826,7 @@
 
     <!-- Download.Version.Type -->
 
+    <sys:String x:Key="Download.Version.Type.AprilFools">April Fools'</sys:String>
     <sys:String x:Key="Download.Version.Type.BeforeRelease">Before-release</sys:String>
     <sys:String x:Key="Download.Version.Type.Development">Development</sys:String>
     <sys:String x:Key="Download.Version.Type.Installer">Installer</sys:String>
@@ -1000,6 +1001,7 @@
 
     <!-- Instance.Overall -->
 
+    <sys:String x:Key="Instance.Overall.Category.AprilFools">April Fools'</sys:String>
     <sys:String x:Key="Instance.Overall.Category.Hidden">Hidden</sys:String>
     <sys:String x:Key="Instance.Overall.Category.Hidden.ToolTip">This instance will not be shown in the instance list by default.&#xA;Press F11 in the instance list page to view all hidden instances.</sys:String>
     <sys:String x:Key="Instance.Overall.Category.LessUsed">Less-used</sys:String>
@@ -2290,9 +2292,24 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Minecraft.Error.VersionNumberEmpty">Cannot get version number, result is empty</sys:String>
     <sys:String x:Key="Minecraft.Error.VersionNumberFetchFailed">Failed to fetch version number: {0}</sys:String>
 
+    <!-- Minecraft.Fool -->
 
+    <sys:String x:Key="Minecraft.Fool.Tag.Blue">(Blue version)</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Tag.Purple">(Purple version)</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Tag.Red">(Red version)</sys:String>
 
+    <!-- Minecraft.Fool.Description -->
 
+    <sys:String x:Key="Minecraft.Fool.Description.2013">2013 | This update, planned in secret for two years, takes the game to new heights!</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2015">2015 | As an all-ages game, we need peace, love, and hugs.</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2016">2016 | It's time to bring modern technology to Minecraft!</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2019">2019 | We found this masterpiece from 1994 in the basement ruins!</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2020">2020 | We added 20 billion new dimensions, turning infinite imagination into reality!</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2022">2022 | One block at a time! Embrace new mining, crafting and riding gameplay!</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2023">2023 | Research shows: players love making choices—the more the better!</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2024">2024 | Poisonous potatoes have always been overlooked and underestimated, so we supercharged them!</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2025">2025 | You can craft anything—including crafting your world!</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2026">2026 | Who needs an inventory? Let the blocks follow you!</sys:String>
 
     <!-- Minecraft.Launch -->
 
@@ -2583,6 +2600,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
 
     <!-- Select.Instance.Card -->
 
+    <sys:String x:Key="Select.Instance.Card.AprilFools">April Fools'</sys:String>
     <sys:String x:Key="Select.Instance.Card.Cleanroom">Cleanroom</sys:String>
     <sys:String x:Key="Select.Instance.Card.Error">Error</sys:String>
     <sys:String x:Key="Select.Instance.Card.Fabric">Fabric</sys:String>
@@ -2599,6 +2617,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
 
     <!-- Select.Instance.Description -->
 
+    <sys:String x:Key="Select.Instance.Description.AprilFools">April Fools' {0}</sys:String>
     <sys:String x:Key="Select.Instance.Description.ExperimentalSnapshot">Experimental snapshot {0}</sys:String>
     <sys:String x:Key="Select.Instance.Description.ExperimentalSnapshot.Pending">Experimental snapshot</sys:String>
     <sys:String x:Key="Select.Instance.Description.NeedInherit">{0} needs to be installed as a parent instance.</sys:String>
@@ -2950,7 +2969,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.ModdedOnly">Isolate instances with mod support</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.ModdedOnly.ToolTip">Isolate instances with mod support like Forge and Fabric to avoid mod conflicts, while other instances like Vanilla are not isolated.</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.NonRelease">Isolate non-releases</sys:String>
-    <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.NonRelease.ToolTip">Isolate snapshots, pre-releases, and old versions from other instances.</sys:String>
+    <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.NonRelease.ToolTip">Isolate snapshots, pre-releases, old versions, and April Fools' versions from other instances.</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.None.ToolTip">All instances use the same profile. Saves, mods, resource packs, and other files are shared.&#xA;If multiple instances with mods installed are present, this may cause mod conflicts.</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.ToolTip">When installing a new instance, the isolation option for the new instance will be automatically set accordingly.&#xA;To adjust the isolation policy for an existing instance, please go to instance settings.</sys:String>
 

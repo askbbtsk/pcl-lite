@@ -817,6 +817,7 @@
 
     <!-- Download.Version.Type -->
 
+    <sys:String x:Key="Download.Version.Type.AprilFools">愚人節版</sys:String>
     <sys:String x:Key="Download.Version.Type.BeforeRelease">遠古版</sys:String>
     <sys:String x:Key="Download.Version.Type.Development">預覽版</sys:String>
     <sys:String x:Key="Download.Version.Type.Installer">安裝器</sys:String>
@@ -991,6 +992,7 @@
 
     <!-- Instance.Overall -->
 
+    <sys:String x:Key="Instance.Overall.Category.AprilFools">愚人節實例</sys:String>
     <sys:String x:Key="Instance.Overall.Category.Hidden">從實例清單中隱藏</sys:String>
     <sys:String x:Key="Instance.Overall.Category.Hidden.ToolTip">該實例預設將不會在實例清單中顯示。&#xA;在實例清單頁面按下 F11，即可檢視所有隱藏的實例。</sys:String>
     <sys:String x:Key="Instance.Overall.Category.LessUsed">不常用實例</sys:String>
@@ -2242,9 +2244,24 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Minecraft.Error.VersionNumberEmpty">無法取得版本號，結果為空</sys:String>
     <sys:String x:Key="Minecraft.Error.VersionNumberFetchFailed">版本號取得失敗：{0}</sys:String>
 
+    <!-- Minecraft.Fool -->
 
+    <sys:String x:Key="Minecraft.Fool.Tag.Blue">（藍色版本）</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Tag.Purple">（紫色版本）</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Tag.Red">（紅色版本）</sys:String>
 
+    <!-- Minecraft.Fool.Description -->
 
+    <sys:String x:Key="Minecraft.Fool.Description.2013">2013 | 這個秘密計劃了兩年的更新將遊戲推向了一個新高度！</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2015">2015 | 作為一款全年齡向的遊戲，我們需要和平，需要愛與擁抱。</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2016">2016 | 是時候將現代科技帶入 Minecraft 了！</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2019">2019 | 我們從地下室的廢墟裡找到了這個開發於 1994 年的傑作！</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2020">2020 | 我們加入了 20 億個新的維度，讓無限的想像變成了現實！</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2022">2022 | 一次一個方塊更新！迎接全新的挖掘、合成與騎乘玩法吧！</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2023">2023 | 研究表明：玩家喜歡作出選擇——越多越好！</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2024">2024 | 毒馬鈴薯一直都被大家忽視和低估，於是我們超級加強了它！</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2025">2025 | 你可以合成任何東西——包括合成你的世界！</sys:String>
+    <sys:String x:Key="Minecraft.Fool.Description.2026">2026 | 為什麼需要物品欄？讓方塊們跟著你走吧！</sys:String>
 
     <!-- Minecraft.Launch -->
 
@@ -2535,6 +2552,7 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
 
     <!-- Select.Instance.Card -->
 
+    <sys:String x:Key="Select.Instance.Card.AprilFools">愚人節實例</sys:String>
     <sys:String x:Key="Select.Instance.Card.Cleanroom">Cleanroom 實例</sys:String>
     <sys:String x:Key="Select.Instance.Card.Error">錯誤的實例</sys:String>
     <sys:String x:Key="Select.Instance.Card.Fabric">Fabric 實例</sys:String>
@@ -2551,6 +2569,7 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
 
     <!-- Select.Instance.Description -->
 
+    <sys:String x:Key="Select.Instance.Description.AprilFools">愚人節版本 {0}</sys:String>
     <sys:String x:Key="Select.Instance.Description.ExperimentalSnapshot">實驗性快照{0}</sys:String>
     <sys:String x:Key="Select.Instance.Description.ExperimentalSnapshot.Pending">實驗性快照</sys:String>
     <sys:String x:Key="Select.Instance.Description.NeedInherit">需要安裝 {0} 作為前置實例</sys:String>
@@ -2893,7 +2912,7 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.ModdedOnly">隔離可安裝模組的實例</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.ModdedOnly.ToolTip">可安裝模組的實例（例如 Forge、Fabric）均互相獨立以避免模組衝突，其他實例（例如原版）則不會被隔離。</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.NonRelease">隔離非正式版</sys:String>
-    <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.NonRelease.ToolTip">將快照、預釋出版和遠古版本與其他實例隔離</sys:String>
+    <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.NonRelease.ToolTip">將 Minecraft 快照、預釋出版、遠古版本、愚人節版本與其他實例進行隔離</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.None.ToolTip">所有實例均使用同一檔案，存檔、模組、資源包等均為公用。&#xA;若存在多個安裝了模組的實例，可能會導致模組衝突。</sys:String>
     <sys:String x:Key="Setup.Launch.Options.InstanceIsolation.ToolTip">當安裝新實例時，據此自動設定新實例的隔離選項。&#xA;若想調整已有實例的隔離策略，請前往它的實例設定。</sys:String>
 

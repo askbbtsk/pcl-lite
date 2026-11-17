@@ -24,6 +24,7 @@ public partial class PageInstanceInstall
         "正式版" => Lang.Text("Download.Version.Type.Release"),
         "预览版" => Lang.Text("Download.Version.Type.Development"),
         "远古版" => Lang.Text("Download.Version.Type.BeforeRelease"),
+        "愚人节版" => Lang.Text("Download.Version.Type.AprilFools"),
         _ => key
     };
 
@@ -37,19 +38,106 @@ public partial class PageInstanceInstall
             {
                 var dict = new Dictionary<string, List<JsonObject>>
                 {
-                    { "正式版", new List<JsonObject>() }, { "预览版", new List<JsonObject>() }, { "远古版", new List<JsonObject>() }
+                    { "正式版", new List<JsonObject>() }, { "预览版", new List<JsonObject>() }, { "远古版", new List<JsonObject>() },
+                    { "愚人节版", new List<JsonObject>() }
                 };
                 var versions = (JsonArray)ModDownload.dlClientListLoader.output.Value["versions"];
                 foreach (JsonObject Version in versions)
                 {
-                    if (McVersionClassifier.ClassifyVersion(Version) is not { } versionCategory)
-                        continue;
-                    var type = versionCategory switch
+                    // 确定分类
+                    var type = Version["type"].ToString();
+                    var versionId = Version["id"].ToString().ToLower();
+                    switch (type ?? "")
                     {
-                        McVersionCategory.Release => "正式版",
-                        McVersionCategory.Snapshot => "预览版",
-                        _ => "远古版"
-                    };
+                        case "release":
+                        {
+                            type = "正式版";
+                            break;
+                        }
+                        case "snapshot":
+                        case "pending":
+                        {
+                            type = "预览版";
+                            // Mojang 误分类
+                            if (versionId.StartsWith("1.") && !versionId.Contains("combat") &&
+                                !versionId.Contains("rc") && !versionId.Contains("experimental") &&
+                                !versionId.Equals("1.2") && !versionId.Contains("pre"))
+                            {
+                                type = "正式版";
+                                Version["type"] = "release";
+                            }
+
+                            // 愚人节版本
+                            switch (Version["id"].ToString().ToLower() ?? "")
+                            {
+                                case "2point0_blue":
+                                case "2point0_red":
+                                case "2point0_purple":
+                                case "2.0_blue":
+                                case "2.0_red":
+                                case "2.0_purple":
+                                case "2.0":
+                                {
+                                    type = "愚人节版";
+                                    Version["id"] = Version["id"].ToString().Replace("point", ".");
+                                    Version["type"] = "special";
+                                    Version.Add("lore", McVersionClassifier.GetMcFoolName((string)Version["id"]));
+                                    break;
+                                }
+                                case "20w14infinite":
+                                case "20w14∞":
+                                {
+                                    type = "愚人节版";
+                                    Version["id"] = "20w14∞";
+                                    Version["type"] = "special";
+                                    Version.Add("lore", McVersionClassifier.GetMcFoolName((string)Version["id"]));
+                                    break;
+                                }
+                                case "3d shareware v1.34":
+                                case "1.rv-pre1":
+                                case "15w14a":
+                                case var @case when @case == "2.0":
+                                case "22w13oneblockatatime":
+                                case "23w13a_or_b":
+                                case "24w14potato":
+                                case "25w14craftmine":
+                                case "26w14a":
+                                {
+                                    type = "愚人节版";
+                                    Version["type"] = "special";
+                                    Version.Add("lore",
+                                        McVersionClassifier.GetMcFoolName((string)Version["id"])); // 4/1 自动视作愚人节版
+                                    break;
+                                }
+
+                                default:
+                                {
+                                    var releaseDate = McVersionClassifier.GetReleaseTime(Version).ToUniversalTime().AddHours(2d);
+                                    if (releaseDate.Month == 4 && releaseDate.Day == 1)
+                                    {
+                                        type = "愚人节版";
+                                        Version["type"] = "special";
+                                    }
+
+                                    break;
+                                }
+                            }
+
+                            break;
+                        }
+                        case "special":
+                        {
+                            // 已被处理的愚人节版
+                            type = "愚人节版";
+                            break;
+                        }
+
+                        default:
+                        {
+                            type = "远古版";
+                            break;
+                        }
+                    }
 
                     // 加入辞典
                     dict[type].Add(Version);

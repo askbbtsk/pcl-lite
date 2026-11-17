@@ -235,23 +235,11 @@ public static class ModInstanceList
                         if (!instanceCfg.ReleaseTimeConfig.IsDefault(instance.PathInstance))
                             instance.releaseTime = DateTime.Parse(instanceCfg.ReleaseTime[instance.PathInstance]);
                         if (!instanceCfg.StateConfig.IsDefault(instance.PathInstance))
-                        {
-                            var storedState = (int)instanceCfg.State[instance.PathInstance];
-                            instance.state = storedState == 3
-                                ? McInstanceState.Old
-                                : (McInstanceState)storedState;
-                        }
+                            instance.state =
+                                (McInstanceState)(int)instanceCfg.State[instance.PathInstance];
                         instance.IsStar = instanceCfg.Starred[instance.PathInstance];
-                        var storedCardType = (int)instanceCfg.CardType[instance.PathInstance];
-                        if (storedCardType == 5)
-                        {
-                            instance.displayType = McInstanceCardType.Rubbish;
-                            instanceCfg.CardType[instance.PathInstance] = (int)instance.displayType;
-                        }
-                        else
-                        {
-                            instance.displayType = (McInstanceCardType)storedCardType;
-                        }
+                        instance.displayType =
+                            (McInstanceCardType)(int)instanceCfg.CardType[instance.PathInstance];
                         if (instance.state != McInstanceState.Error &&
                             !instanceCfg.VanillaVersionNameConfig.IsDefault(instance.PathInstance) &&
                             !instanceCfg.VanillaVersionConfig
@@ -405,9 +393,11 @@ public static class ModInstanceList
             if (staredInstances.Any())
                 instanceListOriginal.Add(McInstanceCardType.Star, staredInstances);
 
-            // 预先筛选出错误的实例
+            // 预先筛选出愚人节和错误的实例
             McInstanceFilter(ref instanceList, ref instanceListOriginal, new[] { McInstanceState.Error },
                 McInstanceCardType.Error);
+            McInstanceFilter(ref instanceList, ref instanceListOriginal, new[] { McInstanceState.Fool },
+                McInstanceCardType.Fool);
 
             // 筛选 API 实例
             McInstanceFilter(ref instanceList, ref instanceListOriginal,
@@ -533,7 +523,7 @@ public static class ModInstanceList
         foreach (var sortRule in new[]
                  {
                      McInstanceCardType.Star, McInstanceCardType.API, McInstanceCardType.OriginalLike,
-                     McInstanceCardType.Rubbish, McInstanceCardType.Error,
+                     McInstanceCardType.Rubbish, McInstanceCardType.Fool, McInstanceCardType.Error,
                      McInstanceCardType.Hidden
                  })
             if (results.ContainsKey(sortRule))
@@ -545,7 +535,7 @@ public static class ModInstanceList
         foreach (var cardType in new[]
                  {
                      McInstanceCardType.Star, McInstanceCardType.API, McInstanceCardType.OriginalLike,
-                     McInstanceCardType.Rubbish
+                     McInstanceCardType.Rubbish, McInstanceCardType.Fool
                  })
         {
             if (!results.ContainsKey(cardType))

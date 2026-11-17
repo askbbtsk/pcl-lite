@@ -50,7 +50,7 @@ public partial class McInstance
                         }
 
                         // 根据全局的默认设置决定是否隔离
-                        var isRelease = state != McInstanceState.Old &&
+                        var isRelease = state != McInstanceState.Fool && state != McInstanceState.Old &&
                                         state != McInstanceState.Snapshot;
                         ModBase.Log(
                             $"[Minecraft] 版本隔离初始化（{Name}）：从全局默认设置中（{Config.Launch.IndieSolutionV2}）判断，State {ModBase.GetStringFromEnum(state)}，IsRelease {isRelease}，Modable {Modable}");

@@ -18,6 +18,12 @@ on:
   pull_request:
     paths-ignore: *ignored
   workflow_dispatch:
+    inputs:
+      run_build:
+        description: 'Run the CI x64/ARM64 build jobs'
+        required: false
+        type: boolean
+        default: true
   workflow_call:
     inputs:
       run_build:
@@ -31,7 +37,7 @@ jobs:
     uses: ./.github/workflows/ui-smoke.yml
 
   build:
-    if: ${{ github.event_name != 'workflow_call' || inputs.run_build }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' || inputs.run_build }}
     needs: [ui_smoke]
     strategy:
       matrix:

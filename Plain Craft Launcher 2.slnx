@@ -1,4 +1,4 @@
-<Solution>
+﻿<Solution>
   <Configurations>
     <BuildType Name="CI" />
     <BuildType Name="Beta" />
@@ -12,6 +12,7 @@
   <Project Path="PCL.Plugin.SDK\PCL.Plugin.SDK.csproj" Type="C#" />
   <Project Path="PCL.Plugin.Sample\PCL.Plugin.Sample.csproj" Type="C#" />
   <Project Path="PCL.Plugin.Tools\PCL.Plugin.Tools.csproj" Type="C#" />
+  <Project Path="PCL.Plugin.ImcProxy.Plugin\PCL.Plugin.ImcProxy.csproj" Type="C#" />
   <Project Path="PCL.Plugin.TestAll\PCL.Plugin.TestAll.csproj" Type="C#" />
   <Project Path="PCL.Plugin.Dependency.TestSupport\PCL.Plugin.Dependency.TestSupport.csproj" Type="C#">
     <Build Solution="*|*" Project="false" />

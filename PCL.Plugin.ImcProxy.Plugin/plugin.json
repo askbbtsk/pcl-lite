@@ -1,0 +1,11 @@
+﻿{
+    "schemaVersion": 1,
+    "id": "imcproxy.control",
+    "name": "IMCProxy",
+    "version": "2.0.0",
+    "author": "IMCProxy",
+    "description": "在 PCL Lite 中下载并静默运行 IMCProxy-NextGen-Free（C++ 版），通过 HTTP API 控制与修改配置。",
+    "apiVersion": 1,
+    "entryAssembly": "PCL.Plugin.ImcProxy.dll",
+    "entryType": "PCL.Plugin.ImcProxy.Plugin"
+}

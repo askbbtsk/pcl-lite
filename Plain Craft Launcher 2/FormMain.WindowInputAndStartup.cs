@@ -28,9 +28,4 @@ namespace PCL;
 public partial class FormMain
 {
 
-    private void FormMain_MouseMove(object sender, MouseEventArgs e)
-    {
-        lastMouseArg = e;
-    }
-
 }

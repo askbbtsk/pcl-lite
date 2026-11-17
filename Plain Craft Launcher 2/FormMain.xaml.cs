@@ -27,9 +27,6 @@ namespace PCL;
 
 public partial class FormMain
 {
-    // 愚人节鼠标位置
-    public MouseEventArgs lastMouseArg;
-
     // 窗口加载
     private bool isWindowLoadFinished;
     private readonly DragHelper _helper = new();
@@ -138,19 +135,13 @@ public partial class FormMain
         BtnExtraUpdateRestart.showCheck = BtnExtraUpdateRestart_ShowCheck;
         BtnExtraDownload.showCheck = BtnExtraDownload_ShowCheck;
         BtnExtraBack.showCheck = BtnExtraBack_ShowCheck;
-        BtnExtraApril.showCheck = BtnExtraApril_ShowCheck;
         BtnExtraShutdown.showCheck = BtnExtraShutdown_ShowCheck;
         BtnExtraLog.showCheck = BtnExtraLog_ShowCheck;
-        BtnExtraApril.ShowRefresh();
         // 初始化尺寸改变
         if (!Config.Preference.LockWindowSize)
             AddResizer();
         else
             RemoveResizer();
-        // PLC 彩蛋
-        if (RandomUtils.NextInt(1, 1000) == 233)
-            ShapeTitleLogo.Data = (Geometry)new GeometryConverter().ConvertFromString(
-                "M26,29 v-25 h6 a7,7 180 0 1 0,14 h-6 M83,6.5 a10,11.5 180 1 0 0,18 M48,2.5 v24.5 h13.5");
         // 加载窗口
 
         ThemeManager.ThemeRefresh();

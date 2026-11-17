@@ -68,8 +68,6 @@ public static partial class ModMain
             try
             {
 
-                if (frmMain!.BtnExtraApril_ShowCheck() && aprilDistance != 0)
-                    frmMain.BtnExtraApril.Ribble();
                 // 以未知原因窗口被丢到一边去的修复（Top、Left = -25600），还有 #745
                 ModBase.RunInUi(() =>
                 {
@@ -115,33 +113,6 @@ public static partial class ModMain
                     userSummary: Lang.Text("Main.Error.OperationFailed"));
             }
         }, "Timer Main");
-        if (!isAprilEnabled)
-            return;
-        ModBase.RunInNewThread(() =>
-        {
-            try
-            {
-                var lastTime = Environment.TickCount;
-                while (true)
-                {
-                    if (lastTime != Environment.TickCount)
-                    {
-                        lastTime = Environment.TickCount;
-                        ModBase.RunInUiWait(TimerFool);
-                    }
-
-                    Thread.Sleep(1);
-                }
-            }
-            catch (Exception ex)
-            {
-                ModBase.Log(
-                    ex,
-                    "愚人节主时钟出错",
-                    ModBase.LogLevel.Feedback,
-                    userSummary: Lang.Text("Main.Error.OperationFailed"));
-            }
-        }, "Timer Main Fool");
     }
 
 }

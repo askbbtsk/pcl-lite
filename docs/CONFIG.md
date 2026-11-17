@@ -76,7 +76,7 @@ public partial int WindowHue { get; set; }
 | `UiToneProfiles` | 对象 | 见 THEME.md | 灰度档位，可整体调深浅 |
 
 `ColorMode`：`Light=0` / `Dark=1` / `System=2`
-`ColorTheme`：`SkyBlue=0` / `CatBlue=1` / `DeathBlue=2` / `HmclBlue=3`
+`ColorTheme`：`SkyBlue=0` / `CatBlue=1` / `DeathBlue=2`（旧配置值 `3` 会回退为 `CatBlue`）
 
 ### Discord 状态显示
 

@@ -41,9 +41,6 @@ public partial class PageLaunchLeft
         if (isLoad)
             RefreshPage(false);
 
-        AprilPosTrans.X = 0d;
-        AprilPosTrans.Y = 0d;
-
         if (isLoad)
             return;
         isLoad = true;
@@ -192,17 +189,6 @@ public partial class PageLaunchLeft
              ModMain.frmMain.pageRight.PageState != MyPageRight.PageStates.ContentStay &&
              ModMain.frmMain.pageRight.PageState != MyPageRight.PageStates.ContentEnter))
             return;
-        // 愚人节处理
-        if (ModMain.isAprilEnabled && !ModMain.isAprilGiveup)
-        {
-            ModMain.isAprilGiveup = true;
-            ModMain.frmLaunchLeft.AprilScaleTrans.ScaleX = 1d;
-            ModMain.frmLaunchLeft.AprilScaleTrans.ScaleY = 1d;
-            ModMain.frmLaunchLeft.AprilPosTrans.X = 0d;
-            ModMain.frmLaunchLeft.AprilPosTrans.Y = 0d;
-            ModMain.frmMain.BtnExtraApril.ShowRefresh();
-        }
-
         // 实际的启动
         switch (_launchButtonAction)
         {

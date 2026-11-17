@@ -252,8 +252,6 @@ public static partial class LiquidGlassCore
         else { window.TahoeWindowGlass.Visibility = Visibility.Collapsed; window.TahoeWindowGlass.BackdropSource = null; }
         UpdateTitleGlass(window);
         window.ShapeTitleLogo.Stroke = foreground;
-        window.ShapeHMCLTitleLogo.Stroke = foreground;
-        window.ShapeHMCLTitleLogo.Fill = foreground;
         window.LabTitleLogo.Foreground = foreground;
         window.CELogo.Foreground = foreground;
         window.LabTitleInner.Foreground = foreground;
@@ -310,7 +308,6 @@ public static partial class LiquidGlassCore
         window.RectForm.RadiusY = _radiusY;
         window.PanMainLeft.Clip = _originalSidebarClip;
         window.ShapeTitleLogo.Stroke = Brushes.White;
-        window.ShapeHMCLTitleLogo.Stroke = window.ShapeHMCLTitleLogo.Fill = Brushes.White;
         window.LabTitleLogo.Foreground = window.CELogo.Foreground = window.LabTitleInner.Foreground = Brushes.White;
         foreach (var pair in OriginalIconThemes)
         {
@@ -327,7 +324,7 @@ public static partial class LiquidGlassCore
     }
 
     private static IEnumerable<MyIconButton> TitleIcons(FormMain window) =>
-        [window.BtnTitleClose, window.BtnTitleMin, window.BtnTitleHelp, window.BtnTitleInner, window.BtnTitleNavOverflow];
+        [window.BtnTitleClose, window.BtnTitleMin, window.BtnTitleInner, window.BtnTitleNavOverflow];
 
     private static void SetBrush(FormMain window, string key, Color color)
     {

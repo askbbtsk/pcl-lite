@@ -16,6 +16,16 @@ public sealed class TopBarNavigationLayoutTests
     ];
 
     [TestMethod]
+    public void AvailableWidthReservesAsymmetricTitleAndWindowControls()
+    {
+        var available = TopBarNavigationLayout.GetAvailableWidth(
+            totalWidth: 1000, leftReservedWidth: 240, rightReservedWidth: 92, horizontalMargins: 26,
+            safetyPadding: 2);
+
+        Assert.AreEqual(640d, available);
+    }
+
+    [TestMethod]
     public void AllTabsRemainVisibleWhenMeasuredWidthFits()
     {
         var collapsed = TopBarNavigationLayout.SelectCollapsedTabs(SevenTabs,

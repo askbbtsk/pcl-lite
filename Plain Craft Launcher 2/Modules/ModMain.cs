@@ -115,14 +115,6 @@ public static partial class ModMain
 
 
 
-    public static bool isAprilEnabled = DateTime.Now.Month == 4 && DateTime.Now.Day == 1;
-    public static bool isAprilGiveup = false;
-    private static Vector aprilSpeed = new(0d, 0d);
-    private static int aprilIdieCount;
-    private static Point aprilMousePosLast = new(0d, 0d);
-    private static int aprilDistance;
-
-
     private static bool isTaskTempCleared;
     private static bool isTaskTempClearing;
 }

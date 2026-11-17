@@ -49,7 +49,6 @@ public sealed partial class ThemeService
                 {
                     ApplyColorResources();
                     ColorThemeChanged?.Invoke(CurrentTheme);
-                    _AprilFoolLogic();
                 });
             }
         }
@@ -83,6 +82,10 @@ public sealed partial class ThemeService
     private static void _Start()
     {
         IsDarkMode = _IsDarkMode();
+        if (Config.Preference.Theme.DarkColor == ColorTheme.Reserved3)
+            Config.Preference.Theme.DarkColor = ColorTheme.CatBlue;
+        if (Config.Preference.Theme.LightColor == ColorTheme.Reserved3)
+            Config.Preference.Theme.LightColor = ColorTheme.CatBlue;
         _LogStatus();
         _RefreshAll();
     }
@@ -120,14 +123,6 @@ public sealed partial class ThemeService
         ApplyGrayResources();
         ApplyColorResources();
         ColorModeChanged?.Invoke(IsDarkMode, CurrentTheme);
-        _AprilFoolLogic();
-    }
-
-    private static void _AprilFoolLogic()
-    {
-        // for HMCL theme on April Fools' Day
-        if (Basics.IsAprilFool) Config.Preference.WindowTitleTypeConfig.TriggerEvent(ConfigEvent.Changed, null);
-        else if (CurrentTheme == ColorTheme.HmclBlue) CurrentTheme = ColorTheme.CatBlue;
     }
 
     /// <summary>
@@ -180,7 +175,6 @@ public sealed partial class ThemeService
             ColorTheme.SkyBlue => (235, 0.36, 0.2),
             ColorTheme.CatBlue => (255, 0, -0.2),
             ColorTheme.DeathBlue => (268, -0.05, -0.1),
-            ColorTheme.HmclBlue => (275, -0.03, -0.35),
 #if DEBUG
             _ => ((int)theme, 0, 0)
 #else

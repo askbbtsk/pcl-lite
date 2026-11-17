@@ -69,7 +69,6 @@ If the custom-traded villager is a nitwit or unemployed, those trades will work 
 
 In Java Edition, the demand in supply and demand mechanics can become negative and keep decreasing indefinitely, so trades that are not used for a long time are hard to increase in price (because it takes many trades to make a large negative demand positive).
 
-The April Fools snapshot 25w14craftmine added the "Traitor" profession, selling a variety of mining effects.
 
 There are a total of 18 different armor trim smithing templates and 11 different trimming materials, allowing for 198 different trimmed appearances per armor piece.
 
@@ -139,7 +138,6 @@ Notch later called chickens "the chicken/duck/whatevers" in a blog post, implyin
 
 In reality, chickens are oviparous, but in-game chickens can give birth directly to baby chickens.
 
-In the April Fools version Java Edition 2.0, diamond and lapis lazuli chicken variants were added.
 
 In Java Edition, chickens spawn more frequently in sparse jungles than in other biomes.
 
@@ -505,7 +503,6 @@ According to Jeb, elder guardians exist to encourage players to solve the ocean 
 
 According to Jeb, elder guardians drop wet sponge to ensure players can obtain wet sponge even from ocean monuments that lack a sponge room.
 
-In the April Fools version 3D Shareware v1.34 for Java Edition, elder guardians drop blue keys.
 
 Before 14w28a, endermites had a chance to spawn when an enderman teleported. According to Dinnerbone, this is because endermen pass through some "intermediate dimension" during teleportation and bring back "something bad."
 
@@ -595,7 +592,6 @@ The ravager's neck-extending attack may reference medieval siege weapons, specif
 
 The ravager's roar that pushes enemies back after exiting its stun state may reference the signature enraged behavior of large monsters in the Monster Hunter series.
 
-In the April Fools version 3D Shareware v1.34, ravagers drop yellow keys.
 
 In Bedrock Edition, you can use spawn event commands to spawn ravagers with riders, e.g., /summon ravager ~ ~ ~ ~ ~ minecraft:spawn_with_pillager_rider to spawn a ravager with a pillager rider.
 
@@ -621,7 +617,6 @@ If there are blocks on the top and sides of a shulker, it will attach to the sid
 
 In reality, silverfish are harmless, shrimp-like insects found in dark areas of buildings, wooden structures, and trees; they are notorious for damaging wood, paper, and clothing. They hibernate underwater in cold temperatures, resembling small stones or gravel, which mirrors their in-game ability to hide in stone.
 
-The April Fools joke Java Edition 2.0 added "Redstone Bugs," which behave like silverfish and spawn where redstone signal strength changes rapidly.
 
 If aware of a player, skeletons can shoot arrows behind them, sometimes injuring themselves.
 
@@ -821,7 +816,6 @@ Minecraft: Story Mode features a monster called the "Wither Storm," whose spawni
 
 Although the wither has no visible feet, it still produces footstep sounds.
 
-In the April Fools joke version 3D Shareware v1.34 for Java Edition, the wither drops red keys.
 
 In Bedrock Edition, the wither's "wither armor" flashes between white and blue; in Java Edition, it also flashes, but only in white.
 

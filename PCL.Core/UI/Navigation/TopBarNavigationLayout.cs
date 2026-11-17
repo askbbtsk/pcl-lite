@@ -12,6 +12,23 @@ public static class TopBarNavigationLayout
 {
     public const int LaunchTabId = 0;
 
+    public static double GetAvailableWidth(double totalWidth, double leftReservedWidth,
+        double rightReservedWidth, double horizontalMargins, double safetyPadding = 0d)
+    {
+        if (!double.IsFinite(totalWidth) || totalWidth < 0d)
+            throw new ArgumentOutOfRangeException(nameof(totalWidth));
+        if (!double.IsFinite(leftReservedWidth) || leftReservedWidth < 0d)
+            throw new ArgumentOutOfRangeException(nameof(leftReservedWidth));
+        if (!double.IsFinite(rightReservedWidth) || rightReservedWidth < 0d)
+            throw new ArgumentOutOfRangeException(nameof(rightReservedWidth));
+        if (!double.IsFinite(horizontalMargins) || horizontalMargins < 0d)
+            throw new ArgumentOutOfRangeException(nameof(horizontalMargins));
+        if (!double.IsFinite(safetyPadding) || safetyPadding < 0d)
+            throw new ArgumentOutOfRangeException(nameof(safetyPadding));
+
+        return Math.Max(0d, totalWidth - leftReservedWidth - rightReservedWidth - horizontalMargins - safetyPadding);
+    }
+
     public static IReadOnlySet<int> SelectCollapsedTabs(
         IReadOnlyList<TopBarNavigationItem> tabs,
         IReadOnlySet<int> preferredCollapsedIds,

@@ -35,8 +35,7 @@ public partial class PageDownloadClient
             {
                 McVersionCategory.Release,
                 McVersionCategory.Snapshot,
-                McVersionCategory.BeforeRelease,
-                McVersionCategory.AprilFools
+                McVersionCategory.BeforeRelease
             };
 
             var dict = categoryOrder.ToDictionary(
@@ -48,7 +47,8 @@ public partial class PageDownloadClient
             foreach (JsonObject Version in versions)
             {
                 var cat = McVersionClassifier.ClassifyVersion(Version);
-                dict[cat].Add(Version);
+                if (cat is { } category)
+                    dict[category].Add(Version);
             }
 
             foreach (var category in categoryOrder)

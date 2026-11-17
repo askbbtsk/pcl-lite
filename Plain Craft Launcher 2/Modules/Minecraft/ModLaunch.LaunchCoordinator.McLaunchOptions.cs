@@ -117,7 +117,6 @@ public static partial class ModLaunch
             ModMain.frmLaunchLeft.RefreshPage(false);
         }
 
-        ModMain.frmMain.AprilGiveup();
         var launchEventInstance = currentLaunchOptions.instance ?? ModInstanceList.McMcInstanceSelected;
         if (launchEventInstance is not null)
             PluginRuntimeManager.Notify(new PluginGameLaunchingEvent(launchEventInstance.PathInstance, launchEventInstance.Name));

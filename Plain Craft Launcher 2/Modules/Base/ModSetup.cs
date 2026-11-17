@@ -570,14 +570,11 @@ public class ModSetup
     // 顶部栏
     public static void UiLogoType(int value)
     {
-        if (ThemeService.CurrentTheme == ColorTheme.HmclBlue) value = 4;
         switch (value)
         {
             case 0: // 无
             {
                 ModMain.frmMain.ShapeTitleLogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.BtnTitleHelp.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.ShapeHMCLTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
@@ -593,8 +590,6 @@ public class ModSetup
             case 1: // 默认
             {
                 ModMain.frmMain.ShapeTitleLogo.Visibility = Visibility.Visible;
-                ModMain.frmMain.BtnTitleHelp.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.ShapeHMCLTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
                 // Lite 徽标只跟随默认的 PCL 字标出现
@@ -611,8 +606,6 @@ public class ModSetup
             case 2: // 文本
             {
                 ModMain.frmMain.ShapeTitleLogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.BtnTitleHelp.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.ShapeHMCLTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Visible;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
                 // 自定义标题后面不强加 Lite 徽标
@@ -630,8 +623,6 @@ public class ModSetup
             case 3: // 图片
             {
                 ModMain.frmMain.ShapeTitleLogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.BtnTitleHelp.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.ShapeHMCLTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Visible;
                 // 自定义标题后面不强加 Lite 徽标
@@ -659,24 +650,10 @@ public class ModSetup
 
                 break;
             }
-            case 4: //HMCL (愚人节)
-                ModMain.frmMain.ShapeTitleLogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.ShapeHMCLTitleLogo.Visibility = Visibility.Visible;
-                ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
-                ModMain.frmMain.BtnTitleHelp.Visibility = Visibility.Visible;
-                if (ModMain.frmSetupUI is not null) 
-                {
-                    ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed;
-                    ModMain.frmSetupUI.PanLogoText.Visibility = Visibility.Collapsed;
-                    ModMain.frmSetupUI.PanLogoChange.Visibility = Visibility.Collapsed;
-                }
-
-                break;
         }
 
         UiLogoLeft(Config.Preference.TopBarLeftAlign);
+        ModMain.frmMain.RefreshNavigationOverflow();
         if (ModMain.frmSetupUI is not null)
             ModMain.frmSetupUI.CardLogo.TriggerForceResize();
     }
@@ -684,13 +661,18 @@ public class ModSetup
     public static void UiLogoText(string value)
     {
         ModMain.frmMain.LabTitleLogo.Text = value;
+        ModMain.frmMain.RefreshNavigationOverflow();
     }
 
     public static void UiLogoLeft(bool value)
     {
-        ModMain.frmMain.PanTitleMain.ColumnDefinitions[0].Width = new GridLength(
-            value && Config.Preference.WindowTitleType == LauncherTitleType.None ? 0 : 1,
-            GridUnitType.Star);
+        var columns = ModMain.frmMain.PanTitleMain.ColumnDefinitions;
+        var rightReservedWidth = ModMain.frmMain.GetTitleRightReservedWidth();
+        columns[0].Width = Config.Preference.WindowTitleType == LauncherTitleType.None
+            ? new GridLength(value ? 0d : rightReservedWidth)
+            : GridLength.Auto;
+        columns[2].Width = new GridLength(rightReservedWidth);
+        ModMain.frmMain.RefreshNavigationOverflow();
     }
 
     #endregion

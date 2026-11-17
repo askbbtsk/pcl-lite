@@ -93,7 +93,6 @@
                             <local:MyComboBoxItem Content="{DynamicResource Instance.Overall.Category.Modable}" />
                             <local:MyComboBoxItem Content="{DynamicResource Instance.Overall.Category.Regular}" />
                             <local:MyComboBoxItem Content="{DynamicResource Instance.Overall.Category.LessUsed}" />
-                            <local:MyComboBoxItem Content="{DynamicResource Instance.Overall.Category.AprilFools}" />
                         </local:MyComboBox>
                     </Grid>
                     <Grid Margin="0,15,0,7" Height="35">

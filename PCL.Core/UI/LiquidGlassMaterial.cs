@@ -93,7 +93,6 @@ public static class LiquidGlassMaterial
             ColorTheme.SkyBlue => (205d, 78d, 0d),
             ColorTheme.CatBlue => (210d, 80d, 0d),
             ColorTheme.DeathBlue => (226d, 58d, -4d),
-            ColorTheme.HmclBlue => (234d, 48d, -4d),
             _ => (210d, 80d, 0d)
         };
     }

@@ -270,7 +270,13 @@ public class Ipv6DirectTest
         await using (guestPeer)
         {
             var reachabilityChanges = new ConcurrentQueue<bool>();
-            guestPeer.OnReachabilityChanged += reachabilityChanges.Enqueue;
+            var becameUnreachable = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            guestPeer.OnReachabilityChanged += reachable =>
+            {
+                reachabilityChanges.Enqueue(reachable);
+                if (!reachable)
+                    becameUnreachable.TrySetResult();
+            };
             await guestPeer.SendPingAsync();
 
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
@@ -282,8 +288,7 @@ public class Ipv6DirectTest
             // Simulate the host process exiting: outgoing responses stop, then
             // verify an old successful PONG does not leave the UI online forever.
             Volatile.Write(ref hostResponding, 0);
-            while (guestPeer.IsReachable)
-                await Task.Delay(20, timeout.Token);
+            await becameUnreachable.Task.WaitAsync(timeout.Token);
 
             Assert.IsFalse(guestPeer.IsReachable);
             CollectionAssert.Contains(reachabilityChanges.ToArray(), false);

@@ -240,12 +240,6 @@ public partial class PageSelectRight
                         cardName = Lang.Text("Select.Instance.Card.Favorites");
                         break;
                     }
-                    case McInstanceCardType.Fool:
-                    {
-                        cardName = Lang.Text("Select.Instance.Card.AprilFools");
-                        break;
-                    }
-
                     default:
                     {
                         throw new ArgumentException($"未知的卡片种类（{(int)Card.Key}）");
@@ -275,9 +269,7 @@ public partial class PageSelectRight
                 }
 
                 ;
-                if (Card.Key == McInstanceCardType.Rubbish ||
-                    Card.Key == McInstanceCardType.Error ||
-                    Card.Key == McInstanceCardType.Fool)
+                if (Card.Key == McInstanceCardType.Rubbish || Card.Key == McInstanceCardType.Error)
                 {
                     newCard.IsSwapped = true;
                     newCard.InstallMethod = PutMethod;

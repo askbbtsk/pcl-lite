@@ -83,32 +83,6 @@ public partial class FormMain
     }
 
 
-    // 投降
-    public void AprilGiveup()
-    {
-        if (ModMain.isAprilEnabled && !ModMain.isAprilGiveup)
-        {
-            HintService.Hint("=D", HintType.Success);
-            ModMain.isAprilGiveup = true;
-            ModMain.frmLaunchLeft.AprilScaleTrans.ScaleX = 1d;
-            ModMain.frmLaunchLeft.AprilScaleTrans.ScaleY = 1d;
-            BtnExtraApril.ShowRefresh();
-        }
-    }
-
-
-    private void BtnExtraApril_Click(object sender, MouseButtonEventArgs e)
-    {
-        AprilGiveup();
-    }
-
-
-    public bool BtnExtraApril_ShowCheck()
-    {
-        return ModMain.isAprilEnabled && !ModMain.isAprilGiveup && pageCurrent == PageType.Launch;
-    }
-
-
     // 关闭 Minecraft
     private void BtnExtraShutdown_Click(object sender, MouseButtonEventArgs e)
     {

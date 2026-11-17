@@ -30,13 +30,7 @@
                         Click="BtnMore_Click"
                         Margin="0,10,10,0" TextPadding="36" Text="{DynamicResource Launch.Home.InstanceSettings}" />
         <Grid Grid.ColumnSpan="5" Grid.Row="1" Margin="20,0" VerticalAlignment="Center" x:Name="PanLogin" />
-        <Grid Grid.ColumnSpan="5" Grid.Row="2" RenderTransformOrigin="0.5,0.5">
-            <Grid.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform x:Name="AprilScaleTrans" />
-                    <TranslateTransform x:Name="AprilPosTrans" />
-                </TransformGroup>
-            </Grid.RenderTransform>
+        <Grid Grid.ColumnSpan="5" Grid.Row="2">
             <local:MyButton x:Name="BtnLaunch" Height="54" Margin="20,0" Text="{DynamicResource Launch.Home.Button.Loading}" ColorType="Highlight"
                             Click="BtnLaunch_Click"
                             Padding="30,0,30,15" IsEnabled="False" />

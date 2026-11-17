@@ -333,10 +333,22 @@ public partial class FormMain
         if (!foldingEnabled) _navigationExpanded = false;
 
         var infiniteSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
-        var sideReservedWidth = Math.Max(GetTitleLeftReservedWidth(), GetTitleRightReservedWidth());
+        var rightReservedWidth = GetTitleRightReservedWidth();
+        PanTitleMain.ColumnDefinitions[0].Width = Config.Preference.WindowTitleType == LauncherTitleType.None
+            ? new GridLength(Config.Preference.TopBarLeftAlign ? 0d : rightReservedWidth)
+            : GridLength.Auto;
+        PanTitleMain.ColumnDefinitions[2].Width = new GridLength(rightReservedWidth);
         var viewportMargins = PanTitleSelectViewport.Margin.Left + PanTitleSelectViewport.Margin.Right;
-        var availableNavigationWidth = Math.Max(0d,
-            PanTitle.ActualWidth - sideReservedWidth * 2d - viewportMargins - 2d);
+        var overflowButtonWidth = BtnTitleNavOverflow.Width + BtnTitleNavOverflow.Margin.Left + BtnTitleNavOverflow.Margin.Right;
+        BtnTitleSelect0.Measure(infiniteSize);
+        var minimumNavigationWidth = BtnTitleSelect0.DesiredSize.Width +
+                                     BtnTitleSelect0.Margin.Left + BtnTitleSelect0.Margin.Right + overflowButtonWidth;
+        var titleWidthLimit = Math.Max(0d,
+            PanTitle.ActualWidth - rightReservedWidth - viewportMargins - minimumNavigationWidth - 2d);
+        PanTitleLeft.MaxWidth = titleWidthLimit;
+        var leftReservedWidth = Math.Min(GetTitleLeftReservedWidth(), titleWidthLimit);
+        var availableNavigationWidth = TopBarNavigationLayout.GetAvailableWidth(
+            PanTitle.ActualWidth, leftReservedWidth, rightReservedWidth, viewportMargins, 2d);
         PanTitleSelectViewport.MaxWidth = availableNavigationWidth;
 
         var measuredTabs = new List<TopBarNavigationItem>(visibleButtons.Length);
@@ -349,7 +361,6 @@ public partial class FormMain
             button.Visibility = previousVisibility;
         }
 
-        var overflowButtonWidth = BtnTitleNavOverflow.Width + BtnTitleNavOverflow.Margin.Left + BtnTitleNavOverflow.Margin.Right;
         var autoCollapsedIds = foldingEnabled
             ? TopBarNavigationLayout.SelectCollapsedTabs(measuredTabs, preferredCollapsedIds,
                 availableNavigationWidth, overflowButtonWidth)
@@ -403,10 +414,10 @@ public partial class FormMain
     }
 
 
-    private double GetTitleRightReservedWidth()
+    internal double GetTitleRightReservedWidth()
     {
         var reservedWidth = 0d;
-        foreach (var button in new[] { BtnTitleClose, BtnTitleMin, BtnTitleHelp })
+        foreach (var button in new[] { BtnTitleClose, BtnTitleMin })
         {
             if (button.Visibility != Visibility.Visible) continue;
             var buttonWidth = double.IsFinite(button.Width)
@@ -418,7 +429,7 @@ public partial class FormMain
     }
 
 
-    private double GetTitleLeftReservedWidth()
+    internal double GetTitleLeftReservedWidth()
     {
         var infiniteSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
         var columnWidths = new double[PanTitleLeft.ColumnDefinitions.Count];
@@ -431,9 +442,7 @@ public partial class FormMain
                 columnWidths[column] = Math.Max(columnWidths[column], child.DesiredSize.Width);
         }
 
-        // PanTitle_SizeChanged reserves 30 DIPs around the logo column. Include that
-        // room here so the middle navigation never forces the PCL Lite mark to shrink.
-        return columnWidths.Sum() + 30d;
+        return columnWidths.Sum();
     }
 
 
@@ -488,7 +497,9 @@ public partial class FormMain
         // 正常态保持居中；展开态靠右排列折叠导航。
         PanTitleSelect.HorizontalAlignment = _navigationExpanded
             ? HorizontalAlignment.Right
-            : HorizontalAlignment.Center;
+            : Config.Preference.WindowTitleType == LauncherTitleType.None && Config.Preference.TopBarLeftAlign
+                ? HorizontalAlignment.Left
+                : HorizontalAlignment.Center;
         PanTitleSelect.RenderTransform = Transform.Identity;
     }
 
@@ -496,10 +507,6 @@ public partial class FormMain
     // 标题栏改变大小
     private void PanTitle_SizeChanged(object sender, EventArgs e)
     {
-        if (PanTitleMain.ColumnDefinitions[0].ActualWidth - 30 <= 0)
-            PanTitleLeft.ColumnDefinitions[0].MaxWidth = 0;
-        else
-            PanTitleLeft.ColumnDefinitions[0].MaxWidth = PanTitleMain.ColumnDefinitions[0].ActualWidth - 30;
         QueueNavigationOverflowRefresh();
     }
 
@@ -509,14 +516,6 @@ public partial class FormMain
     {
         WindowState = WindowState.Minimized;
     }
-
-
-    private void BtnTitleHelp_Click(object sender, EventArgs e)
-    {
-        ModBase.OpenWebsite("https://www.bilibili.com/video/BV1uT4y1P7CX");
-    }
-
-
 
 
     public void AddResizer()
@@ -624,10 +623,7 @@ public partial class FormMain
         // 调用启动游戏
         if (e.Key == Key.Enter && pageCurrent == PageType.Launch)
         {
-            if (ModMain.isAprilEnabled && !ModMain.isAprilGiveup)
-                HintService.Hint(Lang.Text("Main.April.Nope"));
-            else
-                ModMain.frmLaunchLeft.LaunchButtonClick();
+            ModMain.frmLaunchLeft.LaunchButtonClick();
         }
 
         // 修复按下 Alt 后误认为弹出系统菜单导致的冻结

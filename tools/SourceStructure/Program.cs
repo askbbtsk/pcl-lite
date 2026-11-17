@@ -202,9 +202,12 @@ internal static partial class Program
                     errors.Add("Changed member: " + pair.Key);
             }
         foreach (var pair in old.Initializers)
-            if (!current.Initializers.TryGetValue(pair.Key, out var value)
-                || !pair.Value.SequenceEqual(value.Where(key => pair.Value.Contains(key, StringComparer.Ordinal))))
+        {
+            var expected = pair.Value.Where(key => !IsReviewedFeatureRemoval(key, current)).ToArray();
+            var actual = current.Initializers.GetValueOrDefault(pair.Key) ?? [];
+            if (!expected.SequenceEqual(actual.Where(key => expected.Contains(key, StringComparer.Ordinal))))
                 errors.Add("Initializer order changed: " + pair.Key);
+        }
         foreach (var error in errors) Console.Error.WriteLine(error);
         Console.WriteLine($"Compared {old.Members.Count} existing type/member contracts with baseline {Baseline}; {errors.Count} differences.");
         return errors.Count == 0 ? 0 : 1;

@@ -1,0 +1,314 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Basics.cs",
+    "Sha256": "1C65B1FB74D44D2AB83FF4AFBC238F9B80EE688F78CFB07CAB46185CD02322BB",
+    "Members": [],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": [
+      "PCL.Core.App.Basics::PropertyDeclaration::IsAprilFool"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/App/ConfigEnums.cs",
+    "Sha256": "7D01061AA7B306EC7901915EAD953CABFBCA67EDCF8E51FDAB1FBB7C9B54736D",
+    "Members": [
+      "PCL.Core.App.ColorTheme::enum"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/Minecraft/McVersionClassifier.cs",
+    "Sha256": "0B5BC3CD59AD3118F72048349CC00681024F14BA717B81BB8E356E794C72EEC3",
+    "Members": [
+      "PCL.McVersionCategory::enum",
+      "PCL.McVersionClassifier::MethodDeclaration::ClassifyVersion(JsonObject version)",
+      "PCL.McVersionClassifier::MethodDeclaration::_ClassifySnapshotOrPending(JsonObject version, string idLower)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": [
+      "PCL.McVersionClassifier::MethodDeclaration::GetCategoryDisplayName(McVersionCategory cat)",
+      "PCL.McVersionClassifier::MethodDeclaration::GetMcFoolName(string name)",
+      "PCL.McVersionClassifier::MethodDeclaration::_MarkAsAprilFools(JsonObject version, bool addLore)",
+      "PCL.McVersionClassifier::MethodDeclaration::_RefreshAprilFools(JsonObject version, string idLower)",
+      "PCL.McVersionClassifier::MethodDeclaration::_TryMarkAprilFoolsVersion(JsonObject version, string idLower)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/UI/Theme/ThemePackageApi.cs",
+    "Sha256": "FC4C78A61A65D2BCD7F0ABFDDDB07B241070CA6A6F82203A4525476DCE437ABB",
+    "Members": [],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": [
+      "PCL.Core.UI.Theme.ThemeService::MethodDeclaration::_AprilFoolLogic()"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/UI/Theme/ThemeService.cs",
+    "Sha256": "3818C60299CBA51C063C4ADF014CDA802F4A2DA6F77ECCAB39DA477E31F6467C",
+    "Members": [
+      "PCL.Core.UI.Theme.ThemeService::MethodDeclaration::GetCurrentThemeArgs()",
+      "PCL.Core.UI.Theme.ThemeService::MethodDeclaration::GetCustomThemeArgs()",
+      "PCL.Core.UI.Theme.ThemeService::MethodDeclaration::_RefreshAll()",
+      "PCL.Core.UI.Theme.ThemeService::MethodDeclaration::_Start()",
+      "PCL.Core.UI.Theme.ThemeService::PropertyDeclaration::OnColorThemeConfigChanged"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.CommandPalette.cs",
+    "Sha256": "ED5DC50F8A8AE2232AF4E2AE2D08F8CDAEDF86B8383B451B318F15464F90F756",
+    "Members": [],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": [
+      "PCL.FormMain::FieldDeclaration::lastMouseArg",
+      "PCL.FormMain::MethodDeclaration::AprilGiveup()",
+      "PCL.FormMain::MethodDeclaration::BtnExtraApril_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::BtnExtraApril_ShowCheck()",
+      "PCL.FormMain::MethodDeclaration::BtnTitleHelp_Click(object sender, EventArgs e)",
+      "PCL.FormMain::MethodDeclaration::FormMain_MouseMove(object sender, MouseEventArgs e)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.PageNavigation.cs",
+    "Sha256": "7207426F2F53D79E0DB956E5A56CEEBC1DE9F86063EE5EB7D4470CBABE30EB01",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::PageChange(PageStackData stack, PageSubType subType = PageSubType.Default)",
+      "PCL.FormMain::MethodDeclaration::PageChangeActual(PageStackData stack, PageSubType subType)",
+      "PCL.FormMain::PropertyDeclaration::PageCurrentSub"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+    "Sha256": "9B97992C6F4AB0B55E6644124CE5046B866F9E2C20B2C0B00FE767E69A1258AD",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::FormMain_KeyDown(object sender, KeyEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::GetTitleLeftReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::GetTitleRightReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::PanTitle_SizeChanged(object sender, EventArgs e)",
+      "PCL.FormMain::MethodDeclaration::ParseCollapsedNavigationIds(string? value)",
+      "PCL.FormMain::MethodDeclaration::RefreshNavigationOverflow()",
+      "PCL.FormMain::MethodDeclaration::UpdateNavigationOverflowPosition()",
+      "PCL.FormMain::MethodDeclaration::_SizeWndProc(nint hWnd, int msg, nint wParam, nint lParam, ref bool handled)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.xaml.cs",
+    "Sha256": "780CAFFAC9A9EBB1208E23A954A403807EC624E6EF1E858DE268310E9387B568",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::FormMain_Loaded()"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Base/ModSetup.cs",
+    "Sha256": "14DCA3172EBAA0EABA7F08A426789DBE99E06B4BB263E2CFD8F011B28590E0FC",
+    "Members": [
+      "PCL.ModSetup::MethodDeclaration::UiLogoLeft(bool value)",
+      "PCL.ModSetup::MethodDeclaration::UiLogoText(string value)",
+      "PCL.ModSetup::MethodDeclaration::UiLogoType(int value)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/McInstance.Members.Load.cs",
+    "Sha256": "799F24242602D639FA32F3CEB6B1B34CF2B60229A0E55D631330C42FD0F045AC",
+    "Members": [
+      "PCL.McInstance::MethodDeclaration::GetDefaultDescription()",
+      "PCL.McInstance::MethodDeclaration::Load()"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/McInstance.Members.PathInstance.cs",
+    "Sha256": "AA014A3295541C3A1FDE008CD20A15DE3DAC7339D7BA89D0EFC4E5A2DEF56AD2",
+    "Members": [
+      "PCL.McInstance::PropertyDeclaration::JsonObject",
+      "PCL.McInstance::PropertyDeclaration::PathIndie"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/McInstanceCardType.cs",
+    "Sha256": "4B4B74A1B9EDEAF4154A34A55EFCA03FBFE0DF2DAD6583506996F0180559EC15",
+    "Members": [
+      "PCL.McInstanceCardType::enum"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/McInstanceInfo.cs",
+    "Sha256": "2568AB86628A92F8BF8371E4DBDE01DF3FA04CCB4238E56A1B498BD9493119A4",
+    "Members": [
+      "PCL.McInstanceInfo::MethodDeclaration::VersionToDrop(string? version, bool allowSnapshot = false)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/McInstanceState.cs",
+    "Sha256": "9CD30EEFCF1A3F3D3EE8BDDA64FDF5B5EDFA0F93DC406DB8D8ECEE9680E70B09",
+    "Members": [
+      "PCL.McInstanceState::enum"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModInstanceList.cs",
+    "Sha256": "C73411554C4C4F6EB1C7677083D00B60D13B17D5A0702D083E2C4919D917644E",
+    "Members": [
+      "PCL.ModInstanceList::MethodDeclaration::InitMcInstanceListWithCache(string path)",
+      "PCL.ModInstanceList::MethodDeclaration::InitMcInstanceListWithoutCache(string path)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.JavaConstraints.cs",
+    "Sha256": "C5F3F6FEC978433BD4C2752B559881C9FDC91536D1C3046A5A4D106A861B7EAA",
+    "Members": [
+      "PCL.ModLaunch::MethodDeclaration::ResolveJavaConstraints(McInstance instance)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.LaunchCoordinator.McLaunchOptions.cs",
+    "Sha256": "E683D9BE1B2A74D7E1E7FE4576AF40076FE5A2A79FF7E60785DBF1C6FD2E2C95",
+    "Members": [
+      "PCL.ModLaunch::MethodDeclaration::McLaunchStart(McLaunchOptions options = null)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/ModMain.Members.TimerMain.cs",
+    "Sha256": "1F035BD752229C10A4F01CC5C4A5CE644159BB37FDC6046EE7C9441D88AF5E2A",
+    "Members": [
+      "PCL.ModMain::MethodDeclaration::TimerMain()",
+      "PCL.ModMain::MethodDeclaration::TimerMainStart()"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": [
+      "PCL.ModMain::FieldDeclaration::aprilDistance",
+      "PCL.ModMain::FieldDeclaration::aprilIdieCount",
+      "PCL.ModMain::FieldDeclaration::aprilMousePosLast",
+      "PCL.ModMain::FieldDeclaration::aprilSpeed",
+      "PCL.ModMain::FieldDeclaration::isAprilEnabled",
+      "PCL.ModMain::FieldDeclaration::isAprilGiveup",
+      "PCL.ModMain::MethodDeclaration::TimerFool()"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
+    "Sha256": "CE4F84B0F2421D5328336FA5D0581378FDCE4730B01292C2512F7FCA50FB34E6",
+    "Members": [
+      "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::OnClosed(object? sender, EventArgs e)",
+      "PCL.LiquidGlassCore::MethodDeclaration::Refresh()",
+      "PCL.LiquidGlassCore::MethodDeclaration::Restore(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::SetResource(FormMain window, string key, object value)",
+      "PCL.LiquidGlassCore::MethodDeclaration::TitleIcons(FormMain window)",
+      "PCL.LiquidGlassCore::PropertyDeclaration::BackdropSource",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsDesktopBackdropRequested",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsEnabled",
+      "PCL.LiquidGlassCore::PropertyDeclaration::Profile"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadClient.xaml.cs",
+    "Sha256": "8AAB12043401FA68E8191B1E73B0368E3B1966F7634A581020E6F6DA6B04D6EB",
+    "Members": [
+      "PCL.PageDownloadClient::MethodDeclaration::Load_OnFinish()"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadInstall.MinecraftVersionCards.cs",
+    "Sha256": "F9B910CB1809BBB780025CC2A6BFDF2B1A920B8F97367FFAB54E2B490BB54030",
+    "Members": [
+      "PCL.PageDownloadInstall::MethodDeclaration::_RebuildVersionCards(JsonArray versions)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceInstall.MinecraftVersionCatalog.cs",
+    "Sha256": "9D1C5FF84CC29A00DA109D8276DD573F250C8C034B1CCE8BE44215BF7821291B",
+    "Members": [
+      "PCL.PageInstanceInstall::MethodDeclaration::GetVersionTypeTitle(string key)",
+      "PCL.PageInstanceInstall::MethodDeclaration::LoadMinecraft_OnFinish()"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceOverall.Members.PageSetupLaunch_Loaded.cs",
+    "Sha256": "F8D599EB9228AD2878C8ECB164DE9C7EAAA9774D2BDBACAB223406673BBE6B57",
+    "Members": [
+      "PCL.PageInstanceOverall::MethodDeclaration::Reload()"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLaunch/PageLaunchLeft.AccountsAndInstances.cs",
+    "Sha256": "59209D8D54830871E8F3FB7E062E88215225424D26FC5769C7EEEDDAFF57A885",
+    "Members": [
+      "PCL.PageLaunchLeft::MethodDeclaration::LaunchButtonClick()",
+      "PCL.PageLaunchLeft::MethodDeclaration::PageLaunchLeft_Loaded(object sender, RoutedEventArgs e)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageSelectRight.xaml.cs",
+    "Sha256": "8DB7724687952967A2D2C82854F0D689C2679B23D2B5D130113DF7F9EB548E42",
+    "Members": [
+      "PCL.PageSelectRight::MethodDeclaration::McInstanceListUI(ModLoader.LoaderTask<string, int> loader)"
+    ],
+    "Reason": "1.8.1-hotfix-2: remove launcher Easter egg behavior and dedicated special-version listings, migrate legacy numeric configuration values, and keep custom title names visible while navigation folds. UI smoke, source contracts, and regression tests cover the changed behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  }
+]

@@ -548,7 +548,6 @@ public partial class FormMain
 
 
             BtnExtraDownload.ShowRefresh();
-            BtnExtraApril.ShowRefresh();
 
 
             ModBase.Log("[Control] 切换主要页面：" + ModBase.GetStringFromEnum(stack) + ", " + (int)subType);

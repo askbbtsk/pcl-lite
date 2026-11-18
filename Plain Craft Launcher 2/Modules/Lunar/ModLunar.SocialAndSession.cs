@@ -137,17 +137,13 @@ public static partial class ModLunar
 
 
     /// <summary>
-    ///     这次启动写进哪个目录。设置里指定过就用指定的，否则跟随当前实例的有效游戏目录。
-    ///     <para>
-    ///         这与普通 Minecraft 启动使用的 <c>PathIndie</c> 保持一致，确保
-    ///         <c>options.txt</c>、存档和 <c>resourcepacks</c> 不会从另一套目录读取。
-    ///     </para>
+    ///     优先使用 Lunar 页面指定的启动目录，否则使用 Lunar 的默认游戏目录。
     /// </summary>
     public static string ResolveGameDirectory()
     {
         var custom = Config.Preference.Lunar.GameDir;
         if (!string.IsNullOrWhiteSpace(custom)) return custom;
-        return ModInstanceList.McMcInstanceSelected?.PathIndie ?? ModFolder.mcFolderSelected;
+        return DefaultGameDirectory;
     }
 
 

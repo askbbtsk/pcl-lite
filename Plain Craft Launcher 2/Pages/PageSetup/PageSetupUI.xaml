@@ -387,6 +387,9 @@
                                       Height="32" Margin="0,6,0,6"
                                       IsEnabled="{Binding Checked, ElementName=CheckTahoeGlass}"
                                       Change="LiquidGlassDesktop_Change" />
+                    <local:MyCheckBox x:Name="CheckTahoePauseDuringMove" Text="{DynamicResource Setup.Ui.Tahoe.PauseDuringMove}"
+                                      MinHeight="32" Margin="21,0,0,6" Visibility="Collapsed"
+                                      Change="LiquidGlassPauseDuringMove_Change" />
                     <TextBlock x:Name="TextLiquidGlassDesktopDescription" Text="{DynamicResource Setup.Ui.Tahoe.Desktop.Description}"
                                Style="{StaticResource TahoeSettingsCaptionStyle}" Margin="0,0,0,6" />
                     <TextBlock Text="{DynamicResource Setup.Ui.Tahoe.Compatibility}"

@@ -150,7 +150,7 @@
                                               MouseLeftButtonDown="FormDragMove"
                                               WindowChrome.IsHitTestVisibleInChrome="True"
                                               BackgroundBrush="{DynamicResource ColorBrush3}">
-                    <local:TahoeGlassSurface x:Name="TahoeToolbar" Margin="8,5" CornerRadius="19"
+                    <local:TahoeGlassSurface x:Name="TahoeToolbar" Margin="8,7" CornerRadius="17" HorizontalAlignment="Left"
                                              Visibility="Collapsed" />
                     <local:TahoeGlassSurface x:Name="TahoeWindowControls" Width="66" HorizontalAlignment="Right"
                                              Margin="0,7,8,7" CornerRadius="17" Visibility="Collapsed" />

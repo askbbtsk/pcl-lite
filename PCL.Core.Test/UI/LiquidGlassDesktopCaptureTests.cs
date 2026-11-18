@@ -16,12 +16,14 @@ namespace PCL.Core.Test.UI;
 public sealed class TahoeDesktopCaptureTests
 {
     [TestMethod]
-    public void MagnifierBackendSuspendsRealtimeSamplingDuringWindowMoveAndResize()
+    public void MagnifierBackendHonorsPausePreferenceDuringWindowMoveAndResize()
     {
-        var platform = new LiquidGlassScreenshotCapturePlatform(() => 60);
+        bool pause = false;
+        var platform = new LiquidGlassScreenshotCapturePlatform(() => 60, () => pause);
 
-        Assert.IsFalse(platform.SupportsLiveMove,
-            "The full-resolution Magnifier sampler must suspend during the Windows move/size modal loop.");
+        Assert.IsTrue(platform.SupportsLiveMove);
+        pause = true;
+        Assert.IsFalse(platform.SupportsLiveMove);
     }
 
     [STATestMethod]

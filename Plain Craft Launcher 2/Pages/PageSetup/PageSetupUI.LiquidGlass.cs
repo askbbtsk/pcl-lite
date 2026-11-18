@@ -16,6 +16,8 @@ public partial class PageSetupUI
         try
         {
             PanLiquidGlassSettings.Visibility = CheckTahoeGlass.Checked == true ? Visibility.Visible : Visibility.Collapsed;
+            CheckTahoePauseDuringMove.Visibility = CheckTahoeDesktop.Checked == true ? Visibility.Visible : Visibility.Collapsed;
+            CheckTahoePauseDuringMove.Checked = Config.Preference.TahoeGlass.PauseBackdropDuringMove;
             ComboLiquidGlassPreset.SelectedIndex = LiquidGlassPerformance.NormalizePreset(Config.Preference.TahoeGlass.PerformancePreset);
             SliderLiquidGlassFrameRate.getHintText = new Func<object, object>(value =>
                 FrameRateLabel(LiquidGlassPerformance.FrameRateFromSlider((int)value)));
@@ -152,6 +154,15 @@ public partial class PageSetupUI
         }
         UseCustomGlassSettings();
         Config.Preference.TahoeGlass.UseDesktopBackdrop = CheckTahoeDesktop.Checked == true;
+        RefreshLiquidGlassSettings();
+        LiquidGlassCore.Refresh();
+    }
+
+    private void LiquidGlassPauseDuringMove_Change(object sender, bool user)
+    {
+        if (_liquidGlassBinding || ModAnimation.AniControlEnabled != 0) return;
+        UseCustomGlassSettings();
+        Config.Preference.TahoeGlass.PauseBackdropDuringMove = CheckTahoePauseDuringMove.Checked == true;
         LiquidGlassCore.Refresh();
     }
 
@@ -196,6 +207,7 @@ public partial class PageSetupUI
         if (ModMain.MyMsgBox(Lang.Text("Setup.Ui.LiquidGlass.Reset.Confirm"),
                 Lang.Text("Setup.Ui.LiquidGlass.Reset"), Lang.Text("Common.Action.Confirm"),
                 Lang.Text("Common.Action.Cancel"), isWarn: true) != 1) return;
+        Config.Preference.TahoeGlass.PauseBackdropDuringMove = false;
         ApplyGlassRecommendation(1);
     }
 

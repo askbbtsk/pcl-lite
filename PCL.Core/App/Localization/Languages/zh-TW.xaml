@@ -3207,6 +3207,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液態玻璃介面</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">啟用液態玻璃介面，會帶來一定效能開銷。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop">即時桌面折射</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.PauseDuringMove">移動或調整視窗大小時暫停折射</sys:String>
     <sys:String x:Key="Common.Status.Cancelling">正在取消…</sys:String>
     <sys:String x:Key="Setup.Ui.WallpaperEngine.Follow">跟隨 Wallpaper Engine 桌布</sys:String>
     <sys:String x:Key="Setup.Ui.WallpaperEngine.Description">支援影片、場景和網頁桌布。由 Wallpaper Engine 獨立播放，進度可能與桌面不同，會增加資源用量。</sys:String>
@@ -4106,7 +4107,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Region.Feature.Restricted">Minecraft 下載、補全與模組包安裝功能在你所在的國家或地區無法使用。</sys:String>
     <sys:String x:Key="Region.Feature.Unknown">無法取得區域資訊，暫時無法使用 Minecraft 下載、補全與模組包安裝功能。</sys:String>
     <sys:String x:Key="Lunar.Tip.PickGameDir">選一個 .minecraft 目錄當啟動目錄</sys:String>
-    <sys:String x:Key="Lunar.Tip.ResetGameDir">恢復預設（跟隨目前實例目錄）</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetGameDir">恢復 Lunar 預設啟動目錄</sys:String>
     <sys:String x:Key="Lunar.Tip.PickRoot">選 Lunar 物料根目錄</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetRoot">恢復預設（~/.lunarclient）</sys:String>
     <sys:String x:Key="Lunar.Ipc.AddAccount">遊戲裡點了「新增帳號」。PCL 不能代替遊戲登入，請在這裡登入微軟帳號後再啟動。</sys:String>

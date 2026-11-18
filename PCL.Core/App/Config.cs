@@ -369,10 +369,7 @@ public static partial class Config
             [ConfigItem<string>("LunarRoot", "", ConfigSource.Local)] public partial string Root { get; set; }
 
             /// <summary>
-            ///     Lunar 的启动目录（存档、资源包、截图所在）。空值表示跟随当前实例的有效游戏目录。
-            ///     <para>
-            ///         默认跟当前实例的 <c>PathIndie</c> 走。想单独隔离一套 Lunar 存档时可以在这里指定。
-            ///     </para>
+            ///     Lunar 的启动目录（存档、资源包、截图所在）。空值使用官方默认游戏目录。
             /// </summary>
             [ConfigItem<string>("LunarGameDir", "", ConfigSource.Local)] public partial string GameDir { get; set; }
         }
@@ -552,6 +549,7 @@ public static partial class Config
             [ConfigItem<bool>("UiTahoeGlassEnabled", false, ConfigSource.Local)] public partial bool IsEnabled { get; set; }
             /// <summary>Capture the desktop behind the window as the refraction source.</summary>
             [ConfigItem<bool>("UiTahoeDesktopBackdrop", false, ConfigSource.Local)] public partial bool UseDesktopBackdrop { get; set; }
+            [ConfigItem<bool>("UiTahoePauseBackdropDuringMove", false, ConfigSource.Local)] public partial bool PauseBackdropDuringMove { get; set; }
             [ConfigItem<int>("UiLiquidGlassPreset", 1, ConfigSource.Local)] public partial int PerformancePreset { get; set; }
             [ConfigItem<int>("UiLiquidGlassFrameRate", 60, ConfigSource.Local)] public partial int MaximumFrameRate { get; set; }
             [ConfigItem<int>("UiLiquidGlassFrost", 8, ConfigSource.Local)] public partial int FrostRadius { get; set; }

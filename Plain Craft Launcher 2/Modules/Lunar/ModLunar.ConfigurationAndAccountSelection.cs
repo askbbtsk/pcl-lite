@@ -42,9 +42,8 @@ public static partial class ModLunar
     }
 
 
-    /// <summary>默认启动目录：当前选中实例实际使用的游戏目录。</summary>
-    public static string DefaultGameDirectory =>
-        ModInstanceList.McMcInstanceSelected?.PathIndie ?? ModFolder.mcFolderSelected;
+    /// <summary>默认启动目录：与官方 Lunar 全局游戏目录一致。</summary>
+    public static string DefaultGameDirectory => VanillaRoot;
 
 
     public static bool IsInstalled => LunarClientService.IsInstalled(LunarRoot);
@@ -514,7 +513,6 @@ public static partial class ModLunar
     {
         if (IsBusy || IsRunning) return;
 
-        // 游戏目录必须在 UI 线程取：PathIndie 首次访问会触发实例加载
         var gameDirectory = ResolveGameDirectory();
 
         // IsBusy 在 UI 线程上先占位，防止连点两次起两个进程

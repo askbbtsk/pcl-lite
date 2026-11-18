@@ -16,15 +16,11 @@ namespace PCL;
 /// A native magnifier samples behind the launcher without changing
 /// global capture affinity. The existing glass renderer consumes the same BGRA frames.
 /// </summary>
-internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) : ITahoeCapturePlatform
+internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate, Func<bool> pauseDuringMove) : ITahoeCapturePlatform
 {
     private IntPtr _window;
     public bool IsSupported => Environment.Is64BitProcess && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041);
-    // Magnifier resizes and recopies a full-resolution helper window while the user sizes
-    // the launcher. Suspend the session for the Win32 move/size modal loop and restore the
-    // latest frame when that interaction ends instead of making window resizing compete
-    // with continuous desktop capture.
-    public bool SupportsLiveMove => false;
+    public bool SupportsLiveMove => !pauseDuringMove();
     public event EventHandler DisplaysChanged
     {
         add => SystemEvents.DisplaySettingsChanged += value;

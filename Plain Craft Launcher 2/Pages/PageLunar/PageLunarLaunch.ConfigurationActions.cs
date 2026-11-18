@@ -31,7 +31,7 @@ public partial class PageLunarLaunch
     }
 
 
-    /// <summary>启动目录恢复默认：跟随当前选中的 MC 根目录。</summary>
+    /// <summary>清除自定义启动目录，恢复 Lunar 默认目录。</summary>
     private void BtnResetGameDir_Click(object sender, EventArgs e)
     {
         Config.Preference.Lunar.GameDir = "";

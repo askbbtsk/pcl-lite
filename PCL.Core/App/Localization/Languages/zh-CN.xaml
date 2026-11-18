@@ -3264,6 +3264,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Tahoe.Enable">使用液态玻璃界面</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Description">启用液态玻璃界面，会带来一定性能开销。</sys:String>
     <sys:String x:Key="Setup.Ui.Tahoe.Desktop">实时桌面折射</sys:String>
+    <sys:String x:Key="Setup.Ui.Tahoe.PauseDuringMove">移动或缩放窗口时暂停折射</sys:String>
     <sys:String x:Key="Common.Status.Cancelling">正在取消…</sys:String>
     <sys:String x:Key="Setup.Ui.WallpaperEngine.Follow">跟随 Wallpaper Engine 壁纸</sys:String>
     <sys:String x:Key="Setup.Ui.WallpaperEngine.Description">支持视频、场景和网页壁纸。由 Wallpaper Engine 独立播放，进度可能与桌面不同，会增加资源占用。</sys:String>
@@ -4109,7 +4110,7 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Lunar.Error.OperationFailed">Lunar 页面操作失败。请查看错误详情。</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">转移 PCL 设置</sys:String>
     <sys:String x:Key="Lunar.Tip.PickGameDir">选一个 .minecraft 目录当启动目录</sys:String>
-    <sys:String x:Key="Lunar.Tip.ResetGameDir">恢复默认（跟随当前实例目录）</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetGameDir">恢复 Lunar 默认启动目录</sys:String>
     <sys:String x:Key="Lunar.Tip.PickRoot">选 Lunar 物料根目录</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetRoot">恢复默认（~/.lunarclient）</sys:String>
     <sys:String x:Key="Lunar.Ipc.AddAccount">游戏里点了「添加账号」。PCL 不能代替游戏登录，请在这里登录微软账号后再启动。</sys:String>

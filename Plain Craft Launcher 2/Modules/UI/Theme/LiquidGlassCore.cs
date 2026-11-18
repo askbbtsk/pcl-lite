@@ -75,15 +75,15 @@ public static partial class LiquidGlassCore
                 _windowClip = new LiquidGlassWindowClip(window, window.PanForm, window.RectForm,
                     error => LogCapture("[LiquidGlass] Native window clipping failed", error));
                 ITahoeCapturePlatform capturePlatform =
-                    new LiquidGlassScreenshotCapturePlatform(() => SamplingFrameRate);
+                    new LiquidGlassScreenshotCapturePlatform(() => SamplingFrameRate,
+                        () => Config.Preference.TahoeGlass.PauseBackdropDuringMove);
                 LogCapture("[LiquidGlass] CaptureBackend=Magnifier; GlobalCaptureExclusion=False", null);
                 _desktopCapture = new TahoeDesktopCapture(window, window.PanForm, window.TahoeDesktopImage,
                     window.TransformRotate, window.TransformPos, capturePlatform, LogCapture);
                 _desktopCapture.StateChanged += OnCaptureStateChanged;
                 window.Closed += OnClosed;
                 window.PanMainLeft.SizeChanged += OnSidebarSizeChanged;
-                window.PanTitleSelectViewport.SizeChanged += OnTitleSizeChanged;
-                window.PanTitle.SizeChanged += OnTitleSizeChanged;
+                window.PanTitleSelect.LayoutUpdated += OnTitleLayoutUpdated;
                 window.PanTitleMain.IsVisibleChanged += OnTitleNavigationChanged;
                 window.PanTitleMain.IsHitTestVisibleChanged += OnTitleNavigationChanged;
                 SystemParameters.StaticPropertyChanged += OnSystemSettingsChanged;
@@ -109,7 +109,7 @@ public static partial class LiquidGlassCore
             _windowClip?.SetEnabled(IsEnabled || WallpaperEngineBackground.IsActive);
             Appearance.IsEnabled = IsEnabled;
             Appearance.IsDesktopRequested = IsDesktopBackdropRequested;
-            string captureState = _windowMoving && IsDesktopBackdropRequested ? "Moving"
+            string captureState = _windowMoving && IsDesktopBackdropRequested && Config.Preference.TahoeGlass.PauseBackdropDuringMove ? "Moving"
                 : (_desktopCapture?.State ?? TahoeCaptureState.Stopped).ToString();
             if (_desktopCapture?.State == TahoeCaptureState.Live && !window.TahoeWindowGlass.IsRefractionActive)
                 captureState = "Compatibility";
@@ -347,7 +347,7 @@ public static partial class LiquidGlassCore
         if (IsEnabled && _window is { } window) UpdateSidebarClip(window);
     }
 
-    private static void OnTitleSizeChanged(object sender, SizeChangedEventArgs e)
+    private static void OnTitleLayoutUpdated(object? sender, EventArgs e)
     {
         if (IsEnabled && _window is { } window) UpdateTitleGlass(window);
     }
@@ -365,14 +365,17 @@ public static partial class LiquidGlassCore
         window.TahoeToolbar.Visibility = showNavigation ? Visibility.Visible : Visibility.Collapsed;
         if (!showNavigation) return;
         var viewport = window.PanTitleSelectViewport;
-        if (!viewport.IsLoaded || viewport.ActualWidth <= 0) return;
-        Point origin = viewport.TranslatePoint(new Point(), window.PanTitle);
-        double left = Math.Max(8, origin.X - 8);
-        double width = Math.Max(0, Math.Min(viewport.ActualWidth + 16, window.PanTitle.ActualWidth - left - 84));
-        window.TahoeToolbar.HorizontalAlignment = HorizontalAlignment.Left;
-        window.TahoeToolbar.Width = width;
-        window.TahoeToolbar.Margin = new Thickness(left, 7, 0, 7);
-        window.TahoeToolbar.CornerRadius = 17;
+        var navigation = window.PanTitleSelect;
+        if (!viewport.IsLoaded || viewport.ActualWidth <= 0 || navigation.ActualWidth <= 0) return;
+        double viewportLeft = viewport.TranslatePoint(new Point(), window.PanTitle).X;
+        double navigationLeft = navigation.TranslatePoint(new Point(), window.PanTitle).X;
+        double left = Math.Max(8, Math.Max(viewportLeft, navigationLeft) - 8);
+        double right = Math.Min(window.PanTitle.ActualWidth - 84,
+            Math.Min(viewportLeft + viewport.ActualWidth, navigationLeft + navigation.ActualWidth) + 8);
+        var margin = new Thickness(left, 7, 0, 7);
+        double width = Math.Max(0, right - left);
+        if (window.TahoeToolbar.Width != width) window.TahoeToolbar.Width = width;
+        if (window.TahoeToolbar.Margin != margin) window.TahoeToolbar.Margin = margin;
     }
 
     private static void UpdateSidebarClip(FormMain window)
@@ -397,8 +400,7 @@ public static partial class LiquidGlassCore
         {
             _window.Closed -= OnClosed;
             _window.PanMainLeft.SizeChanged -= OnSidebarSizeChanged;
-            _window.PanTitleSelectViewport.SizeChanged -= OnTitleSizeChanged;
-            _window.PanTitle.SizeChanged -= OnTitleSizeChanged;
+            _window.PanTitleSelect.LayoutUpdated -= OnTitleLayoutUpdated;
             _window.PanTitleMain.IsVisibleChanged -= OnTitleNavigationChanged;
             _window.PanTitleMain.IsHitTestVisibleChanged -= OnTitleNavigationChanged;
         }

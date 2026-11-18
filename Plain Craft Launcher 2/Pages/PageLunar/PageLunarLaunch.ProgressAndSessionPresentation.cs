@@ -709,7 +709,7 @@ public partial class PageLunarLaunch
 
     /// <summary>
     ///     预览这次启动会写进哪个目录：和 <see cref="ModLunar" /> 的取值规则保持一致
-    ///     （设置里指定过就用指定的，否则用当前 MC 根目录）—— Lunar 不跟实例隔离走。
+    ///     （设置里指定过就用指定的，否则用 Lunar 默认目录）。
     /// </summary>
     private static string PreviewGameDirectory()
     {

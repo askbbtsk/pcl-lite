@@ -15,5 +15,107 @@
       "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory, long launchSession)"
     ],
     "Reason": "Lite hotfix-5 provides a localized close-game-and-retry dialog for Lunar native files that cannot be replaced, and clarifies the connected friend-system status."
+  },
+  {
+    "SourcePath": "PCL.Core/App/Config.cs",
+    "Sha256": "3671D11CC76F448199F3D968D29B4C49B924C6031CA5AA28DB2DED8E07B9DAA8",
+    "Members": [
+      "PCL.Core.App.Config+PreferenceConfigGroup::PropertyDeclaration::TopBarCollapsedTabs"
+    ],
+    "Reason": "Hotfix 5: preserve reviewed behavior and record the Lunar default directory, toolbar glass alignment, and selectable refraction pause.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.ConfigurationAndAccountSelection.cs",
+    "Sha256": "128330CEA6FE560BDC626F5B61DA62305708E0E864A22F3F230931CEFF914928",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::Launch()",
+      "PCL.ModLunar::MethodDeclaration::Log(string message)",
+      "PCL.ModLunar::PropertyDeclaration::DefaultGameDirectory"
+    ],
+    "Reason": "Hotfix 5: preserve reviewed behavior and record the Lunar default directory, toolbar glass alignment, and selectable refraction pause.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
+    "Sha256": "482BD5EE76CD0668A6784CFD4AC409FD1D00A64CE7279AF4F50DBF89F918E607",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ConnectSocialAsync()",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory)",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory, long launchSession)",
+      "PCL.ModLunar::MethodDeclaration::ResolveGameDirectory()"
+    ],
+    "Reason": "Hotfix 5: preserve reviewed behavior and record the Lunar default directory, toolbar glass alignment, and selectable refraction pause.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
+    "Sha256": "726D33B7ED722B3DC48D8BC80047C8A1E9D1A554009976A3A8690A48B6BA082F",
+    "Members": [
+      "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::OnClosed(object? sender, EventArgs e)",
+      "PCL.LiquidGlassCore::MethodDeclaration::Refresh()",
+      "PCL.LiquidGlassCore::MethodDeclaration::Restore(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::SetResource(FormMain window, string key, object value)",
+      "PCL.LiquidGlassCore::MethodDeclaration::TitleIcons(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::UpdateTitleGlass(FormMain window)",
+      "PCL.LiquidGlassCore::PropertyDeclaration::BackdropSource",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsDesktopBackdropRequested",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsEnabled",
+      "PCL.LiquidGlassCore::PropertyDeclaration::Profile"
+    ],
+    "Reason": "Hotfix 5: preserve reviewed behavior and record the Lunar default directory, toolbar glass alignment, and selectable refraction pause.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassScreenshotCapturePlatform.cs",
+    "Sha256": "C6F0DEE5A21216989AFE56B9B2140E0A9B2A52F22EE62E0C1AF8388BDC80F606",
+    "Members": [
+      "PCL.LiquidGlassScreenshotCapturePlatform+Capture::MethodDeclaration::Run()"
+    ],
+    "Reason": "Hotfix 5: preserve reviewed behavior and record the Lunar default directory, toolbar glass alignment, and selectable refraction pause.",
+    "RemovedMembers": [
+      "PCL.LiquidGlassScreenshotCapturePlatform+Capture::FieldDeclaration::_closing,_pending"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.ProgressAndSessionPresentation.cs",
+    "Sha256": "C23FD37BF52B8874F40A1F9B388779AF6ABBA920F55A25DC43620A90C262947D",
+    "Members": [
+      "PCL.PageLunarLaunch::MethodDeclaration::Subscribe()",
+      "PCL.PageLunarLaunch::MethodDeclaration::Unsubscribe()"
+    ],
+    "Reason": "Hotfix 5: preserve reviewed behavior and record the Lunar default directory, toolbar glass alignment, and selectable refraction pause.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.LiquidGlass.cs",
+    "Sha256": "F67A500E3B6814853EF9DB22406F1180B66D62DBF281A06CA92B25A190F08178",
+    "Members": [
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassDesktop_Change(object sender, bool user)",
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassFrameRate_Changed(object sender, bool user)",
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassPreset_Changed(object sender, SelectionChangedEventArgs e)",
+      "PCL.PageSetupUI::MethodDeclaration::RefreshLiquidGlassSettings()"
+    ],
+    "Reason": "Hotfix 5: preserve reviewed behavior and record the Lunar default directory, toolbar glass alignment, and selectable refraction pause.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.FailureRecovery.cs",
+    "Sha256": "3FB4CA5F389B3ED4B78E135F87F2B08061D210793EE74473DFD4359C00E4D02C",
+    "Members": [],
+    "Reason": "Track the arranged navigation bounds, including layout changes that do not resize the viewport.",
+    "RemovedMembers": [
+      "PCL.LiquidGlassCore::MethodDeclaration::OnTitleSizeChanged(object sender, SizeChangedEventArgs e)"
+    ],
+    "AllMembers": false
   }
 ]

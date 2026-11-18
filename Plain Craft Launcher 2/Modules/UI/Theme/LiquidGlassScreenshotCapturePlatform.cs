@@ -20,7 +20,11 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate) 
 {
     private IntPtr _window;
     public bool IsSupported => Environment.Is64BitProcess && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041);
-    public bool SupportsLiveMove => true;
+    // Magnifier resizes and recopies a full-resolution helper window while the user sizes
+    // the launcher. Suspend the session for the Win32 move/size modal loop and restore the
+    // latest frame when that interaction ends instead of making window resizing compete
+    // with continuous desktop capture.
+    public bool SupportsLiveMove => false;
     public event EventHandler DisplaysChanged
     {
         add => SystemEvents.DisplaySettingsChanged += value;

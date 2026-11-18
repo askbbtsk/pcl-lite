@@ -42,8 +42,9 @@ public static partial class ModLunar
     }
 
 
-    /// <summary>默认启动目录：当前选中的 MC 根目录。</summary>
-    public static string DefaultGameDirectory => ModFolder.mcFolderSelected;
+    /// <summary>默认启动目录：当前选中实例实际使用的游戏目录。</summary>
+    public static string DefaultGameDirectory =>
+        ModInstanceList.McMcInstanceSelected?.PathIndie ?? ModFolder.mcFolderSelected;
 
 
     public static bool IsInstalled => LunarClientService.IsInstalled(LunarRoot);

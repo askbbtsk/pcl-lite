@@ -76,6 +76,35 @@ public class LunarJvmArgumentsTest
     }
 
     [TestMethod]
+    public void EnsureGameDirectory_CreatesResourcePackFolderWithoutChangingExistingFiles()
+    {
+        var optionsPath = Path.Combine(_root, "options.txt");
+        var packPath = Path.Combine(_root, "resourcepacks", "test.zip");
+        Directory.CreateDirectory(Path.GetDirectoryName(packPath)!);
+        File.WriteAllText(optionsPath, "resourcePacks:[\"file/test\"]");
+        File.WriteAllText(packPath, "existing-pack");
+
+        var result = LunarClientService.EnsureGameDirectory(_root);
+
+        Assert.AreEqual(Path.GetFullPath(_root), result);
+        Assert.IsTrue(Directory.Exists(Path.Combine(_root, "resourcepacks")));
+        Assert.AreEqual("resourcePacks:[\"file/test\"]", File.ReadAllText(optionsPath));
+        Assert.AreEqual("existing-pack", File.ReadAllText(packPath));
+    }
+
+    [TestMethod]
+    public void EnsureGameDirectory_CreatesMissingOfficialGameAndResourcePackDirectories()
+    {
+        var gameDirectory = Path.Combine(_root, "official", ".minecraft");
+
+        var result = LunarClientService.EnsureGameDirectory(gameDirectory);
+
+        Assert.AreEqual(Path.GetFullPath(gameDirectory), result);
+        Assert.IsTrue(Directory.Exists(result));
+        Assert.IsTrue(Directory.Exists(Path.Combine(result, "resourcepacks")));
+    }
+
+    [TestMethod]
     public void CustomArguments_OverrideMetadataAndStayBeforeMainClass()
     {
         var arguments = Build("-Dtest=user -javaagent:agent.jar",

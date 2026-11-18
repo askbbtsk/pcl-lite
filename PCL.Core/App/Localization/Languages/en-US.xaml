@@ -4106,7 +4106,7 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Tools.Import.NoKeys">None of the settings in this source are recognised: {0}</sys:String>
     <sys:String x:Key="Tools.Import.Shortcut">Migrate PCL settings</sys:String>
     <sys:String x:Key="Lunar.Tip.PickGameDir">Pick a .minecraft folder as the game directory</sys:String>
-    <sys:String x:Key="Lunar.Tip.ResetGameDir">Reset to default (current MC folder)</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetGameDir">Reset to default (current instance folder)</sys:String>
     <sys:String x:Key="Lunar.Tip.PickRoot">Pick the Lunar root folder</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetRoot">Reset to default (~/.lunarclient)</sys:String>
     <sys:String x:Key="Lunar.Ipc.AddAccount">The game asked to add an account. PCL cannot sign in on its behalf — sign in with your Microsoft account here first.</sys:String>

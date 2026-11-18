@@ -15,6 +15,15 @@ namespace PCL.Core.Test.UI;
 [DoNotParallelize]
 public sealed class TahoeDesktopCaptureTests
 {
+    [TestMethod]
+    public void MagnifierBackendSuspendsRealtimeSamplingDuringWindowMoveAndResize()
+    {
+        var platform = new LiquidGlassScreenshotCapturePlatform(() => 60);
+
+        Assert.IsFalse(platform.SupportsLiveMove,
+            "The full-resolution Magnifier sampler must suspend during the Windows move/size modal loop.");
+    }
+
     [STATestMethod]
     public void LiveMoveKeepsSessionBitmapAndNewFramesInsteadOfFreezingTheLastImage()
     {

@@ -137,17 +137,17 @@ public static partial class ModLunar
 
 
     /// <summary>
-    ///     这次启动写进哪个目录。设置里指定过就用指定的，否则用当前 MC 根目录。
+    ///     这次启动写进哪个目录。设置里指定过就用指定的，否则跟随当前实例的有效游戏目录。
     ///     <para>
-    ///         刻意不跟实例的版本隔离目录走：Lunar 的版本（比如 1.12.2）和主页面选中的实例
-    ///         （比如某个 1.21 Fabric 模组包）根本不是一个东西，用隔离目录会写坏人家：
-    ///         <c>options.txt</c> 被低版本覆盖、存档和资源包混进去、模组包的设置全乱。
+    ///         这与普通 Minecraft 启动使用的 <c>PathIndie</c> 保持一致，确保
+    ///         <c>options.txt</c>、存档和 <c>resourcepacks</c> 不会从另一套目录读取。
     ///     </para>
     /// </summary>
     public static string ResolveGameDirectory()
     {
         var custom = Config.Preference.Lunar.GameDir;
-        return string.IsNullOrWhiteSpace(custom) ? ModFolder.mcFolderSelected : custom;
+        if (!string.IsNullOrWhiteSpace(custom)) return custom;
+        return ModInstanceList.McMcInstanceSelected?.PathIndie ?? ModFolder.mcFolderSelected;
     }
 
 
@@ -219,7 +219,10 @@ public static partial class ModLunar
             if (!GameSessions.IsCurrent(launchSession)) return;
             _stopRequested = false;
             var subVersion = SelectedSubVersion;
+            gameDirectory = LunarClientService.EnsureGameDirectory(gameDirectory);
             GameDirectory = gameDirectory;
+            Log($"游戏目录：{gameDirectory}");
+            Log($"资源包目录：{Path.Combine(gameDirectory, "resourcepacks")}");
 
             // 内存 / JVM 参数 / Java 覆盖都在设置页里配，这里只负责解析出最终值
             var settings = LunarLaunchProfile.Resolve(subVersion, ResolvePclGlobalMemoryMb());
@@ -237,8 +240,6 @@ public static partial class ModLunar
             Log(module is null
                 ? $"Loader：{SelectedModuleId}（还没拿到版本元数据，按兜底值走）"
                 : $"Loader：{module.DisplayName}（{module.Id}，该版本共 {Modules.Count} 种可选）");
-            Log($"游戏目录：{gameDirectory}");
-
             // 首次用某个版本时 Genesis 要先把原版客户端下到 %APPDATA%\.minecraft，
             // 这一步以前是它自己在后台闷头下，现在改成由 PCL 下（有进度、能看见）
             await EnsureVanillaAsync(subVersion, CancellationToken.None).ConfigureAwait(false);

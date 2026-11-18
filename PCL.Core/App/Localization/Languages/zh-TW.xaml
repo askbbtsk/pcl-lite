@@ -4106,7 +4106,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Region.Feature.Restricted">Minecraft 下載、補全與模組包安裝功能在你所在的國家或地區無法使用。</sys:String>
     <sys:String x:Key="Region.Feature.Unknown">無法取得區域資訊，暫時無法使用 Minecraft 下載、補全與模組包安裝功能。</sys:String>
     <sys:String x:Key="Lunar.Tip.PickGameDir">選一個 .minecraft 目錄當啟動目錄</sys:String>
-    <sys:String x:Key="Lunar.Tip.ResetGameDir">恢復預設（跟隨目前 MC 目錄）</sys:String>
+    <sys:String x:Key="Lunar.Tip.ResetGameDir">恢復預設（跟隨目前實例目錄）</sys:String>
     <sys:String x:Key="Lunar.Tip.PickRoot">選 Lunar 物料根目錄</sys:String>
     <sys:String x:Key="Lunar.Tip.ResetRoot">恢復預設（~/.lunarclient）</sys:String>
     <sys:String x:Key="Lunar.Ipc.AddAccount">遊戲裡點了「新增帳號」。PCL 不能代替遊戲登入，請在這裡登入微軟帳號後再啟動。</sys:String>

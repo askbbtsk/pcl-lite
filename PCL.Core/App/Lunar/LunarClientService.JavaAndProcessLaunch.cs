@@ -148,6 +148,19 @@ public static partial class LunarClientService
     ///         <c>--accessToken</c> 就是正版验证的落点，传 PCL 登录拿到的那个即可。
     ///     </para>
     /// </summary>
+    /// <summary>
+    /// Ensures Lunar's game directory and resource-pack folder exist without changing
+    /// the user's options or enabled-pack list.
+    /// </summary>
+    public static string EnsureGameDirectory(string gameDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(gameDirectory);
+        var fullPath = Path.GetFullPath(gameDirectory);
+        Directory.CreateDirectory(fullPath);
+        Directory.CreateDirectory(Path.Combine(fullPath, "resourcepacks"));
+        return fullPath;
+    }
+
     public static ProcessStartInfo BuildStartInfo(
         LunarLaunchData data,
         LunarLaunchOptions options,

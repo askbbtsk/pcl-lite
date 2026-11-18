@@ -369,10 +369,9 @@ public static partial class Config
             [ConfigItem<string>("LunarRoot", "", ConfigSource.Local)] public partial string Root { get; set; }
 
             /// <summary>
-            ///     Lunar 的启动目录（存档、资源包、截图所在）。空值表示用当前 MC 根目录。
+            ///     Lunar 的启动目录（存档、资源包、截图所在）。空值表示跟随当前实例的有效游戏目录。
             ///     <para>
-            ///         默认跟 <c>ModFolder.mcFolderSelected</c> 走，也就是玩家平时玩的那个
-            ///         <c>.minecraft</c>。想单独隔离一套 Lunar 存档时可以在这里指定。
+            ///         默认跟当前实例的 <c>PathIndie</c> 走。想单独隔离一套 Lunar 存档时可以在这里指定。
             ///     </para>
             /// </summary>
             [ConfigItem<string>("LunarGameDir", "", ConfigSource.Local)] public partial string GameDir { get; set; }

@@ -36,7 +36,7 @@ public partial class PagePluginsLeft
         _isUpdatingSelection = true;
         try
         {
-            item.SetChecked(true, animate, false);
+            item.SetChecked(true, user: false, anime: animate);
         }
         finally
         {

@@ -282,7 +282,7 @@ public sealed partial class LocalizationService
         }
     }
 
-    private static ResourceDictionary _LoadLanguageDictionary(string languageCode)
+    internal static ResourceDictionary _LoadLanguageDictionary(string languageCode)
     {
         return new ResourceDictionary
         {

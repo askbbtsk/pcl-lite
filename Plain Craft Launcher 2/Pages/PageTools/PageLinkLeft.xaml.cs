@@ -47,7 +47,7 @@ public partial class PageLinkLeft
         _isUpdatingSelection = true;
         try
         {
-            item.SetChecked(true, animate, false);
+            item.SetChecked(true, user: false, anime: animate);
         }
         finally
         {

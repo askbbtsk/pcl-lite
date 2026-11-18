@@ -19,6 +19,8 @@ namespace PCL;
 public partial class PageLunarLaunch
 {
     private long _chatGeneration;
+    private List<LunarChatMessage>? _messagesDuringHistoryLoad;
+    private readonly HashSet<(string Id, LunarChatMessage? WithoutId)> _displayedMessages = [];
 
     /// <summary>订阅 <see cref="ModLunar" /> 的社交事件。页面每次显示都要重新挂。</summary>
     private void SubscribeSocial()
@@ -36,6 +38,7 @@ public partial class PageLunarLaunch
     {
         if (!_socialSubscribed) return;
         ++_chatGeneration;
+        _messagesDuringHistoryLoad = null;
         BtnChatSend.IsEnabled = true;
         ModLunar.SocialStateChanged -= RefreshSocial;
         ModLunar.SocialFriendsChanged -= RefreshSocial;
@@ -53,7 +56,7 @@ public partial class PageLunarLaunch
             return;
         }
 
-        if (!IsLoaded) return;
+        if (!IsLoaded || !_socialSubscribed) return;
 
         var client = ModLunar.Social;
         var connected = ModLunar.IsSocialConnected;
@@ -74,10 +77,24 @@ public partial class PageLunarLaunch
         BtnSocialConnect.IsEnabled = !(_socialBusy || ModLunar.IsSocialBusy);
         BtnSocialRefresh.IsEnabled = connected;
 
-        _friends = client?.Friends ?? [];
+        if (!connected) ClearChatSelection();
+        _friends = connected ? client?.Friends ?? [] : [];
         RebuildFriendRows();
     }
 
+    private void ClearChatSelection()
+    {
+        if (_selectedFriend is null) return;
+        ++_chatGeneration;
+        _selectedFriend = null;
+        _selectedConversation = "";
+        _messagesDuringHistoryLoad = null;
+        _displayedMessages.Clear();
+        BtnChatSend.IsEnabled = true;
+        PanChat.Visibility = Visibility.Collapsed;
+        PanMessages.Children.Clear();
+        _lastMessageDate = default;
+    }
 
     private void RebuildFriendRows()
     {
@@ -206,6 +223,8 @@ public partial class PageLunarLaunch
         var generation = ++_chatGeneration;
         _selectedFriend = friend;
         _selectedConversation = "";
+        _messagesDuringHistoryLoad = null;
+        _displayedMessages.Clear();
         BtnChatSend.IsEnabled = true;
         PanChat.Visibility = Visibility.Visible;
         LabChatTitle.Text = friend.Name;
@@ -226,19 +245,23 @@ public partial class PageLunarLaunch
             var conversation = await client.OpenConversationAsync(friend.Uuid);
             if (generation != _chatGeneration || !ReferenceEquals(client, ModLunar.Social)) return;
             _selectedConversation = conversation;
+            var liveMessages = _messagesDuringHistoryLoad = [];
             var messages = await client.LoadMessagesAsync(friend.Uuid, conversation);
             if (generation != _chatGeneration || !ReferenceEquals(client, ModLunar.Social)) return;
+            _messagesDuringHistoryLoad = null;
             PanMessages.Children.Clear();
             _lastMessageDate = default;
-            foreach (var message in messages) AddMessageRow(message);
-            if (messages.Count == 0) AddSystemLine(Lang.Text("Lunar.Social.NoMessages"));
+            _displayedMessages.Clear();
+            foreach (var message in liveMessages.Concat(messages).OrderBy(message => message.SentAt))
+                AddMessageRow(message);
+            if (_displayedMessages.Count == 0) AddSystemLine(Lang.Text("Lunar.Social.NoMessages"));
             PanChatScroll.ScrollToEnd();
         }
         catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
         {
             if (generation != _chatGeneration || !ReferenceEquals(client, ModLunar.Social)) return;
-            PanMessages.Children.Clear();
-            _lastMessageDate = default;
+            _messagesDuringHistoryLoad = null;
+            if (_displayedMessages.Count == 0) PanMessages.Children.Clear();
             AddSystemLine(ex.Message);
         }
     }
@@ -252,7 +275,10 @@ public partial class PageLunarLaunch
             return;
         }
 
-        if (!_socialSubscribed || conversationId != _selectedConversation) return;
+        if (!_socialSubscribed || !ModLunar.IsSocialConnected || conversationId != _selectedConversation) return;
+        if (_messagesDuringHistoryLoad is not null && _displayedMessages.Count == 0)
+            PanMessages.Children.Clear();
+        _messagesDuringHistoryLoad?.Add(message);
         AddMessageRow(message);
         PanChatScroll.ScrollToEnd();
     }
@@ -282,6 +308,8 @@ public partial class PageLunarLaunch
     /// </summary>
     private void AddMessageRow(LunarChatMessage message)
     {
+        var withoutId = LunarUuid.Parse(message.Id).IsEmpty ? message : null;
+        if (!_displayedMessages.Add((message.Id, withoutId))) return;
         var local = message.SentAt.ToLocalTime();
         var date = DateOnly.FromDateTime(local.DateTime);
 
@@ -399,10 +427,7 @@ public partial class PageLunarLaunch
             finally
             {
                 _socialBusy = false;
-                ++_chatGeneration;
-                _selectedConversation = "";
-                BtnChatSend.IsEnabled = true;
-                PanChat.Visibility = Visibility.Collapsed;
+                ClearChatSelection();
                 RefreshSocial();
             }
 

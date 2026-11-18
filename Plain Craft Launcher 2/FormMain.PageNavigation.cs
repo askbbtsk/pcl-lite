@@ -272,6 +272,8 @@ public partial class FormMain
                 case PageType.Link:
                 {
                     ModMain.frmLinkLeft ??= new PageLinkLeft();
+                    if (subType is not (PageSubType.LinkHost or PageSubType.LinkGuest))
+                        subType = ModMain.frmLinkLeft.pageID;
                     ModMain.frmLinkLeft.Select(subType, stack == pageCurrent);
                     break;
                 }

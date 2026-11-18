@@ -3822,6 +3822,8 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Update.Security.Signature.Continue">Update anyway</sys:String>
     <sys:String x:Key="Update.Error.UnableToGetUpdate">Unable to get update information</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlocked">Update failed</sys:String>
+    <sys:String x:Key="Update.Error.InstallFailedMessage">The update could not be installed. Reopen PCL Lite and check for updates to try again. See the updater log for details.</sys:String>
+    <sys:String x:Key="Update.Error.OldProcessTimeout">The previous version of PCL Lite is still running, so the update was canceled. Close it, reopen PCL Lite, and check for updates again.</sys:String>
     <sys:String x:Key="Update.Error.UpdateBlockedMessage">PCL CE cannot update because it was blocked by Windows Security or does not have sufficient permissions.&#xA;Please add the PCL CE folder to the exclusion list, or manually replace the current file with {0}PCL\Plain Craft Launcher Community Edition.exe!</sys:String>
     <sys:String x:Key="Update.Service.PclCe">PCL Lite service</sys:String>
     <sys:String x:Key="Update.Title">Launcher update</sys:String>

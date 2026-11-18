@@ -1,0 +1,58 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Essentials/UpdateService.cs",
+    "Sha256": "59C88FF41B51CD2C36C503C734CD1D69C3CA1045C00FBBFBE2D9E33504CB0B97",
+    "Members": [
+      "PCL.Core.App.Essentials.UpdateService::MethodDeclaration::Start()"
+    ],
+    "Reason": "Show a retry prompt and clean the staged package when an update fails."
+  },
+  {
+    "SourcePath": "PCL.Core/App/Localization/LocalizationService.cs",
+    "Sha256": "D29C139D931D2ED58DB7FED699CCC91DB6552A48F9E3600F2A41EBAD5F615FFF",
+    "Members": [
+      "PCL.Core.App.Localization.LocalizationService::MethodDeclaration::_LoadLanguageDictionary(string languageCode)"
+    ],
+    "Reason": "Reuse language resources for the updater prompt before normal app loading."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.PageNavigation.cs",
+    "Sha256": "BEB44A1F8C51C5B5177D992C8319B476164AC04540810D22B1D0D195E0BDE251",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::PageChange(PageStackData stack, PageSubType subType = PageSubType.Default)",
+      "PCL.FormMain::MethodDeclaration::PageChangeActual(PageStackData stack, PageSubType subType)",
+      "PCL.FormMain::PropertyDeclaration::PageCurrentSub"
+    ],
+    "Reason": "Use the remembered Link subpage for both the sidebar and content; retain the reviewed navigation changes from hotfix 6."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Network/Downloader/FileDownloader.cs",
+    "Sha256": "8638BECF263F82B38408C378BD1110E20438F7E44F17D91BBD3F9980A9D53CBB",
+    "Members": [
+      "PCL.Network.FileDownloader::MethodDeclaration::PromoteTempFile(string localPath)"
+    ],
+    "Reason": "Fail immediately if the staged file is missing, and preserve retries for transient I/O errors."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.SocialLifecycle.cs",
+    "Sha256": "CD66B9FACEAD9B83BA34BB8F190276293D1BE29A067C77B4D3AE3829A000A2E9",
+    "Members": [
+      "PCL.PageLunarLaunch::MethodDeclaration::AddMessageRow(LunarChatMessage message)",
+      "PCL.PageLunarLaunch::MethodDeclaration::BtnSocialConnect_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageLunarLaunch::MethodDeclaration::OnSocialMessage(string conversationId, LunarChatMessage message)",
+      "PCL.PageLunarLaunch::MethodDeclaration::OpenChatAsync(LunarFriend friend)",
+      "PCL.PageLunarLaunch::MethodDeclaration::RefreshSocial()",
+      "PCL.PageLunarLaunch::MethodDeclaration::SendChatAsync()",
+      "PCL.PageLunarLaunch::MethodDeclaration::UnsubscribeSocial()"
+    ],
+    "Reason": "Clear the selected friend after disconnect and reconcile live messages with loaded history, retaining hotfix 6 stale response checks."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PagePlugins/PagePluginsLeft.xaml.cs",
+    "Sha256": "6E6D85D449A1E523FCB104E77E0E2653E6E4128878DBAE1DE5106CE9A1EEEF06",
+    "Members": [
+      "PCL.PagePluginsLeft::MethodDeclaration::Select(FormMain.PageSubType id, bool animate)"
+    ],
+    "Reason": "Pass the animation flag to the animation parameter for programmatic selection."
+  }
+]

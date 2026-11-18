@@ -126,6 +126,13 @@ public partial class PageToolsDirectLink
                     Lang.Text("Link.Sidebar.GuestConnected"),
                     $"127.0.0.1:{_guestSession.LocalProxyPort} · {_guestSession.RttMs} ms");
             }
+            else if (_guestSession.IsTunnelReachable)
+            {
+                ModMain.frmLinkLeft.UpdateSidebarStatus(
+                    false,
+                    Lang.Text("Link.Guest.WorldUnavailable"),
+                    string.Empty);
+            }
             else if (_guestSession.HasConnected)
             {
                 ModMain.frmLinkLeft.UpdateSidebarStatus(

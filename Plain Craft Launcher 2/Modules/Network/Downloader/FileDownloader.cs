@@ -321,7 +321,7 @@ public static class FileDownloader
                 File.Move(tempPath, localPath, true);
                 return;
             }
-            catch (IOException) when (retry < 4)
+            catch (IOException ex) when (retry < 4 && ex is not (FileNotFoundException or DirectoryNotFoundException))
             {
                 Thread.Sleep(100);
             }

@@ -3840,6 +3840,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Lunar.Social.Online">已連上 Lunar 好友系統</sys:String>
     <sys:String x:Key="Lunar.Social.Connecting">正在連線…</sys:String>
     <sys:String x:Key="Lunar.Social.Connect">連線</sys:String>
+    <sys:String x:Key="Lunar.Social.NeedAccount">請先登入 Lunar 帳號。</sys:String>
     <sys:String x:Key="Lunar.Social.Disconnect">斷開</sys:String>
     <sys:String x:Key="Lunar.Social.Refresh">重新整理</sys:String>
     <sys:String x:Key="Lunar.Social.Send">傳送</sys:String>
@@ -4024,6 +4025,7 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Link.Guest.Connecting">正在連房主，等 1 秒看看能不能直接通…</sys:String>
     <sys:String x:Key="Link.Guest.NeedAckStatus">請點擊下方「複製回執碼」傳給房主放行，保持本頁開啟即可自動連通：</sys:String>
     <sys:String x:Key="Link.Guest.ConnectionLost">與房主的連線已中斷，請斷開後重新加入房間。</sys:String>
+    <sys:String x:Key="Link.Guest.WorldUnavailable">已連上房主，等待世界開放。</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">已經連上房主（延遲 {0} ms）！打開遊戲點「多人遊戲」，拉到最底下就能進。</sys:String>
     <sys:String x:Key="Link.Guest.AckExplain">你的回執碼（ACK- 加 26 個常用漢字，共 30 字元）：</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">複製回執碼</sys:String>

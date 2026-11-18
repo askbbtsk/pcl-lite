@@ -112,7 +112,7 @@ public class UpdatesManifestModel : IUpdateSource
         // 和 GetLatestVersion 用同一个结论，否则会出现「显示已是最新、点检查又提示有新版」。
         // 判据是「远程没有比当前更新的」，不能写成 IsAtLeast(remote, current)：
         // 那样 1.6.1-hotfix-1 ≥ 1.6.1 会直接把有更新判成已是最新
-        return UpdateVersion.IsUpToDate(_PickBest(channel, arch).Version.VersionName, currentVersion.ToString());
+        return UpdatesGitHubModel.IsUpToDate(_PickBest(channel, arch).Version, currentVersion.ToString());
     }
 
     public VersionAnnouncementDataModel GetAnnouncementList()
@@ -179,14 +179,6 @@ public class UpdatesManifestModel : IUpdateSource
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true
     };
-
-    public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
-    {
-        // 下载也必须走「刚才挑出最新版的那个源」，否则会出现
-        // 「提示 1.5.13，下载下来是 1.5.12 的资产」这种自相矛盾的情况
-        var best = _PickBest(channel, arch);
-        return best.Model.GetDownloadLoader(channel, arch, output);
-    }
 
     // ─────────────────────────────────────────────────────────────
     //  加载清单

@@ -58,7 +58,7 @@ public static class UpdateChannelLevels
         if (text.Contains("early", StringComparison.OrdinalIgnoreCase)) return Stable;
 
         if (text.Contains("nightly", StringComparison.OrdinalIgnoreCase)) return Latest;
-        if (text.Split(['-', '.'])[0].Equals("alpha", StringComparison.OrdinalIgnoreCase)) return Latest;
+        if (UpdateVersion.TryGetAlpha(text, out _)) return Latest;
         if (text.Contains("snapshot", StringComparison.OrdinalIgnoreCase)) return Snapshot;
         return Preview;
     }

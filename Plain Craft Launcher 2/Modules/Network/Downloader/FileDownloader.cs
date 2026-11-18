@@ -314,9 +314,6 @@ public static class FileDownloader
     private static void PromoteTempFile(string localPath)
     {
         var tempPath = localPath + ModNet.NetDownloadEnd;
-        if (File.Exists(localPath) || !File.Exists(tempPath))
-            return;
-
         for (var retry = 0; retry < 5; retry++)
         {
             try

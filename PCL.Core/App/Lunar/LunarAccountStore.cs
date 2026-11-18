@@ -95,6 +95,7 @@ public sealed record LunarAccountSnapshot(string ActiveLocalId, IReadOnlyList<Lu
 /// </summary>
 public static class LunarAccountStore
 {
+    private static readonly object WriteLock = new();
     public static string FilePath(string lunarRoot) =>
         Path.Combine(lunarRoot, "settings", "game", "accounts.json");
 
@@ -151,6 +152,7 @@ public static class LunarAccountStore
         if (string.IsNullOrWhiteSpace(localId)) return false;
 
         var path = FilePath(lunarRoot);
+        lock (WriteLock)
         try
         {
             if (!File.Exists(path)) return false;
@@ -167,9 +169,7 @@ public static class LunarAccountStore
 
             root["activeAccountLocalId"] = localId;
 
-            var temporary = path + ".pcltmp";
-            File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.Move(temporary, path, overwrite: true);
+            Write(path, root);
             return true;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
@@ -187,7 +187,7 @@ public static class LunarAccountStore
     {
         if (string.IsNullOrWhiteSpace(localId) || minecraftUuid == Guid.Empty) return false;
         string path = FilePath(lunarRoot);
-        string? temporary = null;
+        lock (WriteLock)
         try
         {
             if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root ||
@@ -207,23 +207,12 @@ public static class LunarAccountStore
                 catch (IOException) when (File.Exists(backup)) { }
             }
             root["activeAccountLocalId"] = localId;
-            temporary = path + ".pcl-" + Guid.NewGuid().ToString("N") + ".tmp";
-            File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.Move(temporary, path, overwrite: true);
+            Write(path, root);
             return true;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
         {
             return false;
-        }
-        finally
-        {
-            if (temporary is not null)
-            {
-                try { File.Delete(temporary); }
-                catch (IOException) { }
-                catch (UnauthorizedAccessException) { }
-            }
         }
     }
 
@@ -250,6 +239,7 @@ public static class LunarAccountStore
         if (string.IsNullOrWhiteSpace(localId) || string.IsNullOrWhiteSpace(accessToken)) return false;
 
         var path = FilePath(lunarRoot);
+        lock (WriteLock)
         try
         {
             if (!File.Exists(path)) return false;
@@ -270,9 +260,7 @@ public static class LunarAccountStore
             if (!string.IsNullOrWhiteSpace(refreshToken))
                 account["refreshToken"] = refreshToken;
 
-            var temporary = path + ".pcltmp";
-            File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.Move(temporary, path, overwrite: true);
+            Write(path, root);
             return true;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
@@ -308,6 +296,7 @@ public static class LunarAccountStore
         if (string.IsNullOrWhiteSpace(localId) || string.IsNullOrWhiteSpace(minecraftUuid)) return false;
 
         var path = FilePath(lunarRoot);
+        lock (WriteLock)
         try
         {
             JsonObject root;
@@ -317,6 +306,7 @@ public static class LunarAccountStore
 
                 // 已经有账号了就不动，只在「空账户库」的情况下补一条
                 if (existing["accounts"] is JsonObject { Count: > 0 }) return true;
+                if (existing.ContainsKey("accounts") && existing["accounts"] is not JsonObject) return false;
                 root = existing;
             }
             else
@@ -361,10 +351,19 @@ public static class LunarAccountStore
     /// <returns>写入成功返回 <c>true</c>。</returns>
     public static bool Upsert(string lunarRoot, string localId, string username, string minecraftName,
         string minecraftUuid, string accessToken, DateTimeOffset? expiresAt, string? refreshToken = null)
+        => Upsert(lunarRoot, localId, username, minecraftName, minecraftUuid, accessToken, expiresAt,
+            refreshToken, out _);
+
+    public static bool Upsert(string lunarRoot, string localId, string username, string minecraftName,
+        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt, string? refreshToken,
+        out string activeLocalId)
     {
-        if (string.IsNullOrWhiteSpace(localId) || string.IsNullOrWhiteSpace(minecraftUuid)) return false;
+        activeLocalId = string.Empty;
+        if (string.IsNullOrWhiteSpace(localId) || !Guid.TryParse(minecraftUuid, out var uuid)
+            || uuid == Guid.Empty) return false;
 
         var path = FilePath(lunarRoot);
+        lock (WriteLock)
         try
         {
             JsonObject root;
@@ -380,8 +379,21 @@ public static class LunarAccountStore
 
             if (root["accounts"] is not JsonObject accounts)
             {
+                if (root.ContainsKey("accounts")) return false;
                 accounts = new JsonObject();
                 root["accounts"] = accounts;
+            }
+
+            bool MatchesUuid(JsonNode? node) =>
+                node is JsonObject entry && entry["minecraftProfile"] is JsonObject profile &&
+                profile["id"] is JsonValue id && id.TryGetValue<string>(out var text) &&
+                Guid.TryParse(text, out var recordedUuid) && recordedUuid == uuid;
+
+            if (!MatchesUuid(accounts[localId]))
+            {
+                var match = accounts.FirstOrDefault(item => MatchesUuid(item.Value)).Key;
+                if (match is not null) localId = match;
+                else if (accounts.ContainsKey(localId)) localId = Guid.NewGuid().ToString("N");
             }
 
             if (accounts[localId] is JsonObject account)
@@ -404,6 +416,7 @@ public static class LunarAccountStore
                 root["activeAccountLocalId"] = localId;
 
             Write(path, root);
+            activeLocalId = localId;
             return true;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException
@@ -456,9 +469,17 @@ public static class LunarAccountStore
 
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
-        var temporary = path + ".pcltmp";
-        File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-        File.Move(temporary, path, overwrite: true);
+        var temporary = path + ".pcl-" + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.WriteAllText(temporary, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temporary, path, overwrite: true);
+        }
+        finally
+        {
+            try { File.Delete(temporary); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
     }
 
     private static string FormatTimestamp(DateTimeOffset value) =>

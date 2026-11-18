@@ -18,6 +18,7 @@ namespace PCL;
 
 public partial class PageLunarLaunch
 {
+    private long _chatGeneration;
 
     /// <summary>订阅 <see cref="ModLunar" /> 的社交事件。页面每次显示都要重新挂。</summary>
     private void SubscribeSocial()
@@ -34,6 +35,8 @@ public partial class PageLunarLaunch
     private void UnsubscribeSocial()
     {
         if (!_socialSubscribed) return;
+        ++_chatGeneration;
+        BtnChatSend.IsEnabled = true;
         ModLunar.SocialStateChanged -= RefreshSocial;
         ModLunar.SocialFriendsChanged -= RefreshSocial;
         ModLunar.SocialMessageReceived -= OnSocialMessage;
@@ -200,8 +203,10 @@ public partial class PageLunarLaunch
 
     private async Task OpenChatAsync(LunarFriend friend)
     {
+        var generation = ++_chatGeneration;
         _selectedFriend = friend;
         _selectedConversation = "";
+        BtnChatSend.IsEnabled = true;
         PanChat.Visibility = Visibility.Visible;
         LabChatTitle.Text = friend.Name;
         PanMessages.Children.Clear();
@@ -218,8 +223,11 @@ public partial class PageLunarLaunch
 
         try
         {
-            _selectedConversation = await client.OpenConversationAsync(friend.Uuid);
-            var messages = await client.LoadMessagesAsync(friend.Uuid, _selectedConversation);
+            var conversation = await client.OpenConversationAsync(friend.Uuid);
+            if (generation != _chatGeneration || !ReferenceEquals(client, ModLunar.Social)) return;
+            _selectedConversation = conversation;
+            var messages = await client.LoadMessagesAsync(friend.Uuid, conversation);
+            if (generation != _chatGeneration || !ReferenceEquals(client, ModLunar.Social)) return;
             PanMessages.Children.Clear();
             _lastMessageDate = default;
             foreach (var message in messages) AddMessageRow(message);
@@ -228,6 +236,7 @@ public partial class PageLunarLaunch
         }
         catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
         {
+            if (generation != _chatGeneration || !ReferenceEquals(client, ModLunar.Social)) return;
             PanMessages.Children.Clear();
             _lastMessageDate = default;
             AddSystemLine(ex.Message);
@@ -243,7 +252,7 @@ public partial class PageLunarLaunch
             return;
         }
 
-        if (conversationId != _selectedConversation) return;
+        if (!_socialSubscribed || conversationId != _selectedConversation) return;
         AddMessageRow(message);
         PanChatScroll.ScrollToEnd();
     }
@@ -390,6 +399,9 @@ public partial class PageLunarLaunch
             finally
             {
                 _socialBusy = false;
+                ++_chatGeneration;
+                _selectedConversation = "";
+                BtnChatSend.IsEnabled = true;
                 PanChat.Visibility = Visibility.Collapsed;
                 RefreshSocial();
             }
@@ -450,6 +462,7 @@ public partial class PageLunarLaunch
 
     private async Task SendChatAsync()
     {
+        if (!BtnChatSend.IsEnabled) return;
         var text = TxtChatInput.Text.Trim();
         if (text.Length == 0) return;
         if (_selectedFriend is null || _selectedConversation.Length == 0) return;
@@ -461,6 +474,7 @@ public partial class PageLunarLaunch
             return;
         }
 
+        var generation = _chatGeneration;
         TxtChatInput.Text = "";
         BtnChatSend.IsEnabled = false;
         try
@@ -470,12 +484,13 @@ public partial class PageLunarLaunch
         catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
         {
             // 发失败就把内容放回去，别让用户白打一遍
-            TxtChatInput.Text = text;
+            if (generation != _chatGeneration || !ReferenceEquals(client, ModLunar.Social)) return;
+            if (TxtChatInput.Text.Length == 0) TxtChatInput.Text = text;
             HintService.Hint(ex.Message, HintType.Warning);
         }
         finally
         {
-            BtnChatSend.IsEnabled = true;
+            if (generation == _chatGeneration) BtnChatSend.IsEnabled = true;
         }
     }
 

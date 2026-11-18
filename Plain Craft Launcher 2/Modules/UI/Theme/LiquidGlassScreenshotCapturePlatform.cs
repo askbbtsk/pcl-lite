@@ -170,7 +170,7 @@ internal sealed class LiquidGlassScreenshotCapturePlatform(Func<int> frameRate, 
                     if (++warmup < 3 || Volatile.Read(ref _pending) != 0) continue;
                     if (!PrintWindow(host, dc, 2)) throw new Win32Exception();
                     var sampleSize = LiquidGlassPerformance.SamplingSize(region.Width, region.Height,
-                        Config.Preference.TahoeGlass.SamplingQuality);
+                        region.CoversViewport ? Config.Preference.TahoeGlass.SamplingQuality : 100);
                     if (sampleWidth != sampleSize.Width || sampleHeight != sampleSize.Height ||
                         sampleBitmap == IntPtr.Zero && (sampleSize.Width != region.Width || sampleSize.Height != region.Height))
                     {

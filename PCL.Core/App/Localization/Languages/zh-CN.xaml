@@ -3737,6 +3737,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Link.Guest.Connecting">正在连房主，等 1 秒看看能不能直接通…</sys:String>
     <sys:String x:Key="Link.Guest.NeedAckStatus">请点击下方「复制回执码」发给房主放行，保持本页开启即可自动连通：</sys:String>
     <sys:String x:Key="Link.Guest.ConnectionLost">与房主的连接已断开，请断开后重新加入房间。</sys:String>
+    <sys:String x:Key="Link.Guest.WorldUnavailable">已连上房主，等待世界开放。</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">已经连上房主（延迟 {0} ms）！打开游戏点「多人游戏」，拉到最底下就能进。</sys:String>
     <sys:String x:Key="Link.Guest.AckExplain">你的回执码（ACK- 加 26 个常用汉字，共 30 字符）：</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">复制回执码</sys:String>
@@ -3980,6 +3981,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Lunar.Social.Online">已连接 Lunar 好友系统</sys:String>
     <sys:String x:Key="Lunar.Social.Connecting">正在连接…</sys:String>
     <sys:String x:Key="Lunar.Social.Connect">连接</sys:String>
+    <sys:String x:Key="Lunar.Social.NeedAccount">请先登录 Lunar 账号。</sys:String>
     <sys:String x:Key="Lunar.Social.Disconnect">断开</sys:String>
     <sys:String x:Key="Lunar.Social.Refresh">刷新</sys:String>
     <sys:String x:Key="Lunar.Social.Send">发送</sys:String>

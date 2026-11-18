@@ -15,11 +15,13 @@ public sealed class UpdateService : GeneralService
 
     private UpdateService() : base("update", "更新", false) { _context = ServiceContext; }
 
+    internal static bool IsUpdateHelper => Basics.CommandLineArguments is ["update", _, _, _, _];
+
     public override void Start()
     {
         var args = Basics.CommandLineArguments;
         
-        if (args is not ["update", _, _, _, _])
+        if (!IsUpdateHelper)
         {
             switch (args)
             {
@@ -48,9 +50,7 @@ public sealed class UpdateService : GeneralService
                 case ["update_failed", _]:
                 {
                     var reason = args[1];
-                    Context.Error(
-                        $"更新失败: {reason}\n你可以手动将 exe 文件替换为 PCL 目录中的新版本" +
-                        $"或再次尝试更新，若再次尝试仍然失败，请尽快反馈这个问题");
+                    Context.Error($"更新失败: {reason}\n请重新检查更新后重试。");
                     break;
                 }
                 default: Context.Debug("无更新任务"); break;
@@ -67,25 +67,22 @@ public sealed class UpdateService : GeneralService
 
             var oldProcessId = args[1].Convert<int>();
             Context.Debug($"旧版本进程 ID: {oldProcessId}");
+            Process? oldProcess;
             try
             {
-                var oldProcess = Process.GetProcessById(oldProcessId);
-                Context.Debug("正在等待旧版本进程退出");
-                // 必须给超时。旧进程若在关闭流程里被某个服务卡住，这里会无限期挂着：
-                // 用户看到的现象是「点了更新，启动器窗口没了，进程还在，再点启动也没反应」，
-                // 而且没有任何日志能说明它在等谁。等不到就照常往下走，让替换和重启先完成。
-                if (!oldProcess.WaitForExit(30000))
-                {
-                    Context.Warn("旧版本进程 30 秒内没有退出，不再等待，继续替换文件");
-                }
-                else
-                {
-                    Context.Trace("旧版本进程已退出");
-                }
+                oldProcess = Process.GetProcessById(oldProcessId);
             }
-            catch
+            catch (ArgumentException)
             {
-                /* ignored */
+                oldProcess = null;
+            }
+            using (oldProcess)
+            {
+                if (oldProcess is not null && !oldProcess.WaitForExit(30000))
+                {
+                    Context.Warn("旧版本进程未退出，已取消替换，请重试更新。");
+                    return;
+                }
             }
 
             Context.Debug("正在替换文件");
@@ -93,24 +90,32 @@ public sealed class UpdateService : GeneralService
             Context.Trace($"目标: {target}");
             var source = args[3];
             Context.Trace($"来源: {source}");
-            var ex = UpdateHelper.Replace(source, target);
-            if (ex is null) Context.Trace("替换完成");
-            else Context.Error("替换文件出错", ex);
-
             var restart = args[4].Convert<bool>();
-            if (restart)
+            var ex = UpdateHelper.Replace(source, target, restart
+                ? () => _StartUpdated(target, "update_finished", source)
+                : null);
+            if (ex is null) Context.Trace("替换完成");
+            else
             {
-                var restartArgs = (ex is null) ? $"finished \"{source}\"" : $"failed \"{ex.Message}\"";
-                restartArgs = $"update_{restartArgs}";
-                Context.Debug($"重启中，使用参数: {restartArgs}");
-                Process.Start(target, restartArgs);
+                Context.Error("替换或启动新版出错", ex);
+                if (restart) _StartUpdated(target, "update_failed", ex.Message);
             }
         }
         catch (Exception ex)
         {
             Context.Error("更新过程出错", ex);
         }
-        
-        Context.RequestExit();
+        finally
+        {
+            Context.RequestExit();
+        }
+    }
+
+    private static void _StartUpdated(string target, string command, string value)
+    {
+        var start = new ProcessStartInfo(target);
+        start.ArgumentList.Add(command);
+        start.ArgumentList.Add(value);
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("更新后启动失败");
     }
 }

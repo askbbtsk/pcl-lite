@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.IO;
 using System.Threading;
 
@@ -28,97 +27,89 @@ public static class UpdateHelper
     /// <param name="source">用于替换的来源文件路径</param>
     /// <param name="target">目标文件路径</param>
     /// <returns>成功返回 <c>null</c>，失败返回最后一次的异常。</returns>
-    public static Exception? Replace(string source, string target)
+    public static Exception? Replace(string source, string target, Action? launch = null)
     {
         source = Path.GetFullPath(source);
         target = Path.GetFullPath(target);
-        var backup = $"{target}.bak.{DateTime.Now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)}";
+        if (string.Equals(source, target, StringComparison.OrdinalIgnoreCase))
+            return new IOException("更新来源与目标相同");
+        var id = Guid.NewGuid().ToString("N");
+        var backup = $"{target}.bak.{id}";
+        var replacement = $"{target}.new.{id}";
 
-        // 1) 备份目标文件。备份都做不了就别动目标文件了，否则失败后连回滚的余地都没有。
-        //    读也可能被瞬时占用挡一下，同样要重试
-        Exception? backupEx = null;
-        for (var attempt = 0; attempt < RetryCount; attempt++)
+        var replaced = false;
+        var keepBackup = false;
+        FileAttributes? originalAttributes = null;
+        try
         {
-            try
+            if (!File.Exists(source)) throw new FileNotFoundException("未找到更新文件", source);
+            _Retry(() =>
             {
                 File.Copy(target, backup, true);
-                if (!File.Exists(backup)) throw new FileNotFoundException("备份目标文件失败", backup);
-                backupEx = null;
-                break;
-            }
-            catch (Exception ex)
+                originalAttributes = File.GetAttributes(backup);
+                _ClearReadOnly(backup);
+            });
+            _Retry(() => File.Copy(source, replacement, true));
+            if (new FileInfo(replacement).Length != new FileInfo(source).Length)
+                throw new IOException("复制后的文件大小与来源不一致");
+
+            _Retry(() =>
             {
-                backupEx = ex;
-                if (attempt < RetryCount - 1) Thread.Sleep(RetryDelayMs);
-            }
-        }
-
-        if (backupEx is not null)
-        {
-            TryDelete(backup);
-            return backupEx;
-        }
-
-        // 2) 替换：删目标 → 复制来源。整段重试，因为删除和复制都可能撞上瞬时占用
-        Exception? lastEx = null;
-        var replaced = false;
-        for (var attempt = 0; attempt < RetryCount; attempt++)
-        {
-            try
-            {
-                if (File.Exists(target))
-                {
-                    // 只读属性会让 File.Delete 直接抛 UnauthorizedAccessException，
-                    // 和「被占用」是同一个异常类型，先摘掉属性再试
-                    var attributes = File.GetAttributes(target);
-                    if ((attributes & FileAttributes.ReadOnly) != 0)
-                        File.SetAttributes(target, attributes & ~FileAttributes.ReadOnly);
-
-                    File.Delete(target);
-                }
-
-                File.Copy(source, target);
-
-                if (!File.Exists(target)) throw new FileNotFoundException("复制到目标文件失败", target);
-
-                // 复制过程中被截断（磁盘满、杀软中断写入）时 File.Copy 不一定报错，
-                // 用大小兜一道，避免把一个残缺的 exe 留在目标位置
-                if (new FileInfo(target).Length != new FileInfo(source).Length)
-                    throw new IOException("复制后的文件大小与来源不一致");
-
+                _ClearReadOnly(target);
+                File.Move(replacement, target, true);
                 replaced = true;
-                lastEx = null;
-                break;
-            }
-            catch (Exception ex)
-            {
-                lastEx = ex;
-                if (attempt < RetryCount - 1) Thread.Sleep(RetryDelayMs);
-            }
+            });
+            launch?.Invoke();
+            return null;
         }
-
-        // 3) 失败：把旧文件放回目标位置，至少保证用户还能启动
-        if (!replaced)
+        catch (Exception error)
         {
             try
             {
-                if (File.Exists(target)) File.Delete(target);
-                if (File.Exists(backup)) File.Move(backup, target);
+                if (replaced)
+                    _Retry(() =>
+                    {
+                        _ClearReadOnly(target);
+                        File.Move(backup, target, true);
+                    });
+                if (originalAttributes is { } attributes && File.Exists(target))
+                    _Retry(() => File.SetAttributes(target, attributes));
             }
             catch (Exception restoreEx)
             {
-                // 回滚也失败了：两份异常都带出去，日志里能看出是哪一步崩的
-                return new AggregateException(lastEx!, restoreEx);
+                keepBackup = replaced;
+                return new AggregateException(error, restoreEx);
             }
-
-            TryDelete(backup);
-            return lastEx;
+            return error;
         }
+        finally
+        {
+            TryDelete(replacement);
+            if (!keepBackup) TryDelete(backup);
+        }
+    }
 
-        // 4) 成功：清理备份。这一步失败不能算更新失败——文件已经换好了，
-        //    以前它写在 try 外面，删备份被拦会直接抛到上层，连重启都被跳过
-        TryDelete(backup);
-        return null;
+    private static void _Retry(Action action)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                action();
+                return;
+            }
+            catch (Exception ex) when (attempt < RetryCount && ex is IOException or UnauthorizedAccessException)
+            {
+                Thread.Sleep(RetryDelayMs);
+            }
+        }
+    }
+
+    private static void _ClearReadOnly(string path)
+    {
+        var attributes = File.GetAttributes(path);
+        if ((attributes & FileAttributes.ReadOnly) != 0)
+            File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
     }
 
     /// <summary>删除文件，失败不抛。用于各种收尾清理。</summary>
@@ -127,9 +118,7 @@ public static class UpdateHelper
         try
         {
             if (!File.Exists(path)) return;
-            var attributes = File.GetAttributes(path);
-            if ((attributes & FileAttributes.ReadOnly) != 0)
-                File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+            _ClearReadOnly(path);
             File.Delete(path);
         }
         catch

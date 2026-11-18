@@ -1,0 +1,309 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Essentials/SingleInstanceService.cs",
+    "Sha256": "2417AD73233DC3BCBFAEDA6EF15004DAAF2CB6374FC35CB416406C7456CDEEA8",
+    "Members": [
+      "PCL.Core.App.Essentials.SingleInstanceService::MethodDeclaration::_Start()"
+    ],
+    "Reason": "Hotfix 6: give the update helper its own startup path and preserve the existing executable when replacement cannot complete.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/App/Essentials/UpdateHelper.cs",
+    "Sha256": "311C0B908EC2BC243E5650BAAE6B0014DAE8274394F6C930ECF8A3C4CC329951",
+    "Members": [
+      "PCL.Core.App.Essentials.UpdateHelper::MethodDeclaration::TryDelete(string path)"
+    ],
+    "Reason": "Hotfix 6: give the update helper its own startup path and preserve the existing executable when replacement cannot complete.",
+    "RemovedMembers": [
+      "PCL.Core.App.Essentials.UpdateHelper::MethodDeclaration::Replace(string source, string target)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/App/Essentials/UpdateService.cs",
+    "Sha256": "5BEA54E508C55802631C44F8D4E369085961A34895A449EC042B9620D44B8BAF",
+    "Members": [
+      "PCL.Core.App.Essentials.UpdateService::MethodDeclaration::Start()"
+    ],
+    "Reason": "Hotfix 6: give the update helper its own startup path and preserve the existing executable when replacement cannot complete.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarAccountStore.cs",
+    "Sha256": "5A7C93E95DF66B0A80900628A51FA5054CE6CF8C29D78D754F6680D79B63394F",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::CreateIfMissing(string lunarRoot, string localId, string username,\n        string minecraftName, string minecraftUuid, string accessToken, DateTimeOffset? expiresAt,\n        string? refreshToken = null)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::SetActive(string lunarRoot, string localId)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::UpdateToken(string lunarRoot, string localId, string accessToken,\n        DateTimeOffset? expiresAt, string? refreshToken = null)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::Upsert(string lunarRoot, string localId, string username, string minecraftName,\n        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt, string? refreshToken = null)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::Write(string path, JsonObject root)"
+    ],
+    "Reason": "Hotfix 6: retain exact Lunar account ownership, atomic writes and current conversation; preserve the previously reviewed launch and friend behavior in this file.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarIdentityStore.cs",
+    "Sha256": "B8221D333D104F259486851E8AC5AF631E78A2ECDF8953C38AA10D8BBA9ACED6",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Find(string? uuid)",
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Remove(string uuid)",
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Upsert(LunarIdentityAccount account)"
+    ],
+    "Reason": "Hotfix 6: retain exact Lunar account ownership, atomic writes and current conversation; preserve the previously reviewed launch and friend behavior in this file.",
+    "RemovedMembers": [
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Write(IReadOnlyList<LunarIdentityAccount> accounts)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/App/Updates/UpdateChannelLevels.cs",
+    "Sha256": "7814B5034C9280D8374919DBCEDEC7AD02C5CC5BD75FD22687805DC47FF0A60B",
+    "Members": [
+      "PCL.Core.App.Updates.UpdateChannelLevels::MethodDeclaration::Describe(int level)",
+      "PCL.Core.App.Updates.UpdateChannelLevels::MethodDeclaration::FromSuffix(string? suffix)"
+    ],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "PCL.Core/App/Updates/UpdateVersion.cs",
+    "Sha256": "77AB730585852D0F4A8C0CD17CD1A5389491D28C19E7C3EBA1A0C391987E58C6",
+    "Members": [
+      "PCL.Core.App.Updates.UpdateVersion::FieldDeclaration::RankLatest",
+      "PCL.Core.App.Updates.UpdateVersion::MethodDeclaration::TryGetSnapshotHotfix(string suffix, out int snapshot, out int hotfix)",
+      "PCL.Core.App.Updates.UpdateVersion::MethodDeclaration::_FamilyOf(string suffix)",
+      "PCL.Core.App.Updates.UpdateVersion::MethodDeclaration::_RankOf(string suffix)",
+      "PCL.Core.App.Updates.UpdateVersion::MethodDeclaration::_SequenceOf(string suffix)"
+    ],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.PageNavigation.cs",
+    "Sha256": "9003A456533FE0FEEA5991321267FD31F2407435E8B7115D5178EA7557EA92E1",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::PageChange(PageStackData stack, PageSubType subType = PageSubType.Default)",
+      "PCL.FormMain::MethodDeclaration::PageChangeActual(PageStackData stack, PageSubType subType)",
+      "PCL.FormMain::PropertyDeclaration::PageCurrentSub"
+    ],
+    "Reason": "Hotfix 6: use the active plugin subpage for navigation and selection; retain previously reviewed navigation behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+    "Sha256": "4BA8C73F78B120C545E42E41677CB7EC4BB549E6F9B05E387A5149131A6B7B87",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::FormMain_KeyDown(object sender, KeyEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::GetTitleLeftReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::GetTitleRightReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::PanTitle_SizeChanged(object sender, EventArgs e)",
+      "PCL.FormMain::MethodDeclaration::ParseCollapsedNavigationIds(string? value)",
+      "PCL.FormMain::MethodDeclaration::RefreshNavigationOverflow()",
+      "PCL.FormMain::MethodDeclaration::UpdateNavigationOverflowPosition()",
+      "PCL.FormMain::MethodDeclaration::_SizeWndProc(nint hWnd, int msg, nint wParam, nint lParam, ref bool handled)"
+    ],
+    "Reason": "Hotfix 6: handle clipped capture dimensions and align resizing with the visible window; retain previously reviewed Liquid Glass behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.IdentityAndGameProcess.cs",
+    "Sha256": "035D279A69A929222A018928F8D20B75198017584AED415C90006BBFDD94674D",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ReadInstallationId()",
+      "PCL.ModLunar::MethodDeclaration::RefreshAccountTokenAsync(LunarAccount account,\n        CancellationToken cancellationToken)",
+      "PCL.ModLunar::MethodDeclaration::RefreshIdentityAsync(LunarIdentityAccount identity,\n        CancellationToken token)",
+      "PCL.ModLunar::MethodDeclaration::RefreshLunarAccountAsync(Guid minecraftUuid,\n        CancellationToken cancellationToken)",
+      "PCL.ModLunar::MethodDeclaration::StartIpcAsync(string installationId)",
+      "PCL.ModLunar::MethodDeclaration::StartIpcAsync(string installationId, long launchSession)",
+      "PCL.ModLunar::MethodDeclaration::TryProvideAccountToStore()"
+    ],
+    "Reason": "Hotfix 6: retain exact Lunar account ownership, atomic writes and current conversation; preserve the previously reviewed launch and friend behavior in this file.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
+    "Sha256": "34E23E6469D7EF474C584FD9EC7C9B0E84CECA987343A37229E579BBBA58DF31",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ConnectSocialAsync()",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory)",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory, long launchSession)",
+      "PCL.ModLunar::MethodDeclaration::ResolveCredentialsAsync()",
+      "PCL.ModLunar::MethodDeclaration::ResolveGameDirectory()"
+    ],
+    "Reason": "Hotfix 6: retain exact Lunar account ownership, atomic writes and current conversation; preserve the previously reviewed launch and friend behavior in this file.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Network/Downloader/FileDownloader.cs",
+    "Sha256": "D5795F9F11B8A6CEA48FD7EE5E3A6600A4367FE87F82EE5EF338E1972E21665E",
+    "Members": [
+      "PCL.Network.FileDownloader::MethodDeclaration::PromoteTempFile(string localPath)"
+    ],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
+    "Sha256": "C427A4038AD98C1ADF677906EEBE36FD43F63B1FD875663123C36E8BD42BCE83",
+    "Members": [
+      "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::OnClosed(object? sender, EventArgs e)",
+      "PCL.LiquidGlassCore::MethodDeclaration::Refresh()",
+      "PCL.LiquidGlassCore::MethodDeclaration::Restore(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::SetResource(FormMain window, string key, object value)",
+      "PCL.LiquidGlassCore::MethodDeclaration::TitleIcons(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::UpdateTitleGlass(FormMain window)",
+      "PCL.LiquidGlassCore::PropertyDeclaration::BackdropSource",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsDesktopBackdropRequested",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsEnabled",
+      "PCL.LiquidGlassCore::PropertyDeclaration::Profile"
+    ],
+    "Reason": "Hotfix 6: handle clipped capture dimensions and align resizing with the visible window; retain previously reviewed Liquid Glass behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassDesktopCapture.cs",
+    "Sha256": "FB16B2BF1CFA788520EDF2627CB5CBE129A2B57A1CC5266D298EC55EBBF029E4",
+    "Members": [
+      "PCL.TahoeDesktopCapture::MethodDeclaration::Failed(Session session, Exception error)",
+      "PCL.TahoeDesktopCapture::MethodDeclaration::Present(Session session, TahoeCaptureFrame frame, Action completed)",
+      "PCL.TahoeDesktopCapture::MethodDeclaration::SetInteractiveMove(bool moving)",
+      "PCL.TahoeDesktopCapture::MethodDeclaration::UpdateGeometry()"
+    ],
+    "Reason": "Hotfix 6: handle clipped capture dimensions and align resizing with the visible window; retain previously reviewed Liquid Glass behavior.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassScreenshotCapturePlatform.cs",
+    "Sha256": "B130F59F6E13AF3FAA782FA14AB6BABB347DE8DC3C4297ED5CD7EE7014FCA5F9",
+    "Members": [
+      "PCL.LiquidGlassScreenshotCapturePlatform+Capture::MethodDeclaration::Run()"
+    ],
+    "Reason": "Hotfix 6: handle clipped capture dimensions and align resizing with the visible window; retain previously reviewed Liquid Glass behavior.",
+    "RemovedMembers": [
+      "PCL.LiquidGlassScreenshotCapturePlatform+Capture::FieldDeclaration::_closing,_pending"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/IUpdateSource.cs",
+    "Sha256": "7367FAB77D4A0CF37826CE4F3489AD5E8D745E78883C07CA3FC7D490D5039990",
+    "Members": [],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": [
+      "PCL.IUpdateSource::MethodDeclaration::GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/UpdateManager.cs",
+    "Sha256": "A2EC60A8A5C877FA0EC3C6ACCBBBAD951C476CD46C888A11E45E3B0D24678613",
+    "Members": [
+      "PCL.UpdateManager::FieldDeclaration::isUpdateWaitingRestart",
+      "PCL.UpdateManager::MethodDeclaration::UpdateRestart(bool triggerRestartAndByEnd, bool triggerRestart = true)",
+      "PCL.UpdateManager::MethodDeclaration::UpdateStart(UpdateEnums.UpdateType type, string receivedKey = null, bool forceValidated = false)"
+    ],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/UpdatesGitHubModel.cs",
+    "Sha256": "1FB95E9F45E2406B5C09FD218CC11B954B4CB3F21989C81CB47395AB9C07547B",
+    "Members": [
+      "PCL.UpdatesGitHubModel::FieldDeclaration::PageSize",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::GetLatestVersion(UpdateChannel channel, UpdateArch arch)",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::RefreshCache(bool force = false)",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::_PickAsset(JsonArray assets, UpdateArch arch)",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::_RefreshCacheFromAtom()"
+    ],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": [
+      "PCL.UpdatesGitHubModel::FieldDeclaration::_fetchedAt",
+      "PCL.UpdatesGitHubModel::FieldDeclaration::_releases",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::_ApplyDownloaded(string path, string output)",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::_PickRelease(UpdateChannel channel)",
+      "PCL.UpdatesGitHubModel::MethodDeclaration::_TryGetSha256(JsonObject release, UpdateArch arch)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/UpdatesManifestModel.cs",
+    "Sha256": "C6CF5FFAF29DBE5D37C2047AE0EF9051AEBDB505C7224550539F1E05207E19F7",
+    "Members": [
+      "PCL.UpdatesManifestModel::MethodDeclaration::IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)"
+    ],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": [
+      "PCL.UpdatesManifestModel::MethodDeclaration::GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/UpdatesMinioModel.cs",
+    "Sha256": "2BE898B1662546F054B1F9A5DDDE2FE3AB5E71C6A3AB894C026DCC657DF1A810",
+    "Members": [
+      "PCL.UpdatesMinioModel::MethodDeclaration::GetChannelInfo(UpdateChannel channel, UpdateArch arch)"
+    ],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": [
+      "PCL.UpdatesMinioModel::MethodDeclaration::GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/UpdatesRandomModel.cs",
+    "Sha256": "D5B173EBA7E168F12643EE102DC8A7CA5F329F73FCD57C5986176F38B663287A",
+    "Members": [],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": [
+      "PCL.UpdatesRandomModel::MethodDeclaration::GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/UpdatesWrapperModel.cs",
+    "Sha256": "DF3CF5D77C8272AE9E604AE93CE384FF6682BA92928B1F89368E81F8DC7581F9",
+    "Members": [
+      "PCL.UpdatesWrapperModel::MethodDeclaration::GetAnnouncementList()",
+      "PCL.UpdatesWrapperModel::MethodDeclaration::GetLatestVersion(UpdateChannel channel, UpdateArch arch)",
+      "PCL.UpdatesWrapperModel::MethodDeclaration::IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)",
+      "PCL.UpdatesWrapperModel::MethodDeclaration::RefreshCache(bool force = false)"
+    ],
+    "Reason": "Hotfix 6: pin release selection and download metadata, isolate and verify staging, and preserve the intended historical release channels.",
+    "RemovedMembers": [
+      "PCL.UpdatesWrapperModel::MethodDeclaration::GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)"
+    ],
+    "AllMembers": false
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.SocialLifecycle.cs",
+    "Sha256": "398FF062AAB6F98552824667807462A7D6AB9CA96B9AAC68CC615B3AE9433DC1",
+    "Members": [
+      "PCL.PageLunarLaunch::MethodDeclaration::BtnSocialConnect_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageLunarLaunch::MethodDeclaration::OnSocialMessage(string conversationId, LunarChatMessage message)",
+      "PCL.PageLunarLaunch::MethodDeclaration::OpenChatAsync(LunarFriend friend)",
+      "PCL.PageLunarLaunch::MethodDeclaration::SendChatAsync()",
+      "PCL.PageLunarLaunch::MethodDeclaration::UnsubscribeSocial()"
+    ],
+    "Reason": "Hotfix 6: retain exact Lunar account ownership, atomic writes and current conversation; preserve the previously reviewed launch and friend behavior in this file.",
+    "RemovedMembers": null,
+    "AllMembers": false
+  }
+]

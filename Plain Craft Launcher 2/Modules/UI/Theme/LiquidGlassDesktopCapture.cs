@@ -232,6 +232,7 @@ internal sealed class TahoeDesktopCapture : IDisposable
                 session.Capture!.SetRegion(new TahoeCaptureRegion((int)(area.X - monitor.Bounds.X), (int)(area.Y - monitor.Bounds.Y),
                     (int)area.Width, (int)area.Height, (int)(area.X - bounds.X), (int)(area.Y - bounds.Y), version)
                 {
+                    CoversViewport = area == bounds,
                     RadiusX = radii.Width, RadiusY = radii.Height,
                     WindowOffsetX = hasWindowBounds ? checked((int)area.X - nativeBounds.Left) : null,
                     WindowOffsetY = hasWindowBounds ? checked((int)area.Y - nativeBounds.Top) : null

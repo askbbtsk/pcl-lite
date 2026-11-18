@@ -9,4 +9,6 @@ public class VersionDataModel
     public string Source { get; set; }
     public int VersionCode { get; set; }
     public string VersionName { get; set; }
+    public bool IsComplete { get; init; } = true;
+    public Func<string, List<ModLoader.LoaderBase>> CreateDownloadLoaders { get; init; }
 }

@@ -73,26 +73,26 @@ public partial class FormMain
         if (!canResize)
             return new nint(HTCLIENT);
 
-        // 真实像素尺寸的 offset
         var dpi = VisualTreeHelper.GetDpi(this);
-        // Glass clips the unused 10-DIP HWND margin. Keep the resize band
-        // inside the visible edge instead of the now-clipped outer margin.
-        var offsetPxX = (LiquidGlassCore.IsEnabled ? 10 : offsetWpf) * dpi.DpiScaleX;
-        var offsetPxY = (LiquidGlassCore.IsEnabled ? 10 : offsetWpf) * dpi.DpiScaleY;
+        var offsetPxX = offsetWpf * dpi.DpiScaleX;
+        var offsetPxY = offsetWpf * dpi.DpiScaleY;
         var hitWidthPxX = hitWidthWpf * dpi.DpiScaleX;
         var hitWidthPxY = hitWidthWpf * dpi.DpiScaleY;
 
         // 计算鼠标相对于窗口左上角的物理像素位置
         var relX = xMouse - windowRect.Left;
         var relY = yMouse - windowRect.Top;
-        var w = windowBounds.Width;
-        var h = windowBounds.Height;
+        var clip = LiquidGlassCore.WindowClipDeviceBounds;
+        var left = clip?.Left ?? offsetPxX;
+        var right = clip?.Right ?? windowBounds.Width - offsetPxX;
+        var top = clip?.Top ?? offsetPxY;
+        var bottom = clip?.Bottom ?? windowBounds.Height - offsetPxY;
 
         // 判定是否命中偏移后的热区
-        var inLeft = relX >= offsetPxX && relX <= offsetPxX + hitWidthPxX;
-        var inRight = relX <= w - offsetPxX && relX >= w - offsetPxX - hitWidthPxX;
-        var inTop = relY >= offsetPxY && relY <= offsetPxY + hitWidthPxY;
-        var inBottom = relY <= h - offsetPxY && relY >= h - offsetPxY - hitWidthPxY;
+        var inLeft = relX >= left && relX <= left + hitWidthPxX;
+        var inRight = relX <= right && relX >= right - hitWidthPxX;
+        var inTop = relY >= top && relY <= top + hitWidthPxY;
+        var inBottom = relY <= bottom && relY >= bottom - hitWidthPxY;
 
         handled = true; // 接管该区域的消息
 

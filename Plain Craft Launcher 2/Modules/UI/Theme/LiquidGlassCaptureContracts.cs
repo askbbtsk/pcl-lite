@@ -10,6 +10,7 @@ internal sealed record TahoeCaptureMonitor(IntPtr Handle, Rect Bounds);
 internal sealed record TahoeCaptureRegion(int X, int Y, int Width, int Height,
     int DestinationX, int DestinationY, int Version)
 {
+    public bool CoversViewport { get; init; }
     // Device-pixel radii of the launcher's actual viewport clip, not its HWND border.
     public double RadiusX { get; init; }
     public double RadiusY { get; init; }

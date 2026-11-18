@@ -154,40 +154,6 @@ public class UpdatesWrapperModel : IUpdateSource
         throw new Exception(Lang.Text("Update.Task.GetAnnouncementFailed"));
     }
 
-    public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
-    {
-        _lastSourceError = null;
-        var attempted = new HashSet<IUpdateSource>();
-        foreach (var item in _sources)
-            try
-            {
-                if (_versionSource is not null && attempted.Add(_versionSource))
-                    try
-                    {
-                        return _versionSource.GetDownloadLoader(channel, arch, output);
-                    }
-                    catch (Exception ex)
-                    {
-                        _lastSourceError = ex;
-                        ModBase.Log(ex, $"[Update] 缓存的版本源 {_versionSource.SourceName} 不可用");
-                        _versionSource = null;
-                    }
-
-                if (!attempted.Add(item)) continue;
-                var ret = item.GetDownloadLoader(channel, arch, output);
-                _versionSource = item;
-                return ret;
-            }
-            catch (Exception ex)
-            {
-                _lastSourceError = ex;
-                ModBase.Log(ex, $"[Update] {item.SourceName} 无法获取最新版本信息");
-            }
-
-        ModBase.Log("[Update] 错误！所有的版本源都无法使用！");
-        throw new Exception(Lang.Text("Update.Task.GetVersionInfoFailed"), _lastSourceError);
-    }
-
     public async Task<bool> IsLatestAsync(UpdateChannel channel, UpdateArch arch, SemVer currentVersion,
         int currentVersionCode)
     {

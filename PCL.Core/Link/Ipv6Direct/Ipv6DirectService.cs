@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -292,6 +293,7 @@ public sealed class Ipv6HostSession : IAsyncDisposable
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {
         var buffer = new byte[2048];
+        var retryDelay = 50;
         EndPoint remoteAny = new IPEndPoint(IPAddress.IPv6Any, 0);
 
         while (!ct.IsCancellationRequested)
@@ -299,6 +301,7 @@ public sealed class Ipv6HostSession : IAsyncDisposable
             try
             {
                 var res = await _udp.ReceiveFromAsync(buffer, SocketFlags.None, remoteAny, ct).ConfigureAwait(false);
+                retryDelay = 50;
                 if (res.RemoteEndPoint is not IPEndPoint rawRemoteEp)
                     continue;
 
@@ -317,6 +320,8 @@ public sealed class Ipv6HostSession : IAsyncDisposable
             {
                 if (_loggedErrors.TryAdd(ex.ErrorCode, 1))
                     LogWrapper.Warn("Link", $"[Host] UDP 接收出现 Socket 错误 ({ex.SocketErrorCode}/{ex.ErrorCode}): {ex.Message}");
+                if (!await TunnelBridgeHelper.DelayReceiveRetryAsync(retryDelay, ct).ConfigureAwait(false)) break;
+                retryDelay = Math.Min(retryDelay * 2, 1000);
             }
             catch
             {
@@ -414,6 +419,7 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
         _peer.IsReachable &&
         (!_peer.RemoteGameServerStatusSupported || _peer.RemoteGameServerAvailable);
     public bool HasConnected => Volatile.Read(ref _hasConnected) != 0;
+    public bool IsTunnelReachable => _peer.IsReachable;
     public int RttMs => _peer.RttMs;
     public bool HostRequiresOnlineAuth => _peer.RemoteRequiresOnlineAuth;
 
@@ -476,9 +482,18 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
         // Minecraft's LAN discovery can connect back through a non-loopback address
         // of this same machine. The accept loop filters remote endpoints to local
         // addresses before opening an authenticated tunnel stream.
-        var localProxy = TunnelBridgeHelper.BindRandomLocalTcpListener();
-
-        return new Ipv6GuestSession(udp, localPublicIpv6, localUdpPort, hostInvite, localProxy);
+        TcpListener? localProxy = null;
+        try
+        {
+            localProxy = TunnelBridgeHelper.BindRandomLocalTcpListener();
+            return new Ipv6GuestSession(udp, localPublicIpv6, localUdpPort, hostInvite, localProxy);
+        }
+        catch
+        {
+            localProxy?.Stop();
+            udp.Dispose();
+            throw;
+        }
     }
 
     private async ValueTask SendToHostAsync(ReadOnlyMemory<byte> data)
@@ -500,6 +515,7 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {
         var buffer = new byte[2048];
+        var retryDelay = 50;
         EndPoint remoteAny = new IPEndPoint(IPAddress.IPv6Any, 0);
 
         while (!ct.IsCancellationRequested)
@@ -507,6 +523,7 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
             try
             {
                 var res = await _udp.ReceiveFromAsync(buffer, SocketFlags.None, remoteAny, ct).ConfigureAwait(false);
+                retryDelay = 50;
                 if (res.RemoteEndPoint is not IPEndPoint endpoint ||
                     !TunnelBridgeHelper.NormalizeEndpoint(endpoint).Equals(_hostEndpoint))
                     continue;
@@ -520,6 +537,8 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
             {
                 if (_loggedErrors.TryAdd(ex.ErrorCode, 1))
                     LogWrapper.Warn("Link", $"[Guest] UDP 接收出现 Socket 错误 ({ex.SocketErrorCode}/{ex.ErrorCode}): {ex.Message}");
+                if (!await TunnelBridgeHelper.DelayReceiveRetryAsync(retryDelay, ct).ConfigureAwait(false)) break;
+                retryDelay = Math.Min(retryDelay * 2, 1000);
             }
             catch
             {
@@ -614,6 +633,19 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
 
 internal static class TunnelBridgeHelper
 {
+    public static async Task<bool> DelayReceiveRetryAsync(int milliseconds, CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(milliseconds, ct).ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return false;
+        }
+    }
+
     private const int SioUdpConnReset = -1744830452;
     private const int SioUdpNetReset = -1744830445;
 
@@ -835,6 +867,8 @@ internal static class TunnelBridgeHelper
         UdpReliablePeer.ReliableStream tunnelStream,
         CancellationToken ct)
     {
+        using var bridgeCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct, tunnelStream.Aborted);
+        ct = bridgeCancellation.Token;
         var up = Task.Run(async () =>
         {
             var buf = new byte[4096];
@@ -847,8 +881,9 @@ internal static class TunnelBridgeHelper
                     await tunnelStream.WriteAsync(buf.AsMemory(0, n), ct).ConfigureAwait(false);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is IOException or SocketException or OperationCanceledException or ObjectDisposedException)
             {
+                bridgeCancellation.Cancel();
             }
             finally
             {
@@ -868,8 +903,9 @@ internal static class TunnelBridgeHelper
                     await netStream.WriteAsync(buf.AsMemory(0, n), ct).ConfigureAwait(false);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is IOException or SocketException or OperationCanceledException or ObjectDisposedException)
             {
+                bridgeCancellation.Cancel();
             }
             finally
             {

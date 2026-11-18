@@ -26,5 +26,4 @@ public interface IUpdateSource
     VersionDataModel GetLatestVersion(UpdateChannel channel, UpdateArch arch);
     bool IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode);
     VersionAnnouncementDataModel GetAnnouncementList();
-    List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output);
 }

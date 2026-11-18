@@ -729,9 +729,7 @@ public static partial class ModLunar
         // ③ 既没选 Lunar 身份账号，账户库里也没有账号。
         //    这里**不再**偷偷回落到 PCL 主页面的登录：那套令牌是 PCL 自己的 client id 签的，
         //    JWT 里的 aid 对不上，Lunar 认不出来，启动只会卡在 Connecting...。
-        throw new InvalidOperationException(
-            "还没有可用的 Lunar 账号。请在账号下拉框右侧点「登录」，用 Lunar 身份登录一次。\n" +
-            "这个登录和 PCL 主页面的账号是两套，互不影响。");
+        throw new LunarSocialException(Lang.Text("Lunar.Social.NeedAccount"));
     }
 
 }

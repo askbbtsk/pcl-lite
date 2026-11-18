@@ -155,8 +155,6 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             case TunnelPacketType.Pong:
             {
                 Volatile.Write(ref _lastPongTimestamp, Environment.TickCount64);
-                if (Interlocked.Exchange(ref _isReachable, 1) == 0)
-                    OnReachabilityChanged?.Invoke(true);
                 if (packet.Length >= HeaderSize + 8)
                 {
                     var sentTick = BinaryPrimitives.ReadInt64BigEndian(packet.Slice(HeaderSize, 8));
@@ -170,6 +168,8 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                     Volatile.Write(ref _remoteGameServerStatusSupported, (flags & 0x02) != 0 ? 1 : 0);
                     Volatile.Write(ref _remoteGameServerAvailable, (flags & 0x04) != 0 ? 1 : 0);
                 }
+                if (Interlocked.Exchange(ref _isReachable, 1) == 0)
+                    OnReachabilityChanged?.Invoke(true);
                 OnConnectedOrHeartbeat?.Invoke(Volatile.Read(ref _rttMs));
                 break;
             }
@@ -331,6 +331,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         private readonly object _sendLock = new();
         private readonly SortedDictionary<uint, PendingPacket> _unacked = new();
         private readonly SemaphoreSlim _windowSignal = new(MaxWindow, MaxWindow);
+        private readonly CancellationTokenSource _abort = new();
 
         private readonly object _recvLock = new();
         private readonly SortedDictionary<uint, byte[]> _outOfOrder = new();
@@ -344,7 +345,18 @@ public sealed class UdpReliablePeer : IAsyncDisposable
 
         public uint ConnId => _connId;
         public uint ExpectedReceiveSeq { get { lock (_recvLock) return _recvExpectedSeq; } }
-        public bool IsFullyClosed => _localClosed && _remoteClosedDelivered && _unacked.IsEmpty();
+        internal CancellationToken Aborted => _abort.Token;
+        public bool IsFullyClosed
+        {
+            get
+            {
+                if (_abort.IsCancellationRequested) return true;
+                lock (_recvLock)
+                    if (!_remoteClosedDelivered) return false;
+                lock (_sendLock)
+                    return _localClosed && _unacked.Count == 0;
+            }
+        }
 
         internal ReliableStream(uint connId, UdpReliablePeer peer, bool isInitiator)
         {
@@ -355,6 +367,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
 
         public async Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken ct)
         {
+            using var writeCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct, Aborted);
             var offset = 0;
             while (offset < data.Length)
             {
@@ -362,13 +375,16 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                 var slice = data.Slice(offset, len);
                 offset += len;
 
-                await _windowSignal.WaitAsync(ct).ConfigureAwait(false);
+                await _windowSignal.WaitAsync(writeCancellation.Token).ConfigureAwait(false);
                 uint seq;
                 byte[] copy;
                 lock (_sendLock)
                 {
                     if (_localClosed)
+                    {
+                        _windowSignal.Release();
                         throw new ObjectDisposedException(nameof(ReliableStream));
+                    }
                     seq = _nextSendSeq++;
                     copy = slice.ToArray();
                     _unacked[seq] = new PendingPacket(seq, copy, Environment.TickCount64);
@@ -433,6 +449,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                 _localClosed = true;
                 _unacked.Clear();
             }
+            _abort.Cancel();
             _incomingChunks.Writer.TryComplete();
         }
 

@@ -250,7 +250,9 @@ public partial class FormMain
                 case PageType.Plugins:
                 {
                     ModMain.frmPluginsLeft ??= new PagePluginsLeft();
-                    ModMain.frmPluginsLeft.Select(subType, stack == pageCurrent);
+                    ModMain.frmPluginsLeft.Select(
+                        subType is PageSubType.PluginMarket or PageSubType.PluginInstalled
+                            ? subType : ModMain.frmPluginsLeft.pageID, stack == pageCurrent);
                     break;
                 }
                 case PageType.Lunar:

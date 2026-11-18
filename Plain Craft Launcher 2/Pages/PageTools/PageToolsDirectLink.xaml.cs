@@ -165,29 +165,41 @@ public partial class PageToolsDirectLink
         if (_lanListenCts is not null)
             return;
 
-        _lanListenCts = new CancellationTokenSource();
-        var ct = _lanListenCts.Token;
-        _ = Task.Run(() => LanBroadcastHelper.RunListenerAsync(info =>
+        var listener = _lanListenCts = new CancellationTokenSource();
+        var ct = listener.Token;
+        _ = Task.Run(async () =>
         {
-            Dispatcher.BeginInvoke(() =>
+            try
             {
-                _lastLanWorld = info;
-                LabLanDetected.Text = Lang.Text("Link.Host.LanCaptured", info.Motd, info.Port);
-                if (_hostSession is not null)
+                await LanBroadcastHelper.RunListenerAsync(info => Dispatcher.BeginInvoke(() =>
                 {
-                    _lastAutoFilledLanPort = info.Port;
-                    SetHostPortProgrammatic(info.Port.ToString());
-                    _hostSession.McPort = info.Port;
-                    _hostSession.SetLanServerAvailability(info.Port, available: true);
+                    if (_lanListenCts != listener) return;
+                    _lastLanWorld = info;
+                    LabLanDetected.Text = Lang.Text("Link.Host.LanCaptured", info.Motd, info.Port);
+                    if (!_hasUserEditedHostPort && _lastAutoFilledLanPort != info.Port)
+                    {
+                        _lastAutoFilledLanPort = info.Port;
+                        SetHostPortProgrammatic(info.Port.ToString());
+                    }
+                    if (_hostSession is { } host && host.McPort == info.Port)
+                        host.SetLanServerAvailability(info.Port, available: true);
                     PushSidebarStatus();
-                }
-                else if (!_hasUserEditedHostPort && _lastAutoFilledLanPort != info.Port)
+                }), ct);
+            }
+            catch (System.Net.Sockets.SocketException ex)
+            {
+                ModBase.Log(ex, "[Link] LAN listener failed", ModBase.LogLevel.Debug);
+            }
+            finally
+            {
+                _ = Dispatcher.BeginInvoke(() =>
                 {
-                    _lastAutoFilledLanPort = info.Port;
-                    SetHostPortProgrammatic(info.Port.ToString());
-                }
-            });
-        }, ct), ct);
+                    if (_lanListenCts != listener) return;
+                    _lanListenCts = null;
+                    listener.Dispose();
+                });
+            }
+        });
     }
 
     private void EnsureLanExpireTimerRunning()
@@ -297,9 +309,10 @@ public partial class PageToolsDirectLink
             // The tunnel does not change Minecraft's authentication policy.
             var profileType = ProfileService.Current?.ProfileType;
             var requireOnlineAuth = profileType is ProfileType.Microsoft or ProfileType.Authlib or ProfileType.YggdrasilConnect;
-            _hostSession = Ipv6HostSession.Start(_ipv6Candidates[0].Address, mcPort, requireOnlineAuth);
-            _hostSession.StateChanged += () => Dispatcher.BeginInvoke(() =>
+            var session = _hostSession = Ipv6HostSession.Start(_ipv6Candidates[0].Address, mcPort, requireOnlineAuth);
+            session.StateChanged += () => Dispatcher.BeginInvoke(() =>
             {
+                if (_hostSession != session) return;
                 UpdateHostPeersUi();
                 PushSidebarStatus();
             });
@@ -340,7 +353,6 @@ public partial class PageToolsDirectLink
             return;
         var session = _hostSession;
         _hostSession = null;
-        await session.DisposeAsync();
         PanHostInviteRow.Visibility = Visibility.Collapsed;
         CardHostAck.Visibility = Visibility.Collapsed;
         CardHostPeers.Visibility = Visibility.Collapsed;
@@ -358,7 +370,8 @@ public partial class PageToolsDirectLink
         BtnHostToggle.ColorType = MyButton.ColorState.Highlight;
         ClearTransientHostPortState();
         PushSidebarStatus();
-        HintService.Hint("已关闭直连房间。");
+        await session.DisposeAsync();
+        if (_hostSession is null) HintService.Hint("已关闭直连房间。");
     }
 
     private void UpdateHostPeersUi()
@@ -369,10 +382,11 @@ public partial class PageToolsDirectLink
             return;
         }
         var peers = _hostSession.GetPeers();
-        PanelHostPeers.Children.Clear();
         if (peers.Count == 0)
         {
             StopHostPunchTimer();
+            if (PanelHostPeers.Children.Count == 1 && PanelHostPeers.Children[0] is TextBlock) return;
+            PanelHostPeers.Children.Clear();
             PanelHostPeers.Children.Add(new TextBlock
             {
                 Text = Lang.Text("Link.Host.NoPeers"),
@@ -384,6 +398,13 @@ public partial class PageToolsDirectLink
 
         var now = DateTimeOffset.UtcNow;
         var hasPunching = false;
+        var currentIds = peers.Select(peer => peer.VirtualId).ToHashSet();
+        var existing = PanelHostPeers.Children.OfType<Grid>()
+            .Where(row => row.Tag is int)
+            .ToDictionary(row => (int)row.Tag);
+        foreach (UIElement child in PanelHostPeers.Children.Cast<UIElement>().ToArray())
+            if (child is not Grid { Tag: int id } || !currentIds.Contains(id))
+                PanelHostPeers.Children.Remove(child);
         foreach (var peer in peers)
         {
             var label = peer.VirtualId > 0 ? $"好友 #{peer.VirtualId}" : "好友";
@@ -401,12 +422,18 @@ public partial class PageToolsDirectLink
                     : $"正在打洞，已尝试 {elapsedSec}s…";
             }
 
-            var row = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+            var text = $"• {label}  {status}";
+            if (existing.TryGetValue(peer.VirtualId, out var existingRow))
+            {
+                ((TextBlock)existingRow.Children[0]).Text = text;
+                continue;
+            }
+            var row = new Grid { Margin = new Thickness(0, 0, 0, 8), Tag = peer.VirtualId };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.Children.Add(new TextBlock
             {
-                Text = $"• {label}  {status}",
+                Text = text,
                 TextWrapping = TextWrapping.Wrap,
                 LineHeight = 22,
                 VerticalAlignment = VerticalAlignment.Center
@@ -531,9 +558,10 @@ public partial class PageToolsDirectLink
 
         try
         {
-            _guestSession = Ipv6GuestSession.Start(_ipv6Candidates[0].Address, invite);
-            _guestSession.StateChanged += () => Dispatcher.BeginInvoke(() =>
+            var session = _guestSession = Ipv6GuestSession.Start(_ipv6Candidates[0].Address, invite);
+            session.StateChanged += () => Dispatcher.BeginInvoke(() =>
             {
+                if (_guestSession != session) return;
                 UpdateGuestUi();
                 PushSidebarStatus();
             });
@@ -566,7 +594,6 @@ public partial class PageToolsDirectLink
 
         var session = _guestSession;
         _guestSession = null;
-        await session.DisposeAsync();
         CardGuestProgress.Visibility = Visibility.Collapsed;
         PanGuestAck.Visibility = Visibility.Collapsed;
         PanGuestConnected.Visibility = Visibility.Collapsed;
@@ -574,7 +601,8 @@ public partial class PageToolsDirectLink
         BtnGuestToggle.Text = Lang.Text("Link.Guest.ConnectBtn");
         BtnGuestToggle.ColorType = MyButton.ColorState.Highlight;
         PushSidebarStatus();
-        HintService.Hint("已断开联机。");
+        await session.DisposeAsync();
+        if (_guestSession is null) HintService.Hint("已断开联机。");
     }
 
     private void UpdateGuestUi()
@@ -594,11 +622,13 @@ public partial class PageToolsDirectLink
             LabGuestStatus.Text = statusText + "\n" + profileHint +
                 " 能否进入游戏仍由 Minecraft 游戏端决定。";
         }
-        else if (_guestSession.HasConnected)
+        else if (_guestSession.IsTunnelReachable || _guestSession.HasConnected)
         {
             PanGuestAck.Visibility = Visibility.Collapsed;
             PanGuestConnected.Visibility = Visibility.Collapsed;
-            LabGuestStatus.Text = Lang.Text("Link.Guest.ConnectionLost");
+            LabGuestStatus.Text = Lang.Text(_guestSession.IsTunnelReachable
+                ? "Link.Guest.WorldUnavailable"
+                : "Link.Guest.ConnectionLost");
         }
         else
         {

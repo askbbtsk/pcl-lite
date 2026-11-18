@@ -3899,6 +3899,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Lunar.Social.Online">Connected to the Lunar friends system</sys:String>
     <sys:String x:Key="Lunar.Social.Connecting">Connecting…</sys:String>
     <sys:String x:Key="Lunar.Social.Connect">Connect</sys:String>
+    <sys:String x:Key="Lunar.Social.NeedAccount">Sign in to Lunar first.</sys:String>
     <sys:String x:Key="Lunar.Social.Disconnect">Disconnect</sys:String>
     <sys:String x:Key="Lunar.Social.Refresh">Refresh</sys:String>
     <sys:String x:Key="Lunar.Social.Send">Send</sys:String>
@@ -4083,6 +4084,7 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Link.Guest.Connecting">Trying to reach host directly…</sys:String>
     <sys:String x:Key="Link.Guest.NeedAckStatus">Click Copy ACK Code below, send it to the host, and keep this page open:</sys:String>
     <sys:String x:Key="Link.Guest.ConnectionLost">Connection to the host was lost. Disconnect and join the room again.</sys:String>
+    <sys:String x:Key="Link.Guest.WorldUnavailable">Connected to the host. Waiting for the world to open.</sys:String>
     <sys:String x:Key="Link.Guest.ConnectedStatus">Connected ({0} ms)! Open Multiplayer in Minecraft and look at the bottom of the list.</sys:String>
     <sys:String x:Key="Link.Guest.AckExplain">Your ACK (ACK- plus 26 common Chinese characters, 30 characters total):</sys:String>
     <sys:String x:Key="Link.Guest.CopyAck">Copy Ack</sys:String>

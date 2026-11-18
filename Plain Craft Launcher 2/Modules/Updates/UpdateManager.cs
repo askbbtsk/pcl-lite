@@ -7,12 +7,14 @@ using PCL.Core.App.Localization;
 using PCL.Core.App.Updates;
 using PCL.Core.Utils;
 using PCL.Core.Utils.OS;
+using PCL.Network;
+using PCL.Network.Loaders;
 
 namespace PCL;
 
 public static class UpdateManager
 {
-    public static bool isUpdateWaitingRestart;
+    public static volatile bool isUpdateWaitingRestart;
 
     /// <summary>
     /// 更新程序是否已经启动过（0 = 没有，1 = 已启动）。
@@ -25,6 +27,8 @@ public static class UpdateManager
     /// </para>
     /// </summary>
     private static int _restartLaunched;
+    private static int _updateInProgress;
+    private static string? _verifiedUpdatePath;
 
     public static UpdatesWrapperModel remoteServer = new(new List<IUpdateSource>
     {
@@ -85,21 +89,25 @@ public static class UpdateManager
 
     public static void UpdateStart(UpdateEnums.UpdateType type, string receivedKey = null, bool forceValidated = false)
     {
-        // 同一个更新流程只能有一个。以前没有这道门，用户在更新页上连点两下
-        // （或者一边自动下载一边手点安装）就会起出两个加载器，
-        // 它们往同一个临时文件和同一个目标 exe 上写，轻则哈希校验失败，重则装出半个文件。
-        if (type == UpdateEnums.UpdateType.UpdateNow &&
-            updateLoader is { State: ModBase.LoadState.Loading })
+        if (Interlocked.CompareExchange(ref _updateInProgress, 1, 0) != 0)
         {
             ModBase.Log("[Update] 已有更新任务在跑，忽略本次请求");
             return;
         }
 
-        var dlTargetPath = ModBase.exePath + @"PCL\Plain Craft Launcher Community Edition.exe";
+        var dlTargetPath = Path.Combine(ModBase.exePath, "PCL", $"update-{Guid.NewGuid():N}.exe");
         ModBase.RunInNewThread(() =>
         {
+            var loaders = new List<ModLoader.LoaderBase>();
+            ModLoader.LoaderCombo<JsonObject>? combo = null;
             try
             {
+                if (type == UpdateEnums.UpdateType.UpdateNow && isUpdateWaitingRestart)
+                {
+                    UpdateRestart(true);
+                    return;
+                }
+
                 var version = remoteServer.GetLatestVersion(
                     TargetChannel,
                     CurrentArch
@@ -127,11 +135,9 @@ public static class UpdateManager
                     // 构造步骤加载器
                 }
 
-                var loaders = new List<ModLoader.LoaderBase>();
                 // 下载
-                loaders.AddRange(remoteServer.GetDownloadLoader(
-                    TargetChannel,
-                    CurrentArch, dlTargetPath));
+                Directory.CreateDirectory(Path.GetDirectoryName(dlTargetPath)!);
+                loaders.AddRange(version.CreateDownloadLoaders(dlTargetPath));
                 loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Security.Signature.Task"), _ =>
                 {
                     var verificationError = UpdateSignatureVerifier.VerifyAsync(
@@ -157,12 +163,18 @@ public static class UpdateManager
                     if (!string.Equals(curHash, version.Sha256, StringComparison.OrdinalIgnoreCase))
                         throw new Exception(Lang.Text("Update.Error.Sha256Mismatch", version.Sha256, curHash));
                 }));
+                loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.Install"), task =>
+                {
+                    if (task.IsAborted) return;
+                    var oldPath = Interlocked.Exchange(ref _verifiedUpdatePath, dlTargetPath);
+                    isUpdateWaitingRestart = true;
+                    if (oldPath is not null) _CleanUpdateFiles(oldPath);
+                }) { show = false });
                 if (type == UpdateEnums.UpdateType.UpdateNow)
                     loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.Install"), _ => UpdateRestart(true)));
                 else if (type == UpdateEnums.UpdateType.DownloadAndPrompt)
                     loaders.Add(new ModLoader.LoaderTask<int, int>(Lang.Text("Update.Task.ShowButton"), _ =>
                     {
-                        isUpdateWaitingRestart = true;
                         ModBase.RunInUi(() =>
                         {
                             ModMain.frmMain.BtnExtraUpdateRestart.ToolTip =
@@ -186,15 +198,18 @@ public static class UpdateManager
                 {
                     show = false
                 });
-                // 启动
-                updateLoader = new ModLoader.LoaderCombo<JsonObject>(Lang.Text("Update.Title"), loaders);
-                updateLoader.Start();
+                combo = new ModLoader.LoaderCombo<JsonObject>(Lang.Text("Update.Title"), loaders);
+                updateLoader = combo;
+                combo.Start();
                 if (type == UpdateEnums.UpdateType.UpdateNow)
                 {
-                    ModLoader.LoaderTaskbarAdd(updateLoader);
+                    ModLoader.LoaderTaskbarAdd(combo);
                     ModMain.frmMain.BtnExtraDownload.ShowRefresh();
                     ModMain.frmMain.BtnExtraDownload.Ribble();
                 }
+                while (combo.State == ModBase.LoadState.Loading) Thread.Sleep(15);
+                if (combo.State == ModBase.LoadState.Failed && combo.Error is { } error)
+                    ModBase.Log(error, "[Update] 下载或校验更新失败");
             }
             catch (Exception ex)
             {
@@ -202,7 +217,44 @@ public static class UpdateManager
                 if (type != (UpdateEnums.UpdateType)0)
                     HintService.Hint(_DescribeUpdateError(ex), HintType.Error);
             }
+            finally
+            {
+                combo?.Abort();
+                // An aborted loader can still hold or promote a file in this staging directory.
+                foreach (var loader in loaders)
+                {
+                    var worker = loader switch
+                    {
+                        LoaderDownload download => download.ExecutionCompletion,
+                        ModLoader.LoaderTask task => task.lastRunningTask,
+                        _ => null
+                    };
+                    try { worker?.GetAwaiter().GetResult(); }
+                    catch (Exception ex) { ModBase.Log(ex, "[Update] 等待更新任务退出失败", ModBase.LogLevel.Developer); }
+                }
+                if (Volatile.Read(ref _verifiedUpdatePath) != dlTargetPath)
+                    _CleanUpdateFiles(dlTargetPath);
+                else
+                    _CleanUpdateFiles(dlTargetPath, keepExecutable: true);
+                Volatile.Write(ref _updateInProgress, 0);
+            }
         });
+    }
+
+    private static void _CleanUpdateFiles(string path, bool keepExecutable = false)
+    {
+        foreach (var suffix in new[] { "", ".sigstore.json", ".download" })
+        {
+            try
+            {
+                if (suffix.Length != 0 || !keepExecutable) File.Delete(path + suffix);
+                File.Delete(path + suffix + ModNet.NetDownloadEnd);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                ModBase.Log(ex, "[Update] 清理暂存文件失败", ModBase.LogLevel.Developer);
+            }
+        }
     }
 
     /// <summary>
@@ -236,11 +288,12 @@ public static class UpdateManager
 
         try
         {
-            var fileName = ModBase.exePath + @"PCL\Plain Craft Launcher Community Edition.exe";
-            if (!File.Exists(fileName))
+            var fileName = Volatile.Read(ref _verifiedUpdatePath);
+            if (fileName is null || !File.Exists(fileName))
             {
                 ModBase.Log("[System] 更新失败：未找到更新文件");
-                _restartLaunched = 0;
+                Volatile.Write(ref _verifiedUpdatePath, null);
+                Volatile.Write(ref _restartLaunched, 0);
                 return;
             }
 
@@ -248,19 +301,20 @@ public static class UpdateManager
             var text =
                 $"update {Process.GetCurrentProcess().Id} \"{Basics.ExecutablePath}\" \"{fileName}\" {(triggerRestart ? "true" : "false")}";
             ModBase.Log("[System] 更新程序启动，参数：" + text);
-            Process.Start(new ProcessStartInfo(fileName)
-                { WindowStyle = ProcessWindowStyle.Hidden, CreateNoWindow = true, Arguments = text });
+            using var updater = Process.Start(new ProcessStartInfo(fileName)
+                { WindowStyle = ProcessWindowStyle.Hidden, CreateNoWindow = true, Arguments = text })
+                ?? throw new InvalidOperationException("更新程序未启动");
             if (triggerRestartAndByEnd)
             {
                 ModMain.frmMain.EndProgram(false, true);
                 ModBase.Log("[System] 已由于更新强制结束程序");
             }
         }
-        catch (Win32Exception ex)
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
             // 被拦截时把标记还回去，用户装好白名单后还能再点一次
-            _restartLaunched = 0;
             isUpdateWaitingRestart = true;
+            Volatile.Write(ref _restartLaunched, 0);
             ModBase.Log(ex, "自动更新时触发 Win32 错误，疑似被拦截");
             ModMain.MyMsgBox(
                 Lang.Text("Update.Error.UpdateBlockedMessage", ModBase.exePath),

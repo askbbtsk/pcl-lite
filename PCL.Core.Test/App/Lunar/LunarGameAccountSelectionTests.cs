@@ -75,6 +75,29 @@ public sealed class LunarGameAccountSelectionTests
     }
 
     [TestMethod]
+    public void UpsertUsesTheRequestedUuidWhenItsSuggestedLocalIdBelongsToAnotherAccount()
+    {
+        var before = JsonNode.Parse(File.ReadAllText(PathToAccounts))!["accounts"]!["local-one"];
+        Assert.IsTrue(LunarAccountStore.Upsert(_root, "local-one", "Second", "Second", Second.ToString("D"),
+            "second-renewed", null, null, out var active));
+        Assert.AreEqual("local-two", active);
+        var root = JsonNode.Parse(File.ReadAllText(PathToAccounts))!;
+        Assert.IsTrue(JsonNode.DeepEquals(before, root["accounts"]!["local-one"]));
+        Assert.AreEqual("second-renewed", root["accounts"]!["local-two"]!["accessToken"]!.GetValue<string>());
+        Assert.AreEqual(active, root["activeAccountLocalId"]!.GetValue<string>());
+
+        const string third = "33333333-3333-4333-8333-333333333333";
+        Assert.IsTrue(LunarAccountStore.Upsert(_root, "local-one", "Third", "Third", third,
+            "third-access", null, null, out active));
+        Assert.AreNotEqual("local-one", active);
+        Assert.AreNotEqual("local-two", active);
+        root = JsonNode.Parse(File.ReadAllText(PathToAccounts))!;
+        Assert.IsTrue(JsonNode.DeepEquals(before, root["accounts"]!["local-one"]));
+        Assert.AreEqual("third-access", root["accounts"]![active]!["accessToken"]!.GetValue<string>());
+        Assert.AreEqual(active, root["activeAccountLocalId"]!.GetValue<string>());
+    }
+
+    [TestMethod]
     public void RemovedOrInvalidTargetCannotBecomeTheActiveAccount()
     {
         var document = JsonNode.Parse(File.ReadAllText(PathToAccounts))!;

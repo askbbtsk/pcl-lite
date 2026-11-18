@@ -68,29 +68,19 @@ public class UpdatesMinioModel : IUpdateSource // 社区自己的更新系统格
         return deJsonData;
     }
 
-    public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
+    private List<ModLoader.LoaderBase> _CreateDownloadLoaders(MinioUpdateAsset deJsonData, string output)
     {
-        if (_remoteCache is null)
-            RefreshCache();
         var loaders = new List<ModLoader.LoaderBase>();
         var patchUpdate = true;
-        var tempPath = $@"{ModBase.pathTemp}Cache\Update\Download\";
+        var tempPath = output + ".download";
         loaders.Add(new ModLoader.LoaderTask<int, List<DownloadFile>>(Lang.Text("Update.Task.GetVersionInfo"), load =>
         {
-            var channelName = GetChannelName(channel, arch);
-            var deJsonData = GetRemoteInfoByName($"updates-{channelName}", "updates/")
-                ?.ToObject<MinioUpdateModel>()
-                ?.Assets
-                ?.FirstOrDefault();
-            if (deJsonData is null)
-                throw new Exception("No assets can download!");
             var selfSha256 = ModBase.GetFileSHA256(Basics.ExecutablePath);
             var remoteUpdSha256 = deJsonData.Sha256;
             var patchFileName = $"{selfSha256}_{remoteUpdSha256}.patch";
             if (deJsonData.Patches.Contains(patchFileName))
             {
                 patchUpdate = true;
-                tempPath += patchFileName;
                 load.output = new List<DownloadFile>
                     { new(new[] { $"{_baseUrl}static/patch/{patchFileName}" }, tempPath) };
             }
@@ -98,7 +88,6 @@ public class UpdatesMinioModel : IUpdateSource // 社区自己的更新系统格
             {
                 patchUpdate = false;
 
-                tempPath += $"{deJsonData.Sha256}.bin";
                 load.output = new List<DownloadFile> { new(RandomUtils.Shuffle(deJsonData.Downloads), tempPath) };
             }
         }));
@@ -154,7 +143,8 @@ public class UpdatesMinioModel : IUpdateSource // 社区自己的更新系统格
             VersionCode = deJsonData.Version.Code,
             Sha256 = deJsonData.Sha256,
             Source = SourceName,
-            Changelog = deJsonData.Changelog
+            Changelog = deJsonData.Changelog,
+            CreateDownloadLoaders = output => _CreateDownloadLoaders(deJsonData, output)
         };
     }
 

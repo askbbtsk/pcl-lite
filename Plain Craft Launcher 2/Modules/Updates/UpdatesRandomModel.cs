@@ -46,8 +46,4 @@ public class UpdatesRandomModel : IUpdateSource // 社区自己的更新系统�
         return _sources.ElementAt(_randIndex).GetAnnouncementList();
     }
 
-    public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
-    {
-        return _sources.ElementAt(_randIndex).GetDownloadLoader(channel, arch, output);
-    }
 }

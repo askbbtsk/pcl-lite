@@ -436,17 +436,8 @@ public static partial class ModLunar
             var refreshToken = current.RefreshToken;
             var displayName = current.DisplayName;
             var uuid = NormalizeUuid(current.Uuid).Replace("-", string.Empty);
-            RefreshAccounts();
-            var twin = _accounts.FirstOrDefault(x =>
-                string.Equals(NormalizeUuid(x.MinecraftUuid), uuid, StringComparison.OrdinalIgnoreCase));
-            // 复用已有的 localId：游戏记的是这个 id，换一个新的等于凭空多出一个账号
-            var localId = twin?.LocalId ??
-                          (string.IsNullOrWhiteSpace(_launchedLocalId)
-                              ? Guid.NewGuid().ToString("N")
-                              : _launchedLocalId);
-
-            if (!LunarAccountStore.Upsert(LunarClientService.SettingsRoot, localId, displayName, displayName,
-                    uuid, token, expiresAt, refreshToken))
+            if (!LunarAccountStore.Upsert(LunarClientService.SettingsRoot, Guid.NewGuid().ToString("N"),
+                    displayName, displayName, uuid, token, expiresAt, refreshToken, out var localId))
             {
                 Log("[Lunar IPC] 写 Lunar 账户库失败，账号没能交给游戏");
                 return false;

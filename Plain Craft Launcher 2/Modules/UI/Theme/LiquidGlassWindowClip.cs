@@ -22,6 +22,9 @@ internal sealed class LiquidGlassWindowClip : IDisposable
     private (Rect Bounds, double X, double Y, Matrix Transform)? _previous;
     private bool _enabled, _disposed, _faulted;
 
+    internal Rect? DeviceBounds => _previous is { } outline
+        ? new MatrixTransform(outline.Transform).TransformBounds(outline.Bounds) : null;
+
     public LiquidGlassWindowClip(Window window, FrameworkElement viewport, RectangleGeometry clip,
         Action<Exception> failed)
     {

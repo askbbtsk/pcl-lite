@@ -157,4 +157,23 @@ public class UpdateHelperTest
 
         Assert.AreEqual(0, Directory.GetFiles(_dir, "*.bak.*").Length);
     }
+
+    [TestMethod]
+    public void ReplaceShouldRestoreOldExeAndAllowRetryWhenLaunchFails()
+    {
+        var target = Write("app.exe", "old");
+        var source = Write("new.exe", "new content");
+        var launchError = new InvalidOperationException("Could not start the replacement");
+
+        var error = UpdateHelper.Replace(source, target, () =>
+        {
+            Assert.AreEqual("new content", File.ReadAllText(target));
+            throw launchError;
+        });
+
+        Assert.AreSame(launchError, error);
+        Assert.AreEqual("old", File.ReadAllText(target));
+        Assert.IsNull(UpdateHelper.Replace(source, target));
+        Assert.AreEqual("new content", File.ReadAllText(target));
+    }
 }

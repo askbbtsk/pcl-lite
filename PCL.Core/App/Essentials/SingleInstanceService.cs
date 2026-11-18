@@ -90,6 +90,11 @@ public sealed partial class SingleInstanceService
     [LifecycleStart]
     private static void _Start()
     {
+        if (UpdateService.IsUpdateHelper)
+        {
+            Context.DeclareStopped();
+            return;
+        }
         _lockStream = SingleInstanceLock.TryAcquire(_LockFilePath, Basics.CurrentProcessId);
         if (_lockStream is not null)
         {

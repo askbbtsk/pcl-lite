@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text.Json.Nodes;
@@ -31,13 +30,13 @@ namespace PCL;
 /// </summary>
 public class UpdatesGitHubModel : IUpdateSource
 {
-    private const int PageSize = 20;
+    private const int PageSize = 100;
 
     /// <summary>
     /// GitHub 反代，只作为<b>后备</b>：官方直链打不开（被墙、超时、404）时才轮到它们。
     /// <para>
     /// 顺序即优先级。走反代等于把发布包交给别人的服务器中转一遍，能直连就不要绕，
-    /// 所以 <see cref="GetDownloadLoader"/> 里官方地址永远排在最前面。
+    /// 所以官方地址永远排在最前面。
     /// 反代服务时好时坏，失效了改这个列表即可。
     /// </para>
     /// </summary>
@@ -47,12 +46,8 @@ public class UpdatesGitHubModel : IUpdateSource
         "https://gh-proxy.com/",
     ];
 
-    private JsonArray? _releases;
-
-    /// <summary>
-    ///     上次成功拉取版本列表的时间。用来判断缓存是否还有效。
-    /// </summary>
-    private DateTime _fetchedAt = DateTime.MinValue;
+    private sealed record ReleaseList(JsonArray Releases, DateTime FetchedAt, bool Complete);
+    private volatile ReleaseList? _releaseList;
 
     /// <summary>
     ///     版本列表的缓存有效期。
@@ -94,30 +89,34 @@ public class UpdatesGitHubModel : IUpdateSource
 
         // 缓存还在有效期内就直接用，省一次请求（也省 GitHub 的限流额度）。
         // force 用于用户主动点「重新检查」，必须真的去问一次。
-        if (!force && _releases is not null && DateTime.UtcNow - _fetchedAt < CacheTtl)
+        if (!force && _releaseList is { } cached && DateTime.UtcNow - cached.FetchedAt < CacheTtl)
             return true;
 
         try
         {
-            var json = HttpRequest.Create($"{_ReleasesApi}?per_page={PageSize}")
-                .WithHeader("Accept", "application/vnd.github+json")
-                .SendAsync()
-                .GetAwaiter()
-                .GetResult()
-                .AsString();
-
-            if (JsonNode.Parse(json) is JsonArray releases)
+            var releases = new JsonArray();
+            string? page = $"{_ReleasesApi}?per_page={PageSize}";
+            var visited = new HashSet<string>(StringComparer.Ordinal);
+            while (page is not null)
             {
-                if (releases.Count == 0)
-                    throw new UpdateSourceException("这个仓库还没有发布任何 Release。");
+                if (!visited.Add(page))
+                    throw new InvalidDataException("GitHub Releases pagination repeated a page");
+                using var response = HttpRequest.Create(page)
+                    .WithHeader("Accept", "application/vnd.github+json")
+                    .SendAsync().GetAwaiter().GetResult();
+                var json = response.AsString();
+                if (JsonNode.Parse(json) is not JsonArray entries)
+                    throw new InvalidDataException(_DescribeBadResponse(json));
+                foreach (var entry in entries) releases.Add(entry?.DeepClone());
 
-                _releases = releases;
-                _fetchedAt = DateTime.UtcNow;
-                return true;
+                page = response.Headers.TryGetValues("Link", out var links)
+                    ? PCL.Core.App.Updates.GitHubReleasePagination.Next(links)
+                    : null;
             }
-
-            // 返回的是对象而不是数组：403 限流、仓库不存在、令牌失效都在这个分支
-            ModBase.Log($"GitHub Releases API 不可用：{_DescribeBadResponse(json)}", ModBase.LogLevel.Developer);
+            if (releases.Count == 0)
+                throw new UpdateSourceException("这个仓库还没有发布任何 Release。");
+            _releaseList = new ReleaseList(releases, DateTime.UtcNow, true);
+            return true;
         }
         catch (Exception ex) when (ex is not UpdateSourceException)
         {
@@ -151,8 +150,7 @@ public class UpdatesGitHubModel : IUpdateSource
             if (entries.Count == 0)
                 throw new UpdateSourceException("Atom 订阅源里没有任何 Release。");
 
-            _releases = entries;
-            _fetchedAt = DateTime.UtcNow;
+            _releaseList = new ReleaseList(entries, DateTime.UtcNow, false);
             ModBase.Log("已降级使用 Atom 订阅源获取版本列表", ModBase.LogLevel.Developer);
             return true;
         }
@@ -265,7 +263,8 @@ public class UpdatesGitHubModel : IUpdateSource
     public VersionDataModel GetLatestVersion(UpdateChannel channel, UpdateArch arch)
     {
         _EnsureConfigured();
-        var release = _PickRelease(channel);
+        var (release, assets, url, complete) = _PickRelease(channel, arch);
+        var signatureUrl = _TryGetSignatureUrl(assets, url);
         return new VersionDataModel
         {
             VersionName = _NormalizeTag(release["tag_name"]?.GetValue<string>()),
@@ -273,11 +272,11 @@ public class UpdatesGitHubModel : IUpdateSource
             VersionCode = 0,
             Changelog = release["body"]?.GetValue<string>() ?? string.Empty,
             // 有官方 digest 就带上，没有就留空（调用方会跳过校验）
-            Sha256 = _TryGetSha256(release, arch),
-            SignatureUrl = release["assets"] is JsonArray assets
-                ? _TryGetSignatureUrl(assets, _PickAsset(assets, arch))
-                : string.Empty,
-            Source = SourceName
+            Sha256 = _TryGetSha256(assets, url),
+            SignatureUrl = signatureUrl,
+            Source = SourceName,
+            IsComplete = complete,
+            CreateDownloadLoaders = output => _CreateDownloadLoaders(url, signatureUrl, output)
         };
     }
 
@@ -288,14 +287,10 @@ public class UpdatesGitHubModel : IUpdateSource
     ///         只认 .exe 附件：zip 的 digest 是压缩包本身的，解出来的 exe 哈希对不上。
     ///     </para>
     /// </summary>
-    private static string _TryGetSha256(JsonObject release, UpdateArch arch)
+    private static string _TryGetSha256(JsonArray assets, string url)
     {
-        if (release["assets"] is not JsonArray assets || assets.Count == 0) return string.Empty;
         try
         {
-            var url = _PickAsset(assets, arch);
-            if (!url.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return string.Empty;
-
             var asset = assets.OfType<JsonObject>().FirstOrDefault(x =>
                 x["browser_download_url"]?.GetValue<string>() == url);
             var digest = asset?["digest"]?.GetValue<string>();
@@ -338,7 +333,15 @@ public class UpdatesGitHubModel : IUpdateSource
         // IsLatest 问的是「我是不是已经最新了」，也就是「远程没有比当前更新的」。
         // 写成 IsAtLeast(latest, current) 会把 hotfix 判成「已是最新」：
         // 1.6.1-hotfix-1 ≥ 1.6.1 成立，于是有更新也被当成没有。
-        return UpdateVersion.IsUpToDate(latest.VersionName, currentVersion.ToString());
+        return IsUpToDate(latest, currentVersion.ToString());
+    }
+
+    internal static bool IsUpToDate(VersionDataModel latest, string current)
+    {
+        if (!UpdateVersion.IsUpToDate(latest.VersionName, current)) return false;
+        if (!latest.IsComplete)
+            throw new UpdateSourceException("暂时无法确认是否有更新，请稍后再试。");
+        return true;
     }
 
     public VersionAnnouncementDataModel GetAnnouncementList()
@@ -347,42 +350,19 @@ public class UpdatesGitHubModel : IUpdateSource
         return new VersionAnnouncementDataModel { Content = [] };
     }
 
-    public List<ModLoader.LoaderBase> GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)
+    private static List<ModLoader.LoaderBase> _CreateDownloadLoaders(string url, string signatureUrl, string output)
     {
         var loaders = new List<ModLoader.LoaderBase>();
-        var tempDirectory = $@"{ModBase.pathTemp}Cache\Update\Download\";
-        var tempPath = "";
 
         loaders.Add(new ModLoader.LoaderTask<int, List<DownloadFile>>(
             Lang.Text("Update.Task.GetVersionInfo"), load =>
             {
-                var release = _PickRelease(channel);
-                var assets = release["assets"] as JsonArray;
-                if (assets is null || assets.Count == 0)
-                {
-                    // Atom 降级通道没有资产列表，去发布页现抓
-                    var tag = release["tag_name"]?.GetValue<string>();
-                    if (string.IsNullOrWhiteSpace(tag))
-                        throw new UpdateSourceException("Release 没有 tag，无法定位资产。");
-                    assets = _FetchAssetsFromPage(tag);
-                }
-                if (assets.Count == 0)
-                    throw new UpdateSourceException("这个 Release 没有任何附件。");
-
-                var url = _PickAsset(assets, arch);
-                if (!url.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    throw new UpdateSourceException("更新附件不是已签名的 exe，已拒绝安装。");
-                var fileName = url[(url.LastIndexOf('/') + 1)..];
-                tempPath = System.IO.Path.Combine(tempDirectory, fileName);
-
-                var signatureUrl = _TryGetSignatureUrl(assets, url);
-
                 // 官方直链优先、反代兜底。
                 // 顺序在 DownloadCoreAsync 里就是优先级：挨个试，前一个失败才换下一个。
                 // 直连能通就用直连——反代是第三方中转，没必要把发布包先过一道别人的手。
                 var urls = new List<string> { url };
                 urls.AddRange(DownloadProxies.Select(proxy => proxy + url));
-                load.output = [new DownloadFile(urls.Distinct(), tempPath)];
+                load.output = [new DownloadFile(urls.Distinct(), output)];
                 if (!string.IsNullOrWhiteSpace(signatureUrl))
                 {
                     // The sidecar is also fetched through the configured mirrors as a fallback.
@@ -396,9 +376,6 @@ public class UpdatesGitHubModel : IUpdateSource
             }));
 
         loaders.Add(new LoaderDownload(Lang.Text("Update.Task.DownloadFile"), []));
-
-        loaders.Add(new ModLoader.LoaderTask<string, int>(
-            Lang.Text("Update.Task.ApplyFile"), _ => _ApplyDownloaded(tempPath, output)));
 
         return loaders;
     }
@@ -446,12 +423,13 @@ public class UpdatesGitHubModel : IUpdateSource
     ///         补发一个旧版本的预发布包就会把顺序搞乱，进而把旧版当成最新推出去。
     ///     </para>
     /// </summary>
-    private JsonObject _PickRelease(UpdateChannel channel)
+    private (JsonObject Release, JsonArray Assets, string Url, bool Complete) _PickRelease(UpdateChannel channel, UpdateArch arch)
     {
-        if (_releases is null) RefreshCache();
+        if (_releaseList is null) RefreshCache();
+        var list = _releaseList!;
 
         var candidates = new List<(string VersionName, JsonObject Release)>();
-        foreach (var item in _releases!)
+        foreach (var item in list.Releases)
         {
             if (item is not JsonObject release) continue;
             if (release["draft"]?.GetValue<bool>() == true) continue;
@@ -474,7 +452,8 @@ public class UpdatesGitHubModel : IUpdateSource
 
             // tag 里没写后缀、但被标成 prerelease 的，按预览级处理：
             // 宁可少收，也不要把预发布包当正式版推给只想要稳定版的用户。
-            if (level == UpdateChannelLevels.Stable && release["prerelease"]?.GetValue<bool>() == true)
+            if (UpdateVersion.TryParse(versionName, out var version) && version.Rank == UpdateVersion.RankStable &&
+                release["prerelease"]?.GetValue<bool>() == true)
                 level = UpdateChannelLevels.Preview;
 
             if (level > (int)channel) continue;
@@ -488,13 +467,23 @@ public class UpdatesGitHubModel : IUpdateSource
                 ? "仓库里没有正式版 Release，只有预发布版本。"
                 : "仓库里没有任何符合当前更新通道的 Release。");
 
-        return candidates.OrderByDescending(x => x.VersionName, UpdateVersion.Comparer).First().Release;
+        foreach (var candidate in candidates.OrderByDescending(x => x.VersionName, UpdateVersion.Comparer))
+        {
+            var release = candidate.Release;
+            var assets = release["assets"] as JsonArray;
+            if (assets is null && !list.Complete)
+                assets = _FetchAssetsFromPage(Uri.EscapeDataString(release["tag_name"]!.GetValue<string>()));
+            if (assets is null) continue;
+            var url = _PickAsset(assets, arch);
+            if (url is not null) return (release, assets, url, list.Complete);
+        }
+        throw new UpdateSourceException("当前更新通道没有适用于此设备的安装文件。");
     }
 
     /// <summary>
     /// 在附件里挑选更新流程可验证的 EXE，优先匹配架构。
     /// </summary>
-    private static string _PickAsset(JsonArray assets, UpdateArch arch)
+    private static string? _PickAsset(JsonArray assets, UpdateArch arch)
     {
         var candidates = assets
             .OfType<JsonObject>()
@@ -502,25 +491,7 @@ public class UpdatesGitHubModel : IUpdateSource
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Select(x => x!)
             .ToList();
-        var archKey = arch == UpdateArch.arm64 ? "arm64" : "x64";
-        return PCL.Core.App.Updates.UpdateExecutableAssetSelector.Pick(candidates, arch == UpdateArch.arm64)
-               ?? throw new UpdateSourceException($"这个 Release 没有 {archKey} 架构的 .exe。");
-    }
-
-    private static void _ApplyDownloaded(string path, string output)
-    {
-        if (path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-        {
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var zip = new ZipArchive(fs);
-            var entry = zip.Entries
-                            .FirstOrDefault(x => x.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                        ?? throw new Exception(Lang.Text("Update.Error.FileNotFound"));
-            entry.ExtractToFile(output, true);
-            return;
-        }
-
-        File.Copy(path, output, true);
+        return UpdateExecutableAssetSelector.Pick(candidates, arch == UpdateArch.arm64);
     }
 
     /// <summary>

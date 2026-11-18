@@ -121,7 +121,7 @@ public static class UpdateVersion
         if (TryGetSnapshotHotfix(suffix, out _, out _)) return RankSnapshot;
         if (suffix.Contains("hotfix", StringComparison.OrdinalIgnoreCase)) return RankHotfix;
         if (suffix.Contains("nightly", StringComparison.OrdinalIgnoreCase)) return RankLatest;
-        if (suffix.Split(['-', '.'])[0].Equals("alpha", StringComparison.OrdinalIgnoreCase)) return RankAlpha;
+        if (TryGetAlpha(suffix, out _)) return RankAlpha;
         if (suffix.Contains("snapshot", StringComparison.OrdinalIgnoreCase)) return RankSnapshot;
         if (suffix.Contains("early", StringComparison.OrdinalIgnoreCase)) return RankEarly;
         return RankPreview;
@@ -136,6 +136,7 @@ public static class UpdateVersion
     {
         if (suffix.Length == 0) return 0;
         if (TryGetSnapshotHotfix(suffix, out var snapshot, out _)) return snapshot;
+        if (TryGetAlpha(suffix, out var alpha) && alpha > 0) return alpha;
 
         var parts = suffix.Split(['-', '.'], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length > 0 &&
@@ -157,6 +158,7 @@ public static class UpdateVersion
         if (suffix.Length == 0) return string.Empty;
         if (TryGetSnapshotHotfix(suffix, out _, out var hotfix))
             return "snapshot-hotfix-" + hotfix.ToString("D10", CultureInfo.InvariantCulture);
+        if (TryGetAlpha(suffix, out var alpha) && alpha > 0) return "alpha";
 
         var parts = suffix.Split(['-', '.'], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length <= 1) return suffix;
@@ -170,10 +172,24 @@ public static class UpdateVersion
     {
         snapshot = 0; hotfix = 0;
         var parts = suffix.Split('-');
-        return parts.Length == 4 && parts[0].Equals("snapshot", StringComparison.OrdinalIgnoreCase)
-            && parts[2].Equals("hotfix", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out snapshot) && snapshot > 0
-            && int.TryParse(parts[3], NumberStyles.None, CultureInfo.InvariantCulture, out hotfix) && hotfix > 0;
+        if (parts.Length is not (3 or 4) || !parts[0].Equals("snapshot", StringComparison.OrdinalIgnoreCase)
+            || !parts[2].Equals("hotfix", StringComparison.OrdinalIgnoreCase)
+            || !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out snapshot) || snapshot <= 0)
+            return false;
+        if (parts.Length == 4)
+            return int.TryParse(parts[3], NumberStyles.None, CultureInfo.InvariantCulture, out hotfix) && hotfix > 0;
+        hotfix = 1;
+        return true;
+    }
+
+    internal static bool TryGetAlpha(string suffix, out int compactSequence)
+    {
+        compactSequence = 0;
+        var family = suffix.Split(['-', '.'])[0];
+        if (family.Equals("alpha", StringComparison.OrdinalIgnoreCase)) return true;
+        return family.StartsWith("alpha", StringComparison.OrdinalIgnoreCase)
+               && int.TryParse(family.AsSpan(5), NumberStyles.None, CultureInfo.InvariantCulture, out compactSequence)
+               && compactSequence > 0;
     }
 
     /// <summary>拆分后的版本键。</summary>

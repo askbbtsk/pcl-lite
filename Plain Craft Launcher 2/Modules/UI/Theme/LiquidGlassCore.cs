@@ -32,6 +32,7 @@ public static partial class LiquidGlassCore
         Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent)
         && CustomThemeRuntime.AllowsGlass && !_disabledAfterFailure;
     public static bool IsDesktopBackdropActive => IsEnabled && _desktopCapture?.IsActive == true;
+    internal static Rect? WindowClipDeviceBounds => _windowClip?.DeviceBounds;
     public static bool IsDesktopBackdropRequested => PCL.Core.UI.LiquidGlassPerformance.ShouldCaptureDesktop(
         Config.Preference.TahoeGlass.IsEnabled, Config.Preference.TahoeGlass.PerformanceConsent,
         Config.Preference.TahoeGlass.UseDesktopBackdrop, Config.Preference.TahoeGlass.DesktopCaptureConsent)

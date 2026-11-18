@@ -23,6 +23,8 @@ namespace PCL.Core.App.Lunar;
 /// </summary>
 public sealed record LunarIdentityAccount
 {
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtraFields { get; init; }
     /// <summary>游戏内 UUID，32 位不带横线，同时用作列表里的唯一键。</summary>
     [JsonPropertyName("uuid")]
     public string Uuid { get; init; } = string.Empty;
@@ -76,9 +78,13 @@ public static class LunarIdentityStore
     {
         [JsonPropertyName("accounts")]
         public List<LunarIdentityAccount> Accounts { get; init; } = [];
+
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? ExtraFields { get; init; }
     }
 
     private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
+    private static readonly object WriteGate = new();
 
     public static string FilePath => Path.Combine(Paths.SharedLocalData, "Lunar", "identities.json");
 
@@ -107,7 +113,7 @@ public static class LunarIdentityStore
     public static LunarIdentityAccount? Find(string? uuid)
     {
         if (string.IsNullOrWhiteSpace(uuid)) return null;
-        return Read().FirstOrDefault(x => string.Equals(x.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
+        return Read().FirstOrDefault(x => SameUuid(x.Uuid, uuid));
     }
 
     /// <summary>
@@ -121,48 +127,68 @@ public static class LunarIdentityStore
     {
         if (string.IsNullOrWhiteSpace(account.Uuid)) return false;
 
-        var list = Read().ToList();
-        var index = list.FindIndex(x => string.Equals(x.Uuid, account.Uuid, StringComparison.OrdinalIgnoreCase));
-        if (index >= 0)
+        return Edit(list =>
         {
-            var old = list[index];
-            list[index] = account with
+            var index = list.FindIndex(x => SameUuid(x.Uuid, account.Uuid));
+            if (index >= 0)
             {
-                RefreshToken = string.IsNullOrWhiteSpace(account.RefreshToken) ? old.RefreshToken : account.RefreshToken
-            };
-        }
-        else
-        {
-            // 没有 refreshToken 也行：那是用 Minecraft 令牌导入的，能用但续不了
-            if (string.IsNullOrWhiteSpace(account.AccessToken)) return false;
-            list.Add(account);
-        }
-
-        return Write(list);
+                var old = list[index];
+                list[index] = account with
+                {
+                    RefreshToken = string.IsNullOrWhiteSpace(account.RefreshToken) ? old.RefreshToken : account.RefreshToken,
+                    ExtraFields = account.ExtraFields ?? old.ExtraFields
+                };
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(account.AccessToken)) return false;
+                list.Add(account);
+            }
+            return true;
+        });
     }
 
     /// <summary>删掉一条账号。</summary>
-    public static bool Remove(string uuid)
-    {
-        var list = Read().Where(x => !string.Equals(x.Uuid, uuid, StringComparison.OrdinalIgnoreCase)).ToList();
-        return Write(list);
-    }
+    public static bool Remove(string uuid) => Edit(list => list.RemoveAll(x => SameUuid(x.Uuid, uuid)) > 0);
 
-    private static bool Write(IReadOnlyList<LunarIdentityAccount> accounts)
+    private static bool SameUuid(string left, string right) =>
+        Guid.TryParse(left, out var a) && Guid.TryParse(right, out var b)
+            ? a == b
+            : string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+
+    private static bool Edit(Func<List<LunarIdentityAccount>, bool> edit)
     {
-        try
+        lock (WriteGate)
         {
             var path = FilePath;
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            var temporary = path + ".tmp";
-            File.WriteAllText(temporary,
-                JsonSerializer.Serialize(new Container { Accounts = accounts.ToList() }, SerializerOptions));
-            File.Move(temporary, path, overwrite: true);
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return false;
+            var temporary = $"{path}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                Container container;
+                try
+                {
+                    container = JsonSerializer.Deserialize<Container>(File.ReadAllText(path))
+                                ?? throw new JsonException("Missing Lunar identity store.");
+                }
+                catch (FileNotFoundException)
+                {
+                    container = new Container();
+                }
+                if (container.Accounts is null || !edit(container.Accounts)) return false;
+                File.WriteAllText(temporary, JsonSerializer.Serialize(container, SerializerOptions));
+                File.Move(temporary, path, overwrite: true);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+            {
+                return false;
+            }
+            finally
+            {
+                try { File.Delete(temporary); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            }
         }
     }
 }

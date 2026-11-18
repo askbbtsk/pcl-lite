@@ -1,0 +1,50 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Config.cs",
+    "Sha256": "98138D5B8370EE5D902837E8B3AD80145A80082D9E28548E1FE3E88B22F71917",
+    "Members": [
+      "PCL.Core.App.Config+PreferenceConfigGroup::PropertyDeclaration::TopBarCollapsedTabs"
+    ],
+    "Reason": "Retains the previously reviewed launcher setting contract while pinning the current Lunar game-directory documentation update."
+  },
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarClientService.JavaAndProcessLaunch.cs",
+    "Sha256": "6A8D5DAB7BCF75AE96BF74A3515DBB09C995D7CB7FB70680A5C7A3D812475271",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarClientService::MethodDeclaration::BuildStartInfo(\n        LunarLaunchData data,\n        LunarLaunchOptions options,\n        string javaPath,\n        string cacheDirectory,\n        string nativesDirectory)"
+    ],
+    "Reason": "Keeps existing Lunar process argument construction unchanged; the additive directory preparation helper creates only the selected game and resourcepacks directories."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.ConfigurationAndAccountSelection.cs",
+    "Sha256": "43844DB50F792D1B2BF02B5687E8340F54E65BF9BB858C635D6F2EA2D68DC686",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::Launch()",
+      "PCL.ModLunar::MethodDeclaration::Log(string message)",
+      "PCL.ModLunar::PropertyDeclaration::DefaultGameDirectory"
+    ],
+    "Reason": "DefaultGameDirectory and the existing Lunar launch callback preserve the explicit override and otherwise follow the selected instance's PathIndie directory used by ordinary launches."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.SocialAndSession.cs",
+    "Sha256": "83D5ACCF3BEF011B5AE2E1F2E256A5FDA9D77892C14E55C4591290C4F409D360",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::ConnectSocialAsync()",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory)",
+      "PCL.ModLunar::MethodDeclaration::LaunchCoreAsync(string gameDirectory, long launchSession)",
+      "PCL.ModLunar::MethodDeclaration::ResolveGameDirectory()"
+    ],
+    "Reason": "ResolveGameDirectory follows the selected instance PathIndie unless the user set a Lunar-specific directory; launch prepares and logs that exact directory and its resourcepacks folder without rewriting options.txt."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassScreenshotCapturePlatform.cs",
+    "Sha256": "E93194745D75E9D8F6BF04CE04769AF27C5D0003D1DD389C765DD5F06B5B89C8",
+    "Members": [
+      "PCL.LiquidGlassScreenshotCapturePlatform+Capture::MethodDeclaration::Run()"
+    ],
+    "RemovedMembers": [
+      "PCL.LiquidGlassScreenshotCapturePlatform+Capture::FieldDeclaration::_closing,_pending"
+    ],
+    "Reason": "The Magnifier backend suspends live capture while the window is moved or resized, then recreates the capture session after interaction. The existing coordinator regression test covers suspension, stale-frame rejection and resume."
+  }
+]

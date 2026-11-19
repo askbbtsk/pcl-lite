@@ -50,7 +50,7 @@ PCL Lite 插件是 **编译后的 .NET 程序集**，不是脚本。普通插件
 
 ### API 状态说明
 
-SDK 当前版本号为 API v1，含 12 个公开接口、69 个接口成员。契约覆盖生命周期、日志、独立存储与设置、受配额约束的文本/JSON/二进制/流存储、服务发现、PCL 主题按钮、带生命周期的页面/通知/确认、类型化事件、带请求头和超时的 HTTP、带 SHA-256 校验的下载、启动器信息及 Minecraft 实例/配置查询和带启动选项的启动；没有未实现的接口存根。`PluginApiRuntimeTests` 已覆盖这些宿主接口的正常、取消、错误、网络响应上限、下载原子替换与哈希校验、日志等级、停止生命周期、符号链接拒绝和事件清理路径；完整启动器 UI 与真实 Minecraft 进程仍需发行构建回归。`PluginMixinPackageRuntimeTests` 覆盖签名包安装、Mixin 应用、安全模式跳过、必需配置失败时回滚、拒绝安装目录 junction、用签名插件覆盖 `PCL.Core` 中的真实宿主方法以及释放时恢复。
+SDK 当前版本号为 API v1，含 12 个公开接口、72 个接口成员。契约覆盖生命周期、日志、独立存储与设置、受配额约束的文本/JSON/二进制/流存储、服务发现、PCL 主题按钮、插件页与主页面、通知/确认、类型化事件、带请求头和超时的 HTTP、带 SHA-256 校验的下载、启动器信息及 Minecraft 实例/配置查询和带启动选项的启动；没有未实现的接口存根。`PluginApiRuntimeTests` 已覆盖这些宿主接口的正常、取消、错误、网络响应上限、下载原子替换与哈希校验、日志等级、停止生命周期、符号链接拒绝和事件清理路径；完整启动器 UI 与真实 Minecraft 进程仍需发行构建回归。`PluginMixinPackageRuntimeTests` 覆盖签名包安装、Mixin 应用、安全模式跳过、必需配置失败时回滚、拒绝安装目录 junction、用签名插件覆盖 `PCL.Core` 中的真实宿主方法以及释放时恢复。
 
 Mixin 使用编译后的 .NET 程序集修改启动器自身的目标类型、方法和 IL，不是脚本层。当前公开操作包括注入、覆盖、重定向、参数/参数组/常量/局部变量修改、Accessor/Invoker、Shadow/Unique、Slice、优先级和匹配约束。PCL2-Nex 也提供编译型 Mixin packages；本项目不承诺两者每个操作的语义、边界或兼容行为完全等价。请按[Mixin 指南](#mixins)、当前运行时代码及测试确认具体能力。签名包集成测试已验证对 `PCL.Core` 真实方法的覆盖和恢复，但尚未覆盖每一种操作。
 
@@ -203,7 +203,7 @@ dotnet run --project .\PCL.Plugin.Tools -- pack .\staging .\secrets\example-sign
 - `Ui.UnregisterPage(id)`：移除当前插件注册的页面；若正在显示，宿主先触发隐藏回调。
 - `Ui.RegisterMainPage(id, title, Func<FrameworkElement>)`：在顶部主导航注册独立页面；原有 `RegisterPage` 小页面保持不变。
 - `Ui.RegisterMainPage(id, title, Func<FrameworkElement>, PluginPageLifecycle)`：注册带显示/隐藏回调的一级主页面。
-- `Ui.UnregisterMainPage(id)`：注销插件注册的一级主页面；若正在显示，宿主会返回启动页。
+- `Ui.UnregisterMainPage(id)`：注销插件注册的一级主页面，返回页面是否成功移除；若正在显示，宿主会返回启动页。
 - `Ui.CreateButton(text, Func<Task>, style)`：创建宿主的 PCL 原生按钮，不暴露内部主题资源键。`PluginButtonStyle` 支持 `Normal`、`Highlight` 和 `Danger`。
 - `Ui.ShowNotification(message, kind)`：发送提示；可选点击回调会在用户点击 PCL 提示条时执行一次。
 - `Ui.ConfirmAsync(title, message, cancellationToken)`：显示确认提示并返回用户选择。
@@ -213,7 +213,32 @@ dotnet run --project .\PCL.Plugin.Tools -- pack .\staging .\secrets\example-sign
 
 页面 ID 在同一插件内应稳定且唯一。后台事件处理器不能直接操作 WPF 控件；使用 `Application.Current.Dispatcher`。
 
-首次注册一级主页面时，PCL 会按插件显示名汇总待授权页面数量并询问用户；确认按钮等待 3 秒后可用，取消则不显示这些页面。授权只添加导航入口，不会自动打开页面。空间不足时插件页面优先收进顶部导航的展开菜单；用户也可在「个性化 → 隐藏功能」单独隐藏插件主页面，按 F12 可临时显示。
+`RegisterMainPage` 会创建顶部导航中的独立主页面；它与 `RegisterPage` 注册的插件页互不替代。视图工厂在首次打开时调用，页面视图会复用。下面的例子在插件启动时注册一个主页面，并在页面显示和隐藏时执行生命周期回调：
+
+```csharp
+public Task StartAsync(IPluginContext context, CancellationToken cancellationToken)
+{
+    context.Ui.RegisterMainPage(
+        "dashboard",
+        "Example",
+        () => new TextBlock { Text = "Example plugin page" },
+        new PluginPageLifecycle(
+            OnShown: _ =>
+            {
+                context.Logger.Info("Example page shown");
+                return Task.CompletedTask;
+            },
+            OnHidden: _ =>
+            {
+                context.Logger.Info("Example page hidden");
+                return Task.CompletedTask;
+            }));
+
+    return Task.CompletedTask;
+}
+```
+
+首次注册一级主页面时，PCL 会按插件显示名汇总待授权页面数量并询问用户；确认按钮等待 3 秒后可用，取消则不显示这些页面。授权只添加导航入口，不会自动打开页面。空间不足时插件页面优先收进顶部导航的小三角菜单；用户也可在「个性化 → 隐藏功能」单独隐藏插件主页面，按 F12 可临时显示。调用 `UnregisterMainPage(id)` 可移除主页面；若移除的是当前页面，宿主会返回启动页。
 
 ### 事件
 

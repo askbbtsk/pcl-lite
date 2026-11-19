@@ -30,7 +30,7 @@ public sealed partial class PluginRuntimeManager
         public IPluginLogger Logger { get; } = new PluginLogger(manifest.Id);
         public IPluginStorage Storage { get; } = new PluginStorage(Path.Combine(owner._pluginsDirectory, ".plugin-data", manifest.Id));
         public IPluginSettings Settings { get; } = new PluginSettings(Path.Combine(owner._pluginsDirectory, ".plugin-data", manifest.Id));
-        public IPluginUi Ui { get; } = new PluginUi(manifest.Id);
+        public IPluginUi Ui { get; } = new PluginUi(manifest.Id, manifest.Name);
         public IPluginEvents Events => _events;
         public IPluginNetwork Network { get; } = new PluginNetwork(owner._httpClient);
         public IPluginMinecraft Minecraft { get; } = new PluginMinecraft(owner);
@@ -295,7 +295,7 @@ public sealed partial class PluginRuntimeManager
     }
 
 
-    private sealed class PluginUi(string pluginId) : IPluginUi
+    private sealed class PluginUi(string pluginId, string pluginName) : IPluginUi
     {
         public void RegisterPage(string id, string title, Func<System.Windows.FrameworkElement> createView)
             => RegisterPage(id, title, createView, new PluginPageLifecycle());
@@ -307,12 +307,29 @@ public sealed partial class PluginRuntimeManager
             ArgumentException.ThrowIfNullOrWhiteSpace(title);
             ArgumentNullException.ThrowIfNull(createView);
             ArgumentNullException.ThrowIfNull(lifecycle);
-            PluginPageRegistry.Register(new(pluginId, id, title, createView, lifecycle));
+            PluginPageRegistry.Register(new(pluginId, pluginName, id, title, createView, lifecycle));
+        }
+        public void RegisterMainPage(string id, string title, Func<System.Windows.FrameworkElement> createView)
+            => RegisterMainPage(id, title, createView, new PluginPageLifecycle());
+
+        public void RegisterMainPage(string id, string title, Func<System.Windows.FrameworkElement> createView,
+            PluginPageLifecycle lifecycle)
+        {
+            if (string.IsNullOrWhiteSpace(id) || id.Length > 64) throw new ArgumentException("Invalid page id.", nameof(id));
+            ArgumentException.ThrowIfNullOrWhiteSpace(title);
+            ArgumentNullException.ThrowIfNull(createView);
+            ArgumentNullException.ThrowIfNull(lifecycle);
+            PluginPageRegistry.Register(new(pluginId, pluginName, id, title, createView, lifecycle, isMainPage: true));
         }
         public bool UnregisterPage(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || id.Length > 64) throw new ArgumentException("Invalid page id.", nameof(id));
-            return PluginPageRegistry.Unregister(pluginId, id);
+            return PluginPageRegistry.Unregister(pluginId, id, isMainPage: false);
+        }
+        public bool UnregisterMainPage(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id) || id.Length > 64) throw new ArgumentException("Invalid page id.", nameof(id));
+            return PluginPageRegistry.Unregister(pluginId, id, isMainPage: true);
         }
         public System.Windows.FrameworkElement CreateButton(string text, Func<Task> onClick,
             PluginButtonStyle style = PluginButtonStyle.Normal)

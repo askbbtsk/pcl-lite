@@ -254,6 +254,12 @@ public static partial class Config
         /// <summary>标题栏空间不足时优先折叠的主导航页码，以逗号分隔。</summary>
         [ConfigItem<string>("UiTopBarCollapsedTabs", "3,14,15", ConfigSource.Local)] public partial string TopBarCollapsedTabs { get; set; }
 
+        /// <summary>已授权显示的插件主页面标识。</summary>
+        [ConfigItem<string>("UiPluginMainPagesAuthorized", "[]", ConfigSource.Local)] public partial string PluginMainPagesAuthorized { get; set; }
+
+        /// <summary>已隐藏的插件主页面标识。</summary>
+        [ConfigItem<string>("UiPluginMainPagesHidden", "[]", ConfigSource.Local)] public partial string PluginMainPagesHidden { get; set; }
+
         /// <summary>
         /// 全局字体。
         /// </summary>

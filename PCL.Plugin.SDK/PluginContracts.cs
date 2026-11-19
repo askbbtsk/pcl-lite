@@ -90,6 +90,9 @@ public interface IPluginUi
     void RegisterPage(string id, string title, Func<FrameworkElement> createView);
     void RegisterPage(string id, string title, Func<FrameworkElement> createView, PluginPageLifecycle lifecycle);
     bool UnregisterPage(string id);
+    void RegisterMainPage(string id, string title, Func<FrameworkElement> createView);
+    void RegisterMainPage(string id, string title, Func<FrameworkElement> createView, PluginPageLifecycle lifecycle);
+    bool UnregisterMainPage(string id);
     FrameworkElement CreateButton(string text, Func<Task> onClick,
         PluginButtonStyle style = PluginButtonStyle.Normal);
     void ShowNotification(string message, PluginNotificationKind kind = PluginNotificationKind.Info);

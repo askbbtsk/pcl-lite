@@ -44,6 +44,7 @@ public partial class PageSetupUI
             CheckLauncherLogo.Checked = Config.Preference.ShowStartupLogo;
             CheckCommandPaletteButton.Checked = Config.Preference.ShowCommandPaletteButton;
             RefreshTopBarCollapsedTabs();
+            RefreshPluginMainPages();
             ComboDarkMode.SelectedIndex = (int)Config.Preference.Theme.ColorMode;
             RefreshCustomTheme();
             CheckShowLaunchingHint.Checked = Config.Preference.ShowLaunchingHint;

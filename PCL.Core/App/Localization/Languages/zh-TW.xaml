@@ -3264,9 +3264,14 @@ Release 發布時間：{2}
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">標題列頁面折疊</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">標題列空間不足時，優先折疊選取的頁面；空間足夠時顯示所有頁面。勾選此處的頁面會優先收進標題列右側的展開區域。</sys:String>
 
+    <sys:String x:Key="Plugin.MainPage.Consent.Title">顯示外掛頁面</sys:String>
+    <sys:String x:Key="Plugin.MainPage.Consent.Content">{0} 想在頂部導覽中顯示 {1} 個主頁面。是否同意？</sys:String>
+
     <!-- Setup.Ui.FeatureHide -->
 
     <sys:String x:Key="Setup.Ui.FeatureHide.Description">你可以隱藏不需要的畫面或關閉特定功能。在任意畫面按 F12 可以暫時顯示被隱藏的功能。</sys:String>
+    <sys:String x:Key="Setup.Ui.FeatureHide.PluginPages">外掛主頁面</sys:String>
+    <sys:String x:Key="Setup.Ui.FeatureHide.PluginPages.ToolTip">可在此隱藏外掛主頁；按 F12 可暫時顯示隱藏頁面。</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.MainPage">主畫面</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.SpecificFeature">特定功能</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.SubInstance">子畫面 實例設定</sys:String>

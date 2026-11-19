@@ -1,0 +1,81 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Config.cs",
+    "Sha256": "2A9F3EF795E813E5D815D3BCC3D69DA88D6FC2B01CE80E8E11BA32CD19857608",
+    "Members": [
+      "PCL.Core.App.Config+PreferenceConfigGroup::PropertyDeclaration::TopBarCollapsedTabs"
+    ],
+    "Reason": "Add plugin main-page visibility preferences alongside the existing collapsed-navigation preference."
+  },
+  {
+    "SourcePath": "PCL.Core/Plugins/PluginRuntimeManager.HostServices.cs",
+    "Sha256": "065A733BD21452AD5BCA3E1C39A53F202230BDADA04848C75D363120812189F0",
+    "Members": [
+      "PCL.Core.Plugins.PluginRuntimeManager+PluginContext::PropertyDeclaration::Ui",
+      "PCL.Core.Plugins.PluginRuntimeManager+PluginUi::MethodDeclaration::RegisterPage(string id, string title, Func<System.Windows.FrameworkElement> createView,\n            PluginPageLifecycle lifecycle)",
+      "PCL.Core.Plugins.PluginRuntimeManager+PluginUi::MethodDeclaration::UnregisterPage(string id)"
+    ],
+    "Reason": "Extend the plugin UI host with main-page registration and unregistration while preserving existing small-page registration."
+  },
+  {
+    "SourcePath": "PCL.Core/Plugins/PluginRuntimeManager.cs",
+    "Sha256": "22D45472DBDB81D1FD889220DB4541D69F188F066A0A232758D557AC5357355C",
+    "Members": [
+      "PCL.Core.Plugins.PluginPageRegistry::MethodDeclaration::RemovePlugin(string pluginId)",
+      "PCL.Core.Plugins.PluginPageRegistry::MethodDeclaration::Unregister(string pluginId, string pageId)"
+    ],
+    "RemovedMembers": [
+      "PCL.Core.Plugins.PluginPage::ConstructorDeclaration::.ctor(string pluginId, string pageId, string title,\n        Func<System.Windows.FrameworkElement> createView, PluginPageLifecycle? lifecycle = null)"
+    ],
+    "Reason": "Keep registered page cleanup and persisted authorization/visibility preferences consistent when plugins unregister or stop."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.PageNavigation.cs",
+    "Sha256": "0E71A3B5BC8354C4C4C41418F42B5D3BCC050AE9305404F388F0FEAFF7B1FCCD",
+    "Members": [
+      "PCL.FormMain+PageStackData::MethodDeclaration::Equals(object other)",
+      "PCL.FormMain::MethodDeclaration::BtnTitleSelect_Click(MyRadioButton sender, bool raiseByMouse)",
+      "PCL.FormMain::MethodDeclaration::PageChange(PageStackData stack, PageSubType subType = PageSubType.Default)",
+      "PCL.FormMain::MethodDeclaration::PageChangeActual(PageStackData stack, PageSubType subType)",
+      "PCL.FormMain::PropertyDeclaration::PageCurrentSub"
+    ],
+    "Reason": "Add plugin main pages to the existing top navigation, preferring the current overflow menu without changing the selected page on registration."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+    "Sha256": "7F5282E2B040826552E408E2215DD58DCE8DF90C5AB157A9C8E4C0A64A90CA6D",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::FormMain_KeyDown(object sender, KeyEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::GetTitleLeftReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::GetTitleRightReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::IsNavigationFeatureHidden(int id)",
+      "PCL.FormMain::MethodDeclaration::PanTitle_SizeChanged(object sender, EventArgs e)",
+      "PCL.FormMain::MethodDeclaration::ParseCollapsedNavigationIds(string? value)",
+      "PCL.FormMain::MethodDeclaration::RefreshNavigationOverflow()",
+      "PCL.FormMain::MethodDeclaration::UpdateNavigationOverflowPosition()",
+      "PCL.FormMain::MethodDeclaration::_SizeWndProc(nint hWnd, int msg, nint wParam, nint lParam, ref bool handled)"
+    ],
+    "Reason": "Include authorized plugin pages in available navigation and overflow calculations while preserving the existing hidden-page and F12 behavior."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.xaml.cs",
+    "Sha256": "AA941882D4AF9E18854D91F693DC52B90890772E85A015AB4F183889A3855F0E",
+    "Members": [
+      "PCL.FormMain::ConstructorDeclaration::.ctor()",
+      "PCL.FormMain::MethodDeclaration::FormMain_Loaded()"
+    ],
+    "Reason": "Initialize and retire plugin main-page hosting with the main window lifecycle."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.PreferenceBinding.cs",
+    "Sha256": "6E80B6179FD5A4F5120D85F4510AFED4616359ADDA9ED71174A92B9E2E86C021",
+    "Members": [
+      "PCL.PageSetupUI::MethodDeclaration::BackgroundRefresh(bool isHint, bool refresh)",
+      "PCL.PageSetupUI::MethodDeclaration::BackgroundRefreshUI(bool show, int count)",
+      "PCL.PageSetupUI::MethodDeclaration::RefreshTopBarCollapsedTabs()",
+      "PCL.PageSetupUI::MethodDeclaration::Reload()",
+      "PCL.PageSetupUI::MethodDeclaration::TopBarCollapsedTab_Change(object senderRaw, bool user)"
+    ],
+    "Reason": "Refresh plugin main-page visibility controls with personalized navigation preferences."
+  }
+]

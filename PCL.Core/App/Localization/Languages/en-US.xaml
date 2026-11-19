@@ -3321,9 +3321,14 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">Top bar page overflow</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">When the title bar runs short of space, selected pages are folded into the right-side overflow area first. All pages remain visible when there is enough room.</sys:String>
 
+    <sys:String x:Key="Plugin.MainPage.Consent.Title">Show plugin pages</sys:String>
+    <sys:String x:Key="Plugin.MainPage.Consent.Content">{0} wants to show {1} main page(s) in the top navigation. Allow?</sys:String>
+
     <!-- Setup.Ui.FeatureHide -->
 
     <sys:String x:Key="Setup.Ui.FeatureHide.Description">You can hide unnecessary pages or disable specific features. Press F12 in any interface to show the hidden features temporarily.</sys:String>
+    <sys:String x:Key="Setup.Ui.FeatureHide.PluginPages">Plugin main pages</sys:String>
+    <sys:String x:Key="Setup.Ui.FeatureHide.PluginPages.ToolTip">Hide plugin main pages here. Press F12 to show hidden pages temporarily.</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.MainPage">Main interface</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.SpecificFeature">Specific features</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.SubInstance">"Properties" subpages</sys:String>

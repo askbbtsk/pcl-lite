@@ -134,6 +134,7 @@ public partial class FormMain
         public PageHelpDetail? helpPage;
 
         public PageType page;
+        public string? PluginMainPageKey;
 
         public override bool Equals(object other)
         {
@@ -143,6 +144,8 @@ public partial class FormMain
             {
                 var pageOther = (PageStackData)other;
                 if (page != pageOther.page)
+                    return false;
+                if (!string.Equals(PluginMainPageKey, pageOther.PluginMainPageKey, StringComparison.Ordinal))
                     return false;
                 if (helpPage is not null || pageOther.helpPage is not null)
                     return ReferenceEquals(helpPage, pageOther.helpPage);
@@ -200,7 +203,9 @@ public partial class FormMain
             // Lunar 是后加进来的标签，Tag 是 13，插在 Children 的第 4 位，
             // 索引和枚举值早就不一一对应了，用索引会点亮错误的标签（或者直接越界）。
             var titleButton = PanTitleSelect.Children.OfType<MyRadioButton>()
-                .FirstOrDefault(x => x.Tag is not null && ModBase.Val(x.Tag) == (double)stack.page);
+                .FirstOrDefault(x => stack.PluginMainPageKey is not null
+                    ? string.Equals(x.Tag?.ToString(), "plugin:" + stack.PluginMainPageKey, StringComparison.Ordinal)
+                    : x.Tag is not null && ModBase.Val(x.Tag) == (double)stack.page);
             titleButton?.SetChecked(true, true, string.IsNullOrEmpty(PageNameGet(pageCurrent)));
             isChangingPage = false;
             switch (stack.page)
@@ -249,10 +254,13 @@ public partial class FormMain
                 }
                 case PageType.Plugins:
                 {
-                    ModMain.frmPluginsLeft ??= new PagePluginsLeft();
-                    ModMain.frmPluginsLeft.Select(
-                        subType is PageSubType.PluginMarket or PageSubType.PluginInstalled
-                            ? subType : ModMain.frmPluginsLeft.pageID, stack == pageCurrent);
+                    if (stack.PluginMainPageKey is null)
+                    {
+                        ModMain.frmPluginsLeft ??= new PagePluginsLeft();
+                        ModMain.frmPluginsLeft.Select(
+                            subType is PageSubType.PluginMarket or PageSubType.PluginInstalled
+                                ? subType : ModMain.frmPluginsLeft.pageID, stack == pageCurrent);
+                    }
                     break;
                 }
                 case PageType.Lunar:
@@ -328,9 +336,22 @@ public partial class FormMain
     {
         if (isChangingPage)
             return;
-        var pageType = (PageType)int.Parse(sender.Tag.ToString());
-        PageChangeActual(pageType, PageSubType.Default);
+        var tag = sender.Tag?.ToString();
+        if (tag is not null && tag.StartsWith("plugin:", StringComparison.Ordinal))
+        {
+            var key = tag["plugin:".Length..];
+            var pluginPage = PluginPageRegistry.GetMainPages()
+                .FirstOrDefault(page => string.Equals(page.MainPageKey, key, StringComparison.Ordinal));
+            if (pluginPage is null || !PluginMainPagePreferences.IsAuthorized(key) ||
+                PluginMainPagePreferences.IsHidden(key) && !PageSetupUI.HiddenForceShow)
+                return;
+            PageChangeActual(new PageStackData { page = PageType.Plugins, PluginMainPageKey = key },
+                PageSubType.Default);
+            return;
         }
+        if (int.TryParse(tag, out var pageValue))
+            PageChangeActual((PageType)pageValue, PageSubType.Default);
+    }
 
 
     private void BtnTitleInner_Click(object sender, EventArgs e)
@@ -358,7 +379,8 @@ public partial class FormMain
     private void PageChangeActual(PageStackData stack, PageSubType subType)
     {
         if (!EnsureLunarCredentialConsent(stack)) return;
-        if (pageCurrent == stack && (PageCurrentSub == subType || (int)subType == -1))
+        if (pageCurrent == stack && (stack.PluginMainPageKey is not null ||
+                                     PageCurrentSub == subType || (int)subType == -1))
             return;
         ModAnimation.AniControlEnabled += 1;
         try
@@ -454,6 +476,19 @@ public partial class FormMain
                     }
                 case PageType.Plugins: // 插件市场
                     {
+                        if (stack.PluginMainPageKey is { } mainPageKey)
+                        {
+                            var pluginPage = PluginPageRegistry.GetMainPages()
+                                .FirstOrDefault(page => string.Equals(page.MainPageKey, mainPageKey, StringComparison.Ordinal));
+                            if (pluginPage is null || !PluginMainPagePreferences.IsAuthorized(mainPageKey) ||
+                                PluginMainPagePreferences.IsHidden(mainPageKey) && !PageSetupUI.HiddenForceShow)
+                            {
+                                PageChange(PageType.Launch);
+                                break;
+                            }
+                            PageChangeAnim(new MyPageLeft(), GetPluginMainPageHost(pluginPage));
+                            break;
+                        }
                         ModMain.frmPluginsLeft ??= new PagePluginsLeft();
                         if (subType is PageSubType.PluginMarket or PageSubType.PluginInstalled)
                             ModMain.frmPluginsLeft.pageID = subType;
@@ -568,6 +603,17 @@ public partial class FormMain
         {
             ModAnimation.AniControlEnabled -= 1;
         }
+    }
+
+    private PluginMainPageHost GetPluginMainPageHost(PluginPage page)
+    {
+        _pluginMainPageHosts ??= new Dictionary<string, PluginMainPageHost>(StringComparer.Ordinal);
+        if (!_pluginMainPageHosts.TryGetValue(page.MainPageKey, out var host))
+        {
+            host = new PluginMainPageHost(page);
+            _pluginMainPageHosts.Add(page.MainPageKey, host);
+        }
+        return host;
     }
 
 

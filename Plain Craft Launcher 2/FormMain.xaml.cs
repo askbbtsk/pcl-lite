@@ -64,6 +64,7 @@ public partial class FormMain
         HintWrapper.OnShow += HintService.HintWrapper_OnShow;
         // 加载 UI
         InitializeComponent();
+        InitializePluginMainPages();
         InitializeCommandPalette();
         PanBack.SizeChanged += FormMain_SizeChanged;
         RefreshNavigationOverflow();
@@ -316,6 +317,9 @@ public partial class FormMain
     private bool _navigationExpanded;
     private bool _navigationReflowQueued;
     private HashSet<int> _navigationAutoCollapsedIds = [];
+    private readonly Dictionary<string, MyRadioButton> _pluginMainPageButtons = new(StringComparer.Ordinal);
+    private Dictionary<string, PluginMainPageHost>? _pluginMainPageHosts;
+    private bool _pluginAuthorizationPromptActive;
 
     private IDataObject _HandleDrag_PrevData;
     private DragDropEffects _HandleDrag_PrevEffects;

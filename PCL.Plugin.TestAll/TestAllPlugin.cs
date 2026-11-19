@@ -13,7 +13,7 @@ using PCL.Plugin.SDK;
 namespace PCL.Plugin.TestAll;
 
 /// <summary>
-/// Test plugin that exercises every host API (API v1: 12 interfaces / 69 members).
+/// Test plugin that exercises every host API (API v1: 12 interfaces / 72 members).
 /// Each API has a button on the plugin page; results and errors are shown inline.
 /// Buttons are created by PCL's themed host control factory. The "run all" button executes every non-interactive test sequentially.
 /// </summary>
@@ -24,6 +24,7 @@ public sealed class TestAllPlugin : IPclPlugin
     private ObservableCollection<string>? _logLines;
     private TextBox? _logBox;
     private int _counter;
+    private bool _mainPageRegistered;
 
     // ---------------------------------------------------------------- lifecycle
 
@@ -63,7 +64,8 @@ public sealed class TestAllPlugin : IPclPlugin
         context.Ui.RegisterPage("testall", "API TestAll", CreateView, new PluginPageLifecycle(
             OnShown: _ => { Log("Page lifecycle: OnShown"); return Task.CompletedTask; },
             OnHidden: _ => { Log("Page lifecycle: OnHidden"); return Task.CompletedTask; }));
-        log.Info("TestAll plugin started, page registered.");
+        RegisterTestMainPage();
+        log.Info("TestAll plugin started; subpage and main page registered.");
         return Task.CompletedTask;
     }
 
@@ -75,6 +77,7 @@ public sealed class TestAllPlugin : IPclPlugin
             s.Dispose();
         }
         _subscriptions.Clear();
+        _mainPageRegistered = false;
         _context = null;
         return Task.CompletedTask;
     }
@@ -177,7 +180,9 @@ public sealed class TestAllPlugin : IPclPlugin
             Btn("ConfirmAsync 确认对话框", TestConfirm),
             Btn("ChooseAsync 默认本地化按钮", TestChooseDefault),
             Btn("ChooseAsync 自定义三按钮", TestChooseCustom),
-            Btn("UnregisterPage 注册/注销探针", TestUnregisterPage)));
+            Btn("UnregisterPage 注册/注销探针", TestUnregisterPage),
+            Btn("重新注册一级测试页面", TestRegisterMainPage),
+            Btn("注销一级测试页面", TestUnregisterMainPage)));
 
         // --- Events
         groups.Children.Add(Group("事件 (Events)",
@@ -209,6 +214,63 @@ public sealed class TestAllPlugin : IPclPlugin
             Btn("OpenPath 打开插件数据目录", TestOpenPath)));
 
         return root;
+    }
+
+    private FrameworkElement CreateMainPageView()
+    {
+        var panel = new StackPanel { Margin = new Thickness(24) };
+        var title = new TextBlock
+        {
+            Text = "TestAll 一级主页面",
+            FontSize = 22,
+            FontWeight = FontWeights.Bold,
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+        title.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrush1");
+        panel.Children.Add(title);
+
+        var description = new TextBlock
+        {
+            Text = "这是通过 Ui.RegisterMainPage 注册的独立主页面。原有插件小页面仍保留在插件页中。",
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+        description.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray2");
+        panel.Children.Add(description);
+        panel.Children.Add(Btn("注销此一级页面", TestUnregisterMainPage));
+        return panel;
+    }
+
+    private void RegisterTestMainPage()
+    {
+        if (_mainPageRegistered || _context is null) return;
+        _context.Ui.RegisterMainPage("testall-main", "TestAll", CreateMainPageView,
+            new PluginPageLifecycle(
+                OnShown: _ => { LogEvent("Main page lifecycle: OnShown"); return Task.CompletedTask; },
+                OnHidden: _ => { LogEvent("Main page lifecycle: OnHidden"); return Task.CompletedTask; }));
+        _mainPageRegistered = true;
+        LogEvent("Ui.RegisterMainPage: testall-main registered");
+    }
+
+    private Task TestRegisterMainPage()
+    {
+        if (_mainPageRegistered)
+        {
+            Log("UI.RegisterMainPage: 一级测试页面已注册。");
+            return Task.CompletedTask;
+        }
+        RegisterTestMainPage();
+        Require(_mainPageRegistered, "UI.RegisterMainPage did not register the main page.");
+        return Task.CompletedTask;
+    }
+
+    private Task TestUnregisterMainPage()
+    {
+        var removed = Ctx().Ui.UnregisterMainPage("testall-main");
+        _mainPageRegistered = false;
+        Log($"UI.UnregisterMainPage: 注销结果={removed}");
+        Require(removed, "UI.UnregisterMainPage did not remove the main page.");
+        return Task.CompletedTask;
     }
 
     // ---------------------------------------------------------------- run all

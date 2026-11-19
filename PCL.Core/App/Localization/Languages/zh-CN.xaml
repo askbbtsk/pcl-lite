@@ -3321,9 +3321,14 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">标题栏页面折叠</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">标题栏空间不足时，优先折叠选中的页面；空间足够时显示全部页面。勾选此处的页面会优先收进标题栏右侧的展开区域。</sys:String>
 
+    <sys:String x:Key="Plugin.MainPage.Consent.Title">显示插件页面</sys:String>
+    <sys:String x:Key="Plugin.MainPage.Consent.Content">{0} 想要在顶部导航中显示 {1} 个主页面。是否同意？</sys:String>
+
     <!-- Setup.Ui.FeatureHide -->
 
     <sys:String x:Key="Setup.Ui.FeatureHide.Description">你可以隐藏不需要的页面或关闭特定功能。在任意界面按 F12 可以暂时显示被隐藏的功能。</sys:String>
+    <sys:String x:Key="Setup.Ui.FeatureHide.PluginPages">插件主页面</sys:String>
+    <sys:String x:Key="Setup.Ui.FeatureHide.PluginPages.ToolTip">可在此隐藏插件主页面；按 F12 可临时显示隐藏页面。</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.MainPage">主页面</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.SpecificFeature">特定功能</sys:String>
     <sys:String x:Key="Setup.Ui.FeatureHide.SubInstance">子页面 实例设置</sys:String>

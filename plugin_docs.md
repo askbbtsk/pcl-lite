@@ -201,6 +201,9 @@ dotnet run --project .\PCL.Plugin.Tools -- pack .\staging .\secrets\example-sign
 - `Ui.RegisterPage(id, title, Func<FrameworkElement>)`：注册插件页。工厂在首次打开时调用，创建的视图会复用。
 - `Ui.RegisterPage(id, title, Func<FrameworkElement>, PluginPageLifecycle)`：注册带显示/隐藏异步回调的插件页，可用于刷新数据和停止轮询。
 - `Ui.UnregisterPage(id)`：移除当前插件注册的页面；若正在显示，宿主先触发隐藏回调。
+- `Ui.RegisterMainPage(id, title, Func<FrameworkElement>)`：在顶部主导航注册独立页面；原有 `RegisterPage` 小页面保持不变。
+- `Ui.RegisterMainPage(id, title, Func<FrameworkElement>, PluginPageLifecycle)`：注册带显示/隐藏回调的一级主页面。
+- `Ui.UnregisterMainPage(id)`：注销插件注册的一级主页面；若正在显示，宿主会返回启动页。
 - `Ui.CreateButton(text, Func<Task>, style)`：创建宿主的 PCL 原生按钮，不暴露内部主题资源键。`PluginButtonStyle` 支持 `Normal`、`Highlight` 和 `Danger`。
 - `Ui.ShowNotification(message, kind)`：发送提示；可选点击回调会在用户点击 PCL 提示条时执行一次。
 - `Ui.ConfirmAsync(title, message, cancellationToken)`：显示确认提示并返回用户选择。
@@ -209,6 +212,8 @@ dotnet run --project .\PCL.Plugin.Tools -- pack .\staging .\secrets\example-sign
 `PluginDialogOptions` 的确认/取消文案默认留空，宿主会按当前 UI 语言填充；只有传入非空文案时才覆盖宿主默认翻译。
 
 页面 ID 在同一插件内应稳定且唯一。后台事件处理器不能直接操作 WPF 控件；使用 `Application.Current.Dispatcher`。
+
+首次注册一级主页面时，PCL 会按插件显示名汇总待授权页面数量并询问用户；确认按钮等待 3 秒后可用，取消则不显示这些页面。授权只添加导航入口，不会自动打开页面。空间不足时插件页面优先收进顶部导航的展开菜单；用户也可在「个性化 → 隐藏功能」单独隐藏插件主页面，按 F12 可临时显示。
 
 ### 事件
 

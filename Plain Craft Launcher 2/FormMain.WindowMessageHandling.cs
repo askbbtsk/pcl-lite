@@ -321,13 +321,34 @@ public partial class FormMain
             return;
         }
 
-        var buttons = new (MyRadioButton Button, int Id)[]
+        var buttons = new List<(MyRadioButton Button, int Id)>
         {
             (BtnTitleSelect0, 0), (BtnTitleSelect1, 1), (BtnTitleSelect2, 2),
             (BtnTitleSelectLunar, 13), (BtnTitleSelectLink, 15), (BtnTitleSelect4, 4),
             (BtnTitleSelect3, 3), (BtnTitleSelectPlugins, 14)
         };
+        var pluginPages = GetVisiblePluginMainPages();
+        _pluginMainPageButtons.Clear();
+        for (var index = 0; index < pluginPages.Length; index++)
+        {
+            var page = pluginPages[index];
+            var button = new MyRadioButton
+            {
+                Text = page.Title,
+                Tag = "plugin:" + page.MainPageKey,
+                Margin = new Thickness(5, 0, 5, 0),
+                Padding = new Thickness(2, 0, 2, 0),
+                LogoScale = 0.9,
+                SvgIcon = "lucide/puzzle"
+            };
+            button.Check += BtnTitleSelect_Click;
+            var id = -1000 - index;
+            _pluginMainPageButtons[page.MainPageKey] = button;
+            buttons.Add((button, id));
+        }
         var preferredCollapsedIds = ParseCollapsedNavigationIds(Config.Preference.TopBarCollapsedTabs);
+        // Plugin pages are always folded before ordinary optional tabs when the top bar runs out of room.
+        preferredCollapsedIds.UnionWith(buttons.Where(item => item.Id <= -1000).Select(item => item.Id));
         var visibleButtons = buttons.Where(item => !IsNavigationFeatureHidden(item.Id)).ToArray();
         var foldingEnabled = visibleButtons.Length > 5;
         if (!foldingEnabled) _navigationExpanded = false;
@@ -449,6 +470,7 @@ public partial class FormMain
     private static bool IsNavigationFeatureHidden(int id)
     {
         if (PageSetupUI.HiddenForceShow) return false;
+        if (id <= -1000) return false;
         var hidden = Config.Preference.Hide;
         return id switch
         {

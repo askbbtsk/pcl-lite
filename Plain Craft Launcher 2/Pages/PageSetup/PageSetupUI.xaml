@@ -753,6 +753,13 @@
                         <TextBlock Grid.Row="4" VerticalAlignment="Center" HorizontalAlignment="Left" Text="{DynamicResource Setup.Ui.FeatureHide.SubTools}" />
                         <local:MyCheckBox Height="22" VerticalAlignment="Center" Grid.Row="4" Grid.Column="3" Text="{DynamicResource Setup.Ui.FeatureHide.Item.Toolbox}" x:Name="CheckHiddenToolsTest" Tag="UiHiddenToolsTest" Change="CheckBoxChange"/>
                         <TextBlock Grid.Row="5" VerticalAlignment="Center" HorizontalAlignment="Left" Text="{DynamicResource Setup.Ui.FeatureHide.SubInstance}" />
+                        <StackPanel x:Name="PanPluginMainPages" Grid.Row="8" Grid.Column="2" Grid.ColumnSpan="6"
+                                    Margin="0,8,0,0" Visibility="Collapsed">
+                            <WrapPanel x:Name="PanPluginMainPageChecks" />
+                        </StackPanel>
+                        <TextBlock x:Name="LabPluginMainPages" Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
+                                   VerticalAlignment="Top" Margin="0,8,0,0"
+                                   Text="{DynamicResource Setup.Ui.FeatureHide.PluginPages}" Visibility="Collapsed" />
                         <local:MyCheckBox Height="22" VerticalAlignment="Center" Grid.Row="5" Grid.Column="2" Text="{DynamicResource Setup.Ui.FeatureHide.Item.Edit}"
                                           x:Name="CheckHiddenVersionEdit" Tag="UiHiddenVersionEdit"
                                           Change="CheckBoxChange" />

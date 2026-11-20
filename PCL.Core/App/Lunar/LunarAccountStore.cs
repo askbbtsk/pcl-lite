@@ -102,6 +102,7 @@ public static class LunarAccountStore
     /// <summary>读取账户库。文件不存在或读不动时返回空快照，不抛异常。</summary>
     public static LunarAccountSnapshot Read(string lunarRoot)
     {
+        lock (WriteLock)
         try
         {
             var path = FilePath(lunarRoot);

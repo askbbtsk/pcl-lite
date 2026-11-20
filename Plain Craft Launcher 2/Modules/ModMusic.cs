@@ -10,6 +10,7 @@ namespace PCL;
 
 public static class ModMusic
 {
+    private static readonly object PlaylistLock = new();
     /// <summary>
     ///     当前正在播放的 NAudio.Wave.WaveOutEvent。
     /// </summary>
@@ -65,9 +66,9 @@ public static class ModMusic
             }
 
             // 播放结束，继续下一首
-            if (currentWave.PlaybackState == PlaybackState.Stopped &&
+            if (ReferenceEquals(currentWave, musicNAudio) && currentWave.PlaybackState == PlaybackState.Stopped &&
                 (musicAllList?.Any() is { } arg5 ? arg5 : (bool?)null).GetValueOrDefault())
-                MusicStartPlay(DequeueNextMusicAddress(), isFirstLoad);
+                MusicStartPlay(DequeueNextMusicAddress());
         }
 
         catch (Exception ex)
@@ -114,8 +115,11 @@ public static class ModMusic
             }
 
             // 移除无效文件
-            musicAllList?.Remove(musicCurrent);
-            musicWaitingList?.Remove(musicCurrent);
+            lock (PlaylistLock)
+            {
+                musicAllList?.Remove(musicCurrent);
+                musicWaitingList?.Remove(musicCurrent);
+            }
             MusicRefreshUI();
 
             Thread.Sleep(2000);
@@ -152,6 +156,11 @@ public static class ModMusic
     /// <param name="forceReload">强制全部重新载入列表。</param>
     /// <param name="preventFirst">在重载列表时避免让某项成为第一项。</param>
     private static void MusicListInit(bool forceReload, string preventFirst = null)
+    {
+        lock (PlaylistLock) MusicListInitCore(forceReload, preventFirst);
+    }
+
+    private static void MusicListInitCore(bool forceReload, string preventFirst)
     {
         if (forceReload)
             musicAllList = null;
@@ -204,9 +213,14 @@ public static class ModMusic
     /// </summary>
     private static string DequeueNextMusicAddress()
     {
-        if (musicAllList is null || !musicAllList.Any() || !musicWaitingList.Any()) MusicListInit(false);
+        lock (PlaylistLock) return DequeueNextMusicAddressCore();
+    }
 
-        if (musicWaitingList.Any())
+    private static string DequeueNextMusicAddressCore()
+    {
+        if (musicAllList is null || !musicAllList.Any() || musicWaitingList is null || !musicWaitingList.Any()) MusicListInit(false);
+
+        if (musicWaitingList?.Any() == true)
         {
             var nextMusic = musicWaitingList[0];
             musicWaitingList.RemoveAt(0);
@@ -230,7 +244,8 @@ public static class ModMusic
         {
             try
             {
-                if ((musicAllList?.Any() is { } arg1 ? arg1 : null) == false)
+                var musicCount = musicAllList?.Count ?? 0;
+                if (musicCount == 0)
                 {
                     ModMain.frmMain.BtnExtraMusic.Show = false;
                 }
@@ -238,7 +253,7 @@ public static class ModMusic
                 {
                     ModMain.frmMain.BtnExtraMusic.Show = true;
                     var fileName = ModBase.GetFileNameWithoutExtentionFromPath(musicCurrent);
-                    var isSingle = musicAllList.Count == 1;
+                    var isSingle = musicCount == 1;
                     string tipText;
                     if (MusicState == MusicStates.Pause)
                     {

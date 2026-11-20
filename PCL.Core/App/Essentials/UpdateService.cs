@@ -29,7 +29,8 @@ public sealed class UpdateService : GeneralService
             {
                 case ["update_finished", _]:
                 {
-                    var toDelete = args[1];
+                    if (!_TryGetStagedUpdatePath(args[1], Basics.ExecutablePath, out var toDelete))
+                        break;
                     // 这个文件是上一个进程（更新器）自己。它是先 Process.Start 新版本、
                     // 再 RequestExit 的，所以新版本走到这里时它很可能还没退干净——
                     // 此时删不掉是正常现象，重试几次，删不掉就算了，绝不能因此让启动失败
@@ -159,16 +160,8 @@ public sealed class UpdateService : GeneralService
     {
         try
         {
-            var staged = Path.GetFullPath(source);
-            var targetPath = Path.GetFullPath(target);
-            var stagingDirectory = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(targetPath)!, "PCL"));
-            var name = Path.GetFileName(staged);
-            if (!string.Equals(staged, Basics.ExecutablePath, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(staged, targetPath, StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(Path.GetDirectoryName(staged), stagingDirectory, StringComparison.OrdinalIgnoreCase) ||
-                name.Length != 43 || !name.StartsWith("update-", StringComparison.OrdinalIgnoreCase) ||
-                !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
-                !Guid.TryParseExact(name.AsSpan(7, 32), "N", out _))
+            if (!_TryGetStagedUpdatePath(source, target, out var staged) ||
+                !string.Equals(staged, Basics.ExecutablePath, StringComparison.OrdinalIgnoreCase))
                 return;
 
             // Windows 仍锁着当前 EXE。让后台进程在本更新器退出后删除它。
@@ -199,6 +192,33 @@ public sealed class UpdateService : GeneralService
         catch (Exception ex)
         {
             Context.Warn("无法安排清理更新暂存文件", ex);
+        }
+    }
+
+    private static bool _TryGetStagedUpdatePath(string source, string target, out string staged)
+    {
+        staged = "";
+        try
+        {
+            var targetPath = Path.GetFullPath(target);
+            var targetDirectory = Path.GetDirectoryName(targetPath);
+            if (targetDirectory is null) return false;
+            var candidate = Path.GetFullPath(source);
+            var name = Path.GetFileName(candidate);
+            if (string.Equals(candidate, targetPath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(Path.GetDirectoryName(candidate), Path.Combine(targetDirectory, "PCL"),
+                    StringComparison.OrdinalIgnoreCase) ||
+                name.Length != 43 || !name.StartsWith("update-", StringComparison.OrdinalIgnoreCase) ||
+                !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
+                !Guid.TryParseExact(name.AsSpan(7, 32), "N", out _))
+                return false;
+
+            staged = PCL.Core.IO.ContainedFilePath.Resolve(Path.Combine(targetDirectory, "PCL"), name);
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return false;
         }
     }
 }

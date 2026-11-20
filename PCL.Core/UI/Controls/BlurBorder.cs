@@ -102,16 +102,15 @@ public class BlurBorder : Border
     /// <inheritdoc/>
     protected override void OnVisualParentChanged(DependencyObject oldParentObject)
     {
-        if (oldParentObject is UIElement oldParent)
-        {
-            oldParent.LayoutUpdated -= ParentLayoutUpdated;
-        }
-
-        if (Parent is UIElement newParent)
-        {
-            newParent.LayoutUpdated += ParentLayoutUpdated;
-        }
+        base.OnVisualParentChanged(oldParentObject);
+        if (_layoutParent is not null)
+            _layoutParent.LayoutUpdated -= ParentLayoutUpdated;
+        _layoutParent = System.Windows.Media.VisualTreeHelper.GetParent(this) as UIElement;
+        if (_layoutParent is not null)
+            _layoutParent.LayoutUpdated += ParentLayoutUpdated;
     }
+
+    private UIElement? _layoutParent;
 
     private void ParentLayoutUpdated(object? sender, EventArgs e)
     {

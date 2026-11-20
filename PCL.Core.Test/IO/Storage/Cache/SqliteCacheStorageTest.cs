@@ -20,6 +20,44 @@ public class SqliteCacheStorageTest
     private SchemaManager _schemaManager = null!;
     private string _testDbPath = null!;
 
+    [TestMethod]
+    public async Task VersionOneDatabaseUpgradesWithoutLosingItsExistingEntry()
+    {
+        var path = Path.Combine(Path.GetDirectoryName(_testDbPath)!, "legacy-v1.db");
+        await using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={path}"))
+        {
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = """
+                CREATE TABLE cache_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                INSERT INTO cache_meta VALUES ('schema_version', '1');
+                CREATE TABLE cache_entries (
+                    cache_key TEXT PRIMARY KEY, entry_type INTEGER NOT NULL,
+                    content_type TEXT NOT NULL, data BLOB, data_size INTEGER NOT NULL DEFAULT 0,
+                    file_hash TEXT, file_path TEXT, content_hash TEXT,
+                    content_version INTEGER NOT NULL DEFAULT 1,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    last_access_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    expires_at TEXT, hit_count INTEGER NOT NULL DEFAULT 0,
+                    tags TEXT NOT NULL DEFAULT '', group_name TEXT NOT NULL DEFAULT '',
+                    priority INTEGER NOT NULL DEFAULT 1);
+                INSERT INTO cache_entries (cache_key, entry_type, content_type, data)
+                    VALUES ('legacy', 0, 'String', @data);
+                """;
+            command.Parameters.AddWithValue("@data", System.Text.Encoding.UTF8.GetBytes("retained"));
+            await command.ExecuteNonQueryAsync();
+        }
+
+        await new SchemaManager($"Data Source={path}").EnsureCurrentSchemaAsync();
+        using var storage = new SqliteCacheStorage(path);
+        var entry = await storage.LookupAsync("legacy", CancellationToken.None);
+        Assert.IsNotNull(entry);
+        Assert.AreEqual("retained", System.Text.Encoding.UTF8.GetString(entry.Data!));
+        Assert.IsNull(entry.SlidingExpiration);
+        Assert.IsNull(entry.AbsoluteExpiresAt);
+        await storage.TouchAsync("legacy", CancellationToken.None);
+    }
+
     [TestInitialize]
     public async Task Setup()
     {
@@ -62,6 +100,32 @@ public class SqliteCacheStorageTest
     }
 
     #region Upsert Tests
+
+    [TestMethod]
+    public async Task ComponentCacheCanInsertAndUpdateAMod()
+    {
+        var row = new ComponentCacheRow
+        {
+            InstancePath = @"C:\Minecraft",
+            CompType = "mods",
+            FileName = "example.jar",
+            RelativePath = @"mods\example.jar",
+            FileSize = 42,
+            LastModified = DateTime.UtcNow,
+            Enabled = true,
+            ModDependencies = "[\"minecraft\"]"
+        };
+
+        await _storage.UpsertComponentAsync(row, default);
+        await _storage.UpsertComponentAsync(row with { Enabled = false, FileSize = 43 }, default);
+
+        var saved = await _storage.GetComponentAsync(row.InstancePath, row.CompType, row.FileName, default);
+        Assert.IsNotNull(saved);
+        Assert.AreEqual(row.RelativePath, saved.RelativePath);
+        Assert.AreEqual(row.ModDependencies, saved.ModDependencies);
+        Assert.AreEqual(43L, saved.FileSize);
+        Assert.IsFalse(saved.Enabled);
+    }
 
     [TestMethod]
     public async Task UpsertAsync_ShouldInsertNewEntry()

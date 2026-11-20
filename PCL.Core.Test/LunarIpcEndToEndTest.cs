@@ -51,10 +51,11 @@ public class LunarIpcEndToEndTest
     }
 
     /// <summary>客户端发给服务端的帧必须加掩码（RFC 6455）。</summary>
-    private static async Task WriteMaskedFrameAsync(NetworkStream stream, byte[] payload)
+    private static async Task WriteMaskedFrameAsync(NetworkStream stream, byte[] payload,
+        bool fin = true, int opcode = 0x2)
     {
         var mask = RandomNumberGenerator.GetBytes(4);
-        var header = new List<byte> { 0x82 };
+        var header = new List<byte> { (byte)((fin ? 0x80 : 0) | opcode) };
 
         switch (payload.Length)
         {
@@ -161,6 +162,26 @@ public class LunarIpcEndToEndTest
         LunarIpcProtocol.WriteStringField(stream, 3, method);
         LunarIpcProtocol.WriteMessageField(stream, 4, input);
         return stream.ToArray();
+    }
+
+    [TestMethod]
+    public async Task FragmentedMessagesCannotExceedTheSingleMessageLimit()
+    {
+        var port = FindFreePort();
+        var result = await LunarIpcServer.StartAsync(port, "test-installation", NoRefresh, _ => { });
+        using var server = result.Server;
+        Assert.IsNotNull(server);
+        using var client = new TcpClient();
+        var stream = await HandshakeAsync(client, port);
+        await WriteMaskedFrameAsync(stream, new byte[600000], fin: false);
+        await WriteMaskedFrameAsync(stream, new byte[600000], fin: false, opcode: 0);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try
+        {
+            var read = await stream.ReadAsync(new byte[1], timeout.Token);
+            Assert.AreEqual(0, read);
+        }
+        catch (IOException) { /* An oversized message may also be closed with a TCP reset. */ }
     }
 
     [TestMethod]

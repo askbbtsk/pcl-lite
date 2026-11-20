@@ -19,6 +19,8 @@ public sealed class PluginDependencyResolverTests
         Assert.IsTrue(PluginVersionRange.Satisfies("1.2.9", "~1.2.3"));
         Assert.IsFalse(PluginVersionRange.Satisfies("1.3.0", "~1.2.3"));
         Assert.IsTrue(PluginVersionRange.Satisfies("1.9.0-beta.2", ">=1.9.0-beta.1 <2.0.0"));
+        Assert.IsTrue(PluginVersionRange.Satisfies("1.9.0", ">1.9.0-beta.2"));
+        Assert.IsFalse(PluginVersionRange.Satisfies("1.9.0-beta.2", ">=1.9.0"));
         Assert.IsTrue(PluginVersionRange.Satisfies("1.2.3+build.2", "1.2.3+build.1"));
         Assert.IsFalse(PluginVersionRange.IsValid("^999999999999.0.0"));
         Assert.IsFalse(PluginVersionRange.IsValid("1.02.3"));

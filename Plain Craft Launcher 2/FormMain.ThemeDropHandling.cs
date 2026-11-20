@@ -20,6 +20,11 @@ public partial class FormMain
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
+            if (source.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase))
+            {
+                ModBase.Log(error, "[Theme] 无法按主题解析拖入的 XAML，继续由页面文件处理");
+                return false;
+            }
             ModBase.RunInUi(() => ModMain.MyMsgBox(Lang.Text("Theme.Pack.Failed", error.Message), Lang.Text("Theme.Pack.Title")));
             return true;
         }

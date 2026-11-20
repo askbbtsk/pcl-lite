@@ -528,7 +528,7 @@ public partial class FormMain
                     {
                         if (ModMain.frmLogLeft is null)
                             ModMain.frmLogLeft = new PageLogLeft();
-                        if (ModMain.frmLogLeft is null)
+                        if (ModMain.frmLogRight is null)
                             ModMain.frmLogRight = new PageLogRight();
                         PageChangeAnim(ModMain.frmLogLeft, ModMain.frmLogRight);
                         break;

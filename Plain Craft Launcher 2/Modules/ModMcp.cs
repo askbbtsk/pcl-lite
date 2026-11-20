@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using PCL.Core.App;
 using PCL.Core.App.Configuration;
+using PCL.Core.IO;
 using PCL.Core.Mcp;
 
 namespace PCL;
@@ -89,15 +90,20 @@ public static class ModMcp
 
     private static McInstance? FindInstance(string name)
     {
+        if (string.IsNullOrWhiteSpace(name) || name.IndexOfAny(['\\', '/']) >= 0) return null;
+
         var match = ModInstanceList.mcInstanceList.Values
             .SelectMany(list => list)
             .FirstOrDefault(instance => string.Equals(instance.Name, name, StringComparison.OrdinalIgnoreCase));
         if (match is not null) return match;
 
-        // 列表里没有时按名字兜底：只要 versions 下真有这个目录就当它存在
+        // 列表里没有时只允许解析 versions 下的单层目录名。
         try
         {
-            var path = Path.Combine(ModFolder.mcFolderSelected ?? "", "versions", name);
+            var minecraftRoot = ModFolder.mcFolderSelected;
+            if (string.IsNullOrWhiteSpace(minecraftRoot)) return null;
+            var versionsPath = Path.Combine(minecraftRoot, "versions");
+            var path = ContainedFilePath.Resolve(versionsPath, name);
             if (Directory.Exists(path)) return new McInstance(name);
         }
         catch (Exception)

@@ -22,7 +22,9 @@ public partial class Application
 {
     public Application()
     {
-        ApplicationService.RecoverUnhandledException = LiquidGlassCore.TryRecoverGraphicsFailure;
+        ApplicationService.RecoverUnhandledException = error =>
+            LiquidGlassCore.TryRecoverGraphicsFailure(error) ||
+            CustomThemeRuntime.Current?.TryRecoverDeferredThemeFailure(error) == true;
         // 注册生命周期事件
         Lifecycle.When(LifecycleState.Loaded, _ApplicationStartup);
         Lifecycle.When(LifecycleState.WindowCreated, _ShowEnvironmentWarning);

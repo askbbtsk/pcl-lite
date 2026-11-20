@@ -84,6 +84,8 @@ public class HostConnectionHandler
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            cancellationSource.Cancel();
+            _ = _CleanupUnusedConnectionsAsync(connectionTasks, null);
             throw;
         }
         catch (Exception ex)
@@ -107,7 +109,7 @@ public class HostConnectionHandler
         var cacheKey = (host, port);
         var addressCache = _connectionCache.GetValueOrDefault(cacheKey);
 
-        var cachedAddresses = new List<IPAddress>();
+        var cachedAddresses = new List<(IPAddress Address, DateTime SuccessTime)>();
         var uncachedAddresses = new List<IPAddress>();
 
         foreach (var ip in addresses)
@@ -116,7 +118,7 @@ public class HostConnectionHandler
                 addressCache.TryGetValue(ip, out var successTime) &&
                 now - successTime <= _CacheDuration)
             {
-                cachedAddresses.Add(ip);
+                cachedAddresses.Add((ip, successTime));
             }
             else
             {
@@ -125,8 +127,7 @@ public class HostConnectionHandler
         }
 
         // 缓存地址: 按成功时间倒序 (最近成功的优先)
-        cachedAddresses.Sort((a, b) =>
-            addressCache![b].CompareTo(addressCache[a]));
+        cachedAddresses.Sort((a, b) => b.SuccessTime.CompareTo(a.SuccessTime));
 
         // 非缓存地址: IPv6 优先 + 保持原始顺序
         var ipv6List = uncachedAddresses
@@ -151,6 +152,7 @@ public class HostConnectionHandler
         }
 
         return cachedAddresses
+            .Select(entry => entry.Address)
             .Concat(sortedUncached)
             .Take(WaitTasks)
             .ToArray();

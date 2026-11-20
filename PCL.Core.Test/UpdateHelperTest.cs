@@ -159,6 +159,22 @@ public class UpdateHelperTest
     }
 
     [TestMethod]
+    public void ReplaceShouldRestoreOldExeWhenReplacementDisappearsDuringLaunch()
+    {
+        var target = Write("app.exe", "old");
+        var source = Write("new.exe", "new content");
+        var launchError = new FileNotFoundException("Replacement disappeared");
+        var error = UpdateHelper.Replace(source, target, () =>
+        {
+            File.Delete(target);
+            throw launchError;
+        });
+
+        Assert.AreSame(launchError, error);
+        Assert.AreEqual("old", File.ReadAllText(target));
+    }
+
+    [TestMethod]
     public void ReplaceShouldRestoreOldExeAndAllowRetryWhenLaunchFails()
     {
         var target = Write("app.exe", "old");

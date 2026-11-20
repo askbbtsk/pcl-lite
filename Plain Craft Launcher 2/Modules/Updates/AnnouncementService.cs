@@ -28,26 +28,16 @@ public static class AnnouncementService
         {
             foreach (var item in showAnnounce)
             {
-                var first = item.Btn1;
-                var second = item.Btn2;
+                var first = _GetWebAction(item.Btn1) ? item.Btn1 : null;
+                var second = _GetWebAction(item.Btn2) ? item.Btn2 : null;
                 // Primary buttons are always visible. A missing first action
                 // therefore becomes the close action rather than an empty button.
                 ModMain.MyMsgBox(item.Detail, item.Title,
                     first is null ? Lang.Text("Common.Action.Close") : first.Text,
                     second?.Text ?? "",
                     first is null ? "" : Lang.Text("Common.Action.Close"),
-                    button1Action: first is null ? null : () =>
-                    {
-                        if (EventTypeMapper.TryParse(
-                                first.Command, out var eventType))
-                            CustomEvent.Raise(eventType, first.CommandParameter);
-                    },
-                    button2Action: second is null ? null : () =>
-                    {
-                        if (EventTypeMapper.TryParse(
-                                second.Command, out var eventType))
-                            CustomEvent.Raise(eventType, second.CommandParameter);
-                    });
+                    button1Action: first is null ? null : () => CustomEvent.Raise(EventType.OpenUrl, first.CommandParameter),
+                    button2Action: second is null ? null : () => CustomEvent.Raise(EventType.OpenUrl, second.CommandParameter));
             }
         });
 
@@ -55,4 +45,10 @@ public static class AnnouncementService
         showedAnnounced = showedAnnounced.Distinct().ToList();
         States.Hint.ShowedAnnouncements = showedAnnounced.Join("|");
     }
+
+    private static bool _GetWebAction(AnnouncementBtnInfoModel? button) =>
+        button is not null &&
+        EventTypeMapper.TryParse(button.Command, out var type) && type == EventType.OpenUrl &&
+        Uri.TryCreate(button.CommandParameter, UriKind.Absolute, out var uri) &&
+        uri.Scheme == Uri.UriSchemeHttps && uri.Host.Length > 0;
 }

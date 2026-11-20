@@ -50,10 +50,7 @@ public partial class PageHelpDetail : IRefreshable
     {
         // 修改时应同时修改 PageLaunchRight.LoadContent。
         var xaml = ModMain.ArgumentReplace(content.Xaml);
-        while (xaml.Contains("xmlns"))
-            xaml = xaml.RegexReplace("xmlns[^\"']*(\"|')[^\"']*(\"|')", "").Replace("xmlns", "");
-        xaml =
-            $"<StackPanel xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\" xmlns:sys=\"clr-namespace:System;assembly=System.Runtime\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\" xmlns:local=\"clr-namespace:PCL;assembly=Plain Craft Launcher 2\">{xaml}</StackPanel>";
+        xaml = CustomPageXamlPolicy.WrapFragment(xaml);
 
         var element = (UIElement)ModBase.GetObjectFromXML(xaml, out var sanitizeResult);
         foreach (var unsupported in sanitizeResult.UnsupportedTypesFound)

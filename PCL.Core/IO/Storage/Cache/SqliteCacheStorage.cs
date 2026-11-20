@@ -59,11 +59,11 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
                 INSERT OR REPLACE INTO cache_entries (
                     cache_key, entry_type, content_type, data, data_size, file_hash, file_path,
                     content_hash, content_version, created_at, last_access_at, expires_at,
-                    hit_count, tags, group_name, priority
+                    hit_count, tags, group_name, priority, sliding_ticks, absolute_expires_at
                 ) VALUES (
                     @cache_key, @entry_type, @content_type, @data, @data_size, @file_hash, @file_path,
                     @content_hash, @content_version, COALESCE((SELECT created_at FROM cache_entries WHERE cache_key = @cache_key), datetime('now')),
-                    datetime('now'), @expires_at, 0, @tags, @group_name, @priority
+                    datetime('now'), @expires_at, 0, @tags, @group_name, @priority, @sliding_ticks, @absolute_expires_at
                 )
                 """;
             _BindEntryParams(cmd, entry);
@@ -85,7 +85,7 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? _ReadEntry(reader) : null;
     }
 
-    public async Task TouchAsync(string key, CancellationToken ct)
+    public async Task TouchAsync(string key, CancellationToken ct, DateTime? expiresAt = null)
     {
         await _writeLock.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -94,9 +94,12 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
             await using var cmd = conn.CreateCommand();
 
             cmd.CommandText = """
-                              UPDATE cache_entries SET last_access_at = datetime('now'), hit_count = hit_count + 1 WHERE cache_key = @cache_key
+                              UPDATE cache_entries SET last_access_at = @now, hit_count = hit_count + 1,
+                                  expires_at = COALESCE(@expires_at, expires_at) WHERE cache_key = @cache_key
                               """;
             cmd.Parameters.AddWithValue("@cache_key", key);
+            cmd.Parameters.AddWithValue("@now", DateTime.UtcNow.ToString("O"));
+            cmd.Parameters.AddWithValue("@expires_at", (object?)expiresAt?.ToString("O") ?? DBNull.Value);
             await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
         finally
@@ -190,6 +193,15 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
             hashes.Add(reader.GetString(0));
         }
         return hashes;
+    }
+
+    internal async Task<long> CountFileReferencesAsync(string hash)
+    {
+        await using var conn = await _CreateConnectionAsync().ConfigureAwait(false);
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM cache_entries WHERE file_hash = @hash";
+        cmd.Parameters.AddWithValue("@hash", hash);
+        return (long)(await cmd.ExecuteScalarAsync().ConfigureAwait(false))!;
     }
 
     public async Task<int> DeleteByTagAsync(string tag, CancellationToken ct)
@@ -366,11 +378,11 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
                      mod_loader, mod_deps,
                      cache_version, scanned_at, scan_hash)
                 VALUES
-                    (@ip, @ct, @fn, @rp,
-                     @fh, @fs, @lm, @en,
-                     @mn, @mv, @ma, @md,
-                     @ml, @mdeps,
-                     @cv, datetime('now'), @sh)";
+                    (@instance_path, @comp_type, @file_name, @relative_path,
+                     @file_hash, @file_size, @last_modified, @enabled,
+                     @mod_name, @mod_version, @mod_author, @mod_description,
+                     @mod_loader, @mod_dependencies,
+                     @cache_version, datetime('now'), @scan_hash)";
             _BindComponentParams(cmd, row);
             await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
@@ -478,6 +490,8 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
         cmd.Parameters.AddWithValue("@tags", e.Tags);
         cmd.Parameters.AddWithValue("@group_name", e.GroupName);
         cmd.Parameters.AddWithValue("@priority", e.Priority);
+        cmd.Parameters.AddWithValue("@sliding_ticks", (object?)e.SlidingExpiration?.Ticks ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@absolute_expires_at", (object?)e.AbsoluteExpiresAt?.ToString("O") ?? DBNull.Value);
     }
 
     // 数据库中的时间以 ISO-8601 往返格式（"O"，UTC 带 Z）写入；读取必须用 RoundtripKind 解析，
@@ -509,6 +523,8 @@ public class SqliteCacheStorage(string dbPath) : IDisposable
             Tags = r.GetString(13),
             GroupName = r.GetString(14),
             Priority = r.GetInt32(15),
+            SlidingExpiration = r.IsDBNull(16) ? null : TimeSpan.FromTicks(r.GetInt64(16)),
+            AbsoluteExpiresAt = r.IsDBNull(17) ? null : _ParseDateTime(r.GetString(17)),
         };
 
     private static void _BindInstanceParams(SqliteCommand cmd, InstanceCacheRow r)

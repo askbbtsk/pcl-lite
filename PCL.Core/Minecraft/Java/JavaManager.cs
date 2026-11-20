@@ -19,7 +19,7 @@ namespace PCL.Core.Minecraft;
 public class JavaManager
 {
     private const string ModuleName = "JavaManager";
-    private readonly Dictionary<string, JavaEntry> _javaEntrys = new();
+    private readonly ConcurrentDictionary<string, JavaEntry> _javaEntrys = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly IJavaParser _parser;
     private readonly IJavaScanner[] _scanners;
@@ -92,7 +92,7 @@ public class JavaManager
                     }
                     else
                     {
-                        _javaEntrys.Add(item.Installation.JavaExePath, item);
+                        _javaEntrys.TryAdd(item.Installation.JavaExePath, item);
                     }
                 }
             }
@@ -110,7 +110,8 @@ public class JavaManager
     {
         if (ShouldSkip()) return;
 
-        if (!await _scanLock.WaitAsync(TimeSpan.FromSeconds(7))) return;
+        if (force) await _scanLock.WaitAsync().ConfigureAwait(false);
+        else if (!await _scanLock.WaitAsync(TimeSpan.FromSeconds(7)).ConfigureAwait(false)) return;
         try
         {
             if (ShouldSkip()) return;
@@ -238,7 +239,7 @@ public class JavaManager
                     Source = JavaSource.ManualAdded
                 };
 
-                _javaEntrys.Add(exePath, entry);
+                _javaEntrys.TryAdd(exePath, entry);
                 return entry;
             }
         }
@@ -311,7 +312,7 @@ public class JavaManager
                 .Select(kv => kv.Key)
                 .ToArray();
             foreach (var key in keys4Remove)
-                _javaEntrys.Remove(key);
+                _javaEntrys.TryRemove(key, out _);
         }
     }
 

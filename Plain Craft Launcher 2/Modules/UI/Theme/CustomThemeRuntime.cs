@@ -49,12 +49,10 @@ public sealed class CustomThemeRuntime : IThemePackageHost
         };
         SystemParameters.StaticPropertyChanged += OnSystemSettingsChanged;
         LiquidGlassCore.Changed += OnGlassChanged;
-        System.Windows.Application.Current.DispatcherUnhandledException += OnDeferredThemeFailure;
         window.Closed += (_, _) =>
         {
             SystemParameters.StaticPropertyChanged -= OnSystemSettingsChanged;
             LiquidGlassCore.Changed -= OnGlassChanged;
-            System.Windows.Application.Current.DispatcherUnhandledException -= OnDeferredThemeFailure;
         };
     }
 
@@ -279,17 +277,18 @@ public sealed class CustomThemeRuntime : IThemePackageHost
         if (args.PropertyName == nameof(SystemParameters.HighContrast) && !_closed)
             _window.Dispatcher.BeginInvoke(Refresh);
     }
-    private void OnDeferredThemeFailure(object sender, DispatcherUnhandledExceptionEventArgs args)
+    internal bool TryRecoverDeferredThemeFailure(Exception error)
     {
-        if (_active is null || _closed || _refreshing || args.Exception is OutOfMemoryException) return;
+        if (!_window.Dispatcher.CheckAccess() || _active is null || _closed || _refreshing
+            || error is OutOfMemoryException) return false;
         // WPF may instantiate template resources on a later layout tick. Recover
         // only this visual path, never unrelated game/network/command failures.
-        string trace = args.Exception.ToString();
+        string trace = error.StackTrace ?? "";
         if (!trace.Contains("System.Windows.StyleHelper", StringComparison.Ordinal)
             && !trace.Contains("System.Windows.FrameworkTemplate", StringComparison.Ordinal)
-            && !trace.Contains("PCL.ThemeControlRegistry", StringComparison.Ordinal)) return;
-        args.Handled = true;
-        RecoverVisualFailure(args.Exception);
+            && !trace.Contains("PCL.ThemeControlRegistry", StringComparison.Ordinal)) return false;
+        RecoverVisualFailure(error);
+        return true;
     }
     private void ApplyBuiltInAfterError(Exception error)
     {

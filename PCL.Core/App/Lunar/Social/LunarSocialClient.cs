@@ -135,10 +135,35 @@ public sealed class LunarSocialClient : IAsyncDisposable
         _receiveLoop = Task.Run(() => ReceiveLoopAsync(socket, _lifetime.Token), CancellationToken.None);
         StateChanged?.Invoke();
 
-        // 官方启动器是「所有服务并行 Login」，这里两个服务互相独立，顺序来也不会更慢
-        await LoadFriendsAsync(cancellationToken).ConfigureAwait(false);
-        await CallAsync(LunarSocialProtocol.ConversationService, "Login",
-            LunarSocialProtocol.EncodeConversationLogin(), cancellationToken).ConfigureAwait(false);
+        // 官方启动器会并行登录各个服务；每个服务独立重试，单个服务失败不影响其它服务。
+        try
+        {
+            await Task.WhenAll(
+                LoginServiceWithRetryAsync(LunarSocialProtocol.FriendService,
+                    token => LoadFriendsAsync(token), cancellationToken),
+                LoginServiceWithRetryAsync(LunarSocialProtocol.ConversationService,
+                    async token =>
+                    {
+                        await CallAsync(LunarSocialProtocol.ConversationService, "Login",
+                            LunarSocialProtocol.EncodeConversationLogin(), token).ConfigureAwait(false);
+                    }, cancellationToken))
+                .ConfigureAwait(false);
+        }
+        catch
+        {
+            await DisconnectAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    internal Task LoginServiceWithRetryAsync(string serviceName, Func<CancellationToken, Task> login,
+        CancellationToken cancellationToken,
+        Func<TimeSpan, CancellationToken, Task>? delayAsync = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+        ArgumentNullException.ThrowIfNull(login);
+        return LunarSocialServiceLoginRetry.RunAsync(serviceName, login,
+            () => _socket?.State == WebSocketState.Open, cancellationToken, delayAsync);
     }
 
     /// <summary>
@@ -206,26 +231,41 @@ public sealed class LunarSocialClient : IAsyncDisposable
     public async Task DisconnectAsync()
     {
         var socket = _socket;
+        var receiveLoop = _receiveLoop;
         _socket = null;
+        _receiveLoop = null;
         _connected = false;
+        FailAllPending("连接已断开");
 
         if (socket is not null)
         {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
             try
             {
-                if (socket.State == WebSocketState.Open)
-                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None)
-                        .ConfigureAwait(false);
+                await _writeGate.WaitAsync(timeout.Token).ConfigureAwait(false);
+                try
+                {
+                    // The receive loop owns ReceiveAsync, including the peer's close reply.
+                    if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
+                        await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, string.Empty, timeout.Token)
+                            .ConfigureAwait(false);
+                }
+                finally
+                {
+                    _writeGate.Release();
+                }
             }
-            catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException or OperationCanceledException)
+            catch (Exception ex) when (ex is WebSocketException or InvalidOperationException or OperationCanceledException)
             {
                 // 已经断了就算了
             }
-
-            socket.Dispose();
+            finally
+            {
+                socket.Dispose();
+            }
         }
 
-        FailAllPending("连接已断开");
+        if (receiveLoop is not null) await receiveLoop.ConfigureAwait(false);
         StateChanged?.Invoke();
     }
 
@@ -330,7 +370,7 @@ public sealed class LunarSocialClient : IAsyncDisposable
                 HandleFrame(frame);
             }
         }
-        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or ObjectDisposedException)
+        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or InvalidOperationException)
         {
             // 断线 / 主动关闭，交给外层状态机处理
             if (LastCloseReason is null) LastCloseReason = ex.Message;
@@ -517,6 +557,57 @@ public sealed class LunarSocialClient : IAsyncDisposable
             // The receive loop can still dispatch work using these objects until it exits.
             _lifetime.Dispose();
             _writeGate.Dispose();
+        }
+    }
+}
+
+internal static class LunarSocialServiceLoginRetry
+{
+    private static readonly TimeSpan[] RetryDelays =
+    [
+        TimeSpan.FromSeconds(1),
+        TimeSpan.FromSeconds(2),
+        TimeSpan.FromSeconds(4),
+        TimeSpan.FromSeconds(8)
+    ];
+
+    internal static async Task RunAsync(string serviceName, Func<CancellationToken, Task> login,
+        Func<bool> isSocketOpen, CancellationToken cancellationToken,
+        Func<TimeSpan, CancellationToken, Task>? delayAsync = null)
+    {
+        delayAsync ??= Task.Delay;
+
+        for (var attempt = 0; attempt < RetryDelays.Length + 1; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!isSocketOpen())
+            {
+                LogWrapper.Warn("Lunar", $"资产服务器已断开，停止 {serviceName} 服务登录重试");
+                return;
+            }
+
+            try
+            {
+                await login(cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                if (attempt == RetryDelays.Length)
+                {
+                    LogWrapper.Error(ex, "Lunar", $"{serviceName} 服务登录重试 5 次后仍失败");
+                    return;
+                }
+
+                var retryDelay = RetryDelays[attempt];
+                LogWrapper.Warn(ex, "Lunar",
+                    $"{serviceName} 服务登录第 {attempt + 1}/5 次失败，{retryDelay.TotalSeconds:0} 秒后重试");
+                await delayAsync(retryDelay, cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 }

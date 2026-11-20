@@ -22,23 +22,27 @@ internal class CacheEvictionService(SqliteCacheStorage db, FileCacheStorage file
             }
 
             _cts = new CancellationTokenSource();
-            _loop = Task.Run(() => _EvictionLoopAsync(_cts.Token));
+            var token = _cts.Token;
+            _loop = Task.Run(() => _EvictionLoopAsync(token));
         }
     }
 
-    public void Stop()
+    public void Stop() => StopAsync().GetAwaiter().GetResult();
+
+    public async Task StopAsync()
     {
+        Task? loop;
+        CancellationTokenSource? source;
         lock (_startLock)
         {
-            if (_cts is not null)
-            {
-                _cts.Cancel();
-                _cts.Dispose();
-                _cts = null;
-            }
-
+            source = _cts;
+            loop = _loop;
+            source?.Cancel();
+            _cts = null;
             _loop = null;
         }
+        try { if (loop is not null) await loop.ConfigureAwait(false); }
+        finally { source?.Dispose(); }
     }
 
     public void CheckThreshold()
@@ -54,7 +58,9 @@ internal class CacheEvictionService(SqliteCacheStorage db, FileCacheStorage file
             try
             {
                 await Task.Delay(options.EvictionInterval, ct).ConfigureAwait(false);
+                using var lease = await files.EnterMutationAsync(ct).ConfigureAwait(false);
                 await db.DeleteExpiredAsync(DateTime.UtcNow, ct).ConfigureAwait(false);
+                await files.PruneAsync(await db.GetAllFileHashesAsync(ct).ConfigureAwait(false)).ConfigureAwait(false);
 
                 var stats = await db.GetStatsAsync(ct).ConfigureAwait(false);
                 var excess = stats.TotalSizeBytes - (options.MaxCacheSize - options.ReserveBytes);
@@ -98,7 +104,7 @@ internal class CacheEvictionService(SqliteCacheStorage db, FileCacheStorage file
 
                 if (can.EntryType is EntryType.FileRef && can.FileHash is not null)
                 {
-                    await files.ForceDeleteAsync(can.FileHash).ConfigureAwait(false);
+                    await files.ReleaseAsync(can.FileHash).ConfigureAwait(false);
                 }
 
                 freed += can.DataSize;

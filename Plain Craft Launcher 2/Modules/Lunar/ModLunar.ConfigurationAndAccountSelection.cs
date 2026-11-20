@@ -330,10 +330,10 @@ public static partial class ModLunar
     ///         没装 Lunar 也能拉 —— 版本列表本来就是启动前要用的东西。
     ///     </para>
     /// </summary>
-    public static async Task RefreshVersionsAsync()
+    public static async Task RefreshVersionsAsync(bool force = false)
     {
         var installationId = ReadInstallationId();
-        await LunarVersionCatalog.FetchAsync(LunarRoot, installationId).ConfigureAwait(false);
+        await LunarVersionCatalog.FetchAsync(LunarRoot, installationId, force: force).ConfigureAwait(false);
         RaiseStateChanged();
     }
 

@@ -62,6 +62,7 @@ internal static class Program
         var application = new System.Windows.Application { ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown };
         try
         {
+            VerifyCustomPageXaml();
             // A failed/partial main-window load must tolerate ordinary input.
             var main = (FormMain)RuntimeHelpers.GetUninitializedObject(typeof(FormMain));
             var mouseDown = typeof(FormMain).GetMethod("FormMain_MouseDown", BindingFlags.Instance | BindingFlags.NonPublic)!;
@@ -88,6 +89,30 @@ internal static class Program
             return 1;
         }
         finally { application.Shutdown(); }
+    }
+
+    private static void VerifyCustomPageXaml()
+    {
+        var page = CustomPageXamlPolicy.WrapFragment(
+            "<TextBlock Text='xmlns is literal text'/>" +
+            "<Border local:CustomEventService.EventType='内存优化'><Border/></Border>");
+        var panel = (System.Windows.Controls.StackPanel)ModBase.GetObjectFromXML(page, out var result);
+        if (panel.Children.Count != 1 || result.UnsupportedTypesFound.Count != 1)
+            throw new InvalidDataException("Custom-page cleanup did not preserve the valid sibling.");
+        foreach (var fragment in new[]
+        {
+            "<ResourceDictionary Source='https://example.invalid/remote.xaml'/>",
+            "<TextBlock Text='{x:Static sys:Environment.CurrentDirectory}'/>"
+        })
+        {
+            try
+            {
+                ModBase.GetObjectFromXML(CustomPageXamlPolicy.WrapFragment(fragment), out _);
+                throw new InvalidDataException("Unchecked custom-page XAML was accepted: " + fragment);
+            }
+            catch (UnauthorizedAccessException) { }
+        }
+        Console.WriteLine("Custom-page XAML: valid content preserved; external dictionaries and static access rejected.");
     }
 
     private static void VerifyPaletteInput(System.Windows.Interop.HwndSource source)

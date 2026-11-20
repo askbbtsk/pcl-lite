@@ -2,6 +2,8 @@ using System;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Net.Sockets;
+using System.Net.NetworkInformation;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -99,6 +101,11 @@ public static partial class LanBroadcastHelper
                 var result = await udp.ReceiveAsync(ct).ConfigureAwait(false);
                 if (TryParseAnnouncement(result.Buffer, out var motd, out var port))
                 {
+                    if (!IPAddress.IsLoopback(result.RemoteEndPoint.Address) &&
+                        !NetworkInterface.GetAllNetworkInterfaces().SelectMany(network =>
+                            network.GetIPProperties().UnicastAddresses).Any(address =>
+                            address.Address.Equals(result.RemoteEndPoint.Address)))
+                        continue;
                     // 忽略自己发出的 IPv6 直连转发广播，避免房客端误识别成房主端口
                     if (motd.Contains("[IPv6直连]", StringComparison.Ordinal))
                         continue;

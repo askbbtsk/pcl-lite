@@ -566,10 +566,15 @@ public partial class PageLunarLaunch
         HintService.Hint(Lang.Text("Lunar.Hint.Fetching"));
         try
         {
-            await ModLunar.RefreshVersionsAsync();
+            await ModLunar.RefreshVersionsAsync(force: true);
             _versionSignature = ""; // 强制重建下拉框
             RefreshPage();
             HintService.Hint(Lang.Text("Lunar.Hint.Fetched", ModLunar.Versions.Count));
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 刷新版本列表失败", ModBase.LogLevel.Debug);
+            HintService.Hint(Lang.Text("Lunar.Error.OperationFailed"), HintType.Warning);
         }
         finally
         {

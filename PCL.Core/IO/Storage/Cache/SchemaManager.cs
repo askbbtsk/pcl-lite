@@ -6,7 +6,7 @@ namespace PCL.Core.IO.Storage.Cache;
 
 public class SchemaManager(string connectionString)
 {
-    private const int CurrentSchemaVersion = 1;
+    private const int CurrentSchemaVersion = 2;
 
     /// <exception cref="InvalidOperationException">Invalid schema version</exception>
     public async Task EnsureCurrentSchemaAsync()
@@ -90,6 +90,16 @@ public class SchemaManager(string connectionString)
                 await _ExecuteDdlAsync(conn, DdlV1CreateAllTables).ConfigureAwait(false);
                 await _ExecuteDdlAsync(conn, DdlV1CreateIndexes).ConfigureAwait(false);
                 break;
+            case 2:
+                foreach (var (name, type) in new[] { ("sliding_ticks", "INTEGER"), ("absolute_expires_at", "TEXT") })
+                {
+                    await using var column = conn.CreateCommand();
+                    column.CommandText = "SELECT COUNT(*) FROM pragma_table_info('cache_entries') WHERE name = @name";
+                    column.Parameters.AddWithValue("@name", name);
+                    if ((long)(await column.ExecuteScalarAsync().ConfigureAwait(false))! == 0)
+                        await _ExecuteDdlAsync(conn, $"ALTER TABLE cache_entries ADD COLUMN {name} {type}").ConfigureAwait(false);
+                }
+                break;
 
                 // NOTE: add future migrations here
                 // e.g.
@@ -138,7 +148,9 @@ public class SchemaManager(string connectionString)
                                                               hit_count       INTEGER NOT NULL DEFAULT 0,
                                                               tags            TEXT NOT NULL DEFAULT '',
                                                               group_name      TEXT NOT NULL DEFAULT '',
-                                                              priority        INTEGER NOT NULL DEFAULT 1
+                                                              priority        INTEGER NOT NULL DEFAULT 1,
+                                                              sliding_ticks   INTEGER,
+                                                              absolute_expires_at TEXT
                                                           );
 
                                                           CREATE TABLE IF NOT EXISTS instance_cache (

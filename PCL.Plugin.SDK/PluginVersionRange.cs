@@ -160,7 +160,7 @@ public static class PluginVersionRange
         result = left.Patch.CompareTo(right.Patch);
         if (result != 0) return result;
         if (left.Prerelease.Length == 0 || right.Prerelease.Length == 0)
-            return left.Prerelease.Length.CompareTo(right.Prerelease.Length);
+            return right.Prerelease.Length.CompareTo(left.Prerelease.Length);
         for (var index = 0; index < Math.Min(left.Prerelease.Length, right.Prerelease.Length); index++)
         {
             var first = left.Prerelease[index];

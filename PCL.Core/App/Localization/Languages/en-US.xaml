@@ -839,6 +839,7 @@
     <!-- Event -->
 
     <sys:String x:Key="Event.Download.Confirm">About to download from this URL:&#xA;{0}</sys:String>
+    <sys:String x:Key="Event.Download.ConfirmDestination">Download URL:&#xA;{0}&#xA;&#xA;Save to (may overwrite an existing file):&#xA;{1}</sys:String>
     <sys:String x:Key="Event.Error.DownloadUrlRequired">EventData must be a URL starting with http:// or https://.&#xA;PCL Lite does not support other download protocols.</sys:String>
     <sys:String x:Key="Event.Error.ExecutionFailed">Event execution failed ({0}, {1})</sys:String>
     <sys:String x:Key="Event.Error.FileNotFound">Local file not found for EventData: {0}</sys:String>

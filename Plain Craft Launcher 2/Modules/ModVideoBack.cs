@@ -107,9 +107,9 @@ public static class ModVideoBack
         {
             try
             {
-                ModMain.frmMain.VideoBack.Source = null;
                 ModMain.frmMain.VideoBack.Stop();
-                ModMain.frmMain.VideoBack.Position = TimeSpan.Zero;
+                ModMain.frmMain.VideoBack.Close();
+                ModMain.frmMain.VideoBack.Source = null;
                 ModBase.Log("[UI] 已停止视频背景播放");
             }
             catch (Exception ex)

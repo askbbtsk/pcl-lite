@@ -164,12 +164,12 @@ public static class McpServerService
     /// 生成可直接粘进 MCP 客户端配置的 JSON。
     /// 同时给出 HTTP 与 stdio 两种接法：不是所有客户端都支持 HTTP。
     /// </summary>
-    public static string BuildClientConfig(McpOptions? options = null)
+    public static string BuildClientConfig(McpOptions? options = null, bool includeToken = true)
     {
         options ??= Snapshot();
         var url = EndpointUrl(options);
         var headers = new Dictionary<string, string>();
-        if (options.AuthRequired) headers["Authorization"] = $"Bearer {options.Token}";
+        if (options.AuthRequired) headers["Authorization"] = includeToken ? $"Bearer {options.Token}" : "Bearer <token>";
 
         var httpEntry = new Dictionary<string, object?>
         {

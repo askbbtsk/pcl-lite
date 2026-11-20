@@ -35,6 +35,17 @@ public class HashStorage(string folder, IHashProvider hashProvider, bool compres
         if (hash is not null && hash.Length != hashProvider.Length)
             throw new ArgumentException("Provide hash is not correct", nameof(hash));
 
+        if (!input.CanSeek)
+        {
+            Directory.CreateDirectory(folder);
+            var temporary = Path.Combine(folder, $".incoming-{Guid.NewGuid():N}");
+            await using var buffered = new FileStream(temporary, FileMode.CreateNew, FileAccess.ReadWrite,
+                FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+            await input.CopyToAsync(buffered).ConfigureAwait(false);
+            buffered.Position = 0;
+            return await PutAsync(buffered, hash).ConfigureAwait(false);
+        }
+
         if (input.CanSeek) input.Position = 0;
 
         var fileHash = hash ?? (await hashProvider.ComputeHashAsync(input).ConfigureAwait(false)).ToHexString();

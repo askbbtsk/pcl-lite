@@ -14,6 +14,8 @@ namespace PCL.Core.Utils.Encryption
 
         public byte[] Decrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key)
         {
+            if (data.Length < SaltSize + IvSize)
+                throw new ArgumentException("AES-CBC: Can not decrypt data, the encrypted data is broken", nameof(data));
             using var aes = Aes.Create();
             aes.KeySize = 256;
             aes.BlockSize = 128;
@@ -24,11 +26,6 @@ namespace PCL.Core.Utils.Encryption
 
             var iv = data[SaltSize..(SaltSize + IvSize)];
             aes.IV = iv.ToArray();
-
-            if (data.Length < salt.Length + iv.Length)
-            {
-                throw new ArgumentException("AES-CBC: Can not decrypt data, the encrypted data is broken");
-            }
 
 #pragma warning disable SYSLIB0041
             using (var deriveBytes = new Rfc2898DeriveBytes(key.ToArray(), salt.ToArray(), 1000))

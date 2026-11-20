@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 
 namespace PCL.Core.App.Configuration.Storage;
 
@@ -8,6 +9,7 @@ public class DynamicCacheConfigStorage : ConfigStorage
 {
     private readonly Dictionary<object, ConfigStorage> _cache = [];
     private ConfigStorage? _nullContextCache;
+    private readonly object _cacheLock = new();
 
     /// <summary>
     /// 存取仓库工厂。在没有匹配的上下文实例时将被调用，以创建新的上下文实例。
@@ -16,39 +18,59 @@ public class DynamicCacheConfigStorage : ConfigStorage
 
     protected override bool OnAccess<TKey, TValue>(StorageAction action, ref TKey key, [NotNullWhen(true)] ref TValue value, object? context)
     {
-        ConfigStorage? storage;
-        if (context is null) storage = _nullContextCache;
-        else _cache.TryGetValue(context, out storage);
-        if (storage is null)
+        lock (_cacheLock)
         {
-            try
+            var cacheKey = NormalizeContext(context);
+            ConfigStorage? storage;
+            if (context is null) storage = _nullContextCache;
+            else _cache.TryGetValue(cacheKey!, out storage);
+            if (storage is null)
             {
-                storage = StorageFactory(context);
-                if (context is null) _nullContextCache = storage;
-                else _cache[context] = storage;
+                try
+                {
+                    storage = StorageFactory(context);
+                    if (context is null) _nullContextCache = storage;
+                    else _cache[cacheKey!] = storage;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Failed to invoke storage factory", ex);
+                }
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Failed to invoke storage factory", ex);
-            }
+            return storage.Access(action, ref key, ref value, context);
         }
-        return storage.Access(action, ref key, ref value, context);
     }
 
     protected override void OnStop()
     {
-        foreach (var item in _cache.Values) item.Stop();
-        _cache.Clear();
+        lock (_cacheLock)
+        {
+            foreach (var item in _cache.Values) item.Stop();
+            _cache.Clear();
+            _nullContextCache?.Stop();
+            _nullContextCache = null;
+        }
     }
 
     public bool InvalidateCache(object context)
     {
-        var result = _cache.TryGetValue(context, out var center);
-        if (result)
+        lock (_cacheLock)
         {
-            center?.Stop();
-            _cache.Remove(context);
+            var cacheKey = NormalizeContext(context)!;
+            var result = _cache.TryGetValue(cacheKey, out var center);
+            if (result)
+            {
+                center?.Stop();
+                _cache.Remove(cacheKey);
+            }
+            return result;
         }
-        return result;
+    }
+
+    private static object? NormalizeContext(object? context)
+    {
+        if (context is not string path) return context;
+        var normalized = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+        return OperatingSystem.IsWindows() ? normalized.ToUpperInvariant() : normalized;
     }
 }

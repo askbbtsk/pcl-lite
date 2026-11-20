@@ -52,7 +52,7 @@ public partial class FormMain
                     e.Effects = DragDropEffects.Copy;
                 else if (str.StartsWithF("file:///")) e.Effects = DragDropEffects.Copy;
             }
-            else if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e.Effects == DragDropEffects.None && e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files is not null && files.Length > 0) e.Effects = DragDropEffects.Link;
@@ -113,7 +113,7 @@ public partial class FormMain
                     else if (str.StartsWithF("file:///"))
                     {
                         // 文件拖拽（例如从浏览器下载窗口拖入）
-                        var filePath = WebUtility.UrlDecode(str).Substring("file:///".Length).Replace("/", @"\");
+                        var filePath = new Uri(str, UriKind.Absolute).LocalPath;
                         e.Handled = true;
                         e.Effects = DragDropEffects.Copy;
                         FileDrag(new List<string> { filePath });
@@ -124,7 +124,7 @@ public partial class FormMain
                     ModBase.Log(ex, "无法接取文本拖拽事件", ModBase.LogLevel.Developer);
                 }
             }
-            else if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (!e.Handled && e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 // 获取文件并检查
                 var filePathRaw = e.Data.GetData(DataFormats.FileDrop);

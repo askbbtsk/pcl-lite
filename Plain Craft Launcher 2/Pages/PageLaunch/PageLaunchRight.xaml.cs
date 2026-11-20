@@ -373,10 +373,7 @@ public partial class PageLaunchRight : IRefreshable
                 content = ModMain.ArgumentReplace(content);
                 // 主页语言 API：语言信封在这里换成当前语言的 XAML，原版主页内容原样通过
                 content = HomepageLanguageApi.SelectContent(content, LocalizationService.CurrentLanguage.Code);
-                while (content.Contains("xmlns"))
-                    content = content.RegexReplace("xmlns[^\"']*(\"|')[^\"']*(\"|')", "").Replace("xmlns", "");
-                content =
-                    $"<StackPanel xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\" xmlns:sys=\"clr-namespace:System;assembly=System.Runtime\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\" xmlns:local=\"clr-namespace:PCL;assembly=Plain Craft Launcher 2\">{content}</StackPanel>";
+                content = CustomPageXamlPolicy.WrapFragment(content);
                 ModBase.Log($"[Page] 实例化：加载主页 UI 开始，最终内容长度：{content.Count()}");
                 var homepageRoot = (UIElement)ModBase.GetObjectFromXML(content, out var sanitizeResult);
                 // 主页语言 API：移除未命中当前语言的 lang: 分支，原版主页不含这类标签，一个都不会动

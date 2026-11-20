@@ -2,10 +2,10 @@ using System;
 using PCL.Core.Utils.Exts;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using PCL.Core.Minecraft.IdentityModel.OAuth;
-using PCL.Core.Utils.Hash;
 
 namespace PCL.Core.Minecraft.IdentityModel.Extensions.Pkce;
 
@@ -33,10 +33,11 @@ public class PkceClient(OAuthClientOptions options):IOAuthClient
     public string GetAuthorizeUrl(string[] scopes, string state, Dictionary<string, string>? extData)
     {
         RandomNumberGenerator.Fill(_ChallengeCode);
+        var verifier = _ChallengeCode.FromBytesToB64UrlSafe();
         extData ??= [];
         extData["code_challenge"] = ChallengeMethod == PkceChallengeOptions.Sha256
-            ? SHA256Provider.Instance.ComputeHash(_ChallengeCode).ToHexString()
-            : _ChallengeCode.FromBytesToB64UrlSafe();
+            ? SHA256.HashData(Encoding.ASCII.GetBytes(verifier)).FromBytesToB64UrlSafe()
+            : verifier;
         extData["code_challenge_method"] = ChallengeMethod == PkceChallengeOptions.Sha256 ? "S256":"plain";
         _isCallGetAuthorizeUrl = true;
         return _client.GetAuthorizeUrl(scopes, state, extData);

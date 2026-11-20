@@ -61,7 +61,6 @@ public class Identify
             ctx.CopyTo(bufferSpan.Slice(prefix.Length, ctx.Length));
             suffix.CopyTo(bufferSpan.Slice(prefix.Length + ctx.Length, suffix.Length));
 
-            Array.Clear(ctx);
             var sample = SHA512Provider.Instance.ComputeHash(bufferSpan).ToHexString();
             bufferSpan.Clear();
 

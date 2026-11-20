@@ -70,15 +70,17 @@ public partial class MotdRenderer {
     private readonly Random _random = new();
     private const string RandomChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
     private readonly Color _backgroundColor = Color.FromRgb(243, 246, 250); // #f3f6fa
+    private readonly DispatcherTimer _obfuscationTimer;
 
     public MotdRenderer() {
         InitializeComponent(); // 初始化 XAML 定义的控件
         // Start timer to update §k text
-        var timer = new DispatcherTimer {
+        _obfuscationTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(20)
         };
-        timer.Tick += _UpdateObfuscatedText;
-        timer.Start();
+        _obfuscationTimer.Tick += _UpdateObfuscatedText;
+        Loaded += (_, _) => _obfuscationTimer.Start();
+        Unloaded += (_, _) => _obfuscationTimer.Stop();
     }
 
     private void _UpdateObfuscatedText(object? sender, EventArgs e) {

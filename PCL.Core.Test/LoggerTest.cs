@@ -7,6 +7,7 @@ using PCL.Core.Logging;
 namespace PCL.Core.Test;
 
 [TestClass]
+[DoNotParallelize] // 压测会产生大量日志并占用大量内存，避免和其它测试同时争用测试主机资源。
 public class LoggerTest
 {
     [TestMethod]

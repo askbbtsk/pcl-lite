@@ -12,6 +12,7 @@ public sealed class PagePluginsMarket : MyPageRight
     private readonly TextBlock _status;
     private readonly StackPanel _content;
     private bool _installationInProgress;
+    private int _refreshGeneration;
 
     public PagePluginsMarket()
     {
@@ -38,6 +39,7 @@ public sealed class PagePluginsMarket : MyPageRight
     public async Task RefreshAsync()
     {
         if (_installationInProgress) return;
+        var generation = ++_refreshGeneration;
         _content.Children.Clear();
         var manager = PluginManagerService.Manager;
         if (manager is null)
@@ -49,6 +51,7 @@ public sealed class PagePluginsMarket : MyPageRight
         try
         {
             var index = await manager.GetMarketAsync(new Uri(ProjectLinks.PluginCatalog));
+            if (generation != _refreshGeneration || _installationInProgress) return;
             var candidates = manager.GetMarketUpdateCandidates(index.Plugins);
             if (index.Plugins.Count == 0)
             {
@@ -124,6 +127,7 @@ public sealed class PagePluginsMarket : MyPageRight
         }
         catch (Exception ex)
         {
+            if (generation != _refreshGeneration || _installationInProgress) return;
             _status.Text = Lang.Text("Plugin.Market.LoadFailed", ex.Message);
         }
     }

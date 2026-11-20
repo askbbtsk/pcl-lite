@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using PCL.Core.IO.Net;
 using Sigstore.Bundle;
 using Sigstore.Crypto;
 using Sigstore.Fulcio;
@@ -28,7 +29,6 @@ public static class UpdateSignatureVerifier
     public const string ExpectedWorkflowIdentity =
         "https://github.com/askbbtsk/pcl-lite/.github/workflows/release-publish.yml@refs/heads/main";
 
-    private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
     private static readonly Lazy<Verifier> _Verifier = new(_CreateVerifier, LazyThreadSafetyMode.ExecutionAndPublication);
 
     /// <summary>
@@ -75,7 +75,7 @@ public static class UpdateSignatureVerifier
 
         return new Verifier(
             pipeline,
-            new TufClient(HttpClient, NullLogger<TufClient>.Instance),
+            new TufClient(NetworkService.GetClient(), NullLogger<TufClient>.Instance),
             NullLogger<Verifier>.Instance);
     }
 }

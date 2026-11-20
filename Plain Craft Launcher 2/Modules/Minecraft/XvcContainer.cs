@@ -222,7 +222,7 @@ internal sealed class XvcContainer : IDisposable
 
         foreach (var region in _xvcRegions)
         {
-            if (token.IsCancellationRequested) break;
+            token.ThrowIfCancellationRequested();
 
             // 文件段可能被拆分到多个区域（例如主程序、DLL、资源各占一个区域），必须逐个解包；
             // 元数据区域（XVC-HD / EXVD / MDU / MD / FS-MD）的 FirstSegmentIndex 同样是 0，
@@ -233,6 +233,7 @@ internal sealed class XvcContainer : IDisposable
             ExtractRegion(outputDirectory, decoder, (uint)region.Id, region.Offset, region.Length,
                 region.FirstSegmentIndex, IsEncrypted && region.KeyId != ushort.MaxValue, onProgress, token);
         }
+        token.ThrowIfCancellationRequested();
     }
 
     private void ExtractRegion(string outputDirectory, XvcDecoder decoder, uint regionId,
@@ -263,11 +264,12 @@ internal sealed class XvcContainer : IDisposable
         var pageCounter = 0;
         var totalPages = (long)GetPageOffset(regionLength);
 
-        while (_segments.Length > segmentIndex && totalPages > pageCounter && !token.IsCancellationRequested)
+        while (_segments.Length > segmentIndex && totalPages > pageCounter)
         {
+            token.ThrowIfCancellationRequested();
             var fileSize = _segments[segmentIndex].FileSize;
             var relativePath = _segmentPaths[segmentIndex];
-            var path = Path.Join(outputDirectory, relativePath);
+            var path = PCL.Core.IO.ContainedFilePath.Resolve(outputDirectory, relativePath);
             var directory = Path.GetDirectoryName(path);
             if (directory is not null) Directory.CreateDirectory(directory);
 
@@ -276,6 +278,7 @@ internal sealed class XvcContainer : IDisposable
                 var remaining = fileSize;
                 do
                 {
+                    token.ThrowIfCancellationRequested();
                     var writeLength = (int)Math.Min(remaining, PageSize);
 
                     if (needHashRead)
@@ -434,6 +437,7 @@ internal sealed class XvcContainer : IDisposable
 
     private static T ReadStruct<T>(ReadOnlySpan<byte> bytes) where T : struct
     {
+        if (bytes.Length < Marshal.SizeOf<T>()) throw new EndOfStreamException();
         var array = bytes.ToArray();
         var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
         try
@@ -448,12 +452,13 @@ internal sealed class XvcContainer : IDisposable
 
     private static T[] ReadStructs<T>(ReadOnlySpan<byte> bytes, int count) where T : struct
     {
+        var size = Marshal.SizeOf<T>();
+        if (count < 0 || count > bytes.Length / size) throw new EndOfStreamException();
         var array = bytes.ToArray();
         var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
         try
         {
             var address = handle.AddrOfPinnedObject();
-            var size = Marshal.SizeOf<T>();
             var result = new T[count];
             for (var i = 0; i < count; i++)
                 result[i] = Marshal.PtrToStructure<T>(address + size * i);

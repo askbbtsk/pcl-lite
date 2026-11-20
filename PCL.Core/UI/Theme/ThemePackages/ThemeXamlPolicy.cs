@@ -145,9 +145,15 @@ public static class ThemeXamlPolicy
                 if (element.Name.LocalName == "Setter" && member == "Value"
                     && element.Attribute("Property")?.Value is { } setterProperty)
                 {
-                    if (new[] { "Source", "ImageSource", "FontFamily", "Resources", "Template", "Content", "ContentTemplate" }
-                        .Contains(setterProperty) && !value.StartsWith('{'))
+                    string propertyName = setterProperty[(setterProperty.LastIndexOf('.') + 1)..];
+                    if (propertyName is "Source" or "ImageSource" or "FontFamily" or "Resources" or "Template" or "Content" or "ContentTemplate"
+                        && (!value.StartsWith('{') || value.StartsWith("{}", StringComparison.Ordinal)))
                         Fail(attribute, file, "URI/object setters must use a validated local resource.");
+                    if (propertyName is "Source" or "ImageSource" or "FontFamily"
+                        && !value.StartsWith("{StaticResource ", StringComparison.Ordinal)
+                        && !value.StartsWith("{DynamicResource ", StringComparison.Ordinal)
+                        && value is not "{x:Null}")
+                        Fail(attribute, file, "Image and font setters must reference local resources.");
                     if (setterProperty is "IsEnabled" or "IsReadOnly" or "IsHitTestVisible" or "Focusable" or "IsTabStop")
                         Fail(attribute, file, "Theme styles cannot change host interaction state.");
                 }
@@ -167,12 +173,13 @@ public static class ThemeXamlPolicy
                     }
                     else dependencies.Add(ThemeFilePaths.Dependency(file, value));
                 }
-                if (member == "FontFamily" && (value.Contains('/') || value.Contains('\\') || value.Contains('#') || value.Contains(':'))
-                    && !value.StartsWith('{'))
+                var literal = value.StartsWith("{}", StringComparison.Ordinal) ? value[2..] : value;
+                if ((member is "FontFamily" or "TextElement.FontFamily") && literal.IndexOfAny(['/', '\\', '#', ':']) >= 0
+                    && (!value.StartsWith('{') || value.StartsWith("{}", StringComparison.Ordinal)))
                 {
-                    int separator = value.IndexOf('#');
+                    int separator = literal.IndexOf('#');
                     if (separator <= 0) Fail(attribute, file, "A local font needs file.ttf#Family Name.");
-                    dependencies.Add(ThemeFilePaths.Dependency(file, value[..separator]));
+                    dependencies.Add(ThemeFilePaths.Dependency(file, literal[..separator]));
                 }
                 if (member is "Duration" or "BeginTime" && value is not "Automatic")
                 {
@@ -237,7 +244,7 @@ public static class ThemeXamlPolicy
     private static void ValidateMarkup(string value, XElement owner, XObject location, string file)
     {
         if (!value.StartsWith('{') || value.StartsWith("{}", StringComparison.Ordinal)) return;
-        foreach (Match match in Regex.Matches(value, @"\{([A-Za-z_][A-Za-z0-9_:]*)"))
+        foreach (Match match in Regex.Matches(value, @"\{\s*([A-Za-z_][A-Za-z0-9_:]*)"))
         {
             string name = match.Groups[1].Value;
             if (name.Contains(':'))
@@ -251,13 +258,15 @@ public static class ThemeXamlPolicy
             }
             else if (name is not ("StaticResource" or "DynamicResource" or "TemplateBinding" or "Binding" or "RelativeSource"))
                 Fail(location, file, $"Unsupported markup extension: {name}");
+            else if (match.Index != 0 && name is "Binding" or "TemplateBinding")
+                Fail(location, file, $"Nested binding is not supported: {name}");
         }
-        if (value.StartsWith("{Binding", StringComparison.Ordinal))
+        if (Regex.IsMatch(value, @"^\{\s*Binding\b"))
         {
             if (Regex.IsMatch(value, @"\b(Source|Converter|XPath|StringFormat|FallbackValue|TargetNullValue|UpdateSourceTrigger)\s*=")
                 || Regex.IsMatch(value, @"\bMode\s*=\s*(?!OneWay\b|OneTime\b)"))
                 Fail(location, file, "Theme bindings are one-way visual bindings without external sources/converters.");
-            Match path = Regex.Match(value, @"^\{Binding\s+(?:Path\s*=\s*)?([^,}]+)");
+            Match path = Regex.Match(value, @"^\{\s*Binding\s+(?:Path\s*=\s*)?([^,}]+)");
             if (path.Success && !path.Groups[1].Value.Contains('=') && !BindablePaths.Contains(path.Groups[1].Value.Trim()))
                 Fail(location, file, $"Unsupported visual binding path: {path.Groups[1].Value}");
             foreach (Match namedPath in Regex.Matches(value, @"\bPath\s*=\s*([^,}]+)"))
@@ -268,9 +277,9 @@ public static class ThemeXamlPolicy
                 && !value.Contains("Self", StringComparison.Ordinal))
                 Fail(location, file, "Bindings may target Self, TemplatedParent or a named element in the template.");
         }
-        if (value.StartsWith("{TemplateBinding", StringComparison.Ordinal))
+        if (Regex.IsMatch(value, @"^\{\s*TemplateBinding\b"))
         {
-            string path = value["{TemplateBinding".Length..].Trim().TrimEnd('}').Trim();
+            string path = value[1..].TrimStart()["TemplateBinding".Length..].Trim().TrimEnd('}').Trim();
             if (!BindablePaths.Contains(path)) Fail(location, file, "Unsupported template binding.");
         }
     }

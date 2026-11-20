@@ -40,6 +40,27 @@ public class McPingTest
         }
     }
 
+    [TestMethod]
+    public async Task OversizedStatusFrameIsRejectedBeforeAllocatingItsPayload()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var server = Task.Run(async () =>
+        {
+            using var client = await listener.AcceptTcpClientAsync(timeout.Token);
+            await using var stream = client.GetStream();
+            await _ReadPacketAsync(stream, timeout.Token);
+            await _ReadPacketAsync(stream, timeout.Token);
+            await _ReadPacketAsync(stream, timeout.Token);
+            await stream.WriteAsync(_EncodeVarInt(int.MaxValue), timeout.Token);
+            Assert.AreEqual(0, await stream.ReadAsync(new byte[1], timeout.Token));
+        });
+        using var ping = new McPingService((IPEndPoint)listener.LocalEndpoint, timeout: 3000);
+        Assert.IsNull(await ping.PingAsync(timeout.Token));
+        await server.WaitAsync(timeout.Token);
+    }
+
     private static async Task _RespondToStatusRequestAsync(TcpListener listener, CancellationToken cancellationToken)
     {
         using var client = await listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);

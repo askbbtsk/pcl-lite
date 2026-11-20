@@ -30,7 +30,7 @@ public static class DurableFileTransaction
         if (changes.Any(change => change is null)) throw new InvalidDataException("Null transaction change.");
         var roots = NormalizeRoots(allowedRoots);
         if (changes.Count > 100000) throw new InvalidDataException("Too many transaction changes.");
-        var storage = Path.GetFullPath(storageDirectory);
+        var storage = Path.TrimEndingDirectorySeparator(Path.GetFullPath(storageDirectory));
         CheckLinks(storage);
         Directory.CreateDirectory(storage);
         using var gate = Lock(storage);
@@ -134,7 +134,7 @@ public static class DurableFileTransaction
     public static int Recover(string storageDirectory, IReadOnlyDictionary<string, string> allowedRoots)
     {
         var roots = NormalizeRoots(allowedRoots);
-        var storage = Path.GetFullPath(storageDirectory);
+        var storage = Path.TrimEndingDirectorySeparator(Path.GetFullPath(storageDirectory));
         CheckLinks(storage);
         if (!Directory.Exists(storage)) return 0;
         using var gate = Lock(storage);

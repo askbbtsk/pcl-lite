@@ -788,14 +788,15 @@ public static class Files {
     /// <param name="source">源 JSON 对象，优先级高于目标对象。</param>
     /// <returns>合并后的 JSON 对象。如果输入无效，返回源或目标的深拷贝。</returns>
     /// <exception cref="ArgumentNullException">如果 target 和 source 均为 null，则抛出异常。</exception>
-    public static JsonNode MergeJson(JsonNode target, JsonNode source) {
+    public static JsonNode MergeJson(JsonNode? target, JsonNode? source) {
         if (target is null && source is null) {
             throw new ArgumentNullException(nameof(target), "目标和源 JSON 不能同时为 null。");
         }
 
         if (target is null) {
-            return source.DeepClone();
+            return source!.DeepClone();
         }
+        if (source is null) return target.DeepClone();
 
         if (target is not JsonObject targetObj || source is not JsonObject sourceObj) {
             // 如果源是对象，优先返回源的深拷贝；否则返回目标的深拷贝

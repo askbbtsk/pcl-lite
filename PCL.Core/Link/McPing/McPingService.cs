@@ -266,6 +266,8 @@ public class McPingService : IMcPingService
 
     private static async Task<byte[]> _ReadExactAsync(Stream stream, int length, CancellationToken cancellationToken)
     {
+        if (length is < 0 or > 2097151)
+            throw new InvalidDataException($"Minecraft status packet length is invalid: {length}.");
         var buffer = new byte[length];
         await stream.ReadExactlyAsync(buffer, cancellationToken);
         return buffer;

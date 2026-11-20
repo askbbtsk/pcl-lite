@@ -38,17 +38,23 @@ public static class WallpaperEngineSource
 
         string monitorKey = "Monitor" + Math.Max(0, monitorIndex);
         JsonElement assignment = default;
-        if (!selected.TryGetProperty(monitorKey, out assignment) &&
-            (deviceName == null || !selected.TryGetProperty(deviceName, out assignment)))
+        if (!selected.TryGetProperty(monitorKey, out assignment))
         {
-            // Clone/span layouts explicitly use one assignment for all displays.
-            if (!wallpaper.TryGetProperty("layout", out var layout) ||
-                !layout.TryGetInt32(out int mode) || mode == 0)
-                return null;
-            var entries = selected.EnumerateObject().ToArray();
-            if (entries.Length != 1) return null;
-            monitorKey = entries[0].Name;
-            assignment = entries[0].Value;
+            if (deviceName != null && selected.TryGetProperty(deviceName, out assignment))
+            {
+                monitorKey = deviceName;
+            }
+            else
+            {
+                // Clone/span layouts explicitly use one assignment for all displays.
+                if (!wallpaper.TryGetProperty("layout", out var layout) ||
+                    !layout.TryGetInt32(out int mode) || mode == 0)
+                    return null;
+                var entries = selected.EnumerateObject().ToArray();
+                if (entries.Length != 1) return null;
+                monitorKey = entries[0].Name;
+                assignment = entries[0].Value;
+            }
         }
         if (assignment.ValueKind != JsonValueKind.Object ||
             !assignment.TryGetProperty("file", out var file) ||

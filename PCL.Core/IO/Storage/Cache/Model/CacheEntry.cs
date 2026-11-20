@@ -41,6 +41,8 @@ public record CacheEntry
     public DateTime CachedAt { get; init; }
     public DateTime LastAccessAt { get; init; }
     public DateTime? ExpiresAt { get; init; }
+    public TimeSpan? SlidingExpiration { get; init; }
+    public DateTime? AbsoluteExpiresAt { get; init; }
     public long HitCount { get; init; }
 
     public string Tags { get; init; } = string.Empty;

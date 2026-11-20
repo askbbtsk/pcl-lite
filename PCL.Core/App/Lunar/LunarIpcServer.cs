@@ -213,6 +213,16 @@ public sealed class LunarIpcServer : IDisposable
                 return;
             }
 
+            if (headers.TryGetValue("origin", out var origin) &&
+                (!Uri.TryCreate(origin, UriKind.Absolute, out var originUri) ||
+                 originUri.Scheme is not ("http" or "https") ||
+                 !originUri.IsLoopback))
+            {
+                await WriteHttpErrorAsync(stream, "403 Forbidden", "不允许该网页连接 Lunar IPC", token)
+                    .ConfigureAwait(false);
+                return;
+            }
+
             if (!headers.TryGetValue("sec-websocket-key", out var key) || string.IsNullOrWhiteSpace(key))
             {
                 await WriteHttpErrorAsync(stream, "400 Bad Request", "缺少 Sec-WebSocket-Key", token)
@@ -280,7 +290,7 @@ public sealed class LunarIpcServer : IDisposable
     private async Task FrameLoopAsync(LunarIpcConnection connection, CancellationToken token)
     {
         var stream = connection.Stream;
-        var fragments = new MemoryStream();
+        using var fragments = new MemoryStream();
 
         while (!token.IsCancellationRequested)
         {
@@ -312,6 +322,8 @@ public sealed class LunarIpcServer : IDisposable
                 default:
                     // 0x0 续帧
                     if (frame.Value.Opcode != 0) continue;
+                    if (fragments.Length + frame.Value.Payload.Length > MaxFrameBytes)
+                        throw new InvalidDataException("Lunar IPC 消息超过大小限制。");
                     fragments.Write(frame.Value.Payload);
                     break;
             }

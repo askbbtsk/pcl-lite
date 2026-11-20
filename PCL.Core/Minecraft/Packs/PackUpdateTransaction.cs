@@ -94,7 +94,7 @@ public static class PackUpdateTransaction
         Action<int, int>? progress = null, Action? commitMetadata = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        var root = Path.GetFullPath(plan.GameRoot);
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(plan.GameRoot));
         if (!Directory.Exists(root)) throw new DirectoryNotFoundException(root);
         if ((File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0)
             throw new InvalidDataException("Pack updates cannot target an instance root that is a reparse point.");

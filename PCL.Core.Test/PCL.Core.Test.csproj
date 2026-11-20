@@ -60,6 +60,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Net\**" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\Event\XamlEventSanitizer.cs" Link="UI\XamlEventSanitizer.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\Event\CustomPageXamlPolicy.cs" Link="UI\CustomPageXamlPolicy.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\Event\EventTypeMapper.cs" Link="UI\EventTypeMapper.cs" />
+    <Compile Include="..\Plain Craft Launcher 2\Modules\Event\EventType.cs" Link="UI\EventType.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Controls\LiquidGlassMath.cs" Link="UI\LiquidGlassMath.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Controls\LiquidGlassSurface.cs" Link="UI\LiquidGlassSurface.cs" />
     <Compile Include="..\Plain Craft Launcher 2\Controls\LiquidGlassEffect.cs" Link="UI\LiquidGlassEffect.cs" />

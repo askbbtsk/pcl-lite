@@ -253,7 +253,7 @@ namespace PCL
             ModBase.RunInUi(ModModpack.ModpackInstall);
 
         /// <summary>
-        /// 下载文件。参数：Url[|SavePath[|FileName]]，校验 http/https 前缀并弹安全确认。
+        /// 下载文件。参数：Url[|FileName[|SavePath]]，保留现有主页参数顺序。
         /// </summary>
         private static void _DownloadFile(string arg, EventType _)
         {
@@ -264,19 +264,21 @@ namespace PCL
                 ModMain.MyMsgBox(Lang.Text("Event.Error.DownloadUrlRequired"), Lang.Text("Event.Error.Title"));
                 return;
             }
-            if (!EventSafetyConfirm(Lang.Text("Event.Download.Confirm", args[0])))
-                return;
-
+            string fileName;
             try
             {
-                PageToolsTest.StartCustomDownload(args[0],
-                    args.Length >= 2 ? args[1] : ModBase.GetFileNameFromPath(args[0]),
-                    args.Length >= 3 ? args[2] : null);
+                fileName = args.Length >= 2 ? args[1] : ModBase.GetFileNameFromPath(args[0]);
             }
             catch
             {
-                PageToolsTest.StartCustomDownload(args[0], Lang.Text("Common.State.Unknown"));
+                fileName = Lang.Text("Common.State.Unknown");
             }
+            var folder = args.Length >= 3 ? args[2] : null;
+            var confirmation = string.IsNullOrWhiteSpace(folder)
+                ? Lang.Text("Event.Download.Confirm", args[0])
+                : Lang.Text("Event.Download.ConfirmDestination", args[0], Path.GetFullPath(Path.Combine(folder, fileName)));
+            if (!EventSafetyConfirm(confirmation)) return;
+            PageToolsTest.StartCustomDownload(args[0], fileName, folder);
         }
 
         /// <summary>

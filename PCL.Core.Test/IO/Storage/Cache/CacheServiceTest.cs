@@ -21,6 +21,95 @@ public class CacheServiceTest
     private CacheOptions _options = null!;
     private string _testCacheDir = null!;
 
+    [TestMethod]
+    public async Task ForwardOnlyStreamsAreCachedWithoutLosingTheirContent()
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes("forward-only cache content");
+        using var compressed = new MemoryStream();
+        using (var encoder = new System.IO.Compression.GZipStream(compressed,
+                   System.IO.Compression.CompressionMode.Compress, leaveOpen: true))
+            encoder.Write(bytes);
+        compressed.Position = 0;
+        using var source = new System.IO.Compression.GZipStream(compressed,
+            System.IO.Compression.CompressionMode.Decompress, leaveOpen: true);
+        await _cache.CacheFileAsync("forward-only", source);
+        CollectionAssert.AreEqual(bytes, (await _cache.GetAsync<byte[]>("forward-only")).Value);
+    }
+
+    [TestMethod]
+    public async Task SharedFileSurvivesRemovingOneKeyAndIsDeletedAfterTheLastKey()
+    {
+        var bytes = new byte[300000];
+        Random.Shared.NextBytes(bytes);
+        await _cache.SetAsync("shared-a", bytes);
+        await _cache.SetAsync("shared-b", bytes);
+        var file = await _cache.GetCachedFilePathAsync("shared-a");
+        Assert.IsNotNull(file);
+        await _cache.DeleteAsync("shared-a");
+        Assert.IsTrue(File.Exists(file));
+        CollectionAssert.AreEqual(bytes, (await _cache.GetAsync<byte[]>("shared-b")).Value);
+        await _cache.DeleteAsync("shared-b");
+        Assert.IsFalse(File.Exists(file));
+    }
+
+    [TestMethod]
+    public async Task OverwritingAFileEntryReleasesThePreviousFile()
+    {
+        await _cache.SetAsync("overwritten", new byte[300000]);
+        var previous = await _cache.GetCachedFilePathAsync("overwritten");
+        await _cache.SetAsync("overwritten", "inline replacement");
+        Assert.IsFalse(File.Exists(previous));
+        Assert.AreEqual("inline replacement", (await _cache.GetAsync<string>("overwritten")).Value);
+    }
+
+    [TestMethod]
+    public async Task PersistedFileCanBeReleasedAfterRestart()
+    {
+        await _cache.SetAsync("persisted", new byte[300000]);
+        var file = await _cache.GetCachedFilePathAsync("persisted");
+        await _cache.DisposeAsync();
+#pragma warning disable CS0618
+        _cache = new CacheService(_options);
+#pragma warning restore CS0618
+        await _cache.InitializeAsync();
+        Assert.IsTrue((await _cache.GetAsync<byte[]>("persisted")).Found);
+        await _cache.DeleteAsync("persisted");
+        Assert.IsFalse(File.Exists(file));
+    }
+
+    [TestMethod]
+    public async Task SlidingExpirationExtendsOnAccessAndSurvivesRestart()
+    {
+        await _cache.SetAsync("sliding", "value", new CachePolicy
+        {
+            AbsoluteExpiration = null,
+            SlidingExpiration = TimeSpan.FromSeconds(1)
+        });
+        await _cache.DisposeAsync();
+#pragma warning disable CS0618
+        _cache = new CacheService(_options);
+#pragma warning restore CS0618
+        await _cache.InitializeAsync();
+        await Task.Delay(600);
+        Assert.IsTrue((await _cache.GetAsync<string>("sliding")).Found);
+        await Task.Delay(600);
+        Assert.IsTrue((await _cache.GetAsync<string>("sliding")).Found);
+        await Task.Delay(1200);
+        Assert.IsFalse((await _cache.GetAsync<string>("sliding")).Found);
+    }
+
+    [TestMethod]
+    public async Task TagCleanupReleasesOnlyUnreferencedFiles()
+    {
+        await _cache.SetAsync("tagged", new byte[300000], new CachePolicy { Tags = "remove-me" });
+        await _cache.SetAsync("untagged", new byte[300000]);
+        var file = await _cache.GetCachedFilePathAsync("tagged");
+        Assert.AreEqual(1, await _cache.DeleteByTagAsync("remove-me"));
+        Assert.IsTrue(File.Exists(file));
+        await _cache.DeleteAsync("untagged");
+        Assert.IsFalse(File.Exists(file));
+    }
+
     [TestInitialize]
     public async Task Setup()
     {

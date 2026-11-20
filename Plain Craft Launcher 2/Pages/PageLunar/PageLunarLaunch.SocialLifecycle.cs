@@ -424,6 +424,11 @@ public partial class PageLunarLaunch
             {
                 await ModLunar.DisconnectSocialAsync();
             }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "[Lunar] 断开好友系统失败", ModBase.LogLevel.Debug);
+                HintService.Hint(Lang.Text("Lunar.Error.OperationFailed"), HintType.Warning);
+            }
             finally
             {
                 _socialBusy = false;
@@ -440,9 +445,15 @@ public partial class PageLunarLaunch
         {
             await ModLunar.ConnectSocialAsync();
         }
-        catch (Exception ex) when (ex is LunarSocialException or OperationCanceledException)
+        catch (OperationCanceledException) { }
+        catch (LunarSocialException ex)
         {
             HintService.Hint(ex.Message, HintType.Warning);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Lunar] 连接好友系统失败", ModBase.LogLevel.Debug);
+            HintService.Hint(Lang.Text("Lunar.Error.OperationFailed"), HintType.Warning);
         }
         finally
         {

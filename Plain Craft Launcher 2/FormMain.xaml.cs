@@ -69,6 +69,8 @@ public partial class FormMain
         PanBack.SizeChanged += FormMain_SizeChanged;
         RefreshNavigationOverflow();
         PanTitleMain.SizeChanged += PanTitleSelect_SizeChanged;
+        PanTitleSelectViewport.SizeChanged += PanTitleSelect_SizeChanged;
+        PanTitleSelectViewport.IsVisibleChanged += (_, _) => QueueNavigationOverflowRefresh();
         Loaded += (_, _) => QueueNavigationOverflowRefresh();
         Opacity = 0d;
         try
@@ -97,7 +99,7 @@ public partial class FormMain
                 _helper.HwndSource = HwndSource.FromHwnd(windowInterop.Handle);
                 _helper.AddHook();
             };
-            Closing += (_, _) => _helper.RemoveHook();
+            Closed += (_, _) => _helper.RemoveHook();
             _helper.DragDrop += (_, _) => FileDrag(_helper.DropFilePaths);
         }
 

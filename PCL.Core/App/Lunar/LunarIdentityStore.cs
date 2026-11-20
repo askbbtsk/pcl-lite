@@ -91,6 +91,7 @@ public static class LunarIdentityStore
     /// <summary>读全部账号。文件不存在或读不动时返回空列表，不抛异常。</summary>
     public static IReadOnlyList<LunarIdentityAccount> Read()
     {
+        lock (WriteGate)
         try
         {
             var path = FilePath;

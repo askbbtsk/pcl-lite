@@ -26,6 +26,7 @@ public class FileConfigStorage : ConfigStorage
     private readonly Channel<(string, Action)> _writeActionChannel;
     private readonly CancellationTokenSource _writeActionCts;
     private readonly ManualResetEventSlim _writeStopEvent = new(false);
+    private readonly object _fileLock = new();
 
     public FileConfigStorage(IKeyValueFileProvider file)
     {
@@ -46,7 +47,11 @@ public class FileConfigStorage : ConfigStorage
                     // 读入并合并暂存操作
                     var (key, action) = await reader.ReadAsync(cancelToken);
                     writeActionMap[key] = action;
-                    if (Environment.TickCount64 - lastSyncTick < syncInterval || cancelToken.IsCancellationRequested) continue;
+                    var delay = syncInterval - (Environment.TickCount64 - lastSyncTick);
+                    if (delay > 0)
+                        await Task.Delay(TimeSpan.FromMilliseconds(delay), cancelToken).ConfigureAwait(false);
+                    while (reader.TryRead(out var pending))
+                        writeActionMap[pending.Item1] = pending.Item2;
                     // 同步文件
                     Sync();
                     lastSyncTick = Environment.TickCount64;
@@ -69,8 +74,11 @@ public class FileConfigStorage : ConfigStorage
                 try
                 {
                     LogWrapper.Trace("Config", $"正在保存 {File.FilePath}");
-                    foreach (var action in writeActionMap.Values) action();
-                    File.Sync();
+                    lock (_fileLock)
+                    {
+                        foreach (var action in writeActionMap.Values) action();
+                        File.Sync();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -101,6 +109,7 @@ public class FileConfigStorage : ConfigStorage
     {
         if (key is not string strKey) throw new NotSupportedException($"Key '{key}' is not supported");
 #pragma warning disable CS8762 // Parameter must have a non-null value when exiting in some condition.
+        lock (_fileLock)
         switch (action)
         {
             case StorageAction.Get:

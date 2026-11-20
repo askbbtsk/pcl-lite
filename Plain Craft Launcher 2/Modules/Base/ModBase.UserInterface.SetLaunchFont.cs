@@ -266,7 +266,8 @@ public static partial class ModBase
                     foreach (var blackListType in new[]
                              {
                                  typeof(WebBrowser), typeof(Frame), typeof(MediaElement), typeof(ObjectDataProvider),
-                                 typeof(XamlReader), typeof(Window), typeof(XmlDataProvider)
+                                 typeof(XamlReader), typeof(Window), typeof(XmlDataProvider),
+                                 typeof(System.Windows.Markup.StaticExtension)
                              })
                     {
                         if (reader.Type is not null && blackListType.IsAssignableFrom(reader.Type.UnderlyingType))

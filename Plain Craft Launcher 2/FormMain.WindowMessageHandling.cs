@@ -71,7 +71,10 @@ public partial class FormMain
 
         // 如果 CanResize 为 False，直接返回 HTCLIENT
         if (!canResize)
+        {
+            handled = true;
             return new nint(HTCLIENT);
+        }
 
         var dpi = VisualTreeHelper.GetDpi(this);
         var offsetPxX = offsetWpf * dpi.DpiScaleX;
@@ -315,11 +318,8 @@ public partial class FormMain
     public void RefreshNavigationOverflow()
     {
         if (PanTitleSelect is null || BtnTitleNavOverflow is null) return;
-        if (!IsLoaded || PanTitle.ActualWidth <= 0d || PanTitleSelectViewport.ActualHeight <= 0d)
-        {
-            QueueNavigationOverflowRefresh();
-            return;
-        }
+        if (!IsLoaded || !PanTitleSelectViewport.IsVisible ||
+            PanTitle.ActualWidth <= 0d || PanTitleSelectViewport.ActualHeight <= 0d) return;
 
         var buttons = new List<(MyRadioButton Button, int Id)>
         {

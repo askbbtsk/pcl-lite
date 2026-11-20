@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -58,6 +59,20 @@ public class LunarIpcServerTest
 
     private static Task<LunarRefreshResult> NoRefresh(Guid uuid, CancellationToken token) =>
         Task.FromResult(LunarRefreshResult.Ok("测试"));
+
+    [TestMethod]
+    public async Task RemoteWebpagesCannotOpenLunarIpc()
+    {
+        var port = FindFreePort();
+        var result = await LunarIpcServer.StartAsync(port, "test-installation", NoRefresh, _ => { });
+        using var server = result.Server;
+        Assert.IsNotNull(server);
+        using var client = new ClientWebSocket();
+        client.Options.SetRequestHeader("Origin", "https://untrusted.invalid");
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await Assert.ThrowsExactlyAsync<WebSocketException>(() =>
+            client.ConnectAsync(new Uri($"ws://127.0.0.1:{port}/"), timeout.Token));
+    }
 
     [TestMethod]
     public async Task StartAsync_WhenPortIsOccupiedDoesNotTakeOverOrFallback()

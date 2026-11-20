@@ -526,11 +526,16 @@ public static class Tooltip
         _flyout.Opened += (_, _) => _AttachTransparentHook();
     }
 
+    private static HwndSource? _transparentSource;
+
     private static void _AttachTransparentHook()
     {
         if (_transparentHook is null || _flyout?.Child is not UIElement child) return;
         var src = (HwndSource?)PresentationSource.FromVisual(child);
-        src?.AddHook(_transparentHook);
+        if (ReferenceEquals(src, _transparentSource)) return;
+        _transparentSource?.RemoveHook(_transparentHook);
+        _transparentSource = src;
+        _transparentSource?.AddHook(_transparentHook);
     }
 
     private static void _RenderInside(FrameworkElement owner)

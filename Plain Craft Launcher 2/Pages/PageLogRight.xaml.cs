@@ -148,7 +148,7 @@ public partial class PageLogRight
             Lang.Text("LogPage.Export.GameLog.Filter"));
         if (savePath.Length < 3)
             return;
-        File.WriteAllLines(savePath, ModMain.frmLogLeft.currentLog.fullLog);
+        File.WriteAllLines(savePath, ModMain.frmLogLeft.currentLog.GetFullLogSnapshot());
         HintService.Hint(Lang.Text("LogPage.Export.Success"), HintType.Success);
         ModBase.OpenExplorer(savePath);
     }

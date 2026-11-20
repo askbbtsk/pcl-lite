@@ -258,10 +258,10 @@ public static class ModWatcher
 
             // 初始化进程与日志读取
             gameProcess = loader.input;
-            gameProcess.BeginOutputReadLine();
-            gameProcess.BeginErrorReadLine();
             gameProcess.OutputDataReceived += LogReceived;
             gameProcess.ErrorDataReceived += LogReceived;
+            gameProcess.BeginOutputReadLine();
+            gameProcess.BeginErrorReadLine();
 
             // 初始化时钟
             // 设置窗口标题
@@ -337,14 +337,19 @@ public static class ModWatcher
             lock (waitingLogLock)
             {
                 waitingLog.Add(e.Data);
+                if (realTime && e.Data is not null)
+                    fullLog.Add(e.Data);
             }
 
             if (realTime)
             {
                 LogRealTime(e.Data, ref lastLevel);
-                if (e.Data is not null)
-                    fullLog.Add(e.Data);
             }
+        }
+
+        public string[] GetFullLogSnapshot()
+        {
+            lock (waitingLogLock) return fullLog.ToArray();
         }
 
         /// <summary>
@@ -405,8 +410,6 @@ public static class ModWatcher
                 var copyed = new List<string>();
                 lock (waitingLogLock)
                 {
-                    if (!waitingLog.Any())
-                        return;
                     copyed = waitingLog;
                     waitingLog = new List<string>(1000);
                 }
@@ -750,12 +753,7 @@ public static class ModWatcher
         // 强制关闭
         public bool CheckAlive(Process p)
         {
-            if (!p.HasExited)
-                return true;
-            var exists = Array.Exists(Process.GetProcesses(), item => item.Id == p.Id);
-            if (exists)
-                return true;
-            return false;
+            return !p.HasExited;
         }
 
         public void Kill()

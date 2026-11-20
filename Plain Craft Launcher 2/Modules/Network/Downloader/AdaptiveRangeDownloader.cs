@@ -276,13 +276,16 @@ internal sealed class AdaptiveRangeDownloader
                 var splitStart = segment.CurrentOffset + segment.Remaining / 2;
                 var split = new DownloadSegment(Interlocked.Increment(ref _nextSegmentId), splitStart, segment.End);
                 segment.End = splitStart - 1;
-                _segments.Writer.TryWrite(segment);
-                _segments.Writer.TryWrite(split);
                 Interlocked.Increment(ref _outstandingSegments);
+                if (!_segments.Writer.TryWrite(segment) || !_segments.Writer.TryWrite(split))
+                {
+                    Interlocked.Decrement(ref _outstandingSegments);
+                    return false;
+                }
             }
             else
             {
-                _segments.Writer.TryWrite(segment);
+                return _segments.Writer.TryWrite(segment);
             }
 
             return true;

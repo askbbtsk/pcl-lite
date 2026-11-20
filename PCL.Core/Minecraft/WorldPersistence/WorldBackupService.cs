@@ -265,7 +265,7 @@ internal static class BackupArchive
     {
         if (!Guid.TryParseExact(snapshotId, "N", out _)) throw new InvalidDataException("Invalid backup snapshot identifier.");
         var store = Path.GetFullPath(storePath);
-        var destination = Path.GetFullPath(destinationPath);
+        var destination = Path.TrimEndingDirectorySeparator(Path.GetFullPath(destinationPath));
         RecoverInterruptedRestore(destination);
         if (!Directory.Exists(store)) throw new DirectoryNotFoundException(store);
         var snapshot = _ReadManifest(Path.Combine(store, snapshotId + ".json"));

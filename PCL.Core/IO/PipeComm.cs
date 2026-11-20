@@ -51,6 +51,7 @@ public static class PipeComm
                 {
                     hasNextLoop = false;
                     pipe.WaitForConnection(); // 等待客户端连接
+                    connected = true;
                     // 获取客户端进程实例并校验
                     Process? clientProcess = null;
                     var clientProcessId = 0;
@@ -79,13 +80,13 @@ public static class PipeComm
                             throw;
                         }
                     }
-                    connected = true;
                     LogWrapper.Debug("Pipe", $"{identifier}: {clientProcessId} 已连接");
                     // 初始化读取/写入流
                     var reader = new StreamReader(pipe, PipeEncoding, false, 1024, true);
                     var writer = new StreamWriter(pipe, PipeEncoding, 1024, true);
                     // 执行回调函数
-                    hasNextLoop = loopCallback(reader, writer, clientProcess);
+                    using (clientProcess)
+                        hasNextLoop = loopCallback(reader, writer, clientProcess);
                     // 写入终止符
                     writer.Write(PipeEndingChar);
                     writer.Flush(); // 刷新写入缓冲
@@ -101,7 +102,7 @@ public static class PipeComm
                     else
                     {
                         LogWrapper.Warn(ex, "Pipe",  $"{identifier}: 服务端出错");
-                        if (stopWhenException) hasNextLoop = false;
+                        hasNextLoop = !stopWhenException && (connected || ex is IOException);
                     }
                 }
                 try

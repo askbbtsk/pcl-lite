@@ -419,7 +419,8 @@ public sealed partial class PluginRuntimeManager
                 : null;
             if (timeoutSource is not null) timeoutSource.CancelAfter(timeout!.Value);
             var requestToken = timeoutSource?.Token ?? cancellationToken;
-            using var response = await client.SendAsync(request, requestToken).ConfigureAwait(false);
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, requestToken)
+                .ConfigureAwait(false);
             if (response.Content.Headers.ContentLength is > MaximumPluginHttpBodyBytes)
                 throw new InvalidDataException("Plugin HTTP response exceeds the 16 MiB limit.");
             await using var responseStream = await response.Content.ReadAsStreamAsync(requestToken).ConfigureAwait(false);

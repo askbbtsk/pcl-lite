@@ -6,6 +6,7 @@ using System.Text;
 using System.Windows;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
+using PCL.Core.IO;
 using PCL.Core.Minecraft;
 using PCL.Core.Minecraft.Backups;
 using PCL.Core.Minecraft.Worlds;
@@ -48,7 +49,7 @@ public static partial class ModLaunch
             ZipArchive zip;
             try
             {
-                zip = new ZipArchive(new FileStream(native.LocalPath, FileMode.Open));
+                zip = ZipFile.OpenRead(native.LocalPath);
             }
             catch (InvalidDataException ex)
             {
@@ -57,13 +58,14 @@ public static partial class ModLaunch
                 throw new Exception(Lang.Text("Minecraft.Launch.Error.NativesCorrupted", native.LocalPath));
             }
 
-            foreach (var entry in zip.Entries)
+            using var archive = zip;
+            foreach (var entry in archive.Entries)
             {
                 var fileName = entry.FullName;
                 if (fileName.EndsWithF(".dll", true))
                 {
                     // 实际解压文件的步骤
-                    var filePath = target + fileName;
+                    var filePath = ContainedFilePath.Resolve(target, fileName);
                     existFiles.Add(filePath);
                     var originalFile = new FileInfo(filePath);
                     if (originalFile.Exists)
@@ -89,13 +91,12 @@ public static partial class ModLaunch
                     }
 
                     // 解压新文件
-                    ModBase.WriteFile(filePath, entry.Open());
+                    using var entryStream = entry.Open();
+                    ModBase.WriteFile(filePath, entryStream);
                     McLaunchLog("已解压：" + filePath);
                 }
             }
 
-            if (zip is not null)
-                zip.Dispose();
         }
 
         // 删除多余文件

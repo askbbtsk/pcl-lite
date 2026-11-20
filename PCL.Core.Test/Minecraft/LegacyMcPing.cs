@@ -20,7 +20,9 @@ namespace PCL.Core.Test.Minecraft;
 public class LegacyMcPingTest
 {
     [TestMethod]
-    public async Task PingTest()
+    [DataRow("PCL legacy test")]
+    [DataRow("新的世界 §a中文服务器")]
+    public async Task PingTest(string motd)
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
@@ -28,7 +30,7 @@ public class LegacyMcPingTest
         {
             var endpoint = (IPEndPoint)listener.LocalEndpoint;
             var serverTask = _RespondAsync(listener, protocol: 51, version: "1.6.4",
-                motd: "PCL legacy test", online: 3, max: 20, TestContext.CancellationToken);
+                motd: motd, online: 3, max: 20, TestContext.CancellationToken);
             using var ping = new LegacyMcPingService(endpoint, timeout: 3000);
 
             var result = await ping.PingAsync(TestContext.CancellationToken).ConfigureAwait(false);
@@ -37,7 +39,7 @@ public class LegacyMcPingTest
             Assert.IsNotNull(result);
             Assert.AreEqual("1.6.4", result.Version.Name);
             Assert.AreEqual(51, result.Version.Protocol);
-            Assert.AreEqual("PCL legacy test", result.Description);
+            Assert.AreEqual(motd, result.Description);
             Assert.AreEqual(3, result.Players.Online);
             Assert.AreEqual(20, result.Players.Max);
         }

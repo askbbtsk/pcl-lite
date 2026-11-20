@@ -21,6 +21,7 @@ namespace PCL;
 /// </summary>
 public static class ModBedrockInstaller
 {
+    public const string PendingInstallMarker = ".pcl-install-pending";
     /// <summary>安装 UWP 包，返回最终被注册的目录（里面有改写后的 AppxManifest.xml）。</summary>
     /// <param name="packagePath">下载到本地的 .appxbundle / .appx / .msix / .msixbundle</param>
     /// <param name="versionId">版本标识，用来命名解压目录</param>
@@ -32,6 +33,8 @@ public static class ModBedrockInstaller
         report?.Invoke(Lang.Text("Bedrock.Install.Extracting"));
         if (Directory.Exists(extractDir)) Directory.Delete(extractDir, true);
         Directory.CreateDirectory(extractDir);
+        var pendingMarker = Path.Combine(extractDir, PendingInstallMarker);
+        File.WriteAllText(pendingMarker, string.Empty);
 
         try
         {
@@ -113,6 +116,7 @@ public static class ModBedrockInstaller
                     Lang.Text("Bedrock.Install.Failed", Trim(appxResult)));
         }
 
+        File.Delete(pendingMarker);
         ModBase.Log($"[Bedrock] 已安装 {versionId}（{extractDir}）");
         return extractDir;
     }

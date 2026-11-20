@@ -98,11 +98,17 @@ public class WaterfallPanel : Panel
 
     protected override Size MeasureOverride(Size availableSize)
     {
+        if (!double.IsFinite(availableSize.Width))
+        {
+            var columns = Math.Max(1, ColumnCount);
+            var itemWidth = double.IsFinite(MaxItemWidth) && MaxItemWidth > 0 ? MaxItemWidth : 100;
+            availableSize.Width = columns * itemWidth + (columns - 1) * ColumnSpacing;
+        }
         // 1. 确定列数
         int columnCount;
         if (LayoutMode == WaterfallLayoutMode.FixedColumns)
         {
-            columnCount = ColumnCount;
+            columnCount = Math.Max(1, ColumnCount);
         }
         else // AutoFit
         {

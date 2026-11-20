@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,6 +14,19 @@ public class FileCacheStorage : IDisposable
     private readonly HashStorage _hashStorage;
     private readonly string _basePath;
     private readonly ConcurrentDictionary<string, int> _refCounts = [];
+    private readonly SemaphoreSlim _entryGate = new(1, 1);
+    internal Func<string, Task<long>>? ReferenceCountAsync { get; init; }
+
+    internal async ValueTask<MutationLease> EnterMutationAsync(CancellationToken token = default)
+    {
+        await _entryGate.WaitAsync(token).ConfigureAwait(false);
+        return new MutationLease(_entryGate);
+    }
+
+    internal readonly struct MutationLease(SemaphoreSlim gate) : IDisposable
+    {
+        public void Dispose() => gate.Release();
+    }
 
     public FileCacheStorage(string cacheRoot, bool enableCompression = true)
     {
@@ -30,7 +44,7 @@ public class FileCacheStorage : IDisposable
     public async Task<string> StoreAsync(Stream source, string? knownHash = null)
     {
         var hash = await _hashStorage.PutAsync(source, knownHash).ConfigureAwait(false);
-        if (hash is not null)
+        if (hash is not null && ReferenceCountAsync is null)
         {
             _refCounts.AddOrUpdate(hash, 1, (_, count) => count + 1);
         }
@@ -51,6 +65,9 @@ public class FileCacheStorage : IDisposable
 
     public async Task<bool> ReleaseAsync(string hash)
     {
+        if (ReferenceCountAsync is not null)
+            return await ReferenceCountAsync(hash).ConfigureAwait(false) == 0 &&
+                   await _hashStorage.DeleteAsync(hash).ConfigureAwait(false);
         var spin = new SpinWait();
         while (true)
         {
@@ -85,6 +102,18 @@ public class FileCacheStorage : IDisposable
     {
         _refCounts.TryRemove(hash, out _);
         return _hashStorage.DeleteAsync(hash);
+    }
+
+    internal async Task PruneAsync(IEnumerable<string?> referencedHashes)
+    {
+        var live = new HashSet<string>(referencedHashes.OfType<string>(), StringComparer.OrdinalIgnoreCase);
+        var options = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        foreach (var file in Directory.EnumerateFiles(_basePath, "*", options))
+        {
+            var hash = Path.GetFileName(file);
+            if (hash.Length == 64 && hash.All(Uri.IsHexDigit) && !live.Contains(hash))
+                await ForceDeleteAsync(hash).ConfigureAwait(false);
+        }
     }
 
     /// <inheritdoc />

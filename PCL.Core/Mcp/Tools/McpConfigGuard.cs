@@ -20,7 +20,8 @@ internal static class McpConfigGuard
     /// <summary>明确禁止读取的键：读出来就等于把凭据抄进了对话记录。</summary>
     private static readonly HashSet<string> SecretKeys = new(StringComparer.OrdinalIgnoreCase)
     {
-        "McpToken"
+        "McpToken",
+        "Profile"
     };
 
     /// <summary>键名里出现这些片段就当作机密，避免以后新增凭据字段时漏配。</summary>
@@ -41,7 +42,9 @@ internal static class McpConfigGuard
         "McpAllowLauncherConfig",
         // 启动器安全开关：绕过去就能扩大 MCP 的可见范围
         "SystemDebugMode",
-        "SystemDebugAllowRestrictedFeature"
+        "SystemDebugAllowRestrictedFeature",
+        "LaunchAdvanceRun",
+        "LaunchAdvanceJvm"
     };
 
     /// <summary>是否属于不可读的机密键。</summary>

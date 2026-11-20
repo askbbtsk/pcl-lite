@@ -69,7 +69,8 @@ public static class UpdateHelper
                 if (replaced)
                     _Retry(() =>
                     {
-                        _ClearReadOnly(target);
+                        try { _ClearReadOnly(target); }
+                        catch (FileNotFoundException) { }
                         File.Move(backup, target, true);
                     });
                 if (originalAttributes is { } attributes && File.Exists(target))

@@ -131,7 +131,7 @@ internal static class GameTools
                         ["gameControl"] = options.AllowGameControl,
                         ["launcherConfig"] = options.AllowLauncherConfig
                     }),
-                    ("clientConfig", McpServerService.BuildClientConfig(options)),
+                    ("clientConfig", McpServerService.BuildClientConfig(options, includeToken: false)),
                     ("tools", catalogRef.Tools.Tools.Select(t => t.Name).OrderBy(n => n).ToList())));
             }
         });

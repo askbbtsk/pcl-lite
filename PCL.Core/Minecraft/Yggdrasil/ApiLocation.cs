@@ -19,16 +19,24 @@ public static class ApiLocation
             || location.Length == 0) 
             return originAddr;
 
-        // TODO: use schema instead
         var resultAddr = location[0];
 
         if (string.IsNullOrEmpty(resultAddr)) return originAddr;
-        if (resultAddr.StartsWith(originUri.Scheme)) return resultAddr;
-        // 不允许 HTTPS 降 HTTP
-        if (resultAddr.StartsWith("http:") && originUri.Scheme == "https") 
-            return resultAddr.Replace("http","https");
-        
-        return new Uri(originUri, resultAddr).ToString();   
+        return ResolveRedirect(originUri, resultAddr);
+    }
+
+    internal static string ResolveRedirect(Uri origin, string location)
+    {
+        var target = new Uri(origin, location);
+        if (target.Scheme is not ("http" or "https"))
+            throw new InvalidOperationException("Authentication API redirects must use HTTP or HTTPS.");
+        if (origin.Scheme == Uri.UriSchemeHttps && target.Scheme == Uri.UriSchemeHttp)
+            target = new UriBuilder(target)
+            {
+                Scheme = Uri.UriSchemeHttps,
+                Port = target.IsDefaultPort ? -1 : target.Port
+            }.Uri;
+        return target.AbsoluteUri;
     }
 }
 

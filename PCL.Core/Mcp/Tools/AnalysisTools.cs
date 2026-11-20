@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using PCL.Core.IO;
 
 namespace PCL.Core.Mcp.Tools;
 
@@ -246,9 +247,16 @@ internal static class AnalysisTools
 
                 if (!string.IsNullOrWhiteSpace(explicitFile))
                 {
-                    if (!File.Exists(explicitFile))
-                        return Task.FromResult<object?>(McpResults.Error($"文件不存在：{explicitFile}"));
-                    report = CrashLogAnalyzer.AnalyzeFile(explicitFile, Path.GetFileName(explicitFile));
+                    var (location, error) = McpInstanceResolver.Resolve(args.Str("instance"));
+                    if (error is not null) return Task.FromResult<object?>(error);
+
+                    var safeFile = ResolveCrashLogPath(location!, explicitFile);
+                    if (safeFile is null)
+                        return Task.FromResult<object?>(McpResults.Error(
+                            "只能分析该实例 crash-reports 或 logs 目录中的 .txt / .log 文件。"));
+                    if (!File.Exists(safeFile))
+                        return Task.FromResult<object?>(McpResults.Error($"文件不存在：{safeFile}"));
+                    report = CrashLogAnalyzer.AnalyzeFile(safeFile, Path.GetFileName(safeFile));
                 }
                 else
                 {
@@ -282,6 +290,45 @@ internal static class AnalysisTools
                     ("tail", report.Tail)));
             }
         });
+    }
+
+    private static string? ResolveCrashLogPath(InstanceLocation location, string requestedPath)
+    {
+        if (string.IsNullOrWhiteSpace(requestedPath)) return null;
+
+        string fullPath;
+        try { fullPath = Path.GetFullPath(requestedPath); }
+        catch (Exception ex) when (ex is ArgumentException or IOException or NotSupportedException)
+        {
+            return null;
+        }
+
+        var extension = Path.GetExtension(fullPath);
+        if (!extension.Equals(".log", StringComparison.OrdinalIgnoreCase) &&
+            !extension.Equals(".txt", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        foreach (var allowedDirectory in new[]
+                 {
+                     ModDirectoryScanner.CrashReports(location),
+                     ModDirectoryScanner.Logs(location)
+                 })
+        {
+            try
+            {
+                var relativePath = Path.GetRelativePath(allowedDirectory, fullPath);
+                var candidate = ContainedFilePath.Resolve(allowedDirectory, relativePath);
+                if (string.Equals(candidate, fullPath,
+                        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+                    return candidate;
+            }
+            catch (Exception ex) when (ex is ArgumentException or IOException or NotSupportedException)
+            {
+                // Try the other permitted log directory.
+            }
+        }
+
+        return null;
     }
 
     #endregion

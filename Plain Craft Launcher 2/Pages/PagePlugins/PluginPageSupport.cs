@@ -230,7 +230,11 @@ internal static class PluginPageSupport
 
         try
         {
-            var process = Process.Start(new ProcessStartInfo(Basics.ExecutablePath) { UseShellExecute = true });
+            using var process = Process.Start(new ProcessStartInfo(Basics.ExecutablePath)
+            {
+                UseShellExecute = true,
+                Arguments = $"--restart-wait {Environment.ProcessId}"
+            });
             if (process is null) throw new InvalidOperationException("The launcher process could not be started.");
         }
         catch (Exception ex)

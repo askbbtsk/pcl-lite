@@ -73,24 +73,27 @@ public class LegacyMcPingService : IMcPingService
 
         var queryPack = new byte[] { 0xfe, 0x01 };
         await stream.WriteAsync(queryPack.AsMemory(0, queryPack.Length), linkedCts.Token);
-        var ms = new MemoryStream();
-        await stream.CopyToAsync(ms, linkedCts.Token);
-        so.Close();
-        var retData = ms.ToArray();
-        if (retData.Length < 21 || (retData.Length >= 21 && retData[0] != 0xff))
+        var header = new byte[3];
+        byte[] payload;
+        try
+        {
+            await stream.ReadExactlyAsync(header, linkedCts.Token);
+            if (header[0] != 0xff) return null;
+            var characterCount = (header[1] << 8) | header[2];
+            payload = new byte[characterCount * 2];
+            await stream.ReadExactlyAsync(payload, linkedCts.Token);
+        }
+        catch (EndOfStreamException)
         {
             LogWrapper.Info("McPing", $"Unknown response from {_endpoint}, ignore");
             return null;
         }
 
-        var retRep = Encoding.UTF8.GetString(retData);
+        var retRep = Encoding.BigEndianUnicode.GetString(payload);
         try
         {
-            var retPart = retRep.Split(["\0\0\0"], StringSplitOptions.None);
-            retPart = retPart
-                .Select(s => new string([.. s.Where((_, index) => index % 2 == 0)]))
-                .ToArray();
-            if (retPart.Length < 6)
+            var retPart = retRep.Split('\0');
+            if (retPart.Length < 6 || retPart[0] != "§1")
                 return null;
             return new McPingResult(new McPingVersionResult(retPart[2], int.Parse(retPart[1])),
                 new McPingPlayerResult(int.Parse(retPart[5]), int.Parse(retPart[4]), []), retPart[3], string.Empty, 0,

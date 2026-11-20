@@ -75,6 +75,11 @@ internal static class SingleInstanceLock
         {
             return false;
         }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                // Access denied does not establish that the other process exited.
+                return true;
+            }
     }
 
     /// <summary>

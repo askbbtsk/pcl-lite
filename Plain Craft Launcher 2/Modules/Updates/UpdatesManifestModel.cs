@@ -284,10 +284,13 @@ public class UpdatesManifestModel : IUpdateSource
         var tiers = UpdateSourceSelector.GroupByWeight(
             pairs.Select((pair, index) => (pair.Entry.Weight, index)));
 
+        var tiersLeft = tiers.Count;
         foreach (var tier in tiers)
         {
             var group = tier.Indices.Select(i => pairs[i]).ToList();
-            var candidates = _QueryGroup(group, channel, arch, failures, deadline);
+            var remaining = deadline - DateTime.UtcNow;
+            var tierDeadline = DateTime.UtcNow + TimeSpan.FromTicks(Math.Max(0, remaining.Ticks) / tiersLeft--);
+            var candidates = _QueryGroup(group, channel, arch, failures, tierDeadline);
 
             // 这一档全军覆没 → 才轮到下一档
             if (candidates.Count == 0) continue;
@@ -645,7 +648,21 @@ public class UpdatesManifestModel : IUpdateSource
                 throw new UpdateSourceException($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}".TrimEnd());
 
             var body = response.AsString();
-            return accept is null ? body : _UnwrapContentsApi(body);
+            var content = accept is null ? body : _UnwrapContentsApi(body);
+            var trimmed = content.Trim().TrimStart('\uFEFF').TrimStart();
+            if (trimmed.Length == 0 || trimmed[0] == '<')
+                throw new UpdateSourceException("更新通道返回了空内容或网页，而不是更新清单。");
+            if (trimmed[0] is '{' or '[' or '"')
+            {
+                using var document = JsonDocument.Parse(trimmed, new JsonDocumentOptions
+                {
+                    AllowTrailingCommas = true,
+                    CommentHandling = JsonCommentHandling.Skip
+                });
+            }
+            else
+                UpdateManifestPointer.Extract(trimmed);
+            return content;
         }
     }
 

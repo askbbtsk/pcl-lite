@@ -46,7 +46,10 @@ public sealed partial class StartupService
     /// <summary>
     /// 未处理的子命令
     /// </summary>
-    public static IReadOnlyDictionary<string, CommandLine> UnhandledCommands => _UnhandledCommandMap.AsReadOnly();
+    public static IReadOnlyDictionary<string, CommandLine> UnhandledCommands
+    {
+        get { lock (_UnhandledCommandMap) return new Dictionary<string, CommandLine>(_UnhandledCommandMap); }
+    }
 
     /// <summary>
     /// 处理一个子命令
@@ -73,7 +76,8 @@ public sealed partial class StartupService
             _UnhandledCommandMap.TryGetValue(command, out var model);
             if (model is null) return false;
             // remove all related commands
-            foreach (var x in _UnhandledCommandMap.Keys.Where(x => x.StartsWith(command)).ToList())
+            foreach (var x in _UnhandledCommandMap.Keys.Where(x => x == command ||
+                         x.StartsWith(command + ".", StringComparison.Ordinal)).ToList())
                 _UnhandledCommandMap.Remove(x);
             // run handler
             try { handler(model, isCallback); }
@@ -146,8 +150,11 @@ public sealed partial class StartupService
             {
                 foreach (var (command, model) in models)
                 {
-                    _UnhandledCommandMap[command] = model;
-                    TryHandleCommand(command);
+                    lock (_UnhandledCommandMap)
+                    {
+                        _UnhandledCommandMap[command] = model;
+                        TryHandleCommand(command);
+                    }
                 }
             });
         }

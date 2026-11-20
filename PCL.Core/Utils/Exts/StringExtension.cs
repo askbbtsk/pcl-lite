@@ -145,7 +145,7 @@ public static class StringExtension
             };
         }
 
-        public string FromB64ToB64UrlSafe() => input.Replace("+", "-").Replace("/", "_");
+        public string FromB64ToB64UrlSafe() => input.TrimEnd('=').Replace("+", "-").Replace("/", "_");
         public string FromB64UrlSafeToB64() => input.Replace("-", "+").Replace("_", "/");
 
         public byte[] FromB64ToBytes()

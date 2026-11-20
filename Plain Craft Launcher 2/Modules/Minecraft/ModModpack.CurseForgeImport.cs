@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
+using PCL.Core.IO;
 using PCL.Core.Minecraft.Packs;
 using PCL.Core.UI;
 using PCL.Core.Utils.Validate;
@@ -103,9 +104,18 @@ public static partial class ModModpack
         var authoredPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var authoredIdentities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var overrideHome = (string)(json["overrides"] ?? "");
+        var overrideRelative = "";
         if (!string.IsNullOrEmpty(overrideHome))
         {
-            var overridePrefix = CombineArchivePath(archiveBaseFolder, overrideHome is "." or "./" ? "" : overrideHome);
+            // "." is the manifest's supported archive-root override. Other values
+            // must stay below the extracted pack, including rooted/UNC paths.
+            var packRoot = string.IsNullOrEmpty(archiveBaseFolder)
+                ? installTemp
+                : ContainedFilePath.Resolve(installTemp, archiveBaseFolder.TrimEnd('/', '\\'));
+            if (overrideHome is not ("." or "./"))
+                ContainedFilePath.Resolve(packRoot, overrideHome.TrimEnd('/', '\\'));
+            overrideRelative = CombineArchivePath(archiveBaseFolder, overrideHome is "." or "./" ? "" : overrideHome);
+            var overridePrefix = overrideRelative;
             CollectArchiveRelativePaths(archive, overridePrefix, authoredPaths);
         }
         if (!string.IsNullOrEmpty(overrideHome))
@@ -114,7 +124,8 @@ public static partial class ModModpack
             {
                 ExtractModpackFiles(installTemp, fileAddress, task, 0.6d);
                 CopyOverrideDirectory(
-                    Path.Combine(installTemp, archiveBaseFolder, overrideHome == "." || overrideHome == "./" ? "" : overrideHome),
+                    string.IsNullOrEmpty(overrideRelative) ? installTemp
+                        : ContainedFilePath.Resolve(installTemp, overrideRelative.TrimEnd('/', '\\')),
                     $@"{ModFolder.mcFolderSelected}versions\{instanceName}", task, 0.4d);
             })
             {

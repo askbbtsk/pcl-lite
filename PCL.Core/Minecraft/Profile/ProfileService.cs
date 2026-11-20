@@ -262,6 +262,8 @@ public partial class ProfileService
         // 续期沿用原来的签发者；新登进来的记下这次是谁签的
         if (!string.IsNullOrWhiteSpace(result.RefreshClientId))
             profile.RefreshClientId = result.RefreshClientId;
+        else if (result.LoginMethod is not null)
+            profile.RefreshClientId = string.Empty;
         else if (existing is not null)
             profile.RefreshClientId = existing.RefreshClientId;
         if (existing is null) Add(profile, select);

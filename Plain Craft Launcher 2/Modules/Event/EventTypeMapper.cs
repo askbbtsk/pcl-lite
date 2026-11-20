@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace PCL
 {
     public static class EventTypeMapper
@@ -32,8 +35,16 @@ namespace PCL
             "内存优化", "加入房间", "检查更新"
         };
 
-        public static bool TryToEnglish(string chineseName, out string englishName) =>
-            ChineseToEnglish.TryGetValue(chineseName, out englishName);
+        public static bool TryToEnglish(string chineseName, out string englishName)
+        {
+            if (ChineseToEnglish.TryGetValue(chineseName, out var mapped))
+            {
+                englishName = mapped;
+                return true;
+            }
+            englishName = string.Empty;
+            return false;
+        }
 
         public static bool IsUnsupportedType(string name) =>
             UnsupportedTypes.Contains(name);

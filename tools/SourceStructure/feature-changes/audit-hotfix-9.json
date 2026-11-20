@@ -1,0 +1,892 @@
+[
+  {
+    "SourcePath": "PCL.Core/App/Configuration/ConfigService.cs",
+    "Sha256": "DD6928AAD74953F99E86F76BA7FA2660EB1DB4EDBEB7172428A4A7154E24676E",
+    "Members": [
+      "PCL.Core.App.Configuration.ConfigService::MethodDeclaration::_InitializeProviders()"
+    ],
+    "Reason": "Hotfix-9: Correct legacy migration, scheduled persistence and equivalent-instance path serialization without dropping queued settings on stop. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Configuration/Storage/DynamicCacheConfigStorage.cs",
+    "Sha256": "3C981B8D1956B21F5CEFE8461AF226BA1ACFA5A3BA5B94ECDE9F331E1E3D5DC7",
+    "Members": [
+      "PCL.Core.App.Configuration.Storage.DynamicCacheConfigStorage::MethodDeclaration::InvalidateCache(object context)",
+      "PCL.Core.App.Configuration.Storage.DynamicCacheConfigStorage::MethodDeclaration::OnAccess<TKey, TValue>(StorageAction action, ref TKey key, [NotNullWhen(true)] ref TValue value, object? context)",
+      "PCL.Core.App.Configuration.Storage.DynamicCacheConfigStorage::MethodDeclaration::OnStop()"
+    ],
+    "Reason": "Hotfix-9: Correct legacy migration, scheduled persistence and equivalent-instance path serialization without dropping queued settings on stop. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Configuration/Storage/FileConfigStorage.cs",
+    "Sha256": "8B08949A2C44E74FD72BCFF584F4BBF2C7C92E95FFE4E02E87E6A377548322D5",
+    "Members": [
+      "PCL.Core.App.Configuration.Storage.FileConfigStorage::ConstructorDeclaration::.ctor(IKeyValueFileProvider file)",
+      "PCL.Core.App.Configuration.Storage.FileConfigStorage::MethodDeclaration::OnAccess<TKey, TValue>(\n        StorageAction action,\n        ref TKey key,\n        [NotNullWhen(true)] ref TValue value,\n        object? argument)"
+    ],
+    "Reason": "Hotfix-9: Correct legacy migration, scheduled persistence and equivalent-instance path serialization without dropping queued settings on stop. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Essentials/RpcService.cs",
+    "Sha256": "EAFC1EA638634C81DEF8C762992F99DAF643CB05D00492A74B8342954BFCA421",
+    "Members": [
+      "PCL.Core.App.Essentials.RpcService::MethodDeclaration::_EchoPipeCallback(StreamReader reader, StreamWriter writer, Process? client)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Essentials/SingleInstanceLock.cs",
+    "Sha256": "C7B26E28E3E71873C1896732A08AF07A43A1DC7D9C1BBABFF525B20555AFA2B0",
+    "Members": [
+      "PCL.Core.App.Essentials.SingleInstanceLock::MethodDeclaration::IsAlive(int pid)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Essentials/SingleInstanceService.cs",
+    "Sha256": "A82B651D29F71F042A0D29806D56A1C4E1EC6D65E6F5E225F16CDB792A2E796D",
+    "Members": [
+      "PCL.Core.App.Essentials.SingleInstanceService::MethodDeclaration::_Start()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Essentials/StartupService.cs",
+    "Sha256": "CEAD683F68D3D8A447829543E4FA4460E447745E88D2AB07A1B2E9591E61E35E",
+    "Members": [
+      "PCL.Core.App.Essentials.StartupService::MethodDeclaration::OnRpcCommand(string? argument, string? content, bool indent)",
+      "PCL.Core.App.Essentials.StartupService::MethodDeclaration::TryHandleCommand(\n        string command,\n        CommandHandler? handler = null,\n        bool registerCallback = false)",
+      "PCL.Core.App.Essentials.StartupService::PropertyDeclaration::UnhandledCommands"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Essentials/UpdateHelper.cs",
+    "Sha256": "DB786CD45033D0A759F26499CEF6661ADA5A1E9C232B10D224C939E8699BDFEE",
+    "Members": [
+      "PCL.Core.App.Essentials.UpdateHelper::MethodDeclaration::TryDelete(string path)"
+    ],
+    "Reason": "Hotfix-9: Preserve release selection and signer policy while correcting rollback/cleanup, shared network use, fetch validation and fallback availability. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.App.Essentials.UpdateHelper::MethodDeclaration::Replace(string source, string target)"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/App/Essentials/UpdateService.cs",
+    "Sha256": "488CB40DB89DC5D48A70D11CC888977F57B5F5C9C6D2D5E1519B7DCD15A19526",
+    "Members": [
+      "PCL.Core.App.Essentials.UpdateService::MethodDeclaration::Start()"
+    ],
+    "Reason": "Hotfix-9: Preserve release selection and signer policy while correcting rollback/cleanup, shared network use, fetch validation and fallback availability. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarAccountStore.cs",
+    "Sha256": "9BA337C7A925E514E7B53FCBDED31B3E64CB824EAF7ED65AE0E979B1916DA83C",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::CreateIfMissing(string lunarRoot, string localId, string username,\n        string minecraftName, string minecraftUuid, string accessToken, DateTimeOffset? expiresAt,\n        string? refreshToken = null)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::Read(string lunarRoot)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::SetActive(string lunarRoot, string localId)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::UpdateToken(string lunarRoot, string localId, string accessToken,\n        DateTimeOffset? expiresAt, string? refreshToken = null)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::Upsert(string lunarRoot, string localId, string username, string minecraftName,\n        string minecraftUuid, string accessToken, DateTimeOffset? expiresAt, string? refreshToken = null)",
+      "PCL.Core.App.Lunar.LunarAccountStore::MethodDeclaration::Write(string path, JsonObject root)"
+    ],
+    "Reason": "Hotfix-9: Preserve official-compatible Lunar data and native IPC while correcting account serialization, chat ordering, reconnect/cancellation and bounded message handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarIdentityStore.cs",
+    "Sha256": "3E1928BB568DE90345B0C354F4B162EB041E5BFB7F2B8600C56D87B6B7F0ADF9",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Find(string? uuid)",
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Read()",
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Remove(string uuid)",
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Upsert(LunarIdentityAccount account)"
+    ],
+    "Reason": "Hotfix-9: Preserve official-compatible Lunar data and native IPC while correcting account serialization, chat ordering, reconnect/cancellation and bounded message handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.App.Lunar.LunarIdentityStore::MethodDeclaration::Write(IReadOnlyList<LunarIdentityAccount> accounts)"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/App/Lunar/LunarIpcServer.cs",
+    "Sha256": "0C275F558F0073B221E3BB053D75A6151A9CC91377632BAD991D65206CA4C674",
+    "Members": [
+      "PCL.Core.App.Lunar.LunarIpcServer::MethodDeclaration::FrameLoopAsync(LunarIpcConnection connection, CancellationToken token)",
+      "PCL.Core.App.Lunar.LunarIpcServer::MethodDeclaration::HandleConnectionAsync(TcpClient client, CancellationToken token)",
+      "PCL.Core.App.Lunar.LunarIpcServer::MethodDeclaration::StartAsync(\n        int port,\n        string installationId,\n        Func<Guid, CancellationToken, Task<LunarRefreshResult>> refresh,\n        Action<string> log,\n        IReadOnlyList<int>? fallbackPorts = null,\n        ILunarIpcHost? host = null,\n        CancellationToken cancellationToken = default)"
+    ],
+    "Reason": "Hotfix-9: Preserve official-compatible Lunar data and native IPC while correcting account serialization, chat ordering, reconnect/cancellation and bounded message handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.App.Lunar.LunarIpcServer::MethodDeclaration::LooksLikeWebSocketAsync(int port, CancellationToken token)"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/App/Lunar/Social/LunarSocialClient.cs",
+    "Sha256": "52733B58ED8175BA6CDCA3F4F4A771C7B166B6EB8B198637A13BB03BD0A942C4",
+    "Members": [
+      "PCL.Core.App.Lunar.Social.LunarSocialClient::MethodDeclaration::ConnectAsync(string accessToken, LunarUuid uuid, string username,\n        CancellationToken cancellationToken = default)",
+      "PCL.Core.App.Lunar.Social.LunarSocialClient::MethodDeclaration::DisconnectAsync()",
+      "PCL.Core.App.Lunar.Social.LunarSocialClient::MethodDeclaration::DisposeAsync()",
+      "PCL.Core.App.Lunar.Social.LunarSocialClient::MethodDeclaration::ReceiveLoopAsync(ClientWebSocket socket, CancellationToken cancellationToken)"
+    ],
+    "Reason": "Hotfix-9: Preserve official-compatible Lunar data and native IPC while correcting account serialization, chat ordering, reconnect/cancellation and bounded message handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/App/Updates/UpdateSignatureVerifier.cs",
+    "Sha256": "60701F140B2B2927A9B8ED17A6FB5F6B69F9566A5E4F2E1AF780F12F1FF80659",
+    "Members": [
+      "PCL.Core.App.Updates.UpdateSignatureVerifier::MethodDeclaration::_CreateVerifier()"
+    ],
+    "Reason": "Hotfix-9: Preserve release selection and signer policy while correcting rollback/cleanup, shared network use, fetch validation and fallback availability. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.App.Updates.UpdateSignatureVerifier::FieldDeclaration::HttpClient"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/IO/Files.cs",
+    "Sha256": "8365EDB8A449615822D0E287634082A48DDB41C0D4817D720BF6478FE8E5FF51",
+    "Members": [],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.IO.Files::MethodDeclaration::MergeJson(JsonNode target, JsonNode source)"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/IO/Net/Http/HostConnectionHandler.cs",
+    "Sha256": "A06592A5457385E761B8743E8F892E99A63D6FF9E4F62C16090D678C3D4001CC",
+    "Members": [
+      "PCL.Core.IO.Net.Http.HostConnectionHandler::MethodDeclaration::GetConnectionAsync(SocketsHttpConnectionContext context, CancellationToken cancellationToken)",
+      "PCL.Core.IO.Net.Http.HostConnectionHandler::MethodDeclaration::_ConnectToAddressAsync(IPAddress ip, int port, CancellationToken cancellationToken)",
+      "PCL.Core.IO.Net.Http.HostConnectionHandler::MethodDeclaration::_SortAddresses(string host, int port, IPAddress[] addresses, DateTime now)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/IO/PipeComm.cs",
+    "Sha256": "39AEA7267A5BBC4E61F43AF15BD36BB708578F2F205B123D57EE08607EFA5643",
+    "Members": [
+      "PCL.Core.IO.PipeComm::MethodDeclaration::StartPipeServer(string identifier, string pipeName, Func<StreamReader, StreamWriter, Process?, bool> loopCallback, Action? stopCallback = null, bool stopWhenException = false, int[]? allowedProcessId = null)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/IO/Storage/Cache/CacheEvictionService.cs",
+    "Sha256": "07FA057F55B1181824BE99372B31F0B418771942C35BB4506847FD411FFE8C91",
+    "Members": [
+      "PCL.Core.IO.Storage.Cache.CacheEvictionService::MethodDeclaration::Start()",
+      "PCL.Core.IO.Storage.Cache.CacheEvictionService::MethodDeclaration::Stop()",
+      "PCL.Core.IO.Storage.Cache.CacheEvictionService::MethodDeclaration::_EvictAsync(long targetBytes, CancellationToken ct)",
+      "PCL.Core.IO.Storage.Cache.CacheEvictionService::MethodDeclaration::_EvictionLoopAsync(CancellationToken ct)"
+    ],
+    "Reason": "Hotfix-9: Correct component binding, persistent file references, serialized eviction/overwrite, forward-only streams and migrated sliding expiration; preserve existing cache data. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/IO/Storage/Cache/CacheService.cs",
+    "Sha256": "4B6D6FD49344DECFEDD3FBF0C44A358FB92D9CE654F6F5906FEF6D3C584EB62C",
+    "Members": [
+      "PCL.Core.IO.Storage.Cache.CacheService::ConstructorDeclaration::.ctor()",
+      "PCL.Core.IO.Storage.Cache.CacheService::ConstructorDeclaration::.ctor(CacheOptions options)",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::CacheFileAsync(string key, Stream source,\n        CachePolicy? policy = null, CancellationToken ct = default)",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::ClearAsync()",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::DeleteAsync(string key)",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::DeleteByGroupAsync(string groupName)",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::DeleteByTagAsync(string tag)",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::DeleteExpiredAsync()",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::DisposeAsync()",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::GetAsync<T>(string key, CancellationToken ct = default)",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::InitializeAsync()",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::SetAsync<T>(string key, T value, CachePolicy? policy = null,\n            CancellationToken ct = default)",
+      "PCL.Core.IO.Storage.Cache.CacheService::MethodDeclaration::_ComputeExpiry(CachePolicy policy)"
+    ],
+    "Reason": "Hotfix-9: Correct component binding, persistent file references, serialized eviction/overwrite, forward-only streams and migrated sliding expiration; preserve existing cache data. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/IO/Storage/Cache/FileCacheStora.cs",
+    "Sha256": "02DE0391B7DF99C9F6020564EA8E76E83F94D8EA4115CFE71EB661F16AD72AE9",
+    "Members": [
+      "PCL.Core.IO.Storage.Cache.FileCacheStorage::MethodDeclaration::ReleaseAsync(string hash)",
+      "PCL.Core.IO.Storage.Cache.FileCacheStorage::MethodDeclaration::StoreAsync(Stream source, string? knownHash = null)"
+    ],
+    "Reason": "Hotfix-9: Correct component binding, persistent file references, serialized eviction/overwrite, forward-only streams and migrated sliding expiration; preserve existing cache data. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/IO/Storage/Cache/SchemaManager.cs",
+    "Sha256": "9F41A3AB35FEA996336AB90F7F6662055669E6438A4CFCD98379AF479FD1D61D",
+    "Members": [
+      "PCL.Core.IO.Storage.Cache.SchemaManager::FieldDeclaration::CurrentSchemaVersion",
+      "PCL.Core.IO.Storage.Cache.SchemaManager::FieldDeclaration::DdlV1CreateAllTables",
+      "PCL.Core.IO.Storage.Cache.SchemaManager::MethodDeclaration::_ApplyMigrationAsync(SqliteConnection conn, int targetVersion)"
+    ],
+    "Reason": "Hotfix-9: Correct component binding, persistent file references, serialized eviction/overwrite, forward-only streams and migrated sliding expiration; preserve existing cache data. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/IO/Storage/Cache/SqliteCacheStorage.cs",
+    "Sha256": "C33534D554A9D2FAFCC490A6B85107A1EEEE0C49303110BF305AB4D18B6A345C",
+    "Members": [
+      "PCL.Core.IO.Storage.Cache.SqliteCacheStorage::MethodDeclaration::UpsertAsync(CacheEntry entry, CancellationToken ct)",
+      "PCL.Core.IO.Storage.Cache.SqliteCacheStorage::MethodDeclaration::UpsertComponentAsync(ComponentCacheRow row, CancellationToken ct)",
+      "PCL.Core.IO.Storage.Cache.SqliteCacheStorage::MethodDeclaration::_BindEntryParams(SqliteCommand cmd, CacheEntry e)",
+      "PCL.Core.IO.Storage.Cache.SqliteCacheStorage::MethodDeclaration::_ReadEntry(SqliteDataReader r)"
+    ],
+    "Reason": "Hotfix-9: Correct component binding, persistent file references, serialized eviction/overwrite, forward-only streams and migrated sliding expiration; preserve existing cache data. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.IO.Storage.Cache.SqliteCacheStorage::MethodDeclaration::TouchAsync(string key, CancellationToken ct)"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/IO/Storage/HashStorage.cs",
+    "Sha256": "68BBBB8AAD8074D63C30502EA02499B751F2F6DF61C7B3D4B3366C33FAA3040A",
+    "Members": [
+      "PCL.Core.IO.Storage.HashStorage::MethodDeclaration::PutAsync(Stream input, string? hash = null)"
+    ],
+    "Reason": "Hotfix-9: Correct component binding, persistent file references, serialized eviction/overwrite, forward-only streams and migrated sliding expiration; preserve existing cache data. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Link/Bedrock/BedrockService.cs",
+    "Sha256": "8844F9F65613BD15A57A9956A0B56B1414AE6207C7CF6E411463F6AE6B36A12A",
+    "Members": [
+      "PCL.Core.Link.Bedrock.BedrockService::MethodDeclaration::DetectPortable(IEnumerable<string>? directories)",
+      "PCL.Core.Link.Bedrock.BedrockService::MethodDeclaration::IsRunning()",
+      "PCL.Core.Link.Bedrock.BedrockService::MethodDeclaration::RunPowerShell(string script)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Link/McPing/LegacyMcPingService.cs",
+    "Sha256": "4DBE82975B4D0A18176A5251D974F70DA52CFFA36D2DA865B48832CE8EA20E23",
+    "Members": [
+      "PCL.Core.Link.McPing.LegacyMcPingService::MethodDeclaration::PingAsync(CancellationToken cancellationToken = default)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Link/McPing/McPingService.cs",
+    "Sha256": "46A61D902493B5BEA8325815248CCC3898C561DB5B289C23DABF0AC55D5803D8",
+    "Members": [
+      "PCL.Core.Link.McPing.McPingService::MethodDeclaration::_ReadExactAsync(Stream stream, int length, CancellationToken cancellationToken)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Mcp/Analysis/ModJarReader.cs",
+    "Sha256": "6135656DB4D786C59816EFCB8099782406DB59559E8ECD14B1752662C3E47806",
+    "Members": [
+      "PCL.Core.Mcp.Analysis.ModJarReader::MethodDeclaration::ReadForgeToml(ZipArchive archive, string entryName, string loader)"
+    ],
+    "Reason": "Hotfix-9: Restrict MCP credential/configuration, browser-origin and file boundaries while preserving authorized launcher operations and correct JVM argument routing. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Mcp/McpHost.cs",
+    "Sha256": "B131B641BA19C046928290C2CC979474C1E41D9CE1AB7FC5941D8113B36096AD",
+    "Members": [
+      "PCL.Core.Mcp.McpHost::MethodDeclaration::Empty(HttpStatusCode status)",
+      "PCL.Core.Mcp.McpHost::MethodDeclaration::Init()",
+      "PCL.Core.Mcp.McpHost::MethodDeclaration::Json(object? payload, HttpStatusCode status = HttpStatusCode.OK)"
+    ],
+    "Reason": "Hotfix-9: Restrict MCP credential/configuration, browser-origin and file boundaries while preserving authorized launcher operations and correct JVM argument routing. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.Mcp.McpHost::FieldDeclaration::CorsOrigin",
+      "PCL.Core.Mcp.McpHost::MethodDeclaration::CorsHeaders()"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/Mcp/McpServerService.cs",
+    "Sha256": "D1E3E440E60554C4547FA7E0A4EFD433CB4B7D2BE2E11B67D64AD6724CFD3101",
+    "Members": [],
+    "Reason": "Hotfix-9: Restrict MCP credential/configuration, browser-origin and file boundaries while preserving authorized launcher operations and correct JVM argument routing. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.Mcp.McpServerService::MethodDeclaration::BuildClientConfig(McpOptions? options = null)"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/Mcp/Tools/AnalysisTools.cs",
+    "Sha256": "0E405F7B480E762FD3CC241F92D6013F0628DEF31BA8ECAC8A0FDB36D3F0F983",
+    "Members": [
+      "PCL.Core.Mcp.Tools.AnalysisTools::MethodDeclaration::RegisterAnalyzeCrash(McpServerCatalog catalog)"
+    ],
+    "Reason": "Hotfix-9: Restrict MCP credential/configuration, browser-origin and file boundaries while preserving authorized launcher operations and correct JVM argument routing. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Mcp/Tools/GameFileTools.cs",
+    "Sha256": "9F2664F4E5D18BADD47D9B62246BA74E08F8F3AB097C49F769AFB37B9D3F16ED",
+    "Members": [
+      "PCL.Core.Mcp.Tools.GameFileTools::MethodDeclaration::RegisterInstallMod(McpServerCatalog catalog)"
+    ],
+    "Reason": "Hotfix-9: Restrict MCP credential/configuration, browser-origin and file boundaries while preserving authorized launcher operations and correct JVM argument routing. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Mcp/Tools/GameTools.cs",
+    "Sha256": "DD79871756D9C052ED9E961BBB0F2C4FB85DD613E2FDA74B9F8A6CCF741D2531",
+    "Members": [
+      "PCL.Core.Mcp.Tools.GameTools::MethodDeclaration::Register(McpServerCatalog catalog)"
+    ],
+    "Reason": "Hotfix-9: Restrict MCP credential/configuration, browser-origin and file boundaries while preserving authorized launcher operations and correct JVM argument routing. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Mcp/Tools/McpConfigGuard.cs",
+    "Sha256": "A716BB4CB1546824CFBAE7031B0CF057FD96F4ACCA8D305A761E42004B6B3E16",
+    "Members": [
+      "PCL.Core.Mcp.Tools.McpConfigGuard::FieldDeclaration::ProtectedKeys",
+      "PCL.Core.Mcp.Tools.McpConfigGuard::FieldDeclaration::SecretKeys"
+    ],
+    "Reason": "Hotfix-9: Restrict MCP credential/configuration, browser-origin and file boundaries while preserving authorized launcher operations and correct JVM argument routing. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Minecraft/IdentityModel/Extensions/Pkce/PkceClient.cs",
+    "Sha256": "B35A47BF7E680C37B73725F74DEE1917DEB4B1C7831230BC8150DE555C1F8F59",
+    "Members": [
+      "PCL.Core.Minecraft.IdentityModel.Extensions.Pkce.PkceClient::MethodDeclaration::GetAuthorizeUrl(string[] scopes, string state, Dictionary<string, string>? extData)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Minecraft/Java/JavaManager.cs",
+    "Sha256": "919C71E4F13836F5BC65D4C8CB34191ABF3FB2B3BD8D4942DC04B9A8690FBAD5",
+    "Members": [
+      "PCL.Core.Minecraft.JavaManager::FieldDeclaration::_javaEntrys",
+      "PCL.Core.Minecraft.JavaManager::MethodDeclaration::AddOrGet(string javaExePath)",
+      "PCL.Core.Minecraft.JavaManager::MethodDeclaration::CheckAllAvailability()",
+      "PCL.Core.Minecraft.JavaManager::MethodDeclaration::ReadConfig()",
+      "PCL.Core.Minecraft.JavaManager::MethodDeclaration::ScanJavaAsync(bool force = false)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Minecraft/Packs/DurableFileTransaction.cs",
+    "Sha256": "B0FE8142988CB52CA2F9530B12F3461C3DEDD6C7CFD319A57492C9D2A9A0D3B3",
+    "Members": [
+      "PCL.Core.Minecraft.Packs.DurableFileTransaction::MethodDeclaration::Apply(string storageDirectory, IReadOnlyDictionary<string, string> allowedRoots,\n        IReadOnlyList<TransactionFileChange> changes, CancellationToken token = default,\n        Action<int, int>? progress = null)",
+      "PCL.Core.Minecraft.Packs.DurableFileTransaction::MethodDeclaration::Recover(string storageDirectory, IReadOnlyDictionary<string, string> allowedRoots)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Minecraft/Packs/PackUpdateTransaction.cs",
+    "Sha256": "F79DD13342A83C21F38DAADA6240C2E5F83C733352C371F8B9702CA368AE45F2",
+    "Members": [
+      "PCL.Core.Minecraft.Packs.PackUpdateTransaction::MethodDeclaration::Apply(PackUpdatePlan plan, CancellationToken cancellationToken = default,\n        Action<int, int>? progress = null, Action? commitMetadata = null)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Minecraft/Profile/ProfileService.cs",
+    "Sha256": "7CB3A5A5F3FCB32105F9EA214E9CAE630B6F2AADDA9292C21B43E8E44D61ECC1",
+    "Members": [
+      "PCL.Core.Minecraft.Profile.ProfileService::MethodDeclaration::ApplyAuthenticationResult(AuthenticationResult result, McProfile? existing = null, bool select = true)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Minecraft/WorldPersistence/WorldBackupService.cs",
+    "Sha256": "EF6A7EE9D9A6B386E44924BB2FC70204B7F5AB5A2FB53EFB2FD92196F23B4946",
+    "Members": [
+      "PCL.Core.Minecraft.Backups.BackupArchive::MethodDeclaration::Restore(string storePath, string snapshotId, string destinationPath, BackupSnapshotKind kind,\n        bool preserveSaves, bool preserveLauncherData, CancellationToken cancellationToken)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Minecraft/Yggdrasil/ApiLocation.cs",
+    "Sha256": "A84FB701E87CDCFA70B6BB7A38538E654DD1F22DC441D7D78ABEB9FEBA0D7820",
+    "Members": [
+      "PCL.Core.Minecraft.Yggdrasil.ApiLocation::MethodDeclaration::TryRequestAsync(string address)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Plugins/PluginRuntimeManager.HostServices.cs",
+    "Sha256": "5B023DD1B90774FC43DFFF258A9B57A8F2566C43E450B3C203A225945501EADC",
+    "Members": [
+      "PCL.Core.Plugins.PluginRuntimeManager+PluginContext::PropertyDeclaration::Ui",
+      "PCL.Core.Plugins.PluginRuntimeManager+PluginNetwork::MethodDeclaration::SendAsync(HttpMethod method, Uri uri, string? content,\n            string contentType, IReadOnlyDictionary<string, string> headers, TimeSpan? timeout = null,\n            CancellationToken cancellationToken = default)",
+      "PCL.Core.Plugins.PluginRuntimeManager+PluginUi::MethodDeclaration::RegisterPage(string id, string title, Func<System.Windows.FrameworkElement> createView,\n            PluginPageLifecycle lifecycle)",
+      "PCL.Core.Plugins.PluginRuntimeManager+PluginUi::MethodDeclaration::UnregisterPage(string id)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Plugins/PluginRuntimeManager.MarketAndLifecycle.cs",
+    "Sha256": "2F0F9508D06753D2B4C138AEB5AC59ADF1F29969C1D51D9B197BE2141FD593A2",
+    "Members": [],
+    "Reason": "Hotfix-9: Retain the previously reviewed feature and relocation behavior; no new functional change in this file. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.Core.Plugins.PluginRuntimeManager::MethodDeclaration::_ApplyPluginMixinsAsync(Assembly assembly, PluginManifest manifest, PluginState state,\n        CancellationToken cancellationToken)",
+      "PCL.Core.Plugins.PluginRuntimeManager::MethodDeclaration::_ReadMixinConfigurationAsync(Assembly assembly, string relativePath,\n        CancellationToken cancellationToken)"
+    ]
+  },
+  {
+    "SourcePath": "PCL.Core/Plugins/PluginRuntimeManager.PackagePreparationAndRecovery.cs",
+    "Sha256": "D47FAE01987E6AC7223DE21DAB7E7D99515BF15CE8DF3FA51A43D0BC84E04817",
+    "Members": [
+      "PCL.Core.Plugins.PluginRuntimeManager::MethodDeclaration::_PreparePluginAsync(string directory, PluginManifest manifest, PluginState state,\n        CancellationToken cancellationToken)",
+      "PCL.Core.Plugins.PluginRuntimeManager::MethodDeclaration::_ValidateId(string id)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/UI/Controls/BlurBorder.cs",
+    "Sha256": "E9D59891CB3A08421FC66E48DF69CF5787512FE2E48E85D4DDDB69E7A9C59CB0",
+    "Members": [
+      "PCL.Core.UI.Controls.BlurBorder::MethodDeclaration::OnVisualParentChanged(DependencyObject oldParentObject)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/UI/Controls/MotdRenderer.xaml.cs",
+    "Sha256": "03E1F7559A9E4BF3D0F799F4D3A6F8A46C8FE778EF5CB1C2479755B701016F96",
+    "Members": [
+      "PCL.Core.UI.Controls.MotdRenderer::ConstructorDeclaration::.ctor()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/UI/Controls/Tooltip.cs",
+    "Sha256": "E1BB209BBB97FEE96E27F2E058BAC6A2F57680D8BCB7C742115B9073304D97E2",
+    "Members": [
+      "PCL.Core.UI.Controls.Tooltip::MethodDeclaration::_AttachTransparentHook()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/UI/Controls/WaterfallPanel.cs",
+    "Sha256": "D136D0217528176E4C8B1F1E17F22F48966DF665EA12EA52725409AA870A0F49",
+    "Members": [
+      "PCL.Core.UI.Controls.WaterfallPanel::MethodDeclaration::MeasureOverride(Size availableSize)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/UI/Converters/NColorConverter.cs",
+    "Sha256": "C81E7D554C0AFB8133FA8AFC5316ABCF451B20EFF15CDE330B16784FBFC9754E",
+    "Members": [
+      "PCL.Core.UI.Converters.NColorConverter::MethodDeclaration::ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Utils/Encryption/AesCbcProvider.cs",
+    "Sha256": "2DA7D329F27F5E540EC55B5F7B10DC271B5B34F16625DEB5A5BAF71CDCCE7EA7",
+    "Members": [
+      "PCL.Core.Utils.Encryption.AesCbcProvider::MethodDeclaration::Decrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Utils/Exts/StringExtension.cs",
+    "Sha256": "8883514823F296BEB82E2701D67A2F3CAABE93583148150274F64A43ACCE19CD",
+    "Members": [
+      "PCL.Core.Utils.Exts.StringExtension+::MethodDeclaration::FromB64ToB64UrlSafe()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "PCL.Core/Utils/Secret/Identify.cs",
+    "Sha256": "D0328CA136A7577E392EB5A57C8171ED61A7EDDCD6C4275C45107F203CF15326",
+    "Members": [
+      "PCL.Core.Utils.Secret.Identify::MethodDeclaration::_getLauncherId()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Application.xaml.cs",
+    "Sha256": "FB8A64C9D79980D54040FECAE5158D7D7D4B1270EBE83A9507070D24619F8495",
+    "Members": [
+      "PCL.Application::ConstructorDeclaration::.ctor()",
+      "PCL.Application::MethodDeclaration::Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.FileDropHandling.cs",
+    "Sha256": "42B121DB7490C0EE78FF503B522D1B26D734620299798E2B33E525AAEE399D48",
+    "Members": [
+      "PCL.FormMain+PageSubType::enum",
+      "PCL.FormMain+PageType::enum",
+      "PCL.FormMain::MethodDeclaration::FileDrag(IEnumerable<string> filePathList)",
+      "PCL.FormMain::MethodDeclaration::FrmMain_Drop(object sender, DragEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::HandleDrag(object sender, DragEventArgs e)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.PageNavigation.cs",
+    "Sha256": "4E01A370C5623844EC73F8EC7F18DE5CF13D5974D9850CCD79031E75A7A166C9",
+    "Members": [
+      "PCL.FormMain+PageStackData::MethodDeclaration::Equals(object other)",
+      "PCL.FormMain::MethodDeclaration::BtnTitleSelect_Click(MyRadioButton sender, bool raiseByMouse)",
+      "PCL.FormMain::MethodDeclaration::PageChange(PageStackData stack, PageSubType subType = PageSubType.Default)",
+      "PCL.FormMain::MethodDeclaration::PageChangeActual(PageStackData stack, PageSubType subType)",
+      "PCL.FormMain::PropertyDeclaration::PageCurrentSub"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+    "Sha256": "24F56EF6ADEA23C2EEE69CF264EC9ED8FFAAF6F6263F9D5EC4919C61A3496D12",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::FormMain_KeyDown(object sender, KeyEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::GetTitleLeftReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::GetTitleRightReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::IsNavigationFeatureHidden(int id)",
+      "PCL.FormMain::MethodDeclaration::PanTitle_SizeChanged(object sender, EventArgs e)",
+      "PCL.FormMain::MethodDeclaration::ParseCollapsedNavigationIds(string? value)",
+      "PCL.FormMain::MethodDeclaration::RefreshNavigationOverflow()",
+      "PCL.FormMain::MethodDeclaration::UpdateNavigationOverflowPosition()",
+      "PCL.FormMain::MethodDeclaration::_SizeWndProc(nint hWnd, int msg, nint wParam, nint lParam, ref bool handled)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.xaml.cs",
+    "Sha256": "17B2A9C4C16D7EB2DFFF128CE7433D3B5C7553F10FBD1A0995FFB89C8ED63A56",
+    "Members": [
+      "PCL.FormMain::ConstructorDeclaration::.ctor()",
+      "PCL.FormMain::MethodDeclaration::FormMain_Loaded()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Base/ModBase.UserInterface.SetLaunchFont.cs",
+    "Sha256": "2E347A4B5987222C4005ACB17EEC3995CC27A1FDF7F801CB1A6071E36028D7C1",
+    "Members": [
+      "PCL.ModBase::MethodDeclaration::GetObjectFromXML(string str, out XamlEventSanitizer.SanitizeResult sanitizeResult)"
+    ],
+    "Reason": "Hotfix-9: Preserve valid custom-page controls, translated events and download argument order while removing whole invalid event nodes and checking external XAML and download destinations. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Event/CustomEvent.cs",
+    "Sha256": "AA40500025B618315F50B02F6E3DF047D2956CA976AD8DC89A141AE4921EEBF8",
+    "Members": [
+      "PCL.CustomEvent::MethodDeclaration::_DownloadFile(string arg, EventType _)"
+    ],
+    "Reason": "Hotfix-9: Preserve valid custom-page controls, translated events and download argument order while removing whole invalid event nodes and checking external XAML and download destinations. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Event/EventTypeMapper.cs",
+    "Sha256": "52D5E8E82E0085DD6BEF7C2780CCBFD4C2A8450EE4CC9047B9AC61EEE3BAC2A1",
+    "Members": [
+      "PCL.EventTypeMapper::MethodDeclaration::TryToEnglish(string chineseName, out string englishName)"
+    ],
+    "Reason": "Hotfix-9: Preserve valid custom-page controls, translated events and download argument order while removing whole invalid event nodes and checking external XAML and download destinations. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Event/XamlEventSanitizer.cs",
+    "Sha256": "0929B71C96BDE120B5AC101E959994476C009958ED42457CDC5B93F8DE5E508D",
+    "Members": [
+      "PCL.XamlEventSanitizer::MethodDeclaration::Sanitize(string xaml)"
+    ],
+    "Reason": "Hotfix-9: Preserve valid custom-page controls, translated events and download argument order while removing whole invalid event nodes and checking external XAML and download destinations. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.XamlEventSanitizer::MethodDeclaration::CustomEventTypePropertyElementRegex()",
+      "PCL.XamlEventSanitizer::MethodDeclaration::EventTypeAttributeRegex()",
+      "PCL.XamlEventSanitizer::MethodDeclaration::EventTypePropertyElementRegex()",
+      "PCL.XamlEventSanitizer::MethodDeclaration::FindMatchingCloseTag(string text, string elementName)",
+      "PCL.XamlEventSanitizer::MethodDeclaration::LocalCustomEventOpenTagRegex()",
+      "PCL.XamlEventSanitizer::MethodDeclaration::LocalCustomEventSelfClosingRegex()",
+      "PCL.XamlEventSanitizer::MethodDeclaration::LocalCustomEventTypeAttributeRegex()",
+      "PCL.XamlEventSanitizer::MethodDeclaration::RemoveElementsForTypes(List<string> types, ref string sanitized)",
+      "PCL.XamlEventSanitizer::MethodDeclaration::RemoveElementsWithEventType(string xaml, string eventTypeValue, List<string> trackingList)",
+      "PCL.XamlEventSanitizer::MethodDeclaration::ReplaceEventType(Match match, string rawValue, SanitizeResult result)",
+      "PCL.XamlEventSanitizer::MethodDeclaration::ReplaceOrRemovePropertyElement(\n            Match match, string rawValue, SanitizeResult result)",
+      "PCL.XamlEventSanitizer::MethodDeclaration::SetterEventTypePropertyFirstRegex()",
+      "PCL.XamlEventSanitizer::MethodDeclaration::SetterEventTypeValueFirstRegex()",
+      "PCL.XamlEventSanitizer::MethodDeclaration::_IsBadType(string rawValue, SanitizeResult result)",
+      "PCL.XamlEventSanitizer::MethodDeclaration::_RemoveBadCustomEventElement(\n            Match match, string rawValue, SanitizeResult result)",
+      "PCL.XamlEventSanitizer::MethodDeclaration::_ReplaceSetter(Match match, string rawValue, SanitizeResult result)"
+    ]
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Lunar/ModLunar.ConfigurationAndAccountSelection.cs",
+    "Sha256": "95887BC596B653402B620FDAA78C5D54C099C35422BEF6739DB60C34DC28FF10",
+    "Members": [
+      "PCL.ModLunar::MethodDeclaration::Launch()",
+      "PCL.ModLunar::MethodDeclaration::Log(string message)",
+      "PCL.ModLunar::PropertyDeclaration::DefaultGameDirectory"
+    ],
+    "Reason": "Hotfix-9: Preserve official-compatible Lunar data and native IPC while correcting account serialization, chat ordering, reconnect/cancellation and bounded message handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.ModLunar::MethodDeclaration::RefreshVersionsAsync()"
+    ]
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModBedrockInstaller.cs",
+    "Sha256": "29FADE2742294C755F2A69DADFD0B3457F2C16055C683436BEACB9E17F519E2B",
+    "Members": [
+      "PCL.ModBedrockInstaller::MethodDeclaration::InstallUwp(string packagePath, string versionId, Action<string>? report = null)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModJava.cs",
+    "Sha256": "9736CE9B059E0A8B4E3F58FC0B0D68C97D39ECCD3BC5147C0D66A3147EAC0D79",
+    "Members": [
+      "PCL.ModJava::MethodDeclaration::GetInstanceJavaPreference(McInstance instance)",
+      "PCL.ModJava::MethodDeclaration::GetJavaDownloadLoader()"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.JavaConstraints.cs",
+    "Sha256": "C5F3F6FEC978433BD4C2752B559881C9FDC91536D1C3046A5A4D106A861B7EAA",
+    "Members": [
+      "PCL.ModLaunch::MethodDeclaration::ResolveJavaConstraints(McInstance instance)"
+    ],
+    "Reason": "Hotfix-9: Retain the previously reviewed feature and relocation behavior; no new functional change in this file. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModLaunch.NativeExtraction.McLaunchNatives.cs",
+    "Sha256": "FA3554E52F9460A94D0AF8E1AC79335F60A9FE6FA8B886F0B149E5BE8CED1BC5",
+    "Members": [
+      "PCL.ModLaunch::MethodDeclaration::McLaunchNatives(ModLoader.LoaderTask<List<ModLibrary.McLibToken>, int> loader)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModModpack.CurseForgeImport.cs",
+    "Sha256": "32D4A52C9E8E8974EC6BBF39A41FDFFBFD7E192C43EE8E80F0E26B10AF6603F7",
+    "Members": [
+      "PCL.ModModpack::MethodDeclaration::InstallPackCurseForge(string fileAddress, ZipArchive archive,\n        string archiveBaseFolder, string instanceName = null, string logo = null, string resourceId = null,\n        bool isOnlineInstall = false, bool forceIsolated = false)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModWatcher.cs",
+    "Sha256": "4BFBEA98E2CAED61CD48000AAAE8227AE07A9CD174DB430E6BAA6CA3A3F8BB18",
+    "Members": [
+      "PCL.ModWatcher+Watcher::ConstructorDeclaration::.ctor(ModLoader.LoaderTask<Process, int> loader, McInstance version, string windowTitle,\n            string jStackPath, bool outputRealTime = false)",
+      "PCL.ModWatcher+Watcher::MethodDeclaration::CheckAlive(Process p)",
+      "PCL.ModWatcher+Watcher::MethodDeclaration::LogReceived(object sender, DataReceivedEventArgs e)",
+      "PCL.ModWatcher+Watcher::MethodDeclaration::TimerLog()"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/XvcContainer.cs",
+    "Sha256": "6132CCB5368D31C1C3AC896D0D0882F2DD15F01C2EC08178B8F0F2816339EFF5",
+    "Members": [
+      "PCL.XvcContainer::MethodDeclaration::Extract(string outputDirectory, XvcContentKey key,\n        Action<string, int, int>? onProgress, CancellationToken token)",
+      "PCL.XvcContainer::MethodDeclaration::ExtractRegion(string outputDirectory, XvcDecoder decoder, uint regionId,\n        ulong regionStartOffset, ulong regionLength, uint startSegmentIndex, bool shouldDecrypt,\n        Action<string, int, int>? onProgress, CancellationToken token)",
+      "PCL.XvcContainer::MethodDeclaration::ReadStruct<T>(ReadOnlySpan<byte> bytes)",
+      "PCL.XvcContainer::MethodDeclaration::ReadStructs<T>(ReadOnlySpan<byte> bytes, int count)"
+    ],
+    "Reason": "Hotfix-9: Preserve launch/install and existing metadata behavior while correcting audited file boundaries, Java/process lifetime, encoding and failure-state handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/ModMcp.cs",
+    "Sha256": "F6758FB7C63FBC541EFCBF21BC669B57D03893D8E31F970ABA28B536546120EA",
+    "Members": [
+      "PCL.ModMcp::MethodDeclaration::FindInstance(string name)"
+    ],
+    "Reason": "Hotfix-9: Restrict MCP credential/configuration, browser-origin and file boundaries while preserving authorized launcher operations and correct JVM argument routing. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/ModMusic.cs",
+    "Sha256": "A1C4E0B09D135FD578B5EC8C04B0F003B9B4E823B695750685D3DF46EDE7E12E",
+    "Members": [
+      "PCL.ModMusic::MethodDeclaration::DequeueNextMusicAddress()",
+      "PCL.ModMusic::MethodDeclaration::MusicListInit(bool forceReload, string preventFirst = null)",
+      "PCL.ModMusic::MethodDeclaration::MusicLoop(bool isFirstLoad = false)",
+      "PCL.ModMusic::MethodDeclaration::MusicRefreshUI()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/ModVideoBack.cs",
+    "Sha256": "7B662AC46E8688562D1E61DC7908E99A0762346D8FF6A061A6329A12D0F994EF",
+    "Members": [
+      "PCL.ModVideoBack::MethodDeclaration::VideoPlay()",
+      "PCL.ModVideoBack::MethodDeclaration::VideoStop()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Network/Downloader/AdaptiveRangeDownloader.cs",
+    "Sha256": "D1E0CEB226EAEF37FA7667E7000B9E22C1B6A893E74947C633231AD04CAC8C11",
+    "Members": [
+      "PCL.Network.AdaptiveRangeDownloader+DownloadSession::MethodDeclaration::TryRecover(DownloadSegment segment, Exception exception)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Network/Downloader/FileDownloader.cs",
+    "Sha256": "46FD6E992E32A9EA47E1E2E8E5E3436B5E1CECDAE5714A1ED06C5F56E0EAA7D0",
+    "Members": [
+      "PCL.Network.FileDownloader::MethodDeclaration::CleanupTempFiles(string localPath)",
+      "PCL.Network.FileDownloader::MethodDeclaration::DownloadCoreAsync(IEnumerable<string> urls, string localPath, bool useBrowserUserAgent,\n        string customUserAgent, CancellationToken cancellationToken, bool enableParallelChunks, DownloadFile? trackedFile)",
+      "PCL.Network.FileDownloader::MethodDeclaration::PromoteTempFile(string localPath)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/AnnouncementService.cs",
+    "Sha256": "68D0DE34FFB31287FB3172DE58F4C1022DB14CE5851C9888D8EE19C1536B66E8",
+    "Members": [
+      "PCL.AnnouncementService::MethodDeclaration::Load()"
+    ],
+    "Reason": "Hotfix-9: Preserve release selection and signer policy while correcting rollback/cleanup, shared network use, fetch validation and fallback availability. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Updates/UpdatesManifestModel.cs",
+    "Sha256": "814F7B233DC120C00704FB122B20C9FDDDF67D9137845E64E849CA3A321D92CD",
+    "Members": [
+      "PCL.UpdatesManifestModel::MethodDeclaration::IsLatest(UpdateChannel channel, UpdateArch arch, SemVer currentVersion, int currentVersionCode)",
+      "PCL.UpdatesManifestModel::MethodDeclaration::_Get(string url, string? accept = null, CancellationToken outerToken = default)",
+      "PCL.UpdatesManifestModel::MethodDeclaration::_PickBest(UpdateChannel channel, UpdateArch arch)"
+    ],
+    "Reason": "Hotfix-9: Preserve release selection and signer policy while correcting rollback/cleanup, shared network use, fetch validation and fallback availability. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": [
+      "PCL.UpdatesManifestModel::MethodDeclaration::GetDownloadLoader(UpdateChannel channel, UpdateArch arch, string output)"
+    ]
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageBedrock/PageBedrockDownload.xaml.cs",
+    "Sha256": "9100E5BE1CE6B8F0AFE90CEF7DC36E78492BDF58C7A413AAA199E13655BA2A26",
+    "Members": [
+      "PCL.PageBedrockDownload+VersionView::MethodDeclaration::CheckInstalled(BedrockVersionEntry entry)",
+      "PCL.PageBedrockDownload::MethodDeclaration::BtnAction_Click(object sender, MouseButtonEventArgs e)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageHelpDetail.xaml.cs",
+    "Sha256": "1A6E2F36F40FC57C2C2319CEB652FE36B9F43408448D44FC562B7DE37C38F197",
+    "Members": [
+      "PCL.PageHelpDetail::MethodDeclaration::ApplyContent(HelpContent content)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageHomepage/PageHomepageNewsView.xaml.cs",
+    "Sha256": "71BF2D3D1F7302CE012A0E0286E194C38EF0BD9CD0690356CD88EEDBE52F5382",
+    "Members": [
+      "PCL.PageHomepageNewsView::ConstructorDeclaration::.ctor()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLaunch/PageLaunchRight.xaml.cs",
+    "Sha256": "69AFD26F79DC424A7E6EB3FEF1FFA11DB280735E5752B6DEAC0526BF1C5B239D",
+    "Members": [
+      "PCL.PageLaunchRight::MethodDeclaration::LoadContent(string content)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLogRight.xaml.cs",
+    "Sha256": "36125C24223CD279C14D3ED8542B1D861C65F96AADDCFD9B6AC9B54FC33E0B05",
+    "Members": [
+      "PCL.PageLogRight::MethodDeclaration::BtnOperationExport_Click(object sender, ModBase.RouteEventArgs e)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.ProgressAndSessionPresentation.cs",
+    "Sha256": "352BFE5A4E2A34F9CB5FD47C5211B086EC64C8FB4AF3338D15518103A41450A1",
+    "Members": [
+      "PCL.PageLunarLaunch::MethodDeclaration::BtnRefreshVersions_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageLunarLaunch::MethodDeclaration::Subscribe()",
+      "PCL.PageLunarLaunch::MethodDeclaration::Unsubscribe()"
+    ],
+    "Reason": "Hotfix-9: Preserve official-compatible Lunar data and native IPC while correcting account serialization, chat ordering, reconnect/cancellation and bounded message handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.SocialLifecycle.cs",
+    "Sha256": "E9DB20A61DB4F502592FFC3659D807BA163250D68B157984FF119534A8093A39",
+    "Members": [
+      "PCL.PageLunarLaunch::MethodDeclaration::AddMessageRow(LunarChatMessage message)",
+      "PCL.PageLunarLaunch::MethodDeclaration::BtnSocialConnect_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageLunarLaunch::MethodDeclaration::OnSocialMessage(string conversationId, LunarChatMessage message)",
+      "PCL.PageLunarLaunch::MethodDeclaration::OpenChatAsync(LunarFriend friend)",
+      "PCL.PageLunarLaunch::MethodDeclaration::RefreshSocial()",
+      "PCL.PageLunarLaunch::MethodDeclaration::SendChatAsync()",
+      "PCL.PageLunarLaunch::MethodDeclaration::UnsubscribeSocial()"
+    ],
+    "Reason": "Hotfix-9: Preserve official-compatible Lunar data and native IPC while correcting account serialization, chat ordering, reconnect/cancellation and bounded message handling. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PagePlugins/PagePluginsMarket.cs",
+    "Sha256": "41F8C62582FCE21CB312B60AE5689D09863A127BBB08672D4AF5F79B60DF1972",
+    "Members": [
+      "PCL.PagePluginsMarket::MethodDeclaration::RefreshAsync()"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PagePlugins/PluginPageSupport.cs",
+    "Sha256": "B9640E140C044592C0F747144591852C7AFBE984DEE084681122AD3A5759B7D7",
+    "Members": [
+      "PCL.PluginPageSupport::MethodDeclaration::PromptRestartForPluginChanges(string message)"
+    ],
+    "Reason": "Hotfix-9: Apply the scoped hotfix-9 audit correction while retaining existing navigation, theme, network and lifecycle behavior documented in the release notes. Exact members and normalized source hash are pinned; see release/notes-1.8.1-hotfix-9.md.",
+    "RemovedMembers": null
+  }
+]

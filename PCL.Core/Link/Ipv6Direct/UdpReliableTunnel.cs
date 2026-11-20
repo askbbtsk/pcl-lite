@@ -320,6 +320,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             public uint Seq { get; } = seq;
             public byte[] Data { get; } = data;
             public long LastSentMs { get; set; } = firstSentMs;
+            public long FirstSentMs { get; } = firstSentMs;
             public int RetransmitCount { get; set; }
             public bool IsClose { get; init; }
         }
@@ -338,6 +339,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         private readonly Channel<byte[]> _incomingChunks = Channel.CreateUnbounded<byte[]>();
 
         private uint _nextSendSeq;
+        private uint _cumulativeSendAck;
         private uint _recvExpectedSeq;
         private uint? _remoteCloseSeq;
         private bool _localClosed;
@@ -534,6 +536,13 @@ public sealed class UdpReliablePeer : IAsyncDisposable
             var released = 0;
             lock (_sendLock)
             {
+                var advanced = unchecked(ack - _cumulativeSendAck);
+                if (advanced > unchecked(_nextSendSeq - _cumulativeSendAck))
+                    return;
+                released = checked((int)advanced);
+                if (advanced > 0 && _localClosed && ack == _nextSendSeq)
+                    released--; // Close has a sequence number but consumes no data-window slot.
+                _cumulativeSendAck = ack;
                 var toRemove = new List<uint>();
                 foreach (var seq in _unacked.Keys)
                 {
@@ -551,8 +560,7 @@ public sealed class UdpReliablePeer : IAsyncDisposable
 
                 foreach (var seq in toRemove)
                 {
-                    if (_unacked.Remove(seq, out var pkt) && !pkt.IsClose)
-                        released++;
+                    _unacked.Remove(seq);
                 }
             }
 
@@ -572,12 +580,19 @@ public sealed class UdpReliablePeer : IAsyncDisposable
         internal async Task PumpRetransmitsAsync(long nowMs)
         {
             List<PendingPacket>? due = null;
+            var timedOut = false;
             lock (_sendLock)
             {
                 var rto = Math.Clamp(_peer.RttMs > 0 ? _peer.RttMs * 2 : 60, 35, 400);
                 foreach (var pkt in _unacked.Values)
                 {
-                    if (nowMs - pkt.LastSentMs >= rto)
+                    if (nowMs - pkt.FirstSentMs >= 60000)
+                    {
+                        timedOut = true;
+                        break;
+                    }
+                    var retryDelay = Math.Min(400, rto << Math.Min(pkt.RetransmitCount, 3));
+                    if (nowMs - pkt.LastSentMs >= retryDelay)
                     {
                         pkt.LastSentMs = nowMs;
                         pkt.RetransmitCount++;
@@ -587,6 +602,11 @@ public sealed class UdpReliablePeer : IAsyncDisposable
                 }
             }
 
+            if (timedOut)
+            {
+                ForceClose();
+                return;
+            }
             if (due is null) return;
             foreach (var pkt in due)
             {

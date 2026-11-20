@@ -247,7 +247,10 @@ public partial class PageBedrockDownload
             view.SetProgress(100d);
             view.SetStatus(Lang.Text("Bedrock.Download.Status.Verifying"));
             if (!ModBedrockDownload.VerifyMd5(packagePath, view.Entry.Md5))
+            {
+                File.Delete(packagePath);
                 throw new InvalidOperationException(Lang.Text("Bedrock.Download.Md5Failed"));
+            }
 
             view.SetStatus(Lang.Text("Bedrock.Download.Status.Installing"));
             var installedPath = await Task.Run(() => Install(view, packagePath));
@@ -554,7 +557,10 @@ public partial class PageBedrockDownload
                     ? ModBedrockGdk.IsInstalled(
                         ModBedrockUwp.GetVersionDirectory(ModBedrockDownload.VersionsDirectory, entry.Key))
                     : Directory.Exists(
-                        ModBedrockUwp.GetVersionDirectory(ModBedrockDownload.ExtractedDirectory, entry.Key));
+                        ModBedrockUwp.GetVersionDirectory(ModBedrockDownload.ExtractedDirectory, entry.Key)) &&
+                      !File.Exists(Path.Combine(
+                        ModBedrockUwp.GetVersionDirectory(ModBedrockDownload.ExtractedDirectory, entry.Key),
+                        ModBedrockInstaller.PendingInstallMarker));
             }
             catch (Exception)
             {

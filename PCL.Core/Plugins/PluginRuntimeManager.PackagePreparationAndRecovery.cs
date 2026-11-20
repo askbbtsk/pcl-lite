@@ -31,7 +31,7 @@ public sealed partial class PluginRuntimeManager
         var assembly = loadContext.LoadFromAssemblyPath(Path.GetFullPath(assemblyPath));
         try
         {
-            state = await _ApplyPluginMixinsAsync(assembly, manifest, state, cancellationToken).ConfigureAwait(false);
+            state = await _ApplyPluginMixinsAsync(directory, assembly, manifest, state, cancellationToken).ConfigureAwait(false);
             var type = assembly.GetType(manifest.EntryType, throwOnError: true, ignoreCase: false)!;
             if (!typeof(IPclPlugin).IsAssignableFrom(type)) throw new InvalidDataException("Plugin entry type must implement IPclPlugin.");
             lock (_sync) _prepared.Add(manifest.Id, new(manifest, loadContext, assembly, type));
@@ -105,7 +105,7 @@ public sealed partial class PluginRuntimeManager
     }
 
 
-    private async Task<PluginState> _ApplyPluginMixinsAsync(Assembly assembly, PluginManifest manifest, PluginState state,
+    private async Task<PluginState> _ApplyPluginMixinsAsync(string directory, Assembly assembly, PluginManifest manifest, PluginState state,
         CancellationToken cancellationToken)
     {
         var paths = new List<string>();
@@ -114,7 +114,7 @@ public sealed partial class PluginRuntimeManager
         foreach (var relativePath in paths.Distinct(StringComparer.Ordinal))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var configuration = await _ReadMixinConfigurationAsync(assembly, relativePath, cancellationToken)
+            var configuration = await _ReadMixinConfigurationAsync(directory, relativePath, cancellationToken)
                 .ConfigureAwait(false);
 
             try
@@ -141,7 +141,7 @@ public sealed partial class PluginRuntimeManager
             {
                 foreach (var relativePath in feature.MixinConfigs)
                 {
-                    var configuration = await _ReadMixinConfigurationAsync(assembly, relativePath, cancellationToken)
+                    var configuration = await _ReadMixinConfigurationAsync(directory, relativePath, cancellationToken)
                         .ConfigureAwait(false);
                     var applicationId = $"{manifest.Id}/experimental/{feature.Id}/{relativePath}";
                     var result = (_mixinRuntime ??= new MixinRuntime("pcl-lite.plugins"))
@@ -178,10 +178,10 @@ public sealed partial class PluginRuntimeManager
     }
 
 
-    private static async Task<MixinConfiguration> _ReadMixinConfigurationAsync(Assembly assembly, string relativePath,
+    private static async Task<MixinConfiguration> _ReadMixinConfigurationAsync(string directory, string relativePath,
         CancellationToken cancellationToken)
     {
-        var path = Path.Combine(Path.GetDirectoryName(assembly.Location)!, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        var path = Path.Combine(directory, relativePath.Replace('/', Path.DirectorySeparatorChar));
         try
         {
             await using var stream = File.OpenRead(path);
@@ -663,7 +663,8 @@ public sealed partial class PluginRuntimeManager
 
     private static void _ValidateId(string id)
     {
-        if (string.IsNullOrWhiteSpace(id) || id.Length > 64 || id.Any(c => !(char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c is '.' or '-')))
+        if (string.IsNullOrWhiteSpace(id) || id.Length > 64 || id.EndsWith('.') ||
+            id.Any(c => !(char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c is '.' or '-')))
             throw new ArgumentException("Invalid plugin id.", nameof(id));
     }
 

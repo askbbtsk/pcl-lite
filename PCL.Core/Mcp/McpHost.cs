@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -65,8 +66,6 @@ public static class McpDefaults
 /// </summary>
 public sealed class McpHost : HttpServer
 {
-    private const string CorsOrigin = "*";
-
     private static readonly JsonSerializerOptions CompactJson = new(JsonCompat.SerializerOptions)
     {
         WriteIndented = false,
@@ -107,14 +106,63 @@ public sealed class McpHost : HttpServer
 
     protected override void Init()
     {
-        Register(HttpMethod.Post, McpDefaults.EndpointPath, HandlePostAsync);
-        Register(HttpMethod.Get, McpDefaults.EndpointPath, HandleGetAsync);
-        Register(HttpMethod.Get, "/health", HandleHealthAsync);
-        Register(HttpMethod.Options, "*", _ => Task.FromResult(Empty(HttpStatusCode.NoContent)));
-        Register(HttpMethod.Get, "/", HandleHealthAsync);
+        Register(HttpMethod.Post, McpDefaults.EndpointPath, _WrapOrigin(HandlePostAsync));
+        Register(HttpMethod.Get, McpDefaults.EndpointPath, _WrapOrigin(HandleGetAsync));
+        Register(HttpMethod.Get, "/health", _WrapOrigin(HandleHealthAsync));
+        Register(HttpMethod.Options, "*", _WrapOrigin(HandleOptionsAsync));
+        Register(HttpMethod.Get, "/", _WrapOrigin(HandleHealthAsync));
     }
 
     #region HTTP 入口
+
+    private static Func<HttpListenerRequest, Task<HttpRouteResponse>> _WrapOrigin(
+        Func<HttpListenerRequest, Task<HttpRouteResponse>> handler)
+        => async request =>
+        {
+            var origin = request.Headers["Origin"];
+            if (!string.IsNullOrWhiteSpace(origin) && !IsAllowedBrowserOrigin(origin))
+                return Empty(HttpStatusCode.Forbidden);
+
+            var response = await handler(request).ConfigureAwait(false);
+            response.Headers ??= new Dictionary<string, string>();
+            response.Headers["Cache-Control"] = "no-store";
+            if (!string.IsNullOrWhiteSpace(origin))
+            {
+                response.Headers["Access-Control-Allow-Origin"] = origin;
+                response.Headers["Access-Control-Allow-Headers"] =
+                    "Content-Type, Authorization, X-Mcp-Token, Mcp-Session-Id";
+                response.Headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS";
+                response.Headers["Vary"] = "Origin";
+            }
+            return response;
+        };
+
+    internal static bool IsAllowedBrowserOrigin(string origin)
+    {
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
+            uri.Scheme is not ("http" or "https") ||
+            !string.IsNullOrEmpty(uri.UserInfo) ||
+            uri.AbsolutePath != "/" ||
+            !string.IsNullOrEmpty(uri.Query) ||
+            !string.IsNullOrEmpty(uri.Fragment))
+            return false;
+
+        if (string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase) ||
+            uri.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return IPAddress.TryParse(uri.Host, out var address) &&
+               IPAddress.IsLoopback(address);
+    }
+
+    private static Task<HttpRouteResponse> HandleOptionsAsync(HttpListenerRequest request)
+    {
+        var requestedMethod = request.Headers["Access-Control-Request-Method"];
+        return Task.FromResult(
+            requestedMethod is null or "GET" or "POST"
+                ? Empty(HttpStatusCode.NoContent)
+                : Empty(HttpStatusCode.MethodNotAllowed));
+    }
 
     private Task<HttpRouteResponse> HandleHealthAsync(HttpListenerRequest request)
     {
@@ -603,8 +651,7 @@ public sealed class McpHost : HttpServer
 
     private static HttpRouteResponse Empty(HttpStatusCode status) => new()
     {
-        StatusCode = status,
-        Headers = CorsHeaders()
+        StatusCode = status
     };
 
     private static HttpRouteResponse Unauthorized()
@@ -668,17 +715,8 @@ public sealed class McpHost : HttpServer
 
         var response = HttpRouteResponse.Text(text, "application/json; charset=utf-8", Encoding.UTF8);
         response.StatusCode = status;
-        response.Headers = CorsHeaders();
         return response;
     }
-
-    private static Dictionary<string, string> CorsHeaders() => new()
-    {
-        ["Access-Control-Allow-Origin"] = CorsOrigin,
-        ["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Mcp-Token, Mcp-Session-Id",
-        ["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS",
-        ["Cache-Control"] = "no-store"
-    };
 
     #endregion
 }

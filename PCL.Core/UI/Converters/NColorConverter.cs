@@ -26,7 +26,8 @@ public class NColorConverter : TypeConverter
     {
         if (value is NColor color && destinationType == typeof(string))
         {
-            return $"#{color.R:X2}{color.G:X2}{color.B:X2}{color.A:X2}";
+            System.Windows.Media.Color value8 = color;
+            return $"#{value8.R:X2}{value8.G:X2}{value8.B:X2}{value8.A:X2}";
         }
         return base.ConvertTo(context, culture, value, destinationType);
     }

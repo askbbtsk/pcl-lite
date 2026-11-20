@@ -167,13 +167,26 @@ public sealed partial class RpcService
     
     #endregion
 
+    private static string? _ReadRequestPart(TextReader reader, char terminator, int maxLength)
+    {
+        var buffer = new StringBuilder();
+        while (reader.Read() is var value && value >= 0)
+        {
+            if (value == terminator) return buffer.ToString();
+            if (buffer.Length == maxLength) return null;
+            buffer.Append((char)value);
+        }
+        return null;
+    }
+
     private static bool _EchoPipeCallback(StreamReader reader, StreamWriter writer, Process? client)
     {
         try
         {
             // GET/SET/REQ [target]
             // [content]
-            var header = reader.ReadLine(); // 读入请求头
+            var header = _ReadRequestPart(reader, '\n', 8 * 1024)?.TrimEnd('\r');
+            if (header is null) return true;
             Context.Info($"客户端请求: {header}");
 
             var args = header?.Split([' '], 2) ?? []; // 分离请求类型和参数
@@ -183,14 +196,9 @@ public sealed partial class RpcService
             var target = args[1];
 
             // 读入请求内容（可能没有）
-            var buffer = new StringBuilder();
-            var tmp = reader.Read();
-            while (tmp != PipeComm.PipeEndingChar)
-            {
-                buffer.Append((char)tmp);
-                tmp = reader.Read();
-            }
-            var content = buffer.Length == 0 ? null : buffer.ToString();
+            var body = _ReadRequestPart(reader, PipeComm.PipeEndingChar, 4 * 1024 * 1024);
+            if (body is null) return true;
+            var content = body.Length == 0 ? null : body;
 
             switch (type)
             {

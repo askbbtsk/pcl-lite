@@ -839,6 +839,7 @@
     <!-- Event -->
 
     <sys:String x:Key="Event.Download.Confirm">即将从该网址下载文件：&#xA;{0}</sys:String>
+    <sys:String x:Key="Event.Download.ConfirmDestination">下载地址：&#xA;{0}&#xA;&#xA;保存到（可能覆盖已有文件）：&#xA;{1}</sys:String>
     <sys:String x:Key="Event.Error.DownloadUrlRequired">EventData 必须为以 http:// 或 https:// 开头的网址。&#xA;PCL Lite 不支持其他下载协议。</sys:String>
     <sys:String x:Key="Event.Error.ExecutionFailed">事件执行失败（{0}, {1}）</sys:String>
     <sys:String x:Key="Event.Error.FileNotFound">未找到 EventData 指向的本地文件：{0}</sys:String>

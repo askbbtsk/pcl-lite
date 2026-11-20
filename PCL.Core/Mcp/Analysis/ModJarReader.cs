@@ -184,6 +184,9 @@ public static class ModJarReader
         string modId = "", name = "", version = "", description = "", authors = "";
         var depends = new List<string>();
         var section = "";
+        var dependencyId = "";
+        var dependencyRange = "";
+        var dependencyRequired = true;
         var inMultiline = false;
         var multilineKey = "";
         var multilineBuffer = new StringBuilder();
@@ -214,12 +217,14 @@ public static class ModJarReader
 
             if (line.StartsWith("[[", StringComparison.Ordinal))
             {
+                FinishDependency();
                 section = line.Trim('[', ']');
                 continue;
             }
 
             if (line.StartsWith('['))
             {
+                FinishDependency();
                 section = line.Trim('[', ']');
                 continue;
             }
@@ -265,16 +270,23 @@ public static class ModJarReader
                 }
                 else if (section.StartsWith("dependencies", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (k == "modId" && v.Length > 0) depends.Add($"{v} {GetPendingRange()}");
+                    if (k == "modId") dependencyId = v;
+                    else if (k == "versionRange") dependencyRange = v;
+                    else if (k == "mandatory") dependencyRequired = !v.Equals("false", StringComparison.OrdinalIgnoreCase);
+                    else if (k == "type") dependencyRequired = v.Equals("required", StringComparison.OrdinalIgnoreCase);
                 }
             }
+        }
+        FinishDependency();
 
-            string GetPendingRange()
-            {
-                // 依赖段里 versionRange 通常在 modId 之后一行，取最近一次出现的值
-                var match = Regex.Match(text, @"versionRange\s*=\s*""([^""]*)""");
-                return match.Success ? match.Groups[1].Value : "";
-            }
+        void FinishDependency()
+        {
+            if (section.StartsWith("dependencies", StringComparison.OrdinalIgnoreCase) &&
+                dependencyRequired && dependencyId.Length > 0)
+                depends.Add($"{dependencyId} {dependencyRange}".TrimEnd());
+            dependencyId = "";
+            dependencyRange = "";
+            dependencyRequired = true;
         }
 
         if (modId.Length == 0 && name.Length == 0) return null;

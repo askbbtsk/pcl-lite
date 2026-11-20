@@ -63,7 +63,7 @@ public static class FileDownloader
                         enableParallelChunks, trackedFile).ConfigureAwait(false);
                     return;
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     CleanupTempFiles(localPath);
                     throw;
@@ -331,7 +331,6 @@ public static class FileDownloader
     private static void CleanupTempFiles(string localPath)
     {
         var tempPath = localPath + ModNet.NetDownloadEnd;
-        TryDeleteFile(localPath);
         TryDeleteFile(tempPath);
     }
 

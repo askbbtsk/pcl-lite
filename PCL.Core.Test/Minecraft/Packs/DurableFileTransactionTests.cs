@@ -64,6 +64,17 @@ public sealed class DurableFileTransactionTests
     }
 
     [TestMethod]
+    public void TrailingSeparatorDoesNotBreakRollback()
+    {
+        Assert.ThrowsExactly<IOException>(() => DurableFileTransaction.Apply(
+            _storage + Path.DirectorySeparatorChar, Roots, Changes(),
+            progress: (done, _) => { if (done == 1) throw new IOException("simulated failure"); }));
+        Assert.AreEqual("old game", File.ReadAllText(Path.Combine(_game, "mod.jar")));
+        Assert.AreEqual("old metadata", File.ReadAllText(Path.Combine(_metadata, "instance.json")));
+        Assert.AreEqual(0, DurableFileTransaction.Recover(_storage + Path.DirectorySeparatorChar, Roots));
+    }
+
+    [TestMethod]
     public void ExternalEditIsNeverOverwrittenDuringRollbackAndRecoveryEvidenceRemains()
     {
         Assert.ThrowsExactly<AggregateException>(() => DurableFileTransaction.Apply(_storage, Roots, Changes(), progress: (done, _) =>

@@ -433,7 +433,7 @@ public static class ModJava
                     ModBase.DeleteDirectory(lastJavaBaseDir);
                     break;
                 case ModBase.LoadState.Finished:
-                    Javas.ScanJavaAsync().GetAwaiter().GetResult();
+                    Javas.ScanJavaAsync(force: true).GetAwaiter().GetResult();
                     lastJavaBaseDir = null;
                     break;
             }

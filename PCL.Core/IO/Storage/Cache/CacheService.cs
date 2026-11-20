@@ -50,7 +50,8 @@ public class CacheService : ICacheService, IAsyncDisposable
 
         _schemaManager = new SchemaManager($"Data Source={_options.DatabasePath}");
         _db = new SqliteCacheStorage(_options.DatabasePath);
-        _files = new FileCacheStorage(_options.FileCacheRoot, _options.EnableCompression);
+        _files = new FileCacheStorage(_options.FileCacheRoot, _options.EnableCompression)
+            { ReferenceCountAsync = _db.CountFileReferencesAsync };
         _eviction = new CacheEvictionService(_db, _files, _options);
     }
 
@@ -63,7 +64,8 @@ public class CacheService : ICacheService, IAsyncDisposable
         _options = options;
         _schemaManager = new SchemaManager($"Data Source={_options.DatabasePath}");
         _db = new SqliteCacheStorage(_options.DatabasePath);
-        _files = new FileCacheStorage(_options.FileCacheRoot, _options.EnableCompression);
+        _files = new FileCacheStorage(_options.FileCacheRoot, _options.EnableCompression)
+            { ReferenceCountAsync = _db.CountFileReferencesAsync };
         _eviction = new CacheEvictionService(_db, _files, _options);
     }
 
@@ -76,6 +78,8 @@ public class CacheService : ICacheService, IAsyncDisposable
         await _schemaManager.EnsureCurrentSchemaAsync().ConfigureAwait(false);
 
         await _db.CleanupStartupAsync().ConfigureAwait(false);
+        await _files.PruneAsync(await _db.GetAllFileHashesAsync(CancellationToken.None).ConfigureAwait(false))
+            .ConfigureAwait(false);
 
         _eviction.Start();
 
@@ -85,8 +89,10 @@ public class CacheService : ICacheService, IAsyncDisposable
     public async Task SetAsync<T>(string key, T value, CachePolicy? policy = null,
             CancellationToken ct = default)
     {
+        using var lease = await _files.EnterMutationAsync(ct).ConfigureAwait(false);
         _ThrowIfNotReady();
         policy ??= CachePolicy.Default;
+        var previous = await _db.LookupAsync(key, ct).ConfigureAwait(false);
 
         var (bytes, inline) = _Serialize(value);
 
@@ -100,6 +106,8 @@ public class CacheService : ICacheService, IAsyncDisposable
             GroupName = policy.Group ?? string.Empty,
             Priority = (int)policy.Priority,
             ExpiresAt = _ComputeExpiry(policy),
+            SlidingExpiration = policy.SlidingExpiration,
+            AbsoluteExpiresAt = policy.AbsoluteExpiration is { } absolute ? DateTime.UtcNow + absolute : null,
         };
 
         if (inline && bytes.Length <= _options.MaxInlineSize)
@@ -123,6 +131,8 @@ public class CacheService : ICacheService, IAsyncDisposable
         }
 
         await _db.UpsertAsync(entry, ct).ConfigureAwait(false);
+        if (previous?.FileHash is { } oldHash && oldHash != entry.FileHash)
+            await _files.ReleaseAsync(oldHash).ConfigureAwait(false);
 
         _eviction.CheckThreshold();
     }
@@ -130,6 +140,7 @@ public class CacheService : ICacheService, IAsyncDisposable
     /// <inheritdoc/>
     public async Task<CacheResult<T>> GetAsync<T>(string key, CancellationToken ct = default)
     {
+        using var lease = await _files.EnterMutationAsync(ct).ConfigureAwait(false);
         _ThrowIfNotReady();
 
         var entry = await _db.LookupAsync(key, ct).ConfigureAwait(false);
@@ -174,7 +185,10 @@ public class CacheService : ICacheService, IAsyncDisposable
         var value = _Deserialize<T>(data);
 
         // 更新访问时间
-        await _db.TouchAsync(key, ct).ConfigureAwait(false);
+        DateTime? nextExpiry = entry.SlidingExpiration is { } sliding ? DateTime.UtcNow + sliding : null;
+        if (nextExpiry is not null && entry.AbsoluteExpiresAt is { } limit && nextExpiry > limit)
+            nextExpiry = limit;
+        await _db.TouchAsync(key, ct, nextExpiry).ConfigureAwait(false);
 
         return CacheResult<T>.Hit(value, entry.CachedAt);
     }
@@ -191,6 +205,7 @@ public class CacheService : ICacheService, IAsyncDisposable
     /// <inheritdoc/>
     public async Task<bool> DeleteAsync(string key)
     {
+        using var lease = await _files.EnterMutationAsync().ConfigureAwait(false);
         _ThrowIfNotReady();
         var entry = await _db.LookupAsync(key, CancellationToken.None).ConfigureAwait(false);
 
@@ -199,12 +214,13 @@ public class CacheService : ICacheService, IAsyncDisposable
             return false;
         }
 
+        var deleted = await _db.DeleteAsync(key, CancellationToken.None).ConfigureAwait(false);
         if (entry.FileHash is not null)
         {
             await _files.ReleaseAsync(entry.FileHash).ConfigureAwait(false);
         }
 
-        return await _db.DeleteAsync(key, CancellationToken.None).ConfigureAwait(false);
+        return deleted;
     }
 
 
@@ -225,8 +241,10 @@ public class CacheService : ICacheService, IAsyncDisposable
     public async Task<string> CacheFileAsync(string key, Stream source,
         CachePolicy? policy = null, CancellationToken ct = default)
     {
+        using var lease = await _files.EnterMutationAsync(ct).ConfigureAwait(false);
         _ThrowIfNotReady();
         policy ??= CachePolicy.Default;
+        var previous = await _db.LookupAsync(key, ct).ConfigureAwait(false);
 
         var hash = await _files.StoreAsync(source).ConfigureAwait(false);
         var entry = new CacheEntry
@@ -234,15 +252,19 @@ public class CacheService : ICacheService, IAsyncDisposable
             CacheKey = key,
             EntryType = EntryType.FileRef,
             ContentType = "application/octet-stream",
-            DataSize = source.Length,
+            DataSize = source.CanSeek ? source.Length : new FileInfo(_files.GetFilePath(hash)!).Length,
             FileHash = hash,
             ContentHash = hash,
             Tags = policy.Tags ?? "",
             GroupName = policy.Group ?? "",
             Priority = (int)policy.Priority,
             ExpiresAt = _ComputeExpiry(policy),
+            SlidingExpiration = policy.SlidingExpiration,
+            AbsoluteExpiresAt = policy.AbsoluteExpiration is { } absolute ? DateTime.UtcNow + absolute : null,
         };
         await _db.UpsertAsync(entry, ct).ConfigureAwait(false);
+        if (previous?.FileHash is { } oldHash && oldHash != hash)
+            await _files.ReleaseAsync(oldHash).ConfigureAwait(false);
         _eviction.CheckThreshold();
         return hash;
     }
@@ -251,10 +273,12 @@ public class CacheService : ICacheService, IAsyncDisposable
     /// <inheritdoc/>
     public async Task<int> DeleteByGroupAsync(string groupName)
     {
+        using var lease = await _files.EnterMutationAsync().ConfigureAwait(false);
         _ThrowIfNotReady();
 
         // 先收集要被删除的文件 hash（用于清理 FileCacheStore）
         var fileHashes = await _db.GetFileHashesByGroupAsync(groupName, CancellationToken.None).ConfigureAwait(false);
+        var count = await _db.DeleteByGroupAsync(groupName, CancellationToken.None).ConfigureAwait(false);
 
         // 逐个释放文件
         foreach (var hash in fileHashes)
@@ -266,21 +290,26 @@ public class CacheService : ICacheService, IAsyncDisposable
         }
 
         // 删除数据库中的记录
-        return await _db.DeleteByGroupAsync(groupName, CancellationToken.None).ConfigureAwait(false);
+        return count;
     }
 
     /// <inheritdoc/>
-    public Task<int> DeleteByTagAsync(string tag)
+    public async Task<int> DeleteByTagAsync(string tag)
     {
+        using var lease = await _files.EnterMutationAsync().ConfigureAwait(false);
         _ThrowIfNotReady();
-        return _db.DeleteByTagAsync(tag, CancellationToken.None);
+        var count = await _db.DeleteByTagAsync(tag, CancellationToken.None).ConfigureAwait(false);
+        await _files.PruneAsync(await _db.GetAllFileHashesAsync(CancellationToken.None).ConfigureAwait(false)).ConfigureAwait(false);
+        return count;
     }
 
     /// <inheritdoc/>
     public async Task<int> DeleteExpiredAsync()
     {
+        using var lease = await _files.EnterMutationAsync().ConfigureAwait(false);
         _ThrowIfNotReady();
         var count = await _db.DeleteExpiredAsync(DateTime.UtcNow, CancellationToken.None).ConfigureAwait(false);
+        await _files.PruneAsync(await _db.GetAllFileHashesAsync(CancellationToken.None).ConfigureAwait(false)).ConfigureAwait(false);
         _eviction.CheckThreshold();
         return count;
     }
@@ -305,17 +334,8 @@ public class CacheService : ICacheService, IAsyncDisposable
     /// <inheritdoc/>
     public async Task ClearAsync()
     {
+        using var lease = await _files.EnterMutationAsync().ConfigureAwait(false);
         _ThrowIfNotReady();
-
-        // 先释放所有文件引用
-        var fileHashes = await _db.GetAllFileHashesAsync(CancellationToken.None).ConfigureAwait(false);
-        foreach (var hash in fileHashes)
-        {
-            if (hash is not null)
-            {
-                await _files.ReleaseAsync(hash).ConfigureAwait(false);
-            }
-        }
 
         // 清空所有表
         await using var conn = new SqliteConnection($"Data Source={_options.DatabasePath}");
@@ -328,6 +348,7 @@ public class CacheService : ICacheService, IAsyncDisposable
                           VACUUM;
                           """;
         await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        await _files.PruneAsync([]).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -358,10 +379,10 @@ public class CacheService : ICacheService, IAsyncDisposable
     {
         if (policy.AbsoluteExpiration is null && policy.SlidingExpiration is null)
             return null;  // 永不过期
-        if (policy.AbsoluteExpiration is not null)
-            return DateTime.UtcNow + policy.AbsoluteExpiration;
-        // 仅滑动过期——初始也设一个基于滑动过期的过期点
-        return DateTime.UtcNow + policy.SlidingExpiration;
+        var duration = policy.AbsoluteExpiration;
+        if (policy.SlidingExpiration is { } sliding && (duration is null || sliding < duration))
+            duration = sliding;
+        return DateTime.UtcNow + duration;
     }
 
     private static (byte[] bytes, bool isSmall) _Serialize<T>(T value)
@@ -432,7 +453,8 @@ public class CacheService : ICacheService, IAsyncDisposable
 
         _disposed = true;
 
-        _eviction.Stop();
+        await _eviction.StopAsync().ConfigureAwait(false);
+        using var lease = await _files.EnterMutationAsync().ConfigureAwait(false);
 
         try
         {

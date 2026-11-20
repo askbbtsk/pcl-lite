@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
@@ -94,6 +95,22 @@ public sealed partial class SingleInstanceService
         {
             Context.DeclareStopped();
             return;
+        }
+        var args = Basics.CommandLineArguments;
+        if (args.Length >= 2 && args[0] == "--restart-wait" &&
+            int.TryParse(args[1], out var previousPid) && previousPid > 0 && previousPid != Basics.CurrentProcessId)
+        {
+            try
+            {
+                using var previous = Process.GetProcessById(previousPid);
+                if (!previous.WaitForExit(30000))
+                {
+                    Context.Warn("旧启动器尚未退出，取消本次重启。");
+                    Context.RequestExit(1);
+                    return;
+                }
+            }
+            catch (ArgumentException) { /* The previous process already exited. */ }
         }
         _lockStream = SingleInstanceLock.TryAcquire(_LockFilePath, Basics.CurrentProcessId);
         if (_lockStream is not null)

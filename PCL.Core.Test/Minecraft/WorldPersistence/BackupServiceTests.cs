@@ -126,7 +126,7 @@ public sealed class BackupServiceTests
         Write(Path.Combine(instance, "PCLLiteData", "WorldBackups", "existing.zip"), "backup-v2");
         Write(Path.Combine(instance, "PCLLiteData", "new-setting.json"), "keep-current");
 
-        EnvironmentRestorePointService.Restore(restorePoints, point.Id, instance);
+        EnvironmentRestorePointService.Restore(restorePoints, point.Id, instance + Path.DirectorySeparatorChar);
 
         Assert.AreEqual("mod-v1", File.ReadAllText(Path.Combine(instance, "mods", "a.jar")));
         Assert.IsFalse(File.Exists(Path.Combine(instance, "mods", "new.jar")));

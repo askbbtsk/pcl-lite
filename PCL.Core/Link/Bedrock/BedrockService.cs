@@ -395,7 +395,8 @@ public static class BedrockService
 
             foreach (var child in children)
             {
-                var childExe = FindExecutable(child);
+                var childExe = File.Exists(Path.Combine(child, ExecutableName))
+                    ? Path.Combine(child, ExecutableName) : null;
                 if (childExe is not null) list.Add(CreatePortable(childExe));
             }
         }
@@ -465,8 +466,17 @@ public static class BedrockService
 
         using var process = new Process { StartInfo = startInfo };
         process.Start();
-        var output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit(15000);
-        return output.Trim();
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(15000))
+        {
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit();
+            throw new TimeoutException("基岩版安装检测超过 15 秒。");
+        }
+        System.Threading.Tasks.Task.WhenAll(output, error).GetAwaiter().GetResult();
+        if (process.ExitCode != 0)
+            throw new InvalidOperationException($"基岩版安装检测失败（{process.ExitCode}）：{error.Result.Trim()}");
+        return output.Result.Trim();
     }
 }

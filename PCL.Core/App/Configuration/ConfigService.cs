@@ -237,7 +237,7 @@ public sealed partial class ConfigService
                         ArgumentNullException.ThrowIfNull(argument);
                         var dir = Path.GetFullPath(argument.ToString()!);
                         var configPath = Path.Combine(dir, "PCL", "config.v1.yml");
-                        if (!File.Exists(dir)) _TryMigrate(dir, [
+                        if (!File.Exists(configPath)) _TryMigrate(configPath, [
                             new ConfigMigration
                             {
                                 From = Path.Combine(dir, "PCL", "setup.ini"),

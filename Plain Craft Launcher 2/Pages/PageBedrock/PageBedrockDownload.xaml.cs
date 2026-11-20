@@ -26,8 +26,7 @@ namespace PCL;
 /// </summary>
 public partial class PageBedrockDownload
 {
-    /// <summary>同一时间只允许跑一个下载/安装任务，否则进度会互相覆盖。</summary>
-    private static bool _busy;
+    private readonly Dictionary<string, VersionView> _activeVersions = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>列表最多渲染多少行：数据源有 600 多条，全塞进非虚拟化的 ItemsControl 会明显卡顿。</summary>
     private const int MaxRows = 150;
@@ -57,8 +56,6 @@ public partial class PageBedrockDownload
 
     private async Task ReloadAsync(bool force = false)
     {
-        if (_busy) return;
-
         BtnRefresh.IsEnabled = false;
         LabStatus.Text = Lang.Text("Bedrock.Download.Status.Loading");
 
@@ -114,13 +111,17 @@ public partial class PageBedrockDownload
         var shown = matched.Take(MaxRows).ToList();
 
         _views.Clear();
-        foreach (var entry in shown) _views.Add(new VersionView(entry));
+        foreach (var entry in shown) _views.Add(GetVersionView(entry));
 
         LabEmpty.Visibility = _views.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         LabStatus.Text = matched.Count > shown.Count
             ? Lang.Text("Bedrock.Download.Status.LoadedLimited", matched.Count, shown.Count)
             : Lang.Text("Bedrock.Download.Status.Loaded", matched.Count);
     }
+
+    private VersionView GetVersionView(BedrockVersionEntry entry) =>
+        _activeVersions.TryGetValue(ModBedrockDownload.GetPackagePath(entry), out var active)
+            ? active : new VersionView(entry);
 
     /// <summary>只刷新每一行的「已下载 / 已安装」状态，不动列表结构。</summary>
     private void RefreshStates()
@@ -161,6 +162,7 @@ public partial class PageBedrockDownload
 
     private void BtnChooseDir_Click(object sender, MouseButtonEventArgs e)
     {
+        if (_activeVersions.Count != 0) return;
         var folder = SystemDialogs.SelectFolder(Lang.Text("Bedrock.Download.ChooseDir"));
         if (string.IsNullOrWhiteSpace(folder)) return;
 
@@ -200,11 +202,7 @@ public partial class PageBedrockDownload
     {
         if (sender is not FrameworkElement { Tag: VersionView view }) return;
 
-        if (_busy)
-        {
-            HintService.Hint(Lang.Text("Bedrock.Download.Busy"), HintType.Warning);
-            return;
-        }
+        if (view.IsBusy) return;
 
         if (view.Installed)
         {
@@ -215,14 +213,13 @@ public partial class PageBedrockDownload
         // 先把密钥要到手，免得下完 1 GB 才提示解不开
         if (!EnsureCik(view.Entry)) return;
 
-        _busy = true;
-        BtnRefresh.IsEnabled = false;
+        var packagePath = ModBedrockDownload.GetPackagePath(view.Entry);
+        if (!_activeVersions.TryAdd(packagePath, view)) return;
+        BtnChooseDir.IsEnabled = false;
         view.SetBusy(true);
 
         try
         {
-            var packagePath = ModBedrockDownload.GetPackagePath(view.Entry);
-
             if (!File.Exists(packagePath))
             {
                 view.SetStatus(Lang.Text("Bedrock.Download.Status.Resolving"));
@@ -233,20 +230,24 @@ public partial class PageBedrockDownload
 
                 // 下载交给 PCL 自己的下载器：右下角任务栏会显示进度、速度和线程数，
                 // 断流能重试、能中止，也吃得到镜像与代理。这里只同步一下行内进度条。
-                packagePath = await ModBedrockDownload.DownloadWithLoaderAsync(
-                    view.Entry, url,
-                    percent => ModBase.RunInUi(() =>
-                    {
-                        // 取消之后 PCL 的下载线程可能还会推几次进度，别把已经清空的行内状态又写回去
-                        if (!view.IsBusy) return;
-                        view.SetProgress(percent);
-                        view.SetStatus(Lang.Text("Bedrock.Download.Status.Downloading", percent));
-                    }));
+                var downloading = true;
+                try
+                {
+                    packagePath = await ModBedrockDownload.DownloadWithLoaderAsync(
+                        view.Entry, url,
+                        percent => ModBase.RunInUi(() =>
+                        {
+                            if (!view.IsBusy || !downloading) return;
+                            view.SetProgress(percent);
+                            view.SetStatus(Lang.Text("Bedrock.Download.Status.Downloading", percent));
+                        }));
+                }
+                finally { downloading = false; }
             }
 
             view.SetProgress(100d);
             view.SetStatus(Lang.Text("Bedrock.Download.Status.Verifying"));
-            if (!ModBedrockDownload.VerifyMd5(packagePath, view.Entry.Md5))
+            if (!await Task.Run(() => ModBedrockDownload.VerifyMd5(packagePath, view.Entry.Md5)))
             {
                 File.Delete(packagePath);
                 throw new InvalidOperationException(Lang.Text("Bedrock.Download.Md5Failed"));
@@ -265,7 +266,7 @@ public partial class PageBedrockDownload
             // 结果就是解包完了启动页还是看不到新版本。
             ModBedrockRuntime.Refresh(force: true);
         }
-        catch (OperationCanceledException)
+        catch (ModBedrockDownload.DownloadCanceledException)
         {
             // 用户在右下角任务列表里点了 ×。取消是正常操作，不是安装失败：
             // 不弹错误框、不写失败状态，把行内进度和按钮恢复成「可以重新开始」。
@@ -286,8 +287,8 @@ public partial class PageBedrockDownload
         }
         finally
         {
-            _busy = false;
-            BtnRefresh.IsEnabled = true;
+            _activeVersions.Remove(packagePath);
+            BtnChooseDir.IsEnabled = _activeVersions.Count == 0;
         }
     }
 
@@ -305,9 +306,7 @@ public partial class PageBedrockDownload
             case IOException { InnerException: { } inner }:
                 return DescribeError(inner);
             case OperationCanceledException:
-                // 正常取消在 BtnAction_Click 里已经单独接走了，这里只是别把
-                // 英文的 "A task was canceled." 甩到用户脸上
-                return Lang.Text("Bedrock.Download.CancelledShort");
+                return Lang.Text("Bedrock.Download.Interrupted");
             case TimeoutException { InnerException: { } inner }:
                 return DescribeError(inner);
             default:
@@ -491,9 +490,12 @@ public partial class PageBedrockDownload
             private set => SetField(ref _progressVisibility, value);
         }
 
-        public string ActionText => Installed
-            ? Lang.Text("Bedrock.Download.Action.Installed")
-            : Lang.Text("Bedrock.Download.Action.DownloadAndInstall");
+        public string ActionText => IsBusy
+            ? Lang.Text("Bedrock.Download.Action.Working")
+            : Installed ? Lang.Text("Bedrock.Download.Action.Installed")
+                : Lang.Text("Bedrock.Download.Action.DownloadAndInstall");
+
+        public bool CanStart => !IsBusy && !Installed;
 
         public bool Installed { get; private set; }
 
@@ -502,7 +504,11 @@ public partial class PageBedrockDownload
             get => _isBusy;
             private set
             {
-                if (SetField(ref _isBusy, value)) OnPropertyChanged(nameof(ActionText));
+                if (SetField(ref _isBusy, value))
+                {
+                    OnPropertyChanged(nameof(ActionText));
+                    OnPropertyChanged(nameof(CanStart));
+                }
             }
         }
 
@@ -511,6 +517,7 @@ public partial class PageBedrockDownload
         /// <summary>重新读一次本地状态：没下载 / 已下载 / 已安装。</summary>
         public void RefreshState()
         {
+            if (IsBusy) return;
             Installed = CheckInstalled(Entry);
             if (Installed)
                 Status = Lang.Text("Bedrock.Download.State.Installed");
@@ -523,6 +530,7 @@ public partial class PageBedrockDownload
 
             if (Installed || !IsBusy) SetProgress(0d);
             OnPropertyChanged(nameof(ActionText));
+            OnPropertyChanged(nameof(CanStart));
             OnPropertyChanged(nameof(Status));
         }
 

@@ -126,6 +126,7 @@
                                                ToolTip="{Binding Status}" />
                                     <local:MyButton Grid.Column="2" Width="110" Height="30" VerticalAlignment="Center"
                                                     ColorType="Highlight" Text="{Binding ActionText}"
+                                                    IsEnabled="{Binding CanStart}"
                                                     Tag="{Binding}" Click="BtnAction_Click" />
                                 </Grid>
                             </DataTemplate>

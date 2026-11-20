@@ -18,19 +18,21 @@ using PCL.Core.UI.Theme.Packages;
 
 // No Window.Show, screenshots, input simulation, user configuration or game scans.
 // Instantiate production controls against in-memory configuration and render to RAM.
-internal static class Program
+internal static partial class Program
 {
     private const BindingFlags PrivateStatic = BindingFlags.Static | BindingFlags.NonPublic;
     private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
 
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
         try
         {
             InitializeMemoryConfiguration();
             var application = new System.Windows.Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             LoadBuiltInResources(application);
+            CheckBedrockDownloads();
+            if (args.Contains("--bedrock-only", StringComparer.Ordinal)) return 0;
             CheckLearningExampleExport();
             CheckThemeSettingsPlacement();
             CheckLiquidGlassSettings();

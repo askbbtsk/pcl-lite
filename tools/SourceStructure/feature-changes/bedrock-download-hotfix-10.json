@@ -1,0 +1,30 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModBedrockDownload.cs",
+    "Sha256": "B4030E0F5D9C3413300A1EDB8A41EE04AEAB996C8723B58FB0EEFAE10546AE3B",
+    "Members": [
+      "PCL.ModBedrockDownload::MethodDeclaration::DownloadWithLoaderAsync(BedrockVersionEntry entry, string url,\n        Action<double>? onProgress = null, CancellationToken token = default)"
+    ],
+    "Reason": "Hotfix-10: preserve per-version download state across navigation/filtering, allow independent packages concurrently, read actual loader progress, wait for worker cleanup, and classify only explicit task aborts as cancellation. Existing installation checks and downloader network settings are retained. Verified by tools/ThemeSmoke/Program.Bedrock.cs.",
+    "RemovedMembers": null
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageBedrock/PageBedrockDownload.xaml.cs",
+    "Sha256": "DE1CFA14EA00ECC9A379838D7BC75DC636AF19DDA97E37253FF07BD166DD12E0",
+    "Members": [
+      "PCL.PageBedrockDownload+VersionView::MethodDeclaration::CheckInstalled(BedrockVersionEntry entry)",
+      "PCL.PageBedrockDownload+VersionView::MethodDeclaration::RefreshState()",
+      "PCL.PageBedrockDownload+VersionView::PropertyDeclaration::ActionText",
+      "PCL.PageBedrockDownload+VersionView::PropertyDeclaration::IsBusy",
+      "PCL.PageBedrockDownload::MethodDeclaration::ApplyFilter()",
+      "PCL.PageBedrockDownload::MethodDeclaration::BtnAction_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageBedrockDownload::MethodDeclaration::BtnChooseDir_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageBedrockDownload::MethodDeclaration::DescribeError(Exception ex)",
+      "PCL.PageBedrockDownload::MethodDeclaration::ReloadAsync(bool force = false)"
+    ],
+    "Reason": "Hotfix-10: preserve per-version download state across navigation/filtering, allow independent packages concurrently, read actual loader progress, wait for worker cleanup, and classify only explicit task aborts as cancellation. Existing installation checks and downloader network settings are retained. Verified by tools/ThemeSmoke/Program.Bedrock.cs.",
+    "RemovedMembers": [
+      "PCL.PageBedrockDownload::FieldDeclaration::_busy"
+    ]
+  }
+]

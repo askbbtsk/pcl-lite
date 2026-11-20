@@ -3627,6 +3627,8 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Bedrock.Download.State.Downloaded">Downloaded</sys:String>
     <sys:String x:Key="Bedrock.Download.State.Installed">Installed</sys:String>
     <sys:String x:Key="Bedrock.Download.Action.DownloadAndInstall">Download &amp; install</sys:String>
+    <sys:String x:Key="Bedrock.Download.Action.Working">Working</sys:String>
+    <sys:String x:Key="Bedrock.Download.Interrupted">Download interrupted. Please try again.</sys:String>
     <sys:String x:Key="Bedrock.Download.Action.Installed">Installed</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode.On">Developer Mode is on, store packages can be installed.</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode.Off">Developer Mode is off, store packages cannot be installed. Click Developer Mode to try enabling it (requires administrator rights).</sys:String>

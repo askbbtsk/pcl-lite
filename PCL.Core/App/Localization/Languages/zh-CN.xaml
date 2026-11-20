@@ -3627,6 +3627,8 @@ Release 发布时间：{2}
     <sys:String x:Key="Bedrock.Download.State.Downloaded">已下载</sys:String>
     <sys:String x:Key="Bedrock.Download.State.Installed">已安装</sys:String>
     <sys:String x:Key="Bedrock.Download.Action.DownloadAndInstall">下载并安装</sys:String>
+    <sys:String x:Key="Bedrock.Download.Action.Working">处理中</sys:String>
+    <sys:String x:Key="Bedrock.Download.Interrupted">下载中断，请重试。</sys:String>
     <sys:String x:Key="Bedrock.Download.Action.Installed">已安装</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode.On">开发者模式已开启，可以安装商店包。</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode.Off">开发者模式未开启，商店包装不上。点「开发者模式」按钮试试（需要管理员权限）。</sys:String>

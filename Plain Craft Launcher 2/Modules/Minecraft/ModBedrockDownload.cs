@@ -24,6 +24,8 @@ namespace PCL;
 /// </summary>
 public static class ModBedrockDownload
 {
+    internal sealed class DownloadCanceledException(string message) : OperationCanceledException(message);
+
     private static IReadOnlyList<BedrockVersionEntry> _cache = [];
 
     public static string RootDirectory
@@ -136,37 +138,42 @@ public static class ModBedrockDownload
         var loader = new ModLoader.LoaderCombo<string>(
             Lang.Text("Bedrock.Download.Task.Download", entry.Key), [download]);
 
-        var completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        if (onProgress is not null)
-            download.ProgressChanged += (newProgress, _) => onProgress(newProgress * 100d);
-
-        loader.OnStateChangedThread += (_, state, _) =>
+        using var registration = token.Register(loader.Abort);
+        try
         {
-            switch (state)
+            token.ThrowIfCancellationRequested();
+            loader.Start();
+            ModLoader.LoaderTaskbarAdd(loader);
+            return await ObserveDownloadAsync(loader, download, target, onProgress).ConfigureAwait(false);
+        }
+        finally
+        {
+            // A terminal state can precede worker cleanup. Do not let a retry or
+            // installation race a file worker that still owns the package.
+            await download.ExecutionCompletion.ConfigureAwait(false);
+        }
+    }
+
+    internal static async Task<string> ObserveDownloadAsync(ModLoader.LoaderCombo<string> loader,
+        PCL.Network.Loaders.LoaderDownload download, string target, Action<double>? onProgress)
+    {
+        // LoaderDownload computes Progress from its files; it never raises the
+        // base ProgressChanged event. Poll just this task, independently of UI.
+        while (true)
+        {
+            switch (loader.State)
             {
                 case ModBase.LoadState.Finished:
-                    completion.TrySetResult(target);
-                    break;
+                    onProgress?.Invoke(100d);
+                    return target;
                 case ModBase.LoadState.Failed:
-                    completion.TrySetException(loader.Error ?? new Exception(Lang.Text("Bedrock.Download.Md5Failed")));
-                    break;
+                    throw loader.Error ?? new IOException($"基岩版下载失败：{target}");
                 case ModBase.LoadState.Aborted:
-                    // 目前只有两条路会走到这里：点任务列表卡片上的 ×，或退出程序时强行停止任务。
-                    // 两者都不是失败，上层按取消处理，别弹错误框。
-                    ModBase.Log($"[Bedrock] 下载被中止：{entry.Key}");
-                    completion.TrySetCanceled();
-                    break;
+                    throw new DownloadCanceledException($"基岩版下载已中止：{loader.name}");
             }
-        };
-        loader.hasOnStateChangedThread = true;
-
-        using var registration = token.Register(loader.Abort);
-
-        ModLoader.LoaderTaskbarAdd(loader);
-        loader.Start();
-
-        return await completion.Task.ConfigureAwait(false);
+            onProgress?.Invoke(Math.Clamp(download.Progress, 0d, 1d) * 100d);
+            await Task.Delay(100).ConfigureAwait(false);
+        }
     }
 
     /// <summary>下载后按官方 MD5 校验。列表没给 MD5 时直接放行。</summary>

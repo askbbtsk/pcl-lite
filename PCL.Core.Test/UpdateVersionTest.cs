@@ -53,6 +53,16 @@ public class UpdateVersionTest
     }
 
     [TestMethod]
+    public void HotfixTenIsAnUpdateForTheCurrentlyReleasedHotfixNine()
+    {
+        Assert.IsTrue(UpdateVersion.TryParse("1.8.1-hotfix-10", out var version));
+        Assert.AreEqual(10, version.Sequence);
+        Assert.IsTrue(Newer("1.8.1-hotfix-10", "1.8.1-hotfix-9"));
+        Assert.IsFalse(UpdateVersion.IsUpToDate("1.8.1-hotfix-10", "1.8.1-hotfix-9"));
+        Assert.AreEqual(UpdateChannelLevels.Stable, UpdateChannelLevels.FromVersionName("1.8.1-hotfix-10"));
+    }
+
+    [TestMethod]
     public void NextPatchShouldBeatPreviousHotfix()
     {
         // 1.6.1 比 1.6.0-hotfix-9 新，否则发下一个正式版会被旧热修复挡住

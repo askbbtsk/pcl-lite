@@ -1,0 +1,20 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLauncherMisc.xaml.cs",
+    "Sha256": "3F5C3C983C39FB8986EE98C3BD6DDB8982DF992427C9FC11E8F792C6B169B2AC",
+    "Members": [
+      "PCL.PageSetupLauncherMisc::ConstructorDeclaration::.ctor()",
+      "PCL.PageSetupLauncherMisc::MethodDeclaration::UpdateDiscordVisibility()"
+    ],
+    "Reason": "Remove the Discord status line, refresh and clear buttons, implementation description, and their page-only polling and handlers as requested. Keep the existing Discord enable switch, display fields and automatic presence updates.",
+    "RemovedMembers": [
+      "PCL.PageSetupLauncherMisc::FieldDeclaration::_discordStatusTimer",
+      "PCL.PageSetupLauncherMisc::MethodDeclaration::_StartDiscordStatusTimer()",
+      "PCL.PageSetupLauncherMisc::MethodDeclaration::_StopDiscordStatusTimer()",
+      "PCL.PageSetupLauncherMisc::MethodDeclaration::_DiscordStatusTick(object? sender, EventArgs e)",
+      "PCL.PageSetupLauncherMisc::MethodDeclaration::UpdateDiscordStatus()",
+      "PCL.PageSetupLauncherMisc::MethodDeclaration::BtnDiscordRefresh_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageSetupLauncherMisc::MethodDeclaration::BtnDiscordClear_Click(object sender, MouseButtonEventArgs e)"
+    ]
+  }
+]

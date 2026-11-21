@@ -321,25 +321,6 @@
                                    Foreground="{DynamicResource ColorBrushGray2}"
                                    Text="服务器地址默认不显示：打开后好友能直接看到你在哪个服，只在你主动勾选时生效。" />
 
-                        <TextBlock x:Name="LabDiscordStatus" Margin="0,14,0,0" FontSize="12" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource ColorBrushGray2}" Text="状态：未启用" />
-
-                        <Grid Margin="0,12,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
-                                <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
-                            </Grid.ColumnDefinitions>
-                            <local:MyButton Grid.Column="0" Text="立即刷新" MinWidth="100" Padding="13,0" Margin="0,0,12,0"
-                                            ToolTip="改完设置后如果 Discord 里没反应，点一下强制重发。"
-                                            Click="BtnDiscordRefresh_Click" />
-                            <local:MyButton Grid.Column="1" Text="在 Discord 中清除" MinWidth="130" Padding="13,0"
-                                            ToolTip="立刻把状态从 Discord 上撤下来，但保持连接；之后再改任何设置会自动恢复。"
-                                            Click="BtnDiscordClear_Click" />
-                        </Grid>
-
-                        <TextBlock Margin="0,14,0,0" FontSize="12" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource ColorBrushGray2}"
-                                   Text="原理：启动器通过本机命名管道（discord-ipc-0）直接把状态交给 Discord 客户端，不联网、不经中转。&#xA;关掉这个开关会立刻断开并清除状态。" />
                     </StackPanel>
                 </StackPanel>
             </local:MyCard>

@@ -38,7 +38,6 @@ public partial class PageSetupLauncherMisc
         }
 
         Loaded += PageSetupLink_Loaded;
-        Unloaded += (_, _) => _StopDiscordStatusTimer();
         Loaded += (_, _) =>
         {
             ModAnimation.AniControlEnabled += 1;
@@ -586,8 +585,6 @@ public partial class PageSetupLauncherMisc
 
     #region Discord 状态显示
 
-    private System.Windows.Threading.DispatcherTimer? _discordStatusTimer;
-
     /// <summary>
     ///     总开关。关掉时把下面的配置项全部收起来。
     /// </summary>
@@ -604,47 +601,6 @@ public partial class PageSetupLauncherMisc
         var enabled = Config.Discord.Enabled;
         PanDiscordOptions.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
         LabDiscordDisabledHint.Visibility = enabled ? Visibility.Collapsed : Visibility.Visible;
-
-        if (!enabled)
-        {
-            _StopDiscordStatusTimer();
-            return;
-        }
-
-        UpdateDiscordStatus();
-        _StartDiscordStatusTimer();
-    }
-
-    private void _StartDiscordStatusTimer()
-    {
-        _discordStatusTimer ??= new System.Windows.Threading.DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(2)
-        };
-        _discordStatusTimer.Tick -= _DiscordStatusTick;
-        _discordStatusTimer.Tick += _DiscordStatusTick;
-        _discordStatusTimer.Start();
-    }
-
-    private void _StopDiscordStatusTimer()
-    {
-        _discordStatusTimer?.Stop();
-    }
-
-    private void _DiscordStatusTick(object? sender, EventArgs e) => UpdateDiscordStatus();
-
-    /// <summary>
-    ///     状态由后台线程更新，这里只读快照。
-    /// </summary>
-    private void UpdateDiscordStatus()
-    {
-        var text = DiscordRichPresenceService.StatusText;
-        LabDiscordStatus.Text = $"状态：{text}";
-
-        var brush = text.StartsWith("已连接", StringComparison.Ordinal) ? "ColorBrush1"
-            : text.StartsWith("异常", StringComparison.Ordinal) ? "ColorBrushRedLight"
-            : "ColorBrushGray2";
-        LabDiscordStatus.SetResourceReference(TextBlock.ForegroundProperty, brush);
     }
 
     /// <summary>
@@ -666,21 +622,6 @@ public partial class PageSetupLauncherMisc
         if (Config.Discord.Fields == value) return;
         Config.Discord.Fields = value;
         DiscordRichPresenceService.RequestRefresh();
-    }
-
-    // 注意：MyButton.Click 用的是自定义委托 ClickEventHandler(object, MouseButtonEventArgs)，
-    // 不是 WPF 原生的 RoutedEventHandler。写成 EventArgs 编译能过（事件挂接走运行期
-    // Delegate.CreateDelegate），但一点开设置页就会抛 XamlParseException，整个页面加载失败。
-    private void BtnDiscordRefresh_Click(object sender, MouseButtonEventArgs e)
-    {
-        DiscordRichPresenceService.RequestRefresh();
-        UpdateDiscordStatus();
-    }
-
-    private void BtnDiscordClear_Click(object sender, MouseButtonEventArgs e)
-    {
-        DiscordRichPresenceService.ClearActivity();
-        UpdateDiscordStatus();
     }
 
     #endregion

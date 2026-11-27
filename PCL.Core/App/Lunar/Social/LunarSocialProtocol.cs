@@ -104,10 +104,9 @@ internal static partial class LunarSocialProtocol
     private static readonly TimeSpan OnlineVersionTtl = TimeSpan.FromHours(6);
     private static readonly SemaphoreSlim OnlineVersionGate = new(1, 1);
 
-    private static readonly HttpClient VersionHttp = new()
-    {
-        Timeout = TimeSpan.FromSeconds(15)
-    };
+    private static readonly HttpClient VersionHttp =
+        PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Lunar launcher version",
+            PCL.Core.IO.Net.Consent.NetworkPurpose.Lunar, TimeSpan.FromSeconds(15));
 
     private static string? _onlineVersion;
     private static long _onlineVersionExpiresAt;

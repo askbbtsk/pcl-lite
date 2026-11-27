@@ -29,6 +29,8 @@ public class HostConnectionHandler
 
     public async ValueTask<Stream> GetConnectionAsync(SocketsHttpConnectionContext context, CancellationToken cancellationToken)
     {
+        var source = Consent.NetworkConnectionManager.GetSource(context.InitialRequestMessage,
+            new Consent.NetworkRequestSource("HTTP transport"));
         var host = context.DnsEndPoint.Host;
         var port = context.DnsEndPoint.Port;
         var now = DateTime.UtcNow;
@@ -36,7 +38,7 @@ public class HostConnectionHandler
         // 代理地址或者直连 IP 直接返回结果
         if (IPAddress.TryParse(host, out var directIp))
         {
-            return await _ConnectToAddressAsync(directIp, port, cancellationToken).ConfigureAwait(false);
+            return await _ConnectToAddressAsync(directIp, port, cancellationToken, source).ConfigureAwait(false);
         }
 
         var addresses = await _dnsQuery.QueryForIpAsync(host, cancellationToken).ConfigureAwait(false);
@@ -60,7 +62,7 @@ public class HostConnectionHandler
                 var address = sortedAddresses[i];
                 var delayMs = i * (address.AddressFamily.Equals(AddressFamily.InterNetwork) ? 150 : 80); // 偏向使用 v6
 
-                connectionTasks.Add(_DelayedConnectAsync(address, port, delayMs, connectCancellationToken));
+                connectionTasks.Add(_DelayedConnectAsync(address, port, delayMs, connectCancellationToken, source));
             }
 
             // 等待首个成功连接
@@ -177,7 +179,8 @@ public class HostConnectionHandler
         addressCache[ip] = now;
     }
 
-    private static async Task<NetworkStream> _DelayedConnectAsync(IPAddress ip, int port, int delay, CancellationToken cancellationToken)
+    private static async Task<NetworkStream> _DelayedConnectAsync(IPAddress ip, int port, int delay,
+        CancellationToken cancellationToken, Consent.NetworkRequestSource source)
     {
         try
         {
@@ -187,10 +190,11 @@ public class HostConnectionHandler
         {
             throw;
         }
-        return await _ConnectToAddressAsync(ip, port, cancellationToken).ConfigureAwait(false);
+        return await _ConnectToAddressAsync(ip, port, cancellationToken, source).ConfigureAwait(false);
     }
 
-    private static async Task<NetworkStream> _ConnectToAddressAsync(IPAddress ip, int port, CancellationToken cancellationToken)
+    private static async Task<NetworkStream> _ConnectToAddressAsync(IPAddress ip, int port,
+        CancellationToken cancellationToken, Consent.NetworkRequestSource source)
     {
         var socket = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
         {
@@ -199,7 +203,8 @@ public class HostConnectionHandler
 
         try
         {
-            await socket.ConnectAsync(ip, port, cancellationToken).ConfigureAwait(false);
+            await Consent.NetworkConnectionManager.ConnectSocketAsync(socket, source,
+                new IPEndPoint(ip, port), cancellationToken).ConfigureAwait(false);
             return new NetworkStream(socket, ownsSocket: true);
         }
         catch (OperationCanceledException)

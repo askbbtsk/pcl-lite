@@ -20,6 +20,7 @@ internal static class Program
             "Plain Craft Launcher 2/FormMain.xaml",
             "Plain Craft Launcher 2/Controls/CommandPalette.xaml",
             "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.xaml",
+            "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLauncherMisc.xaml",
             "Plain Craft Launcher 2/Pages/PageTools/PageLinkLeft.xaml",
             "Plain Craft Launcher 2/Pages/PageTools/PageToolsDirectLink.xaml"
         })

@@ -4,6 +4,7 @@ namespace PCL.Network;
 
 public struct RequestParam
 {
+    public PCL.Core.IO.Net.Consent.NetworkRequestSource? Source { get; set; }
     public Encoding? Encoding { get; set; }
     public string? Accept { get; set; }
     public string? FallbackUrl { get; set; }

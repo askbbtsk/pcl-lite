@@ -145,7 +145,8 @@ internal sealed class AdaptiveRangeDownloader
 
     private HttpRequestMessage CreateRequest(HttpMethod method, DownloadRequestKind requestKind)
     {
-        var request = FileDownloader.CreateDownloadRequest(_url, _useBrowserUserAgent, _customUserAgent, requestKind);
+        var request = FileDownloader.CreateDownloadRequest(_url, _useBrowserUserAgent, _customUserAgent, requestKind,
+            _trackedFile?.Source);
         request.Method = method;
         request.Headers.AcceptEncoding.Clear();
         request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("identity"));

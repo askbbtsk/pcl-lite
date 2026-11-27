@@ -382,9 +382,13 @@ public static class ServerAddressResolver
             // 宏写成 NET8_0_OR_GREATER 会让 net6 误走 #else：那条路不能中止底层连接，
             // 超时后 using 释放 socket 会留下孤儿连接任务。
 #if NET5_0_OR_GREATER
-            await sock.ConnectAsync(new IPEndPoint(ip, port), linked.Token).ConfigureAwait(false);
+            await IO.Net.Consent.NetworkConnectionManager.ConnectSocketAsync(sock,
+                new("Minecraft address resolver", IO.Net.Consent.NetworkPurpose.ServerConnection),
+                new IPEndPoint(ip, port), linked.Token).ConfigureAwait(false);
 #else
-            await sock.ConnectAsync(new IPEndPoint(ip, port)).WaitAsync(_ConnectTimeout, linked.Token).ConfigureAwait(false);
+            await IO.Net.Consent.NetworkConnectionManager.ConnectSocketAsync(sock,
+                new("Minecraft address resolver", IO.Net.Consent.NetworkPurpose.ServerConnection),
+                new IPEndPoint(ip, port), linked.Token).ConfigureAwait(false);
 #endif
             return (true, ip.ToString());
         }

@@ -30,6 +30,8 @@ public partial class PageToolsDirectLink
     private ushort _lastAutoFilledLanPort;
     private bool _hasUserEditedHostPort;
     private bool _isProgrammaticHostPortUpdate;
+    private bool _hostStartPending;
+    private bool _guestStartPending;
 
     public PageToolsDirectLink()
     {
@@ -291,6 +293,7 @@ public partial class PageToolsDirectLink
 
     private async void BtnHostToggle_Click(object sender, MouseButtonEventArgs e)
     {
+        if (_hostStartPending) return;
         if (_hostSession is not null)
         {
             await StopHostAsync();
@@ -310,13 +313,14 @@ public partial class PageToolsDirectLink
             return;
         }
 
+        _hostStartPending = true;
         try
         {
             // Mirror the currently selected PCL profile for compatibility metadata.
             // The tunnel does not change Minecraft's authentication policy.
             var profileType = ProfileService.Current?.ProfileType;
             var requireOnlineAuth = profileType is ProfileType.Microsoft or ProfileType.Authlib or ProfileType.YggdrasilConnect;
-            var session = _hostSession = Ipv6HostSession.Start(_ipv6Candidates[0].Address, mcPort, requireOnlineAuth);
+            var session = _hostSession = await Ipv6HostSession.StartAsync(_ipv6Candidates[0].Address, mcPort, requireOnlineAuth);
             session.StateChanged += () => Dispatcher.BeginInvoke(() =>
             {
                 if (_hostSession != session) return;
@@ -350,6 +354,7 @@ public partial class PageToolsDirectLink
         {
             HintService.Hint($"开房失败：{ex.Message}", HintType.Error);
         }
+        finally { _hostStartPending = false; }
     }
 
     private async Task StopHostAsync()
@@ -537,6 +542,7 @@ public partial class PageToolsDirectLink
 
     private async void BtnGuestToggle_Click(object sender, MouseButtonEventArgs e)
     {
+        if (_guestStartPending) return;
         if (_guestSession is not null)
         {
             await StopGuestAsync();
@@ -563,9 +569,10 @@ public partial class PageToolsDirectLink
             return;
         }
 
+        _guestStartPending = true;
         try
         {
-            var session = _guestSession = Ipv6GuestSession.Start(_ipv6Candidates[0].Address, invite);
+            var session = _guestSession = await Ipv6GuestSession.StartAsync(_ipv6Candidates[0].Address, invite);
             session.StateChanged += () => Dispatcher.BeginInvoke(() =>
             {
                 if (_guestSession != session) return;
@@ -590,6 +597,7 @@ public partial class PageToolsDirectLink
         {
             HintService.Hint($"连接失败：{ex.Message}", HintType.Error);
         }
+        finally { _guestStartPending = false; }
     }
 
     private async Task StopGuestAsync()

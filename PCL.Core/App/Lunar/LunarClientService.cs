@@ -216,10 +216,9 @@ public static partial class LunarClientService
 {
     private const string ApiBase = "https://api.lunarclientprod.com/launcher";
 
-    private static readonly HttpClient Http = new()
-    {
-        Timeout = TimeSpan.FromSeconds(30)
-    };
+    private static readonly HttpClient Http =
+        IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Lunar Client",
+            IO.Net.Consent.NetworkPurpose.Lunar, TimeSpan.FromSeconds(30));
 
     /// <summary>
     ///     原版资源对象的 CDN。启动器里写死成 <c>uze</c> 这个常量。

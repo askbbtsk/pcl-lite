@@ -71,7 +71,9 @@ public class McPingService : IMcPingService
         try
         {
             LogWrapper.Debug(ModuleName, $"Connecting to {_endpoint}");
-            await so.ConnectAsync(_endpoint.Address, _endpoint.Port, linkedCts.Token);
+            await IO.Net.Consent.NetworkConnectionManager.ConnectSocketAsync(so,
+                new("Minecraft server status", IO.Net.Consent.NetworkPurpose.ServerConnection),
+                _endpoint, linkedCts.Token);
         }
         catch (OperationCanceledException)
         {

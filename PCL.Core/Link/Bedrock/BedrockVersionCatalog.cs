@@ -59,10 +59,9 @@ public static class BedrockVersionCatalog
 {
     public const string SourceUrl = "https://data.mcappx.com/v2/bedrock.json";
 
-    private static readonly HttpClient Client = new()
-    {
-        Timeout = TimeSpan.FromSeconds(30)
-    };
+    private static readonly HttpClient Client =
+        PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Bedrock versions",
+            PCL.Core.IO.Net.Consent.NetworkPurpose.Bedrock, TimeSpan.FromSeconds(30));
 
     /// <summary>拉取并解析版本列表。失败时抛异常，由调用方决定是提示还是用缓存。</summary>
     public static async Task<IReadOnlyList<BedrockVersionEntry>> FetchAsync(CancellationToken token = default)

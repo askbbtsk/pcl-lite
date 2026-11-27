@@ -5,6 +5,8 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
+using PCL.Core.IO.Net.Consent;
 
 namespace PCL.Core.IO.Net.Http;
 
@@ -18,7 +20,8 @@ public static class HttpSenderExtension
             bool enableLogging = true,
             HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead,
             int retryTimes = 3,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            [CallerFilePath] string caller = "")
         {
             using var request = requestMessage;
             httpClient ??= NetworkService.GetClient();
@@ -47,6 +50,7 @@ public static class HttpSenderExtension
                             using var requestCopy = await request
                                 .CloneAsync()
                                 .ConfigureAwait(false);
+                            NetworkConnectionManager.SetSource(requestCopy, NetworkRequestSource.FromCaller(caller));
                             return await httpClient
                                 .SendAsync(requestCopy, httpCompletionOption, token)
                                 .ConfigureAwait(false);

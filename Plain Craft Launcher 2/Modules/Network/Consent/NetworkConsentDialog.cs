@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using PCL.Core.App.Localization;
@@ -41,10 +40,7 @@ public static class NetworkConsentDialog
         void Show()
         {
             if (!_privacyHinted.Add(info.Id)) return;
-            var zh = _IsChinese();
-            var message = zh
-                ? $"隐私模式已开启，「{(info.TitleZh)}」被拦截，功能可能不可用。\n可在「设置 → 杂项 → 网络授权」中关闭隐私模式。"
-                : $"Privacy mode blocked \"{info.TitleEn}\". Disable it in Settings → Misc → Network consent.";
+            var message = Lang.Text("Network.Manager.Privacy.Blocked", info.TitleZh);
             HintService.Hint(message, HintType.Error);
         }
 
@@ -86,11 +82,11 @@ public static class NetworkConsentDialog
     private static bool _Ask(NetworkPurposeInfo info)
     {
         var zh = _IsChinese();
-        var title = zh ? "网络访问请求" : "Network access request";
+        var title = Lang.Text("Network.Manager.Request.Title");
         var caption = _BuildCaption(info, zh);
-        var allow = zh ? "允许" : "Allow";
-        var deny = zh ? "拒绝" : "Deny";
-        var allowAll = zh ? "本次会话全部允许" : "Allow all this session";
+        var allow = Lang.Text("Network.Manager.Allow");
+        var deny = Lang.Text("Network.Manager.Deny");
+        var allowAll = Lang.Text("Network.Manager.Request.AllowAll");
 
         var result = ModMain.MyMsgBox(caption, title, allow, deny, allowAll, isWarn: true);
         switch (result)
@@ -107,37 +103,8 @@ public static class NetworkConsentDialog
 
     private static string _BuildCaption(NetworkPurposeInfo info, bool zh)
     {
-        var name = zh ? info.TitleZh : info.TitleEn;
-        var description = zh ? info.DescriptionZh : info.DescriptionEn;
-        var feature = zh ? info.FeatureZh : info.FeatureEn;
-
-        var sb = new StringBuilder();
-        sb.AppendLine(zh ? $"「{name}」需要连接远程服务器。" : $"\"{name}\" needs to reach remote servers.");
-        sb.AppendLine();
-
-        if (info.Hosts.Length > 0)
-        {
-            sb.AppendLine(zh ? "目标：" : "Targets:");
-            foreach (var host in info.Hosts)
-                sb.AppendLine("    " + host);
-        }
-        else
-        {
-            sb.AppendLine(zh ? "目标：由运行时动态确定。" : "Targets: determined at runtime.");
-        }
-
-        sb.AppendLine();
-        sb.AppendLine((zh ? "用途：" : "Purpose: ") + description);
-        sb.AppendLine();
-        sb.AppendLine(zh
-            ? $"不同意将无法使用{feature}。"
-            : $"Declining makes {feature} unavailable.");
-        sb.AppendLine();
-        sb.Append(zh
-            ? "该选择仅在本次会话内有效；可在「设置 → 启动器 → 网络白名单」中永久管理。"
-            : "This choice lasts for the current session. Manage it permanently in Settings.");
-
-        return sb.ToString();
+        return Lang.Text("Network.Manager.Request.Caption", zh ? info.TitleZh : info.TitleEn,
+            string.Join(", ", info.Hosts));
     }
 
     private static bool _IsChinese()

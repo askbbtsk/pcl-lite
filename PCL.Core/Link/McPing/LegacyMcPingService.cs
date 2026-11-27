@@ -67,7 +67,9 @@ public class LegacyMcPingService : IMcPingService
             }
         });
 
-        await so.ConnectAsync(_endpoint, linkedCts.Token);
+        await IO.Net.Consent.NetworkConnectionManager.ConnectSocketAsync(so,
+            new("Legacy Minecraft server status", IO.Net.Consent.NetworkPurpose.ServerConnection),
+            _endpoint, linkedCts.Token);
         LogWrapper.Debug("LegacyMcPing", $"Connected to {_endpoint}");
         await using var stream = new NetworkStream(so, false);
 

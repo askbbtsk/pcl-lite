@@ -36,10 +36,9 @@ public static class LunarAuthenticator
 {
     private const string SessionJoinUrl = "https://sessionserver.mojang.com/session/minecraft/join";
 
-    private static readonly HttpClient Http = new()
-    {
-        Timeout = TimeSpan.FromSeconds(20)
-    };
+    private static readonly HttpClient Http =
+        PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Lunar authentication",
+            PCL.Core.IO.Net.Consent.NetworkPurpose.Lunar, TimeSpan.FromSeconds(20));
 
     /// <summary>
     ///     换一个启动器 JWT。
@@ -63,7 +62,9 @@ public static class LunarAuthenticator
 
         try
         {
-            await socket.ConnectAsync(new Uri(LunarSocialProtocol.AuthenticatorUrl), cancellationToken)
+            await PCL.Core.IO.Net.Consent.NetworkConnectionManager.ConnectWebSocketAsync(socket,
+                    new("Lunar authentication", PCL.Core.IO.Net.Consent.NetworkPurpose.Lunar),
+                    new Uri(LunarSocialProtocol.AuthenticatorUrl), cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is WebSocketException or HttpRequestException or UriFormatException)

@@ -188,7 +188,8 @@ public static class ModBedrockUwp
             doc.GetElementsByTagName("Expires")[0]!.InnerText = now.AddMinutes(5).ToString("o");
             doc.GetElementsByTagName("deviceAttributes")[0]!.InnerText = DeviceAttributes;
 
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };
+            using var client = PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient(
+                "Bedrock update service", PCL.Core.IO.Net.Consent.NetworkPurpose.Bedrock, TimeSpan.FromSeconds(45));
             client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", SoapContentType);
             using var content = new StringContent(doc.InnerXml, Encoding.UTF8, "application/soap+xml");
             using var response = await client.PostAsync(Fe3UpdateUri, content).ConfigureAwait(false);
@@ -745,7 +746,8 @@ public static class ModBedrockUwp
                 }
 
                 var tempPath = Path.Combine(Path.GetTempPath(), $"{name}_{Guid.NewGuid():N}.appx");
-                using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) })
+                using (var client = PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient(
+                    "Bedrock package", PCL.Core.IO.Net.Consent.NetworkPurpose.Bedrock, TimeSpan.FromMinutes(10)))
                 {
                     var bytes = await client.GetByteArrayAsync(url).ConfigureAwait(false);
                     await File.WriteAllBytesAsync(tempPath, bytes).ConfigureAwait(false);
@@ -776,7 +778,8 @@ public static class ModBedrockUwp
     {
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            using var client = PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient(
+                "Bedrock installation", PCL.Core.IO.Net.Consent.NetworkPurpose.Bedrock, TimeSpan.FromSeconds(30));
             client.DefaultRequestHeaders.Add("Origin", "https://store.rg-adguard.net");
             client.DefaultRequestHeaders.Add("Referer", "https://store.rg-adguard.net/");
 

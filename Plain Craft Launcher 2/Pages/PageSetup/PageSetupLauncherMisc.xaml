@@ -157,25 +157,25 @@
                 </Grid>
             </local:MyCard>
 
-            <local:MyCard Margin="0,0,0,15" Title="网络授权">
+            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Network.Manager.Title}">
                 <StackPanel Margin="25,38,25,18">
                     <local:MyCheckBox x:Name="CheckAllowAllConsent"
-                                      Text="授权全部连接"
-                                      ToolTip="默认开启。所有网络用途与未登记域名一律放行，不再弹出授权窗口。&#xA;关掉之后回到「按用途逐个确认」的细粒度模式。"
+                                      Text="{DynamicResource Network.Manager.AllowAll}"
+                                      ToolTip="{DynamicResource Network.Manager.AllowAll.ToolTip}"
                                       Change="AllowAllConsent_Change" />
                     <local:MyCheckBox x:Name="CheckSystemPrivacyMode" Tag="SystemPrivacyMode" Margin="0,7,0,0"
-                                      Text="隐私模式"
-                                      ToolTip="开启后不再弹出授权窗口，任何未列入白名单的网络用途都会被直接拒绝。"
+                                      Text="{DynamicResource Network.Manager.Privacy}"
+                                      ToolTip="{DynamicResource Network.Manager.Privacy.ToolTip}"
                                       Change="CheckBoxChange" />
                     <TextBlock x:Name="LabConsentAllowAllHint" Margin="0,8,0,0" FontSize="12" TextWrapping="Wrap"
                                Foreground="{DynamicResource ColorBrushGray2}"
-                               Text="当前已授权全部连接：不会拦截任何出站请求，也不会弹出授权窗口。&#xA;关掉上面的勾选即可回到按用途授权的模式。" />
+                               Text="{DynamicResource Network.Manager.AllowAll.Hint}" />
                     <TextBlock x:Name="LabConsentGranularHint" Margin="0,8,0,0" FontSize="12" TextWrapping="Wrap"
                                Foreground="{DynamicResource ColorBrushGray2}" Visibility="Collapsed"
-                               Text="每次联网前会按「用途」询问一次：一次确认覆盖该用途下的全部域名，不会逐个域名打扰。允许仅对本次会话有效，点击下方「允许」才会写入永久白名单。&#xA;启动器更新、版本下载、加载器元数据与加密 DNS 这四项默认已授权，其余用途一律先询问。" />
+                               Text="{DynamicResource Network.Manager.Granular.Hint}" />
                     <StackPanel x:Name="PanConsentList" Margin="0,14,0,0" />
                     <StackPanel x:Name="PanConsentActions" Orientation="Horizontal" Margin="0,10,0,0">
-                        <local:MyButton x:Name="BtnResetConsent" Text="清空白名单" Height="32" MinWidth="104"
+                        <local:MyButton x:Name="BtnResetConsent" Text="{DynamicResource Network.Manager.Reset}" Height="38" MinWidth="104"
                                         Padding="14,0" Click="ResetConsentBtn_OnClicked" />
                     </StackPanel>
                 </StackPanel>

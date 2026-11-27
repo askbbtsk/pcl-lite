@@ -14,7 +14,9 @@ namespace PCL;
 
 internal static class PluginPageSupport
 {
-    private static readonly HttpClient IconClient = new() { Timeout = TimeSpan.FromSeconds(5) };
+    private static readonly HttpClient IconClient =
+        PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Plugin icons",
+            PCL.Core.IO.Net.Consent.NetworkPurpose.Plugins, TimeSpan.FromSeconds(5));
     public static StackPanel CreateRoot(string title, out TextBlock status, out StackPanel content)
     {
         var root = new StackPanel { Margin = new Thickness(25, 10, 25, 24) };

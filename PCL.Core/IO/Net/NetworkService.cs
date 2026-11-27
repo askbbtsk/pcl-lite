@@ -73,7 +73,6 @@ public partial class NetworkService
         var services = new ServiceCollection();
         services.ConfigureHttpClientDefaults(b => b
             .ConfigurePrimaryHttpMessageHandler(_GetSocketsHttpHandler)
-            .AddHttpMessageHandler(() => new NetworkGuardHandler())
             .ConfigureHttpClient(c => c.DefaultRequestHeaders
                 // 不带版本号：见 HttpSenderExtension，统一只报产品名。
                 // 必须走双参数重载并显式传 null —— 单参数的 ProductInfoHeaderValue 是「注释」重载，
@@ -139,6 +138,20 @@ public partial class NetworkService
             _GetSocketsHttpHandler(),CacheServiceManager.Current
             )).SetHandlerLifetime(TimeSpan.FromMinutes(LifeTime));
 
+        foreach (var clientName in new[]
+                 { Default, MicrosoftEntraId, MinecraftService, Cache, MojangPistonMeta, MojangSession,
+                     CurseForgeApi, ModrinthApi, NoRedirect })
+        {
+            var purpose = clientName switch
+            {
+                MicrosoftEntraId or MinecraftService or MojangSession or NoRedirect => NetworkPurpose.Authentication,
+                MojangPistonMeta => NetworkPurpose.MinecraftDownload,
+                CurseForgeApi or ModrinthApi => NetworkPurpose.ModRepository,
+                _ => NetworkPurpose.Unknown
+            };
+            services.AddHttpClient(clientName).AddHttpMessageHandler(() =>
+                new NetworkGuardHandler(new NetworkRequestSource(clientName, purpose)));
+        }
         _provider?.Dispose();
         _provider = services.BuildServiceProvider();
         _factory = _provider.GetRequiredService<IHttpClientFactory>();
@@ -151,6 +164,7 @@ public partial class NetworkService
     }
 
     private static SocketsHttpHandler _GetSocketsHttpHandler() => _GetSocketsHttpHandler(true);
+    internal static HttpMessageHandler CreateTransport() => _GetSocketsHttpHandler();
 
     /// <param name="allowAutoRedirect">
     ///     是否自动跟随 3xx。授权码登录必须自己读 <c>Location</c>，所以那边要传 <c>false</c>。
@@ -174,6 +188,9 @@ public partial class NetworkService
     /// <returns>HttpClient 实例</returns>
     public static HttpClient GetClient(string wantClientType = "default")
     {
+        if (wantClientType is not (Default or MicrosoftEntraId or MinecraftService or Cache or MojangPistonMeta
+            or MojangSession or CurseForgeApi or ModrinthApi or NoRedirect))
+            throw new ArgumentException("Unknown managed HTTP client profile.", nameof(wantClientType));
         return _factory?.CreateClient(wantClientType) ??
                throw new InvalidOperationException("在初始化完成前的意外调用");
     }

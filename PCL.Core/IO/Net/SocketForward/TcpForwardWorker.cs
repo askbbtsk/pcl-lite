@@ -136,7 +136,9 @@ public sealed class TcpForwardWorker : IDisposable
             targetSocket.ReceiveBufferSize = (int)_cfg.BufferSize;
             targetSocket.SendBufferSize = (int)_cfg.BufferSize;
 
-            await targetSocket.ConnectAsync(_cfg.RemoteHost!, _cfg.RemotePort, cancellationToken).ConfigureAwait(false);
+            await Consent.NetworkConnectionManager.ConnectSocketAsync(targetSocket,
+                new("TCP forwarding", Consent.NetworkPurpose.DirectLink),
+                new System.Net.DnsEndPoint(_cfg.RemoteHost!, _cfg.RemotePort), cancellationToken).ConfigureAwait(false);
 
             LogWrapper.Info(ModuleName, $"开始 TCP 转发 {clientSocket.RemoteEndPoint} <-> {targetSocket.RemoteEndPoint}({connectionId})");
 

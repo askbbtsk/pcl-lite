@@ -25,26 +25,24 @@ public class DnsQuery : IDisposable
 
     private DnsQuery()
     {
-        var proxyHandler = new HttpClientHandler()
+        static HttpMessageHandler Transport() => new HttpClientHandler()
         {
             Proxy = HttpProxyManager.Instance
         };
         // 使用Ae.Dns创建DoH客户端，支持多个DoH服务器
         _httpClients =
         [
-            new HttpClient(proxyHandler)
-            {
-                BaseAddress = new Uri("https://doh.pub/")
-            },
-            new HttpClient(proxyHandler)
-            {
-                BaseAddress = new Uri("https://doh.pysio.online/")
-            },
-            new HttpClient(proxyHandler)
-            {
-                BaseAddress = new Uri("https://cloudflare-dns.com/")
-            }
+            Create("https://doh.pub/"),
+            Create("https://doh.pysio.online/"),
+            Create("https://cloudflare-dns.com/")
         ];
+        static HttpClient Create(string address)
+        {
+            var client = NetworkConnectionManager.CreateHttpClient("Encrypted DNS", NetworkPurpose.DnsResolve,
+                transportFactory: Transport);
+            client.BaseAddress = new Uri(address);
+            return client;
+        }
         _resolver = new DnsCachingClient(
             new WeightedDnsRacerClient(2, _httpClients.Select(static x => new DnsHttpClient(x)).ToArray<IDnsClient>()),
             new MemoryCache("DoH Query Cache"));

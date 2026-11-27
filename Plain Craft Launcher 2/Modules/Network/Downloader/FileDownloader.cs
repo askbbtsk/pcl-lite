@@ -125,7 +125,8 @@ public static class FileDownloader
         const int readTimeoutMilliseconds = 30_000;
         using var connection = await DownloadResourceManager.AcquireConnectionAsync(url, cancellationToken)
             .ConfigureAwait(false);
-        using var request = CreateDownloadRequest(url, useBrowserUserAgent, customUserAgent, requestKind);
+        using var request = CreateDownloadRequest(url, useBrowserUserAgent, customUserAgent, requestKind,
+            trackedFile?.Source);
         using var response = await SendDownloadRequestAsync(url, request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"下载请求失败：{(int)response.StatusCode} {response.ReasonPhrase}");
@@ -243,9 +244,12 @@ public static class FileDownloader
     }
 
     internal static HttpRequestMessage CreateDownloadRequest(string url, bool useBrowserUserAgent,
-        string customUserAgent, DownloadRequestKind requestKind)
+        string customUserAgent, DownloadRequestKind requestKind,
+        PCL.Core.IO.Net.Consent.NetworkRequestSource? source = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
+        PCL.Core.IO.Net.Consent.NetworkConnectionManager.SetSource(request,
+            source ?? new("File downloader"));
         RequestSigning.SecretHeadersSign(url, ref request, useBrowserUserAgent, customUserAgent);
         ApplyHttpVersion(request, requestKind);
         return request;

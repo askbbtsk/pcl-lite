@@ -185,7 +185,9 @@ public sealed class LunarSocialClient : IAsyncDisposable
 
         try
         {
-            await socket.ConnectAsync(new Uri(LunarSocialProtocol.AssetServerUrl), cancellationToken)
+            await PCL.Core.IO.Net.Consent.NetworkConnectionManager.ConnectWebSocketAsync(socket,
+                    new("Lunar friends", PCL.Core.IO.Net.Consent.NetworkPurpose.Lunar),
+                    new Uri(LunarSocialProtocol.AssetServerUrl), cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is WebSocketException or HttpRequestException)

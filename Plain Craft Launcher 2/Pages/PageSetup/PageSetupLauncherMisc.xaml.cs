@@ -190,13 +190,13 @@ public partial class PageSetupLauncherMisc
     private void BuildConsentList()
     {
         PanConsentList.Children.Clear();
-        var allowed = NetworkConsentService.GetPersistedAllowed();
-
-        foreach (var info in NetworkPurposeCatalog.All.Where(x => x.Purpose != NetworkPurpose.Unknown))
+        foreach (var info in NetworkPurposeCatalog.All.Concat(NetworkPurposeCatalog.RequestedModules))
         {
-            var isAllowed = allowed.Contains(info.Id);
+            var isAllowed = NetworkConsentService.IsAllowed(info);
+            var name = info.Purpose == NetworkPurpose.Unknown
+                ? info.TitleZh : Lang.Text("Network.Purpose." + info.Id);
 
-            var row = new Grid { Margin = new Thickness(0, 0, 0, 7) };
+            var row = new Grid { Margin = new Thickness(0, 0, 0, 7), MinHeight = 38 };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -204,26 +204,27 @@ public partial class PageSetupLauncherMisc
             {
                 VerticalAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
-                Text = $"{info.TitleZh}　{info.Hosts.Length} 个域名"
+                Text = name,
+                ToolTip = string.Join("\n", info.Hosts)
             };
             label.SetResourceReference(TextBlock.ForegroundProperty,
                 isAllowed ? "ColorBrush1" : "ColorBrushGray2");
 
             var toggle = new MyTextButton
             {
-                Text = isAllowed ? "撤销" : "允许",
+                Text = Lang.Text(isAllowed ? "Network.Manager.Revoke" : "Network.Manager.Allow"),
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(10, 0, 0, 0)
             };
             toggle.Click += (_, _) =>
             {
                 if (isAllowed)
-                    NetworkConsentService.Revoke(info.Purpose);
+                    NetworkConsentService.Revoke(info);
                 else
-                    NetworkConsentService.AllowPermanently(info.Purpose);
+                    NetworkConsentService.AllowPermanently(info);
                 BuildConsentList();
                 HintService.Hint(
-                    $"已{(isAllowed ? "撤销" : "允许")}「{info.TitleZh}」的网络访问",
+                    Lang.Text("Network.Manager.Changed", name),
                     HintType.Success, false);
             };
 
@@ -265,13 +266,13 @@ public partial class PageSetupLauncherMisc
 
     private void ResetConsentBtn_OnClicked(object sender, MouseButtonEventArgs e)
     {
-        if (ModMain.MyMsgBox("确定要清空全部网络白名单吗？\n清空后，每个用途都会在下一次联网前重新询问。",
-                "清空网络白名单", "清空", "取消", isWarn: true) != 1)
+        if (ModMain.MyMsgBox(Lang.Text("Network.Manager.Reset.Confirm"),
+                Lang.Text("Network.Manager.Reset"), Lang.Text("Network.Manager.Reset"), Lang.Text("Common.Action.Cancel"), isWarn: true) != 1)
             return;
 
         NetworkConsentService.ResetAll();
         BuildConsentList();
-        HintService.Hint("网络白名单已清空", HintType.Success, false);
+        HintService.Hint(Lang.Text("Network.Manager.Reset.Done"), HintType.Success, false);
     }
 
     #endregion

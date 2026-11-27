@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PCL.Core.Logging;
 using PCL.Core.Plugins;
+using PCL.Core.IO.Net.Consent;
 using PCL.Plugin.SDK;
 
 namespace PCL.Core.Test.Plugins;
@@ -27,6 +28,7 @@ public sealed class PluginApiRuntimeTests
     [STATestMethod]
     public async Task LoadedPluginCanUseEveryHostApiAndDisposesEventSubscriptions()
     {
+        using var consent = NetworkConsentService.AllowAllForCurrentTest();
         using var certificate = CreateCertificate();
         var packagePath = Path.Combine(Path.GetTempPath(), $"pcl-api-probe-{Guid.NewGuid():N}.pclplugin");
         var pluginsDirectory = Path.Combine(Path.GetTempPath(), "pcl-api-probe-data-" + Guid.NewGuid().ToString("N"));

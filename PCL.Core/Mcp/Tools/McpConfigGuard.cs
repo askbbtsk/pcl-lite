@@ -44,7 +44,11 @@ internal static class McpConfigGuard
         "SystemDebugMode",
         "SystemDebugAllowRestrictedFeature",
         "LaunchAdvanceRun",
-        "LaunchAdvanceJvm"
+        "LaunchAdvanceJvm",
+        "NetworkConsentAllowAll",
+        "NetworkAllowedPurposes",
+        "NetworkConsentSeeded",
+        "SystemPrivacyMode"
     };
 
     /// <summary>是否属于不可读的机密键。</summary>

@@ -5,6 +5,7 @@ namespace PCL.Network;
 
 public class DownloadFile
 {
+    public PCL.Core.IO.Net.Consent.NetworkRequestSource Source { get; }
     public int Id { get; } = ModBase.GetUuid();
     public string LocalPath { get; set; }
     public string LocalName { get; }
@@ -77,8 +78,10 @@ public class DownloadFile
     }
 
     public DownloadFile(IEnumerable<string> urls, string localPath, ModBase.FileChecker? checker = null,
-        bool useBrowserUserAgent = false, string customUserAgent = "")
+        bool useBrowserUserAgent = false, string customUserAgent = "",
+        [System.Runtime.CompilerServices.CallerFilePath] string caller = "")
     {
+        Source = PCL.Core.IO.Net.Consent.NetworkRequestSource.FromCaller(caller);
         Urls = urls.Where(url => !string.IsNullOrWhiteSpace(url)).Distinct().ToList();
         LocalPath = localPath;
         LocalName = ModBase.GetFileNameFromPath(localPath);

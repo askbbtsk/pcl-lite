@@ -26,7 +26,13 @@ public enum NetworkPurpose
     DnsResolve,
 
     /// <summary>未登记的目标域名。</summary>
-    Unknown
+    Unknown,
+    Authentication,
+    Lunar,
+    Bedrock,
+    Plugins,
+    ServerConnection,
+    DirectLink
 }
 
 /// <summary>
@@ -66,6 +72,24 @@ public static class NetworkPurposeCatalog
     /// </summary>
     private static readonly NetworkPurposeInfo[] Defaults =
     [
+        new(NetworkPurpose.Authentication, "authentication", "账号登录", "Account sign-in",
+            "登录账号与刷新登录状态。", "Sign in and refresh account sessions.",
+            "账号登录", "account sign-in", []),
+        new(NetworkPurpose.Lunar, "lunar", "Lunar Client", "Lunar Client",
+            "获取 Lunar 文件、登录好友系统。", "Download Lunar files and connect to friends.",
+            "Lunar Client", "Lunar Client", []),
+        new(NetworkPurpose.Bedrock, "bedrock", "基岩版", "Bedrock Edition",
+            "查询、下载与安装基岩版。", "Browse, download and install Bedrock Edition.",
+            "基岩版下载", "Bedrock downloads", []),
+        new(NetworkPurpose.Plugins, "plugins", "插件联网", "Plugin connections",
+            "允许已启用的插件联网。", "Allow enabled plugins to connect.",
+            "插件在线功能", "plugin online features", []),
+        new(NetworkPurpose.ServerConnection, "server-connection", "服务器连接", "Server connections",
+            "查询 Minecraft 服务器状态。", "Query Minecraft server status.",
+            "服务器状态", "server status", []),
+        new(NetworkPurpose.DirectLink, "direct-link", "联机", "Multiplayer",
+            "发现局域网世界并连接好友。", "Discover LAN worlds and connect to friends.",
+            "联机", "multiplayer", []),
         new(
             NetworkPurpose.LauncherUpdate,
             "update",
@@ -130,11 +154,36 @@ public static class NetworkPurposeCatalog
 
     /// <summary>运行时追加的域名，按用途分组。</summary>
     private static readonly Dictionary<NetworkPurpose, List<string>> ExtraHosts = [];
+    private static readonly Dictionary<string, NetworkPurposeInfo> NamedRequests = new(StringComparer.Ordinal);
+
+    internal static NetworkPurposeInfo RegisterRequest(string name, string host)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        var id = "request:" + Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(name)));
+        lock (Sync)
+        {
+            if (NamedRequests.TryGetValue(id, out var existing) &&
+                existing.Hosts.Contains(host, StringComparer.OrdinalIgnoreCase)) return existing;
+            var hosts = NamedRequests.TryGetValue(id, out var previous)
+                ? previous.Hosts.Append(host).Distinct(StringComparer.OrdinalIgnoreCase).TakeLast(32).ToArray()
+                : [host];
+            var info = new NetworkPurposeInfo(NetworkPurpose.Unknown, id, name, name,
+                "该模块需要联网。", "This module needs a network connection.",
+                name, name, hosts);
+            NamedRequests[id] = info;
+            return info;
+        }
+    }
 
     private static volatile Snapshot _snapshot = _BuildSnapshot();
 
     /// <summary>登记表的只读视图，随 <see cref="RegisterExtraHosts"/> 整体替换。</summary>
     public static IReadOnlyList<NetworkPurposeInfo> All => _snapshot.All;
+    public static IReadOnlyList<NetworkPurposeInfo> RequestedModules
+    {
+        get { lock (Sync) return NamedRequests.Values.ToArray(); }
+    }
 
     /// <summary>
     /// 追加若干域名到某个用途。重复登记会被忽略，可在启动阶段多次调用。
@@ -193,7 +242,9 @@ public static class NetworkPurposeCatalog
     public static NetworkPurposeInfo? ById(string? id)
     {
         if (string.IsNullOrWhiteSpace(id)) return null;
-        return _snapshot.All.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase));
+        var known = _snapshot.All.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (known is not null) return known;
+        lock (Sync) return NamedRequests.GetValueOrDefault(id);
     }
 
     private static string? _HostOfUrl(string? url)

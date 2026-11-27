@@ -281,7 +281,8 @@ public sealed partial class PluginRuntimeManager : IAsyncDisposable
         _pluginsDirectory = Path.GetFullPath(pluginsDirectory ?? Path.Combine(Paths.Data, "Plugins"));
         _stateDirectory = Path.Combine(_pluginsDirectory, ".plugin-state");
         _ownsHttpClient = httpClient is null;
-        _httpClient = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        _httpClient = httpClient ?? IO.Net.Consent.NetworkConnectionManager.CreateHttpClient(
+            "Plugin runtime", IO.Net.Consent.NetworkPurpose.Plugins, TimeSpan.FromSeconds(30));
         Directory.CreateDirectory(_pluginsDirectory);
         Directory.CreateDirectory(_stateDirectory);
         _ApplyPendingChanges();

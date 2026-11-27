@@ -115,10 +115,9 @@ public static class LunarVersionCatalog
 {
     private const string ApiBase = "https://api.lunarclientprod.com/launcher";
 
-    private static readonly HttpClient Http = new()
-    {
-        Timeout = TimeSpan.FromSeconds(20)
-    };
+    private static readonly HttpClient Http =
+        PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Lunar versions",
+            PCL.Core.IO.Net.Consent.NetworkPurpose.Lunar, TimeSpan.FromSeconds(20));
 
     private static readonly TimeSpan CacheLifetime = TimeSpan.FromHours(12);
     private static IReadOnlyList<LunarVersion> _versions = [];

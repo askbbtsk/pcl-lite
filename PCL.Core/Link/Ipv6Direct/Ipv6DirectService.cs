@@ -122,7 +122,14 @@ public sealed class Ipv6HostSession : IAsyncDisposable
     }
 
     public static Ipv6HostSession Start(IPAddress publicIpv6, int initialMcPort, bool requireOnlineAuth = false)
+        => StartAsync(publicIpv6, initialMcPort, requireOnlineAuth).GetAwaiter().GetResult();
+
+    public static async Task<Ipv6HostSession> StartAsync(IPAddress publicIpv6, int initialMcPort,
+        bool requireOnlineAuth = false, CancellationToken cancellationToken = default)
     {
+        await IO.Net.Consent.NetworkConnectionManager.AuthorizeAsync(
+            new("Multiplayer host", IO.Net.Consent.NetworkPurpose.DirectLink),
+            new UriBuilder("udp", publicIpv6.ToString()).Uri, cancellationToken).ConfigureAwait(false);
         var udp = TunnelBridgeHelper.BindUdpSocket(publicIpv6, "[Host]");
 
         var localEp = (IPEndPoint)udp.LocalEndPoint!;
@@ -472,9 +479,16 @@ public sealed class Ipv6GuestSession : IAsyncDisposable
     }
 
     public static Ipv6GuestSession Start(IPAddress localPublicIpv6, InviteCodePayload hostInvite)
+        => StartAsync(localPublicIpv6, hostInvite).GetAwaiter().GetResult();
+
+    public static async Task<Ipv6GuestSession> StartAsync(IPAddress localPublicIpv6, InviteCodePayload hostInvite,
+        CancellationToken cancellationToken = default)
     {
         if (hostInvite.Kind != InviteKind.HostInvite || hostInvite.Secret is null)
             throw new ArgumentException("必须使用房主生成的 BSK- 邀请码。", nameof(hostInvite));
+        await IO.Net.Consent.NetworkConnectionManager.AuthorizeAsync(
+            new("Multiplayer guest", IO.Net.Consent.NetworkPurpose.DirectLink),
+            new UriBuilder("udp", hostInvite.Address.ToString(), hostInvite.Port).Uri, cancellationToken).ConfigureAwait(false);
 
         var udp = TunnelBridgeHelper.BindUdpSocket(localPublicIpv6, "[Guest]");
         var localUdpPort = (ushort)((IPEndPoint)udp.LocalEndPoint!).Port;

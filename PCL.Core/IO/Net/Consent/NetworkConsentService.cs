@@ -12,8 +12,8 @@ namespace PCL.Core.IO.Net.Consent;
 /// <summary>
 /// 网络授权中心。
 /// <para>
-/// 所有出站请求都会先经过 <see cref="NetworkGuardHandler"/>，由它向本服务确认目标域名所属的
-/// 「用途」是否已被授权。授权粒度是用途而不是域名，因此一次确认可以覆盖该用途下的全部域名。
+/// 连接管理器提交模块名称、目标和声明用途后，由本服务决定是否放行。
+/// 已登记功能按用途授权，其余模块按名称授权，不借用相同域名上其他功能的权限。
 /// </para>
 /// <para>
 /// 决策顺序：会话内已决策 → 永久白名单 → 隐私模式（直接拒绝）→ 询问用户。
@@ -40,7 +40,7 @@ public static class NetworkConsentService
     private static readonly SemaphoreSlim _gate = new(1, 1);
 
     private static volatile bool _allowAllForSession;
-    private static readonly AsyncLocal<bool> _testAllowAll = new();
+    private static readonly AsyncLocal<bool?> _testAllowAll = new();
 
     /// <summary>
     /// Explicit, async-flow-scoped network consent for integration tests only.
@@ -48,8 +48,13 @@ public static class NetworkConsentService
     /// </summary>
     internal static IDisposable AllowAllForCurrentTest()
     {
-        bool previous = _testAllowAll.Value;
-        _testAllowAll.Value = true;
+        return SetConsentForCurrentTest(true);
+    }
+
+    internal static IDisposable SetConsentForCurrentTest(bool allowed)
+    {
+        bool? previous = _testAllowAll.Value;
+        _testAllowAll.Value = allowed;
         return new DelegateDisposable(() => _testAllowAll.Value = previous);
     }
 
@@ -84,16 +89,25 @@ public static class NetworkConsentService
     /// <summary>查询某用途当前是否已授权（不触发询问）。</summary>
     public static bool IsAllowed(NetworkPurpose purpose)
     {
-        if (_testAllowAll.Value || AllowAll) return true;
+        if (_testAllowAll.Value is { } testAllowed) return testAllowed;
+        if (AllowAll) return true;
         if (_session.TryGetValue(purpose, out var decided)) return decided;
         var info = NetworkPurposeCatalog.ByPurpose(purpose);
         return info is not null && _IsPersistedAllowed(info.Id);
     }
 
+    public static bool IsAllowed(NetworkPurposeInfo info) => info.Purpose != NetworkPurpose.Unknown
+        ? IsAllowed(info.Purpose)
+        : _testAllowAll.Value ?? (AllowAll ||
+          (_unknownHosts.TryGetValue(info.Id, out var allowed) ? allowed : _IsPersistedAllowed(info.Id)));
+
     /// <summary>确认某用途是否已授权，必要时询问用户。</summary>
-    public static async Task<bool> EnsureAsync(NetworkPurpose purpose, CancellationToken ct = default)
+    public static async Task<bool> EnsureAsync(NetworkPurpose purpose, CancellationToken ct = default,
+        string? name = null, string? host = null)
     {
-        if (_testAllowAll.Value || AllowAll) return true;
+        ct.ThrowIfCancellationRequested();
+        if (_testAllowAll.Value is { } testAllowed) return testAllowed;
+        if (AllowAll) return true;
         if (_session.TryGetValue(purpose, out var decided)) return decided;
 
         var info = NetworkPurposeCatalog.ByPurpose(purpose);
@@ -108,8 +122,17 @@ public static class NetworkConsentService
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            ct.ThrowIfCancellationRequested();
+            if (_testAllowAll.Value is { } gateTestAllowed) return gateTestAllowed;
+            if (AllowAll) return true;
             if (_session.TryGetValue(purpose, out decided)) return decided;
-            var decision = await _AskAsync(info).ConfigureAwait(false);
+            if (_IsPersistedAllowed(info.Id)) return true;
+            var prompt = name is null ? info : info with
+            {
+                TitleZh = name, TitleEn = name, Hosts = host is null ? info.Hosts : [host]
+            };
+            var decision = await _AskAsync(prompt).WaitAsync(ct).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
             _session[purpose] = decision;
             return decision;
         }
@@ -120,26 +143,27 @@ public static class NetworkConsentService
     }
 
     /// <summary>确认未登记域名是否允许访问。</summary>
-    public static async Task<bool> EnsureUnknownHostAsync(string host, CancellationToken ct = default)
+    public static async Task<bool> EnsureUnknownHostAsync(string host, CancellationToken ct = default,
+        string? name = null)
     {
+        ct.ThrowIfCancellationRequested();
+        var info = NetworkPurposeCatalog.RegisterRequest(name ?? host, host);
+        if (_testAllowAll.Value is { } testAllowed) return testAllowed;
         if (AllowAll) return true;
-        if (_unknownHosts.TryGetValue(host, out var decided)) return decided;
-
-        var info = new NetworkPurposeInfo(
-            NetworkPurpose.Unknown,
-            "unknown:" + host,
-            "未登记的目标", "Unregistered target",
-            $"连接到 {host}。该域名不在 PCL Lite 的网络白名单中。",
-            $"Connect to {host}. This host is not in the PCL Lite allow-list.",
-            "发起该请求的功能", "the feature that requested it",
-            [host]);
+        if (_unknownHosts.TryGetValue(info.Id, out var decided)) return decided;
+        if (_IsPersistedAllowed(info.Id)) return true;
 
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (_unknownHosts.TryGetValue(host, out decided)) return decided;
-            var decision = await _AskAsync(info).ConfigureAwait(false);
-            _unknownHosts[host] = decision;
+            ct.ThrowIfCancellationRequested();
+            if (_testAllowAll.Value is { } gateTestAllowed) return gateTestAllowed;
+            if (AllowAll) return true;
+            if (_unknownHosts.TryGetValue(info.Id, out decided)) return decided;
+            if (_IsPersistedAllowed(info.Id)) return true;
+            var decision = await _AskAsync(info).WaitAsync(ct).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+            _unknownHosts[info.Id] = decision;
             return decision;
         }
         finally
@@ -233,7 +257,13 @@ public static class NetworkConsentService
     {
         var info = NetworkPurposeCatalog.ByPurpose(purpose);
         if (info is null) return;
-        _session[purpose] = true;
+        AllowPermanently(info);
+    }
+
+    public static void AllowPermanently(NetworkPurposeInfo info)
+    {
+        if (info.Purpose == NetworkPurpose.Unknown) _unknownHosts[info.Id] = true;
+        else _session[info.Purpose] = true;
         var set = _ParseAllowed();
         set.Add(info.Id);
         _SaveAllowed(set);
@@ -243,8 +273,14 @@ public static class NetworkConsentService
     public static void Revoke(NetworkPurpose purpose)
     {
         var info = NetworkPurposeCatalog.ByPurpose(purpose);
-        _session[purpose] = false;
         if (info is null) return;
+        Revoke(info);
+    }
+
+    public static void Revoke(NetworkPurposeInfo info)
+    {
+        if (info.Purpose == NetworkPurpose.Unknown) _unknownHosts[info.Id] = false;
+        else _session[info.Purpose] = false;
         var set = _ParseAllowed();
         if (set.Remove(info.Id)) _SaveAllowed(set);
     }

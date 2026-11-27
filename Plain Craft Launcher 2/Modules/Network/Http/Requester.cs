@@ -7,6 +7,8 @@ using Downloader;
 using System.Text.Json.Nodes;
 using PCL.Core.IO.Net;
 using PCL.Core.IO.Net.Http;
+using PCL.Core.IO.Net.Consent;
+using System.Runtime.CompilerServices;
 
 namespace PCL.Network;
 
@@ -18,10 +20,12 @@ public static class Requester
             throw new HttpResponseException(response);
     }
 
-    public static async Task<string> FetchStringAsync(string url, RequestParam param = default)
+    public static async Task<string> FetchStringAsync(string url, RequestParam param = default,
+        [CallerFilePath] string caller = "")
     {
         return await FetchAsync(url, new FetchParam
         {
+            Source = param.Source ?? NetworkRequestSource.FromCaller(caller),
             Method = "GET",
             Accept = param.Accept,
             FallbackUrl = param.FallbackUrl,
@@ -32,44 +36,47 @@ public static class Requester
         }, Math.Max(1, param.Retries == 0 ? 1 : param.Retries)).ConfigureAwait(false);
     }
 
-    public static string FetchString(string url, RequestParam param = default)
+    public static string FetchString(string url, RequestParam param = default, [CallerFilePath] string caller = "")
     {
-        return FetchStringAsync(url, param).GetAwaiter().GetResult();
+        return FetchStringAsync(url, param, caller).GetAwaiter().GetResult();
     }
 
-    public static async Task<JsonNode> FetchJsonAsync(string url, RequestParam param = default)
+    public static async Task<JsonNode> FetchJsonAsync(string url, RequestParam param = default,
+        [CallerFilePath] string caller = "")
     {
-        return ModBase.GetJson(await FetchStringAsync(url, param).ConfigureAwait(false));
+        return ModBase.GetJson(await FetchStringAsync(url, param, caller).ConfigureAwait(false));
     }
 
-    public static async Task<T> FetchJsonAsync<T>(string url, RequestParam param = default) where T : JsonNode
+    public static async Task<T> FetchJsonAsync<T>(string url, RequestParam param = default,
+        [CallerFilePath] string caller = "") where T : JsonNode
     {
-        return (T)await FetchJsonAsync(url, param).ConfigureAwait(false);
+        return (T)await FetchJsonAsync(url, param, caller).ConfigureAwait(false);
     }
 
-    public static JsonNode FetchJson(string url, RequestParam param = default)
+    public static JsonNode FetchJson(string url, RequestParam param = default, [CallerFilePath] string caller = "")
     {
-        return FetchJsonAsync(url, param).GetAwaiter().GetResult();
+        return FetchJsonAsync(url, param, caller).GetAwaiter().GetResult();
     }
 
-    public static T FetchJson<T>(string url, RequestParam param = default) where T : JsonNode
+    public static T FetchJson<T>(string url, RequestParam param = default, [CallerFilePath] string caller = "") where T : JsonNode
     {
-        return FetchJsonAsync<T>(url, param).GetAwaiter().GetResult();
+        return FetchJsonAsync<T>(url, param, caller).GetAwaiter().GetResult();
     }
 
-    public static async Task<string> FetchAsync(string url, FetchParam param)
+    public static async Task<string> FetchAsync(string url, FetchParam param, [CallerFilePath] string caller = "")
     {
+        param.Source ??= NetworkRequestSource.FromCaller(caller);
         return await FetchAsync(url, param, 3).ConfigureAwait(false);
     }
 
-    public static string Fetch(string url, FetchParam param)
+    public static string Fetch(string url, FetchParam param, [CallerFilePath] string caller = "")
     {
-        return FetchAsync(url, param).GetAwaiter().GetResult();
+        return FetchAsync(url, param, caller).GetAwaiter().GetResult();
     }
 
-    public static string Fetch(string url)
+    public static string Fetch(string url, [CallerFilePath] string caller = "")
     {
-        return Fetch(url, new FetchParam { Method = "GET", Timeout = 30000, MakeLog = true });
+        return Fetch(url, new FetchParam { Method = "GET", Timeout = 30000, MakeLog = true }, caller);
     }
 
     private static async Task<string> FetchAsync(string url, FetchParam param, int retries)
@@ -98,6 +105,7 @@ public static class Requester
     {
         HttpResponseMessage? response = null;
         var request = new HttpRequestMessage(ParseMethod(param.Method), RequestSigning.SecretCdnSign(url));
+        NetworkConnectionManager.SetSource(request, param.Source ?? new NetworkRequestSource("HTTP requester"));
         RequestSigning.SecretHeadersSign(url, ref request, param.UseBrowserUserAgent);
         try
         {
@@ -160,6 +168,8 @@ public static class Requester
     {
         try
         {
+            NetworkConnectionManager.AuthorizeAsync(new("Network diagnostics", NetworkPurpose.ServerConnection),
+                new UriBuilder("icmp", ip).Uri).GetAwaiter().GetResult();
             using var ping = new Ping();
             var result = ping.Send(ip);
             return result.Status == IPStatus.Success ? (int)result.RoundtripTime : -1;

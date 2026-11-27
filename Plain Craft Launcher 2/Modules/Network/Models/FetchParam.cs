@@ -5,6 +5,7 @@ namespace PCL.Network;
 
 public struct FetchParam
 {
+    public PCL.Core.IO.Net.Consent.NetworkRequestSource? Source { get; set; }
     public string Method { get; set; }
     
     /// <summary>

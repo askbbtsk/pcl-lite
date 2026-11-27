@@ -32,10 +32,10 @@ public sealed partial class PluginRuntimeManager
         public IPluginSettings Settings { get; } = new PluginSettings(Path.Combine(owner._pluginsDirectory, ".plugin-data", manifest.Id));
         public IPluginUi Ui { get; } = new PluginUi(manifest.Id, manifest.Name);
         public IPluginEvents Events => _events;
-        public IPluginNetwork Network { get; } = new PluginNetwork(owner._httpClient);
+        public IPluginNetwork Network { get; } = new PluginNetwork(owner._httpClient, manifest.Id);
         public IPluginMinecraft Minecraft { get; } = new PluginMinecraft(owner);
         public IPluginLauncher Launcher { get; } = new PluginLauncher(owner._pluginsDirectory,
-            Path.Combine(owner._pluginsDirectory, ".plugin-data", manifest.Id), owner._httpClient);
+            Path.Combine(owner._pluginsDirectory, ".plugin-data", manifest.Id), owner._httpClient, manifest.Id);
         public IPluginServices Services { get; } = new PluginServices(owner, manifest.Id);
         public void Dispose()
         {
@@ -386,7 +386,7 @@ public sealed partial class PluginRuntimeManager
     }
 
 
-    private sealed class PluginNetwork(HttpClient client) : IPluginNetwork
+    private sealed class PluginNetwork(HttpClient client, string pluginId) : IPluginNetwork
     {
         public Task<PluginHttpResponse> GetAsync(Uri uri, CancellationToken cancellationToken = default) =>
             SendAsync(HttpMethod.Get, uri, content: null, contentType: "application/json", headers: new Dictionary<string, string>(), cancellationToken: cancellationToken);
@@ -407,6 +407,9 @@ public sealed partial class PluginRuntimeManager
             if (content is not null && System.Text.Encoding.UTF8.GetByteCount(content) > MaximumPluginHttpBodyBytes)
                 throw new InvalidDataException("Plugin HTTP request content exceeds the 16 MiB limit.");
             using var request = new HttpRequestMessage(method, uri);
+            IO.Net.Consent.NetworkConnectionManager.SetSource(request, new("Plugin: " + pluginId));
+            await IO.Net.Consent.NetworkConnectionManager.AuthorizeAsync(new("Plugin: " + pluginId), uri, cancellationToken)
+                .ConfigureAwait(false);
             if (content is not null) request.Content = new StringContent(content, System.Text.Encoding.UTF8, contentType);
             foreach (var header in headers ?? throw new ArgumentNullException(nameof(headers)))
             {
@@ -466,7 +469,8 @@ public sealed partial class PluginRuntimeManager
     }
 
 
-    private sealed class PluginLauncher(string pluginsDirectory, string dataDirectory, HttpClient httpClient) : IPluginLauncher
+    private sealed class PluginLauncher(string pluginsDirectory, string dataDirectory, HttpClient httpClient,
+        string pluginId) : IPluginLauncher
     {
         public string Name => "PCL Lite";
         public string Version => typeof(PluginRuntimeManager).Assembly.GetName().Version?.ToString() ?? "unknown";
@@ -488,7 +492,11 @@ public sealed partial class PluginRuntimeManager
             PluginPackage.ValidateRelativePath(relativePath);
             if (uri is null || !uri.IsAbsoluteUri || uri.Scheme != Uri.UriSchemeHttps)
                 throw new ArgumentException("Downloads must use an absolute HTTPS URI.", nameof(uri));
-            using var response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            var requestSource = new IO.Net.Consent.NetworkRequestSource("Plugin: " + pluginId);
+            IO.Net.Consent.NetworkConnectionManager.SetSource(request, requestSource);
+            await IO.Net.Consent.NetworkConnectionManager.AuthorizeAsync(requestSource, uri, cancellationToken).ConfigureAwait(false);
+            using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             var finalUri = response.RequestMessage?.RequestUri ?? uri;
             if (finalUri.Scheme != Uri.UriSchemeHttps)

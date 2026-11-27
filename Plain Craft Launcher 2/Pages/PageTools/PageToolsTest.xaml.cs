@@ -506,7 +506,7 @@ public partial class PageToolsTest
 
     private async Task LoadImageAsync(string imageUrl)
     {
-        var client = NetworkService.GetClient();
+        using var client = PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Achievement preview");
         try
         {
             var response = await client.GetAsync(imageUrl);
@@ -552,7 +552,7 @@ public partial class PageToolsTest
     private async Task DownloadImageToLocalAsync(string imageUrl)
     {
         var savePath = ModBase.pathTemp + @"Download\" + ModBase.GetHash(imageUrl) + ".png";
-        var client = NetworkService.GetClient();
+        using var client = PCL.Core.IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Achievement image download");
         try
         {
             // 异步发送 GET 请求

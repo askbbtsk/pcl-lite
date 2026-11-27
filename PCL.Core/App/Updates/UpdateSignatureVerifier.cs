@@ -20,6 +20,9 @@ namespace PCL.Core.App.Updates;
 /// </summary>
 public static class UpdateSignatureVerifier
 {
+    private static readonly HttpClient ConsentHttp =
+        IO.Net.Consent.NetworkConnectionManager.CreateHttpClient("Update signature verification",
+            IO.Net.Consent.NetworkPurpose.LauncherUpdate);
     public const string OidcIssuer = "https://token.actions.githubusercontent.com";
     // Sigstore's current GitHub OIDC subject uses immutable numeric owner/repository IDs.
     // Keep this pinned alongside the exact workflow SAN below so a different repository
@@ -75,7 +78,7 @@ public static class UpdateSignatureVerifier
 
         return new Verifier(
             pipeline,
-            new TufClient(NetworkService.GetClient(), NullLogger<TufClient>.Instance),
+            new TufClient(ConsentHttp, NullLogger<TufClient>.Instance),
             NullLogger<Verifier>.Instance);
     }
 }

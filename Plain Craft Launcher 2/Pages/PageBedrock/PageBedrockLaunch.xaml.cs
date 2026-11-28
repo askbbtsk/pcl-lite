@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.Link.Bedrock;
@@ -36,11 +37,13 @@ public partial class PageBedrockLaunch
     private int _boundRevision = -1;
 
     private bool _subscribed;
+    private readonly DispatcherTimer _processTimer = new() { Interval = TimeSpan.FromSeconds(2) };
 
     public PageBedrockLaunch()
     {
         InitializeComponent();
         ListInstalls.ItemsSource = _items;
+        _processTimer.Tick += (_, _) => RefreshProcessAction();
 
         Loaded += (_, _) =>
         {
@@ -51,10 +54,13 @@ public partial class PageBedrockLaunch
             }
 
             Bind(force: true);
+            RefreshProcessAction();
+            _processTimer.Start();
             ModBedrockRuntime.Refresh();
         };
         Unloaded += (_, _) =>
         {
+            _processTimer.Stop();
             if (!_subscribed) return;
             _subscribed = false;
             ModBedrockRuntime.StateChanged -= OnStateChanged;
@@ -77,16 +83,28 @@ public partial class PageBedrockLaunch
 
             _items.Clear();
             foreach (var install in ModBedrockRuntime.Installs) _items.Add(new BedrockItemView(install));
-
-            LabEmpty.Visibility = _items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            BtnOpenSaves.Visibility = _items.Count > 0 || Directory.Exists(BedrockService.GetSavesDirectory())
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         var currentId = ModBedrockRuntime.Current?.Id;
         foreach (var item in _items)
             item.IsCurrent = string.Equals(item.Install.Id, currentId, StringComparison.OrdinalIgnoreCase);
 
+        var noInstalls = _items.Count == 0 && !ModBedrockRuntime.IsBusy;
+        LabEmpty.Visibility = noInstalls ? Visibility.Visible : Visibility.Collapsed;
+        BtnDownload.Visibility = noInstalls ? Visibility.Visible : Visibility.Collapsed;
         BtnRefresh.IsEnabled = !ModBedrockRuntime.IsBusy;
     }
+
+    private void RefreshProcessAction()
+    {
+        BtnStop.Visibility = BedrockService.IsRunning() ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void BtnDownload_Click(object sender, MouseButtonEventArgs e) =>
+        ModMain.frmMain.PageChange(FormMain.PageType.Bedrock, FormMain.PageSubType.BedrockDownload);
 
     private void Row_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
@@ -121,6 +139,7 @@ public partial class PageBedrockLaunch
     private void BtnStop_Click(object sender, MouseButtonEventArgs e)
     {
         ModBedrockRuntime.Stop();
+        RefreshProcessAction();
     }
 
     private void BtnOpenInstallFolder_Click(object sender, MouseButtonEventArgs e)

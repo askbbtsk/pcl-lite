@@ -31,6 +31,17 @@
                                       Margin="0,0,0,15" x:Name="HintGetFail"
                                       Visibility="Collapsed" />
                         <StackPanel x:Name="PanContentList" />
+                        <local:MyCard x:Name="CardNoContent" TahoeIsFlat="True"
+                                      HorizontalAlignment="Left" Margin="0,0,0,15">
+                            <StackPanel Margin="20,16">
+                                <TextBlock Text="{DynamicResource Download.Comp.Favorites.Empty.Title}" FontWeight="SemiBold" />
+                                <TextBlock Margin="0,6,0,12" TextWrapping="Wrap"
+                                           Text="{DynamicResource Download.Comp.Favorites.Empty.Description}" />
+                                <local:MyButton Height="32" Padding="12,0" HorizontalAlignment="Left" ColorType="Highlight"
+                                                Text="{DynamicResource Download.Comp.Favorites.Empty.Browse}"
+                                                Click="BrowseResources_Click" />
+                            </StackPanel>
+                        </local:MyCard>
                         <!--<local:MyCard x:Name="CardProjectsMod" Title="Mod" IsSwapped="True" CanSwap="True" Margin="0,0,0,15">
                             <StackPanel x:Name="PanProjectsMod" Margin="12,38,12,12" />
                         </local:MyCard>
@@ -39,32 +50,6 @@
                         </local:MyCard>-->
                     </StackPanel>
                 </StackPanel>
-                <local:MyCard HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40"
-                              x:Name="CardNoContent" TahoeIsFlat="True">
-                    <Grid Margin="20,17">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="4" Margin="0,0,0,9" HorizontalAlignment="Center"
-                                   Text="{DynamicResource Download.Comp.Favorites.Empty.Title}" Style="{StaticResource TahoeEmptyTitleStyle}"
-                                   UseLayoutRounding="True" SnapsToDevicePixels="True"
-                                   />
-                        <Rectangle Grid.Row="1" Grid.ColumnSpan="4" HorizontalAlignment="Stretch" Height="2"
-                                   Style="{StaticResource TahoeEmptyRuleStyle}" />
-                        <TextBlock Grid.Row="2" Grid.ColumnSpan="4" Margin="10,15,10,5"
-                                   Text="{DynamicResource Download.Comp.Favorites.Empty.Description}"
-                                   TextWrapping="Wrap" />
-                    </Grid>
-                </local:MyCard>
             </Grid>
         </local:MyScrollViewer>
         <local:MyCard x:Name="CardSelect" Visibility="Collapsed" Opacity="0"

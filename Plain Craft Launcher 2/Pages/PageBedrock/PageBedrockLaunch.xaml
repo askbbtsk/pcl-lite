@@ -8,9 +8,6 @@
         <StackPanel x:Name="PanMain" Margin="25,10">
             <local:MyCard Margin="0,15" Title="{DynamicResource Bedrock.Launch.List.Title}">
                 <StackPanel Margin="20,40,20,15">
-                    <TextBlock Text="{DynamicResource Bedrock.Launch.Description}" TextWrapping="Wrap"
-                               LineHeight="20" Margin="6,0,6,12" Opacity="0.8" />
-
                     <ItemsControl x:Name="ListInstalls">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -57,15 +54,18 @@
                     <TextBlock x:Name="LabEmpty" Margin="6,10" Opacity="0.7" TextWrapping="Wrap"
                                Text="{DynamicResource Bedrock.Launch.Empty}" Visibility="Collapsed" />
 
-                    <WrapPanel Margin="0,14,0,0">
-                        <local:MyButton x:Name="BtnRefresh" Height="35" MinWidth="120" Margin="0,0,12,0"
-                                        Text="{DynamicResource Bedrock.Launch.Refresh}" Click="BtnRefresh_Click" />
-                        <local:MyButton x:Name="BtnStop" Height="35" MinWidth="130" Margin="0,0,12,0"
-                                        Text="{DynamicResource Bedrock.Launch.Stop}" Click="BtnStop_Click" />
-                        <local:MyButton x:Name="BtnAddFolder" Height="35" MinWidth="130" Margin="0,0,12,0"
+                    <WrapPanel Margin="6,8,0,0">
+                        <local:MyButton x:Name="BtnDownload" Height="34" MinWidth="110" Padding="12,0"
+                                        Margin="0,0,8,6" ColorType="Highlight" Visibility="Collapsed"
+                                        Text="{DynamicResource Bedrock.Launch.GoToDownload}" Click="BtnDownload_Click" />
+                        <local:MyButton x:Name="BtnAddFolder" Height="34" MinWidth="110" Padding="12,0" Margin="0,0,8,6"
                                         Text="{DynamicResource Bedrock.Launch.AddFolder}" Click="BtnAddFolder_Click" />
-                        <local:MyButton x:Name="BtnOpenSaves" Height="35" MinWidth="130"
+                        <local:MyButton x:Name="BtnRefresh" Height="34" Padding="12,0" Margin="0,0,8,6"
+                                        Text="{DynamicResource Bedrock.Launch.Refresh}" Click="BtnRefresh_Click" />
+                        <local:MyButton x:Name="BtnOpenSaves" Height="34" Padding="12,0" Margin="0,0,8,6" Visibility="Collapsed"
                                         Text="{DynamicResource Bedrock.Launch.OpenSaves}" Click="BtnOpenSaves_Click" />
+                        <local:MyButton x:Name="BtnStop" Height="34" Padding="12,0" Margin="0,0,8,6"
+                                        Visibility="Collapsed" Text="{DynamicResource Bedrock.Launch.Stop}" Click="BtnStop_Click" />
                     </WrapPanel>
                 </StackPanel>
             </local:MyCard>

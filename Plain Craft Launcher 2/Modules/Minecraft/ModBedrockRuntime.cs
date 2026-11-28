@@ -101,7 +101,7 @@ public static class ModBedrockRuntime
                     if (!string.IsNullOrWhiteSpace(error))
                         SetState(Lang.Text("Bedrock.Launch.DetectFailed", error!), Current?.DisplayName ?? "");
                     else if (merged.Count == 0)
-                        SetState(Lang.Text("Bedrock.Status.NotFound"), Lang.Text("Bedrock.Launch.Empty"));
+                        SetState(Lang.Text("Bedrock.Status.NotFound"), "");
                     else
                         SetState(
                             BedrockService.IsRunning()

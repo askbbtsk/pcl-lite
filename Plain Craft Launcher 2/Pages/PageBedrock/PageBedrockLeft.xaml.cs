@@ -62,6 +62,7 @@ public partial class PageBedrockLeft
         _brushIdle ??= (Brush)FindResource("ColorBrushGray4");
         ShapeStatusDot.Fill = ready ? _brushReady : _brushIdle;
         LabVersionText.Text = ModBedrockRuntime.Current?.DisplayName ?? "";
+        BtnLaunch.Visibility = ready ? Visibility.Visible : Visibility.Collapsed;
         BtnLaunch.IsEnabled = !ModBedrockRuntime.IsBusy;
     }
 

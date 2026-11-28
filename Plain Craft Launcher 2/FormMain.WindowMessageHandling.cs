@@ -314,7 +314,7 @@ public partial class FormMain
     }
 
 
-    /// <summary>根据用户折叠列表，把折叠页面排在导航三角按钮后面。</summary>
+    /// <summary>保留能放下的标签，其余标签从更多菜单进入。</summary>
     public void RefreshNavigationOverflow()
     {
         if (PanTitleSelect is null || BtnTitleNavOverflow is null) return;
@@ -350,9 +350,6 @@ public partial class FormMain
         // Plugin pages are always folded before ordinary optional tabs when the top bar runs out of room.
         preferredCollapsedIds.UnionWith(buttons.Where(item => item.Id <= -1000).Select(item => item.Id));
         var visibleButtons = buttons.Where(item => !IsNavigationFeatureHidden(item.Id)).ToArray();
-        var foldingEnabled = visibleButtons.Length > 5;
-        if (!foldingEnabled) _navigationExpanded = false;
-
         var infiniteSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
         var rightReservedWidth = GetTitleRightReservedWidth();
         PanTitleMain.ColumnDefinitions[0].Width = Config.Preference.WindowTitleType == LauncherTitleType.None
@@ -382,45 +379,24 @@ public partial class FormMain
             button.Visibility = previousVisibility;
         }
 
-        var autoCollapsedIds = foldingEnabled
-            ? TopBarNavigationLayout.SelectCollapsedTabs(measuredTabs, preferredCollapsedIds,
-                availableNavigationWidth, overflowButtonWidth)
-            : new HashSet<int>();
-        if (autoCollapsedIds.Count == 0) _navigationExpanded = false;
-        _navigationAutoCollapsedIds = autoCollapsedIds.ToHashSet();
-
-        var mainButtons = new List<MyRadioButton>();
-        var overflowButtons = new List<MyRadioButton>();
+        var collapsedIds = TopBarNavigationLayout.SelectCollapsedTabs(measuredTabs, preferredCollapsedIds,
+            availableNavigationWidth, overflowButtonWidth);
+        _navigationOverflowButtons = visibleButtons.Where(item => collapsedIds.Contains(item.Id))
+            .Select(item => item.Button).ToArray();
         foreach (var (button, id) in buttons)
-        {
-            var featureHidden = IsNavigationFeatureHidden(id);
-            var isCollapsed = autoCollapsedIds.Contains(id);
-            button.Visibility = featureHidden || isCollapsed && !_navigationExpanded
+            button.Visibility = IsNavigationFeatureHidden(id) || collapsedIds.Contains(id)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
-            (isCollapsed ? overflowButtons : mainButtons).Add(button);
-        }
-
-        var desiredChildren = mainButtons.Cast<UIElement>()
-            .Append(BtnTitleNavOverflow)
-            .Concat(overflowButtons)
-            .ToArray();
-        if (PanTitleSelect.Children.Count != desiredChildren.Length ||
-            !PanTitleSelect.Children.Cast<UIElement>().SequenceEqual(desiredChildren))
+        var desiredChildren = buttons.Select(item => (UIElement)item.Button).Append(BtnTitleNavOverflow).ToArray();
+        if (!PanTitleSelect.Children.Cast<UIElement>().SequenceEqual(desiredChildren))
         {
             PanTitleSelect.Children.Clear();
             foreach (var child in desiredChildren) PanTitleSelect.Children.Add(child);
         }
 
-        BtnTitleNavOverflow.Visibility = _navigationAutoCollapsedIds.Count > 0
+        BtnTitleNavOverflow.Visibility = _navigationOverflowButtons.Length > 0
             ? Visibility.Visible
             : Visibility.Collapsed;
-        BtnTitleNavOverflow.SvgIcon = _navigationExpanded
-            ? "lucide/chevron-down"
-            : "lucide/chevron-right";
-        BtnTitleNavOverflow.ToolTip = Lang.Text(_navigationExpanded
-            ? "Main.Tab.OverflowHide"
-            : "Main.Tab.OverflowShow");
         UpdateNavigationOverflowPosition();
     }
 
@@ -438,7 +414,7 @@ public partial class FormMain
     internal double GetTitleRightReservedWidth()
     {
         var reservedWidth = 0d;
-        foreach (var button in new[] { BtnTitleClose, BtnTitleMin })
+        foreach (var button in new[] { BtnTitleClose, BtnTitleMin, BtnCommandPalette })
         {
             if (button.Visibility != Visibility.Visible) continue;
             var buttonWidth = double.IsFinite(button.Width)
@@ -487,11 +463,40 @@ public partial class FormMain
 
     private void BtnTitleNavOverflow_Click(object sender, EventArgs e)
     {
-        if (_navigationAutoCollapsedIds.Count == 0) return;
-        _navigationExpanded = !_navigationExpanded;
-        RefreshNavigationOverflow();
+        if (_navigationOverflowButtons.Length == 0) return;
+
+        var menu = new ContextMenu
+        {
+            PlacementTarget = BtnTitleNavOverflow,
+            Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom
+        };
+        foreach (var button in _navigationOverflowButtons)
+        {
+            var item = new MyMenuItem
+            {
+                Header = button.Text,
+                SvgIcon = button.SvgIcon,
+                IsChecked = button.Checked
+            };
+            item.Click += (_, _) => button.SetChecked(true, raiseByMouse: true, anime: false);
+            menu.Items.Add(item);
+        }
+
+        menu.IsOpen = true;
     }
 
+
+    private void TitleAction_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Enter or Key.Space)) return;
+        e.Handled = true;
+        if (e.IsRepeat) return;
+
+        if (ReferenceEquals(sender, BtnCommandPalette))
+            ToggleCommandPalette();
+        else
+            BtnTitleNavOverflow_Click(sender, e);
+    }
 
     private void PanTitleSelect_SizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -516,10 +521,8 @@ public partial class FormMain
     {
         if (PanTitleSelect is null || PanTitleSelectViewport is null || !PanTitleSelectViewport.IsLoaded) return;
 
-        // 正常态保持居中；展开态靠右排列折叠导航。
-        PanTitleSelect.HorizontalAlignment = _navigationExpanded
-            ? HorizontalAlignment.Right
-            : Config.Preference.WindowTitleType == LauncherTitleType.None && Config.Preference.TopBarLeftAlign
+        PanTitleSelect.HorizontalAlignment =
+            Config.Preference.WindowTitleType == LauncherTitleType.None && Config.Preference.TopBarLeftAlign
                 ? HorizontalAlignment.Left
                 : HorizontalAlignment.Center;
         PanTitleSelect.RenderTransform = Transform.Identity;

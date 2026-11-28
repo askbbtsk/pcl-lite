@@ -12,6 +12,8 @@ public sealed class PagePluginsInstalled : MyPageRight
     private readonly StackPanel _content;
     private readonly WrapPanel _pluginPages;
     private readonly ContentControl _pluginPageContent;
+    private readonly StackPanel _pluginSection;
+    private readonly MyCard _pluginPageCard;
     private PluginPage? _activePluginPage;
 
     public PagePluginsInstalled()
@@ -19,9 +21,13 @@ public sealed class PagePluginsInstalled : MyPageRight
         var root = PluginPageSupport.CreateRoot(Lang.Text("Plugin.Installed.Title"), out _status, out _content);
         _pluginPages = new WrapPanel();
         _pluginPageContent = new ContentControl { Margin = new Thickness(0, 10, 0, 0) };
-        root.Children.Add(PluginPageSupport.Text(Lang.Text("Plugin.Installed.Pages"), 18, true));
-        root.Children.Add(_pluginPages);
-        root.Children.Add(PluginPageSupport.CreateCard(_pluginPageContent));
+        _pluginPageCard = PluginPageSupport.CreateCard(_pluginPageContent);
+        _pluginPageCard.Visibility = Visibility.Collapsed;
+        _pluginSection = new StackPanel { Visibility = Visibility.Collapsed };
+        _pluginSection.Children.Add(PluginPageSupport.Text(Lang.Text("Plugin.Installed.Pages"), 18, true));
+        _pluginSection.Children.Add(_pluginPages);
+        _pluginSection.Children.Add(_pluginPageCard);
+        root.Children.Add(_pluginSection);
         var scroll = new MyScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -46,8 +52,8 @@ public sealed class PagePluginsInstalled : MyPageRight
     {
         _content.Children.Clear();
         _pluginPages.Children.Clear();
-        if (_activePluginPage is not null) _ = HideActivePluginPageAsync(clearContent: true);
-        else _pluginPageContent.Content = null;
+        _pluginSection.Visibility = Visibility.Collapsed;
+        _ = HideActivePluginPageAsync(clearContent: true);
         var manager = PluginManagerService.Manager;
         if (manager is null)
         {
@@ -56,6 +62,13 @@ public sealed class PagePluginsInstalled : MyPageRight
         }
         var plugins = manager.GetInstalled();
         _status.Text = plugins.Count == 0 ? Lang.Text("Plugin.Installed.Empty") : "";
+        if (plugins.Count == 0)
+        {
+            var browse = PluginPageSupport.Button(Lang.Text("Plugin.Installed.BrowseMarket"),
+                (_, _) => ModMain.frmMain.PageChange(FormMain.PageType.Plugins, FormMain.PageSubType.PluginMarket), true);
+            browse.HorizontalAlignment = HorizontalAlignment.Left;
+            _content.Children.Add(browse);
+        }
         foreach (var plugin in plugins)
         {
             var card = new StackPanel();
@@ -129,6 +142,7 @@ public sealed class PagePluginsInstalled : MyPageRight
     {
         _pluginPages.Children.Clear();
         var pages = PluginPageRegistry.GetAll();
+        _pluginSection.Visibility = pages.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (_activePluginPage is not null && !pages.Contains(_activePluginPage))
             _ = HideActivePluginPageAsync(clearContent: true);
         foreach (var page in pages)
@@ -144,6 +158,7 @@ public sealed class PagePluginsInstalled : MyPageRight
     {
         if (ReferenceEquals(_activePluginPage, page)) return;
         await HideActivePluginPageAsync(clearContent: true);
+        _pluginPageCard.Visibility = Visibility.Visible;
         try
         {
             _pluginPageContent.Content = page.GetOrCreateView();
@@ -161,7 +176,11 @@ public sealed class PagePluginsInstalled : MyPageRight
     {
         var page = _activePluginPage;
         _activePluginPage = null;
-        if (clearContent) _pluginPageContent.Content = null;
+        if (clearContent)
+        {
+            _pluginPageContent.Content = null;
+            _pluginPageCard.Visibility = Visibility.Collapsed;
+        }
         if (page is not null) await page.NotifyHiddenAsync();
     }
 

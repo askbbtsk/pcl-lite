@@ -47,7 +47,7 @@ public sealed class PagePluginsMarket : MyPageRight
             _status.Text = Lang.Text("Plugin.Common.NoManager");
             return;
         }
-        _status.Text = "";
+        _status.Text = Lang.Text("Common.State.Loading");
         try
         {
             var index = await manager.GetMarketAsync(new Uri(ProjectLinks.PluginCatalog));
@@ -62,6 +62,7 @@ public sealed class PagePluginsMarket : MyPageRight
             {
                 var entry = candidate.Entry;
                 var stack = new StackPanel();
+                stack.Children.Add(PluginPageSupport.Text(GetDisplayName(entry), 14, true));
                 var icon = new Image { Width = 42, Height = 42,
                     Stretch = System.Windows.Media.Stretch.Uniform,
                     Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -69,11 +70,13 @@ public sealed class PagePluginsMarket : MyPageRight
                 {
                     var header = new StackPanel { Orientation = Orientation.Horizontal };
                     header.Children.Add(icon);
-                    header.Children.Add(PluginPageSupport.Text($"{GetDisplayName(entry)}  ·  {entry.Author}  ·  {entry.Version}", 12));
+                    header.Children.Add(PluginPageSupport.Text($"{entry.Author}  ·  {entry.Version}", 12));
                     stack.Children.Add(header);
                 }
                 else
-                stack.Children.Add(PluginPageSupport.Text($"{GetDisplayName(entry)}  ·  {entry.Author}  ·  {entry.Version}", 12));
+                {
+                    stack.Children.Add(PluginPageSupport.Text($"{entry.Author}  ·  {entry.Version}", 12));
+                }
                 stack.Children.Add(PluginPageSupport.Text(GetDescription(entry)));
                 var row = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
                 switch (candidate.Kind)
@@ -91,35 +94,11 @@ public sealed class PagePluginsMarket : MyPageRight
                         row.Children.Add(CreateInstallButton(entry, Lang.Text("Plugin.Market.Install")));
                         break;
                 }
-                stack.Children.Add(row);
-                Grid? websiteFooter = null;
                 if (Uri.TryCreate(entry.Website, UriKind.Absolute, out var website) && website.Scheme == Uri.UriSchemeHttps)
-                {
-                    var footer = new Grid
-                    {
-                        Margin = new Thickness(0, 2, 0, 0),
-                        HorizontalAlignment = HorizontalAlignment.Left
-                    };
-                    footer.ColumnDefinitions.Add(new ColumnDefinition());
-                    footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                    var websiteButton = PluginPageSupport.Button(Lang.Text("Download.Version.OpenWebsite"),
-                        (_, _) => ModBase.OpenWebsite(website.AbsoluteUri));
-                    websiteButton.Margin = new Thickness(0);
-                    websiteButton.HorizontalAlignment = HorizontalAlignment.Right;
-                    Grid.SetColumn(websiteButton, 1);
-                    footer.Children.Add(websiteButton);
-                    stack.Children.Add(footer);
-                    websiteFooter = footer;
-                }
-                var card = PluginPageSupport.CreateCard(stack, GetDisplayName(entry));
-                card.HorizontalAlignment = HorizontalAlignment.Stretch;
-                if (websiteFooter is not null)
-                {
-                    void ResizeWebsiteFooter() => websiteFooter.Width = Math.Max(0, card.ActualWidth - 40);
-                    card.Loaded += (_, _) => ResizeWebsiteFooter();
-                    card.SizeChanged += (_, _) => ResizeWebsiteFooter();
-                }
-                _content.Children.Add(card);
+                    row.Children.Add(PluginPageSupport.Button(Lang.Text("Download.Version.OpenWebsite"),
+                        (_, _) => ModBase.OpenWebsite(website.AbsoluteUri)));
+                stack.Children.Add(row);
+                _content.Children.Add(PluginPageSupport.CreateCard(stack));
                 if (!string.IsNullOrWhiteSpace(entry.Icon))
                     _ = PluginPageSupport.LoadRemoteIconIntoAsync(entry.Icon, icon);
             }

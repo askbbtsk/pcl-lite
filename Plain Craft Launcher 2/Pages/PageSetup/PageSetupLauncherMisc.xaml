@@ -157,7 +157,7 @@
                 </Grid>
             </local:MyCard>
 
-            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Network.Manager.Title}">
+            <local:MyCard x:Name="CardNetworkPermissions" Margin="0,0,0,15" Title="{DynamicResource Network.Manager.Title}">
                 <StackPanel Margin="25,38,25,18">
                     <local:MyCheckBox x:Name="CheckAllowAllConsent"
                                       Text="{DynamicResource Network.Manager.AllowAll}"

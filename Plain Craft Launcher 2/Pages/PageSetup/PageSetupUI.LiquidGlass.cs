@@ -10,6 +10,15 @@ public partial class PageSetupUI
 {
     private bool _liquidGlassBinding;
 
+    private void LiquidGlassAdvanced_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        var expanded = PanLiquidGlassAdvanced.Visibility != Visibility.Visible;
+        PanLiquidGlassAdvanced.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+        BtnLiquidGlassAdvanced.SetResourceReference(MyButton.TextProperty, expanded
+            ? "Setup.Ui.LiquidGlass.Advanced.Hide"
+            : "Setup.Ui.LiquidGlass.Advanced");
+    }
+
     private void RefreshLiquidGlassSettings()
     {
         _liquidGlassBinding = true;

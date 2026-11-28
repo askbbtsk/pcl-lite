@@ -14,12 +14,9 @@ public partial class FormMain
 
     private void InitializeCommandPalette()
     {
-        BtnCommandPalette.Show = Config.Preference.ShowCommandPaletteButton;
+        UpdateSearchVisibility();
         var visibilityObserver = new ConfigObserver(ConfigEvent.Changed,
-            _ => Dispatcher.BeginInvoke(() =>
-            {
-                if (IsLoaded) BtnCommandPalette.Show = Config.Preference.ShowCommandPaletteButton;
-            }));
+            _ => Dispatcher.BeginInvoke(UpdateSearchVisibility));
         Config.Preference.ShowCommandPaletteButtonConfig.Observe(visibilityObserver);
         Closed += (_, _) => Config.Preference.ShowCommandPaletteButtonConfig.Unobserve(visibilityObserver);
         PreviewKeyDown += (_, e) =>
@@ -38,7 +35,15 @@ public partial class FormMain
         Closed += (_, _) => _paletteLoading?.Cancel();
     }
 
-    private void CommandPalette_Click(object sender, MouseButtonEventArgs e) => ToggleCommandPalette();
+    private void UpdateSearchVisibility()
+    {
+        BtnCommandPalette.Visibility = Config.Preference.ShowCommandPaletteButton
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        QueueNavigationOverflowRefresh();
+    }
+
+    private void CommandPalette_Click(object sender, EventArgs e) => ToggleCommandPalette();
 
     private async void ToggleCommandPalette()
     {

@@ -6,44 +6,39 @@
                   xmlns:local="clr-namespace:PCL"
                   mc:Ignorable="d" x:Name="PanBack"
                   d:DesignHeight="417.2" Width="300">
-    <Grid Name="PanInput" RenderTransformOrigin="0.5,0.5">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="20" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="20" />
-            <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="10" />
-        </Grid.ColumnDefinitions>
-        <Grid.RenderTransform>
-            <ScaleTransform />
-        </Grid.RenderTransform>
-        <local:MyButton Grid.Row="3" Grid.Column="2" x:Name="BtnInstance" Height="35" Margin="0,10,10,0" Text="{DynamicResource Launch.Home.SelectInstance}"
-                        IsEnabled="False" Click="BtnInstance_Click" />
-        <local:MyButton Grid.Row="3" Grid.Column="3" x:Name="BtnMore" Visibility="Collapsed" Height="35"
-                        Click="BtnMore_Click"
-                        Margin="0,10,10,0" TextPadding="36" Text="{DynamicResource Launch.Home.InstanceSettings}" />
-        <Grid Grid.ColumnSpan="5" Grid.Row="1" Margin="20,0" VerticalAlignment="Center" x:Name="PanLogin" />
-        <Grid Grid.ColumnSpan="5" Grid.Row="2">
-            <local:MyButton x:Name="BtnLaunch" Height="54" Margin="20,0" Text="{DynamicResource Launch.Home.Button.Loading}" ColorType="Highlight"
-                            Click="BtnLaunch_Click"
-                            Padding="30,0,30,15" IsEnabled="False" />
-            <TextBlock x:Name="LabVersion" Text="{DynamicResource Launch.Home.VersionList.Loading}" Margin="35,0,35,10" IsHitTestVisible="False"
-                       VerticalAlignment="Bottom" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
-                       FontSize="11" Style="{StaticResource TahoeHomeLaunchSubtitleStyle}" RenderTransformOrigin="0.5,-0.2">
-                <TextBlock.RenderTransform>
-                    <ScaleTransform ScaleX="{Binding RealRenderTransform.ScaleX, ElementName=BtnLaunch, Mode=OneWay}"
-                                    ScaleY="{Binding RealRenderTransform.ScaleY, ElementName=BtnLaunch, Mode=OneWay}" />
-                </TextBlock.RenderTransform>
-            </TextBlock>
+    <local:MyScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Grid Name="PanInput" Margin="20,20,20,16" RenderTransformOrigin="0.5,0.5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.RenderTransform>
+                <ScaleTransform />
+            </Grid.RenderTransform>
+
+            <Grid x:Name="PanLogin" />
+            <TextBlock Grid.Row="1" x:Name="LabVersion" Text="{DynamicResource Launch.Home.VersionList.Loading}"
+                       Margin="0,12,0,7" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource ColorBrush2}" FontSize="13"
+                       ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <local:MyButton x:Name="BtnInstance" Height="35" IsEnabled="False"
+                                Text="{DynamicResource Launch.Home.SelectInstance}" />
+                <local:MyButton Grid.Column="1" x:Name="BtnMore" Visibility="Collapsed" Height="35"
+                                Margin="8,0,0,0" Padding="12,0"
+                                Text="{DynamicResource Launch.Home.InstanceSettings}" />
+            </Grid>
+            <local:MyButton Grid.Row="3" x:Name="BtnLaunch" Height="46" Margin="0,10,0,0"
+                            Text="{DynamicResource Launch.Home.Button.Loading}" ColorType="Highlight" IsEnabled="False" />
         </Grid>
-    </Grid>
+    </local:MyScrollViewer>
+
     <Grid Name="PanLaunching" RenderTransformOrigin="0.5,0.5" Visibility="Collapsed" Opacity="0">
         <Grid.RenderTransform>
             <ScaleTransform ScaleX="0.8" ScaleY="0.8" />

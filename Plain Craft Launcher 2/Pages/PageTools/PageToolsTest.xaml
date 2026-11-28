@@ -31,9 +31,7 @@
             </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Tools.Test.CustomDownload.Title}">
                 <StackPanel Orientation="Vertical" Margin="25,40,25,20">
-                    <TextBlock Text="{DynamicResource Tools.Test.CustomDownload.Description}"
-                               TextWrapping="Wrap" />
-                    <Grid Margin="0,10,0,0">
+                    <Grid>
                         <Grid.Resources>
                             <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource BasedOnTextBlock}">
                                 <Setter Property="VerticalAlignment" Value="Center" />

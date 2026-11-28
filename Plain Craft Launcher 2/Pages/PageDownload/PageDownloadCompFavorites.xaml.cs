@@ -875,6 +875,9 @@ public partial class PageDownloadCompFavorites
 
     #region 搜索
 
+    private void BrowseResources_Click(object sender, MouseButtonEventArgs e) =>
+        ModMain.frmMain.PageChange(FormMain.PageType.Download, FormMain.PageSubType.DownloadMod);
+
     private bool IsSearching => !string.IsNullOrWhiteSpace(PanSearchBox.Text);
 
     private bool allowSearch = true;

@@ -550,8 +550,9 @@
     <sys:String x:Key="Download.Comp.Favorites.Deselect">取消選取</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Download">下載所選</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.EditNote">修改備註</sys:String>
-    <sys:String x:Key="Download.Comp.Favorites.Empty.Description">在資源詳細資訊介面中可以點擊新增至我的最愛按鈕進行新增</sys:String>
+    <sys:String x:Key="Download.Comp.Favorites.Empty.Description">在資源詳細資料頁面點選「收藏」。</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Empty.Title">還沒有我的最愛內容</sys:String>
+    <sys:String x:Key="Download.Comp.Favorites.Empty.Browse">瀏覽資源</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Error.OperationFailed">我的最愛資料夾操作失敗。請檢視錯誤詳情。</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.GetInfoFailed">部分資源線上資訊取得失敗，點此檢視詳情</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.LoaderName.BatchDownload">批次下載資源（{0}）</sys:String>
@@ -1785,8 +1786,8 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
 
     <!-- Welcome -->
 
-    <sys:String x:Key="Welcome.Network.Title">網路自主</sys:String>
-    <sys:String x:Key="Welcome.Network.Manage">管理網路白名單</sys:String>
+    <sys:String x:Key="Welcome.Network.Title">網路權限</sys:String>
+    <sys:String x:Key="Welcome.Network.Manage">管理網路權限</sys:String>
     <sys:String x:Key="Welcome.Network.Status.All">已授權全部連線（{0} 項網路用途）</sys:String>
     <sys:String x:Key="Welcome.Network.Status.Partial">已授權 {0} / {1} 個網路用途</sys:String>
     <sys:String x:Key="Welcome.Recent.Title">目前選擇的版本</sys:String>
@@ -1994,7 +1995,7 @@ Cookie 可以直接貼擴充功能匯出的 cookies.txt（Netscape 格式）整�
     <sys:String x:Key="Main.Tab.Settings">設定</sys:String>
     <sys:String x:Key="Main.Tab.Tools">工具</sys:String>
     <sys:String x:Key="Main.Tab.Link">連線</sys:String>
-    <sys:String x:Key="Main.Tab.OverflowShow">展開更多導覽</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowShow">更多頁面</sys:String>
     <sys:String x:Key="Main.Tab.OverflowHide">收起更多導覽</sys:String>
     <sys:String x:Key="Main.Title.GameLog">即時日誌</sys:String>
     <sys:String x:Key="Main.Title.InstanceSelect">實例選擇</sys:String>
@@ -3035,6 +3036,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Plugin.Install.Failed">外掛安裝失敗：{0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Title">已安裝的外掛</sys:String>
     <sys:String x:Key="Plugin.Installed.Empty">尚未安裝外掛。</sys:String>
+    <sys:String x:Key="Plugin.Installed.BrowseMarket">前往外掛市集</sys:String>
     <sys:String x:Key="Plugin.Installed.Enable">啟用</sys:String>
     <sys:String x:Key="Plugin.Installed.Disable">停用</sys:String>
     <sys:String x:Key="Plugin.Installed.Uninstall">解除安裝</sys:String>
@@ -3255,15 +3257,15 @@ Release 發布時間：{2}
     <sys:String x:Key="Setup.Ui.Window.Size.Huge">超大 1280 × 760</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Custom">自訂</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">不透明度</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowLogo">開啟啟動器時顯示 PCL Lite 圖示</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton">顯示右下角全域搜尋按鈕</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">關閉後隱藏右下角搜尋按鈕，仍可按 Ctrl+K 開啟全域搜尋。立即生效。</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在啟動遊戲時顯示"你知道嗎"</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowLogo">啟動時顯示 PCL Lite 圖示</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton">在標題列顯示搜尋按鈕</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">按 Ctrl+K 也能開啟全域搜尋。</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">啟動遊戲時顯示小知識</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">介面上的使用者資料夾名打碼</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">將介面路徑中的 Windows 使用者名稱隱藏為 *****，僅影響顯示，不更動檔案。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">基礎</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">標題列頁面折疊</sys:String>
-    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">標題列空間不足時，優先折疊選取的頁面；空間足夠時顯示所有頁面。勾選此處的頁面會優先收進標題列右側的展開區域。</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">標題列空間不足時，優先將勾選的頁面收進「更多」。</sys:String>
 
     <sys:String x:Key="Plugin.MainPage.Consent.Title">顯示外掛頁面</sys:String>
     <sys:String x:Key="Plugin.MainPage.Consent.Content">{0} 想在頂部導覽中顯示 {1} 個主頁面。是否同意？</sys:String>
@@ -3541,6 +3543,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Bedrock.Download.Directory">下載目錄：{0}</sys:String>
     <sys:String x:Key="Bedrock.Download.DirChanged">下載目錄已改為：{0}</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode">開發人員模式</sys:String>
+    <sys:String x:Key="Bedrock.Download.DeveloperMode.Confirm">此版本需要 Windows 開發人員模式。繼續安裝時會嘗試開啟，可能需要系統管理員權限。</sys:String>
     <sys:String x:Key="Bedrock.Download.List.Title">可用版本</sys:String>
     <sys:String x:Key="Bedrock.Download.Empty">目前篩選條件下沒有版本。換個篩選條件，或點「重新整理列表」重新取得。</sys:String>
     <sys:String x:Key="Bedrock.Download.Busy">已經有一個下載或安裝工作在跑了，等它結束再點。</sys:String>
@@ -3552,6 +3555,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Bedrock.Download.UrlFailed">沒能取得 {0} 的下載位址。商店包需要用微軟 FE3 介面換真實位址，可能被網路阻擋了。</sys:String>
     <sys:String x:Key="Bedrock.Download.AlreadyInstalled">{0} 已經裝好了，到「啟動」頁就能直接開。</sys:String>
     <sys:String x:Key="Bedrock.Download.Filter.Channel">發布通道</sys:String>
+    <sys:String x:Key="Bedrock.Download.Filter.AllPackages">所有套件類型</sys:String>
     <sys:String x:Key="Bedrock.Download.Filter.Search">搜尋版本號</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Idle">選好版本點右側按鈕即可下載安裝。GDK 包需要內容金鑰（CIK）才能解包，沒設定時只能下載。</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Loading">正在取得版本列表…</sys:String>
@@ -3603,7 +3607,8 @@ Release 發布時間：{2}
     <sys:String x:Key="Bedrock.Launch.List.Title">可啟動的基岩版</sys:String>
     <sys:String x:Key="Bedrock.Launch.Detecting">正在偵測基岩版…</sys:String>
     <sys:String x:Key="Bedrock.Launch.DetectFailed">偵測基岩版失敗：{0}</sys:String>
-    <sys:String x:Key="Bedrock.Launch.Empty">沒有找到基岩版。可以在「下載」頁裝一個，或用「加入目錄」指定已有的解包目錄。</sys:String>
+    <sys:String x:Key="Bedrock.Launch.Empty">下載一個基岩版，或加入已解包的目錄。</sys:String>
+    <sys:String x:Key="Bedrock.Launch.GoToDownload">前往下載</sys:String>
     <sys:String x:Key="Bedrock.Launch.Refresh">重新偵測</sys:String>
     <sys:String x:Key="Bedrock.Launch.Stop">結束遊戲程序</sys:String>
     <sys:String x:Key="Bedrock.Launch.AddFolder">加入目錄</sys:String>
@@ -3710,6 +3715,7 @@ Release 發布時間：{2}
     <sys:String x:Key="Tools.Test.CustomDownload.Aborted">{0}已取消！</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.Description">使用 PCL Lite 的高速多執行緒下載引擎下載任意檔案。請注意，部分網站（例如 Google Drive、MEGA）可能會報錯 (403) 已禁止，無法正常下載。</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.FileName">檔名</sys:String>
+    <sys:String x:Key="Tools.Test.CustomDownload.Failed">下載失敗。請確認連結可直接下載，且儲存位置可寫入。若網站拒絕下載（403），請更換直連連結。</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.Finished">{0}完成！</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.LoaderName">自訂下載檔案：{0} </sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.LoaderTitle">自訂下載 ({0}) </sys:String>
@@ -4008,8 +4014,8 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Link.Sidebar.Ipv6ReadyDetail">網路環境正常，可直接開房或加房</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6">沒拿到公網 IPv6</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6Detail">校園網或舊路由器常關掉 IPv6，開手機熱點一般就有</sys:String>
-    <sys:String x:Key="Link.Env.NoIpv6Title">目前沒拿到公網 IPv6</sys:String>
-    <sys:String x:Key="Link.Env.NoIpv6Desc">目前直連基於純 IPv6，若校園網或路由器未開啟 IPv6，可嘗試開啟路由器 IPv6 或改用手機熱點後重試。</sys:String>
+    <sys:String x:Key="Link.Env.NoIpv6Title">未偵測到公網 IPv6</sys:String>
+    <sys:String x:Key="Link.Env.NoIpv6Desc">開啟路由器的 IPv6，或改用手機熱點後再試。</sys:String>
     <sys:String x:Key="Link.Host.Step1Title">1. 開啟新房間</sys:String>
     <sys:String x:Key="Link.Host.LanWaiting">進存檔點「對區域網路開放」，連接埠會自動填進來；開獨立伺服端也能手填連接埠。</sys:String>
     <sys:String x:Key="Link.Host.LanCaptured">已找到區域網路世界「{0}」，連接埠 {1}</sys:String>
@@ -4367,6 +4373,8 @@ Lunar 工作階段已於 {2} 過期，進遊戲後由 IPC 續期</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">玻璃染色比例（0–100%，不影響背景透明度）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">啟用按鈕按壓與跟隨動效</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Reset">還原玻璃預設參數</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Advanced">進階調整</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Advanced.Hide">收合進階調整</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">確定將液態玻璃參數恢復為預設（均衡）嗎？&#xA;僅重設玻璃參數，不影響其他設定。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity">卡片染色／不透明度（0–100%）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">調整卡片半透明底色的不透明度（0% 透明，100% 不透明）。</sys:String>

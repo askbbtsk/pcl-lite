@@ -37,6 +37,15 @@ internal static class PluginPageSupport
             Opacity = 0.9
         };
         status.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray2");
+        var statusStyle = new Style(typeof(TextBlock));
+        var emptyStatus = new DataTrigger
+        {
+            Binding = new System.Windows.Data.Binding(nameof(TextBlock.Text)) { Source = status },
+            Value = string.Empty
+        };
+        emptyStatus.Setters.Add(new Setter(UIElement.VisibilityProperty, Visibility.Collapsed));
+        statusStyle.Triggers.Add(emptyStatus);
+        status.Style = statusStyle;
         root.Children.Add(status);
         content = new StackPanel();
         root.Children.Add(content);

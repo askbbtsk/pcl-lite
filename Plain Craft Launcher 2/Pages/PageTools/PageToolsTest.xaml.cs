@@ -99,7 +99,7 @@ public partial class PageToolsTest
                         loader.Error,
                         $"{loader.name}失败",
                         ModBase.LogLevel.Msgbox,
-                        userSummary: Lang.Text("Tools.Test.Error.OperationFailed"));
+                        userSummary: Lang.Text("Tools.Test.CustomDownload.Failed"));
                     Console.Beep();
                     break;
                 }

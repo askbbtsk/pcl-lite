@@ -90,7 +90,7 @@
         </local:MyScrollViewer>
 
         <!-- 左下角启动按钮，底部叠一行当前版本名 -->
-        <Grid Grid.Row="1" Margin="0,10,0,0">
+        <Grid Grid.Row="1" Margin="0,10,0,0" Visibility="{Binding Visibility, ElementName=BtnLaunch}">
             <local:MyButton x:Name="BtnLaunch" Height="54" Margin="20,0"
                             Text="{DynamicResource Bedrock.Launch.Title}"
                             ColorType="Highlight"

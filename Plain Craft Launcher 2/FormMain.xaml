@@ -165,6 +165,12 @@
                                         SvgIcon="lucide/x" />
                     <local:MyIconButton x:Name="BtnTitleMin" HorizontalAlignment="Right" Height="28" VerticalAlignment="Center" Width="28" Margin="0,0,44,0" Theme="White" Click="BtnTitleMin_Click"
                                        SvgIcon="lucide/minus" />
+                    <local:MyIconButton x:Name="BtnCommandPalette" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Width="28" Height="28" Margin="0,0,80,0" Theme="White"
+                                        SvgIcon="lucide/search" Click="CommandPalette_Click" Visibility="Collapsed"
+                                        Focusable="True" KeyDown="TitleAction_KeyDown"
+                                        ToolTip="{DynamicResource CommandPalette.ToolTip}"
+                                        AutomationProperties.Name="{DynamicResource CommandPalette.Title}" />
                     <Grid x:Name="PanTitleMain" HorizontalAlignment="Left" Width="{Binding ActualWidth, ElementName=PanTitle, Mode=OneWay}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -220,7 +226,9 @@
                                                  SvgIcon="lucide/wrench" />
                             <local:MyIconButton x:Name="BtnTitleNavOverflow" Height="24" Width="24" Margin="1,0,6,0"
                                                 VerticalAlignment="Center" Theme="White" ToolTip="{DynamicResource Main.Tab.OverflowShow}"
-                                                Click="BtnTitleNavOverflow_Click" SvgIcon="lucide/chevron-right">
+                                                Click="BtnTitleNavOverflow_Click" SvgIcon="lucide/chevron-down"
+                                                Focusable="True" KeyDown="TitleAction_KeyDown"
+                                                AutomationProperties.Name="{DynamicResource Main.Tab.OverflowShow}">
                             </local:MyIconButton>
                             <local:MyRadioButton x:Name="BtnTitleSelect3" Text="{DynamicResource Main.Tab.Settings}" Tag="3" Margin="5,0" Padding="2,0"
                                                  Check="BtnTitleSelect_Click"
@@ -240,7 +248,7 @@
                                             LogoScale="0.87"
                                             SvgIcon="lucide/arrow-left" />
                         <TextBlock SnapsToDevicePixels="False" IsHitTestVisible="False" Name="LabTitleInner"
-                                   VerticalAlignment="Center" Margin="47,1,60,0" HorizontalAlignment="Left"
+                                   VerticalAlignment="Center" Margin="47,1,110,0" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis"
                                    Foreground="White" FontSize="15" />
                     </Grid>
                 </local:LiquidGlassTitleBar>
@@ -288,10 +296,6 @@
                             Margin="0,0,0,20"
                             Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="1" />
                 <StackPanel x:Name="PanExtraButtons" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="1" Margin="15">
-                    <local:MyExtraButton x:Name="BtnCommandPalette" HorizontalAlignment="Right"
-                                         Click="CommandPalette_Click" SvgIcon="lucide/search"
-                                         ToolTip="{DynamicResource CommandPalette.ToolTip}"
-                                         AutomationProperties.Name="{DynamicResource CommandPalette.Title}" />
                     <local:MyExtraButton x:Name="BtnExtraUpdateRestart" HorizontalAlignment="Right"
                                          Click="BtnExtraUpdateRestart_Click"
                                          VerticalAlignment="Center" ToolTip="{DynamicResource Main.Extra.UpdateRestart.ToolTip}"

@@ -316,9 +316,8 @@ public partial class FormMain
 
     private static bool isLogShown;
 
-    private bool _navigationExpanded;
     private bool _navigationReflowQueued;
-    private HashSet<int> _navigationAutoCollapsedIds = [];
+    private MyRadioButton[] _navigationOverflowButtons = [];
     private readonly Dictionary<string, MyRadioButton> _pluginMainPageButtons = new(StringComparer.Ordinal);
     private Dictionary<string, PluginMainPageHost>? _pluginMainPageHosts;
     private bool _pluginAuthorizationPromptActive;

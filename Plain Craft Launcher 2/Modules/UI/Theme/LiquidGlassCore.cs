@@ -325,7 +325,7 @@ public static partial class LiquidGlassCore
     }
 
     private static IEnumerable<MyIconButton> TitleIcons(FormMain window) =>
-        [window.BtnTitleClose, window.BtnTitleMin, window.BtnTitleInner, window.BtnTitleNavOverflow];
+        [window.BtnTitleClose, window.BtnTitleMin, window.BtnTitleInner, window.BtnTitleNavOverflow, window.BtnCommandPalette];
 
     private static void SetBrush(FormMain window, string key, Color color)
     {

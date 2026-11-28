@@ -1,0 +1,183 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.CommandPalette.cs",
+    "Sha256": "B4E1DCECE314A16A95DDA76323E82ACC7C3C5803B90F22722C03EDCDA4384D23",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::CreatePageCommands()",
+      "PCL.FormMain::MethodDeclaration::InitializeCommandPalette()",
+      "PCL.FormMain::MethodDeclaration::ToggleCommandPalette()"
+    ],
+    "Reason": "Move the search button into the title bar and remeasure navigation when its visibility changes. Carries forward previously reviewed members of this source where applicable.",
+    "RemovedMembers": [
+      "PCL.FormMain::FieldDeclaration::_navigationAutoCollapsedIds",
+      "PCL.FormMain::FieldDeclaration::_navigationExpanded",
+      "PCL.FormMain::FieldDeclaration::lastMouseArg",
+      "PCL.FormMain::MethodDeclaration::AprilGiveup()",
+      "PCL.FormMain::MethodDeclaration::BtnExtraApril_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::BtnExtraApril_ShowCheck()",
+      "PCL.FormMain::MethodDeclaration::BtnTitleHelp_Click(object sender, EventArgs e)",
+      "PCL.FormMain::MethodDeclaration::CommandPalette_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::FormMain_MouseMove(object sender, MouseEventArgs e)"
+    ]
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.WindowMessageHandling.cs",
+    "Sha256": "324709EEE97AC4C7184867A3FE8C36DE72D6B9F36F26F49B70EB338F3B2CA109",
+    "Members": [
+      "PCL.FormMain::MethodDeclaration::BtnTitleNavOverflow_Click(object sender, EventArgs e)",
+      "PCL.FormMain::MethodDeclaration::FormMain_KeyDown(object sender, KeyEventArgs e)",
+      "PCL.FormMain::MethodDeclaration::GetTitleLeftReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::GetTitleRightReservedWidth()",
+      "PCL.FormMain::MethodDeclaration::IsNavigationFeatureHidden(int id)",
+      "PCL.FormMain::MethodDeclaration::PanTitle_SizeChanged(object sender, EventArgs e)",
+      "PCL.FormMain::MethodDeclaration::ParseCollapsedNavigationIds(string? value)",
+      "PCL.FormMain::MethodDeclaration::RefreshNavigationOverflow()",
+      "PCL.FormMain::MethodDeclaration::UpdateNavigationOverflowPosition()",
+      "PCL.FormMain::MethodDeclaration::_SizeWndProc(nint hWnd, int msg, nint wParam, nint lParam, ref bool handled)"
+    ],
+    "Reason": "Keep visible title tabs in place while exposing collapsed pages through a dropdown menu. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/FormMain.xaml.cs",
+    "Sha256": "BC830D54CAB1B21476936317ACC03CD468EE1EEC088A8C12E89330B29F9B532C",
+    "Members": [
+      "PCL.FormMain::ConstructorDeclaration::.ctor()",
+      "PCL.FormMain::MethodDeclaration::FormMain_Loaded()"
+    ],
+    "Reason": "Track folded navigation buttons for the dropdown instead of tracking inline expansion. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/Minecraft/ModBedrockRuntime.cs",
+    "Sha256": "02A175DBA2FD4958F1AC3127AD1CAD37999D34713B2180C82AD64981099D38DA",
+    "Members": [
+      "PCL.ModBedrockRuntime::MethodDeclaration::Refresh(bool force = false)"
+    ],
+    "Reason": "Show the missing-install instructions in the launch empty state instead of repeating them in the sidebar. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Modules/UI/Theme/LiquidGlassCore.cs",
+    "Sha256": "D3AEC44AB9375F6A8805ABB99D9FC74A8CB94166949106E18C4E29A7652187B5",
+    "Members": [
+      "PCL.LiquidGlassCore::MethodDeclaration::Apply(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::CaptureOriginal(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::OnClosed(object? sender, EventArgs e)",
+      "PCL.LiquidGlassCore::MethodDeclaration::Refresh()",
+      "PCL.LiquidGlassCore::MethodDeclaration::Restore(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::SetResource(FormMain window, string key, object value)",
+      "PCL.LiquidGlassCore::MethodDeclaration::TitleIcons(FormMain window)",
+      "PCL.LiquidGlassCore::MethodDeclaration::UpdateTitleGlass(FormMain window)",
+      "PCL.LiquidGlassCore::PropertyDeclaration::BackdropSource",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsDesktopBackdropRequested",
+      "PCL.LiquidGlassCore::PropertyDeclaration::IsEnabled",
+      "PCL.LiquidGlassCore::PropertyDeclaration::Profile"
+    ],
+    "Reason": "Apply the existing title icon treatment to the relocated search button. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageBedrock/PageBedrockDownload.xaml.cs",
+    "Sha256": "801A7B52EF51A669688C3353A9C41C160D6A8ACEFE60006A01054DF882C8ED55",
+    "Members": [
+      "PCL.PageBedrockDownload+VersionView::MethodDeclaration::CheckInstalled(BedrockVersionEntry entry)",
+      "PCL.PageBedrockDownload+VersionView::MethodDeclaration::RefreshState()",
+      "PCL.PageBedrockDownload+VersionView::PropertyDeclaration::ActionText",
+      "PCL.PageBedrockDownload+VersionView::PropertyDeclaration::IsBusy",
+      "PCL.PageBedrockDownload::MethodDeclaration::ApplyFilter()",
+      "PCL.PageBedrockDownload::MethodDeclaration::BtnAction_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageBedrockDownload::MethodDeclaration::BtnChooseDir_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageBedrockDownload::MethodDeclaration::DescribeError(Exception ex)",
+      "PCL.PageBedrockDownload::MethodDeclaration::RefreshDirectoryLabel()",
+      "PCL.PageBedrockDownload::MethodDeclaration::ReloadAsync(bool force = false)"
+    ],
+    "Reason": "Keep the version list first, move the directory into its toolbar, and request consent for Developer Mode at the UWP install entry. Carries forward previously reviewed members of this source where applicable.",
+    "RemovedMembers": [
+      "PCL.PageBedrockDownload::FieldDeclaration::_busy",
+      "PCL.PageBedrockDownload::MethodDeclaration::BtnDeveloperMode_Click(object sender, MouseButtonEventArgs e)"
+    ]
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageBedrock/PageBedrockLaunch.xaml.cs",
+    "Sha256": "54F008F8D7C8D0DA6C57F2F675713730294045C6DB02894E11677E843711D9E6",
+    "Members": [
+      "PCL.PageBedrockLaunch::ConstructorDeclaration::.ctor()",
+      "PCL.PageBedrockLaunch::MethodDeclaration::Bind(bool force = false)",
+      "PCL.PageBedrockLaunch::MethodDeclaration::BtnStop_Click(object sender, MouseButtonEventArgs e)"
+    ],
+    "Reason": "Show the download action when the version list is empty and the stop action only while a process is running. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageBedrock/PageBedrockLeft.xaml.cs",
+    "Sha256": "B9A45874A005A3FC569B06A0353937860A4A4C8F2DA6F584E63B91BCB946D29F",
+    "Members": [
+      "PCL.PageBedrockLeft::MethodDeclaration::RefreshStatus()"
+    ],
+    "Reason": "Show the sidebar launch action only when an installed version is selected. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLaunch/PageWelcome.xaml.cs",
+    "Sha256": "D9FF3C28879B40F4CD1CD6782553A9F23FEB54EEDC7045181E80C81D76065BBF",
+    "Members": [
+      "PCL.PageWelcome::MethodDeclaration::Build()",
+      "PCL.PageWelcome::MethodDeclaration::_BuildNetworkCard()"
+    ],
+    "Reason": "Replace the welcome page's brand, community and network cards with one compact network permissions summary. Carries forward previously reviewed members of this source where applicable.",
+    "RemovedMembers": [
+      "PCL.PageWelcome::MethodDeclaration::_AddLocalizedText(StackPanel panel, double size, bool bold,\n        params (string Code, string Text)[] branches)",
+      "PCL.PageWelcome::MethodDeclaration::_BuildCommunityCard()",
+      "PCL.PageWelcome::MethodDeclaration::_BuildHero()",
+      "PCL.PageWelcome::MethodDeclaration::_Button(string text, Action onClick)",
+      "PCL.PageWelcome::MethodDeclaration::_Navigate(FormMain.PageType page, FormMain.PageSubType subType = FormMain.PageSubType.Default)",
+      "PCL.PageWelcome::MethodDeclaration::_Text(string text, double size, bool bold = false, string? tag = null)"
+    ]
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PagePlugins/PagePluginsInstalled.cs",
+    "Sha256": "57652EC0ED48B38E32E1B47224462BF9438D1C35F65F2B760879A8838AE1276C",
+    "Members": [
+      "PCL.PagePluginsInstalled::ConstructorDeclaration::.ctor()",
+      "PCL.PagePluginsInstalled::MethodDeclaration::HideActivePluginPageAsync(bool clearContent)",
+      "PCL.PagePluginsInstalled::MethodDeclaration::Refresh()",
+      "PCL.PagePluginsInstalled::MethodDeclaration::RefreshPluginPages()",
+      "PCL.PagePluginsInstalled::MethodDeclaration::ShowPluginPageAsync(PluginPage page)"
+    ],
+    "Reason": "Hide empty plugin function panels and add a marketplace link to the no-plugins state. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PagePlugins/PagePluginsMarket.cs",
+    "Sha256": "1A9E643893E67618303CC06AD2C51939A54656722D68D7DF4856F3E990D44894",
+    "Members": [
+      "PCL.PagePluginsMarket::MethodDeclaration::RefreshAsync()"
+    ],
+    "Reason": "Display a loading state and place each plugin's install and website actions in one row. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PagePlugins/PluginPageSupport.cs",
+    "Sha256": "D7364CC06191BBA77199F97D2AA78802F959E031E758EA75FC3EC2693168668C",
+    "Members": [
+      "PCL.PluginPageSupport::FieldDeclaration::IconClient",
+      "PCL.PluginPageSupport::MethodDeclaration::CreateRoot(string title, out TextBlock status, out StackPanel content)",
+      "PCL.PluginPageSupport::MethodDeclaration::PromptRestartForPluginChanges(string message)"
+    ],
+    "Reason": "Collapse empty plugin status text to remove the gap above results. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.LiquidGlass.cs",
+    "Sha256": "F91C25F65BAC250B2C1DE85DB95045A8FBE60BDC933901B3EA4F29CC54FDFBD1",
+    "Members": [
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassDesktop_Change(object sender, bool user)",
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassFrameRate_Changed(object sender, bool user)",
+      "PCL.PageSetupUI::MethodDeclaration::LiquidGlassPreset_Changed(object sender, SelectionChangedEventArgs e)",
+      "PCL.PageSetupUI::MethodDeclaration::RefreshLiquidGlassSettings()"
+    ],
+    "Reason": "Retain the existing glass settings lifecycle alongside the advanced section disclosure. Carries forward previously reviewed members of this source where applicable."
+  },
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageTools/PageToolsTest.xaml.cs",
+    "Sha256": "515949E07D10F1EFEC04A1A22BC5D757B76AE104810BF6C87C817C084A92530C",
+    "Members": [
+      "PCL.PageToolsTest::MethodDeclaration::DownloadImageToLocalAsync(string imageUrl)",
+      "PCL.PageToolsTest::MethodDeclaration::DownloadState(ModLoader.LoaderCombo<int> loader)",
+      "PCL.PageToolsTest::MethodDeclaration::LoadImageAsync(string imageUrl)"
+    ],
+    "Reason": "Present download troubleshooting only when a custom download fails. Carries forward previously reviewed members of this source where applicable."
+  }
+]

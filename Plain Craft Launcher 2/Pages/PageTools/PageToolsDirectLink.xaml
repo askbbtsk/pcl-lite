@@ -6,17 +6,21 @@
     <local:MyScrollViewer x:Name="PanBack" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel x:Name="PanMain" Margin="25,10">
 
-            <!-- 仅在没检测到公网 IPv6 时显示，不占用正常情况的版面 -->
-            <local:MyCard x:Name="CardNoIpv6" Margin="0,15,0,15" Visibility="Collapsed"
-                          Title="{DynamicResource Link.Env.NoIpv6Title}">
-                <StackPanel Margin="25,40,25,20">
-                    <TextBlock Text="{DynamicResource Link.Env.NoIpv6Desc}" TextWrapping="Wrap" LineHeight="20" />
-                    <WrapPanel Margin="0,12,0,0">
-                        <local:MyButton x:Name="BtnRetryIpv6" MinWidth="130" Height="35"
-                                        Text="{DynamicResource Link.Left.RefreshNet}"
-                                        Click="BtnRetryIpv6_Click" />
-                    </WrapPanel>
-                </StackPanel>
+            <local:MyCard Margin="0,15,0,0">
+                <Grid Margin="18,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,12,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="LabConnectionStatus" FontWeight="SemiBold" TextWrapping="Wrap"
+                                   Text="{DynamicResource Link.Left.Detecting}" />
+                        <TextBlock x:Name="LabConnectionDetail" Margin="0,3,0,0" FontSize="12"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource ColorBrush2}" />
+                    </StackPanel>
+                    <local:MyButton Grid.Column="1" Height="32" Padding="12,0" VerticalAlignment="Center"
+                                    Text="{DynamicResource Link.Left.RefreshNet}" Click="BtnRetryIpv6_Click" />
+                </Grid>
             </local:MyCard>
 
             <!-- 房主视图 -->
@@ -93,8 +97,7 @@
             <StackPanel x:Name="PanGuestMode" Margin="0,15,0,0" Visibility="Collapsed">
                 <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Link.Guest.Step1Title}">
                     <StackPanel Margin="25,40,25,20">
-                        <TextBlock Text="{DynamicResource Link.Guest.InviteHint}" TextWrapping="Wrap" LineHeight="20" />
-                        <Grid Margin="0,10,0,0">
+                            <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />

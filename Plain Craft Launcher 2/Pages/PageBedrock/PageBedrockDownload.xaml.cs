@@ -157,7 +157,7 @@ public partial class PageBedrockDownload
     /// <summary>把当前下载目录写到界面上，用户一眼能看到包会落在哪。</summary>
     private void RefreshDirectoryLabel()
     {
-        LabDir.Text = Lang.Text("Bedrock.Download.Directory", ModBedrockDownload.RootDirectory);
+        BtnOpenFolder.ToolTip = Lang.Text("Bedrock.Download.Directory", ModBedrockDownload.RootDirectory);
     }
 
     private void BtnChooseDir_Click(object sender, MouseButtonEventArgs e)
@@ -179,25 +179,6 @@ public partial class PageBedrockDownload
         ModBedrockRuntime.Refresh(force: true);
     }
 
-    private void BtnDeveloperMode_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (ModBedrockInstaller.IsDeveloperModeEnabled())
-        {
-            HintService.Hint(Lang.Text("Bedrock.Download.DeveloperMode.On"), HintType.Success);
-            return;
-        }
-
-        if (ModBedrockInstaller.EnableDeveloperMode())
-        {
-            HintService.Hint(Lang.Text("Bedrock.Download.DeveloperMode.Enabled"), HintType.Success);
-            LabStatus.Text = Lang.Text("Bedrock.Download.DeveloperMode.On");
-            return;
-        }
-
-        HintService.Hint(Lang.Text("Bedrock.Download.DeveloperMode.Failed"), HintType.Error);
-        LabStatus.Text = Lang.Text("Bedrock.Download.DeveloperMode.Off");
-    }
-
     private async void BtnAction_Click(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: VersionView view }) return;
@@ -209,6 +190,12 @@ public partial class PageBedrockDownload
             HintService.Hint(Lang.Text("Bedrock.Download.AlreadyInstalled", view.Entry.Key), HintType.Info);
             return;
         }
+
+        if (view.Entry.Kind == BedrockPackageKind.Uwp && !ModBedrockInstaller.IsDeveloperModeEnabled() &&
+            ModMain.MyMsgBox(Lang.Text("Bedrock.Download.DeveloperMode.Confirm"),
+                Lang.Text("Bedrock.Download.DeveloperMode"), Lang.Text("Common.Action.Continue"),
+                Lang.Text("Common.Action.Cancel")) != 1)
+            return;
 
         // 先把密钥要到手，免得下完 1 GB 才提示解不开
         if (!EnsureCik(view.Entry)) return;

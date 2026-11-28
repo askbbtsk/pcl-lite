@@ -559,8 +559,9 @@
     <sys:String x:Key="Download.Comp.Favorites.Deselect">Deselect</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Download">Download selected</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.EditNote">Edit note</sys:String>
-    <sys:String x:Key="Download.Comp.Favorites.Empty.Description">You can click the favorite button on the resource detail page to add a resource to favorites.</sys:String>
+    <sys:String x:Key="Download.Comp.Favorites.Empty.Description">Select Favorite on a project's details page.</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Empty.Title">No favorites yet</sys:String>
+    <sys:String x:Key="Download.Comp.Favorites.Empty.Browse">Browse resources</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Error.OperationFailed">A favorites operation failed. See the details below.</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.GetInfoFailed">Online information for some resources failed to load. Click to view details.</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.LoaderName.BatchDownload">Batch download resources ({0})</sys:String>
@@ -1830,8 +1831,8 @@ Any of these credentials is equivalent to your account password.</sys:String>
 
     <!-- Welcome -->
 
-    <sys:String x:Key="Welcome.Network.Title">Network autonomy</sys:String>
-    <sys:String x:Key="Welcome.Network.Manage">Manage network allowlist</sys:String>
+    <sys:String x:Key="Welcome.Network.Title">Network permissions</sys:String>
+    <sys:String x:Key="Welcome.Network.Manage">Manage permissions</sys:String>
     <sys:String x:Key="Welcome.Network.Status.All">All connections allowed ({0} network purposes)</sys:String>
     <sys:String x:Key="Welcome.Network.Status.Partial">{0} of {1} network purposes allowed</sys:String>
     <sys:String x:Key="Welcome.Recent.Title">Selected instance</sys:String>
@@ -2042,7 +2043,7 @@ Any of these credentials is equivalent to your account password.</sys:String>
     <sys:String x:Key="Main.Tab.Settings">Settings</sys:String>
     <sys:String x:Key="Main.Tab.Tools">Tools</sys:String>
     <sys:String x:Key="Main.Tab.Link">Multiplayer</sys:String>
-    <sys:String x:Key="Main.Tab.OverflowShow">Show more navigation</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowShow">More pages</sys:String>
     <sys:String x:Key="Main.Tab.OverflowHide">Hide extra navigation</sys:String>
     <sys:String x:Key="Main.Title.GameLog">Launch log</sys:String>
     <sys:String x:Key="Main.Title.InstanceSelect">Selection</sys:String>
@@ -3092,6 +3093,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Plugin.Install.Failed">Plugin installation failed: {0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Title">Installed plugins</sys:String>
     <sys:String x:Key="Plugin.Installed.Empty">No plugins installed.</sys:String>
+    <sys:String x:Key="Plugin.Installed.BrowseMarket">Browse marketplace</sys:String>
     <sys:String x:Key="Plugin.Installed.Enable">Enable</sys:String>
     <sys:String x:Key="Plugin.Installed.Disable">Disable</sys:String>
     <sys:String x:Key="Plugin.Installed.Uninstall">Uninstall</sys:String>
@@ -3312,15 +3314,15 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Setup.Ui.Window.Size.Huge">Extra large 1280 × 760</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Custom">Custom</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">Opacity</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowLogo">Display the PCL Lite logo while opening the launcher</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton">Show the global search button in the lower-right corner</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">Hide the floating search button while keeping Ctrl+K available. Takes effect immediately.</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">Show "Trivia" when launching the game</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowLogo">Show PCL Lite logo on startup</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton">Show search in the title bar</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">Press Ctrl+K to open global search.</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">Show trivia during game launch</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">Mask user folder names in the UI</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">Masks your Windows username in displayed paths as *****; display-only.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">Basics</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">Top bar page overflow</sys:String>
-    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">When the title bar runs short of space, selected pages are folded into the right-side overflow area first. All pages remain visible when there is enough room.</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">When the title bar runs out of room, move selected pages into More first.</sys:String>
 
     <sys:String x:Key="Plugin.MainPage.Consent.Title">Show plugin pages</sys:String>
     <sys:String x:Key="Plugin.MainPage.Consent.Content">{0} wants to show {1} main page(s) in the top navigation. Allow?</sys:String>
@@ -3598,6 +3600,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Bedrock.Download.Directory">Download folder: {0}</sys:String>
     <sys:String x:Key="Bedrock.Download.DirChanged">Download folder changed to: {0}</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode">Developer Mode</sys:String>
+    <sys:String x:Key="Bedrock.Download.DeveloperMode.Confirm">This version requires Windows Developer Mode. Continuing will try to enable it and may require administrator permission.</sys:String>
     <sys:String x:Key="Bedrock.Download.List.Title">Available versions</sys:String>
     <sys:String x:Key="Bedrock.Download.Empty">No version matches the current filters. Change the filters or click Refresh list.</sys:String>
     <sys:String x:Key="Bedrock.Download.Busy">Another download or install is already running. Wait for it to finish.</sys:String>
@@ -3609,6 +3612,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Bedrock.Download.UrlFailed">Could not resolve the download URL for {0}. Store packages need the Microsoft FE3 endpoint to return the real URL, which may be blocked on this network.</sys:String>
     <sys:String x:Key="Bedrock.Download.AlreadyInstalled">{0} is already installed. Open the Launch page to start it.</sys:String>
     <sys:String x:Key="Bedrock.Download.Filter.Channel">Channel</sys:String>
+    <sys:String x:Key="Bedrock.Download.Filter.AllPackages">All packages</sys:String>
     <sys:String x:Key="Bedrock.Download.Filter.Search">Search version</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Idle">Pick a version and click the button on the right. GDK packages need a content key (CIK) to be extracted; without one they can only be downloaded.</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Loading">Fetching the version list…</sys:String>
@@ -3660,7 +3664,8 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Bedrock.Launch.List.Title">Launchable installations</sys:String>
     <sys:String x:Key="Bedrock.Launch.Detecting">Looking for Bedrock installations…</sys:String>
     <sys:String x:Key="Bedrock.Launch.DetectFailed">Failed to detect Bedrock installations: {0}</sys:String>
-    <sys:String x:Key="Bedrock.Launch.Empty">No Bedrock installation found. Install one from the Download page, or add an existing extracted folder with Add folder.</sys:String>
+    <sys:String x:Key="Bedrock.Launch.Empty">Download a Bedrock version or add an existing extracted folder.</sys:String>
+    <sys:String x:Key="Bedrock.Launch.GoToDownload">Browse downloads</sys:String>
     <sys:String x:Key="Bedrock.Launch.Refresh">Rescan</sys:String>
     <sys:String x:Key="Bedrock.Launch.Stop">Kill game process</sys:String>
     <sys:String x:Key="Bedrock.Launch.AddFolder">Add folder</sys:String>
@@ -3767,6 +3772,7 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Tools.Test.CustomDownload.Aborted">{0} aborted!</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.Description">Use PCL Lite's high-speed multi-threaded download engine to download any file. Note: some websites may return 403 Forbidden errors and cannot be downloaded.</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.FileName">File name</sys:String>
+    <sys:String x:Key="Tools.Test.CustomDownload.Failed">Download failed. Check that the link downloads the file directly and that you can write to the destination. If the site returns 403, use another direct link.</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.Finished">{0} completed!</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.LoaderName">Custom download file: {0} </sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.LoaderTitle">Custom download ({0}) </sys:String>
@@ -4067,8 +4073,8 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Link.Sidebar.Ipv6ReadyDetail">Network ready for hosting or joining</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6">No public IPv6</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6Detail">Some routers or campus Wi-Fi disable IPv6; mobile hotspots usually work.</sys:String>
-    <sys:String x:Key="Link.Env.NoIpv6Title">No public IPv6 address found</sys:String>
-    <sys:String x:Key="Link.Env.NoIpv6Desc">Direct link requires IPv6; enable IPv6 on your router or try a mobile hotspot, then re-check.</sys:String>
+    <sys:String x:Key="Link.Env.NoIpv6Title">No public IPv6 detected</sys:String>
+    <sys:String x:Key="Link.Env.NoIpv6Desc">Enable IPv6 on your router or switch to a mobile hotspot, then try again.</sys:String>
     <sys:String x:Key="Link.Host.Step1Title">1. Open a Room</sys:String>
     <sys:String x:Key="Link.Host.LanWaiting">Click "Open to LAN" inside your world to fill the port automatically, or type a server port.</sys:String>
     <sys:String x:Key="Link.Host.LanCaptured">Found LAN world "{0}" on port {1}</sys:String>
@@ -4367,6 +4373,8 @@ Current files will be overwritten (a .importbak copy is kept). Continue?</sys:St
     <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">Glass tint scale (0–100%; separate from background opacity)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">Enable button press and follow animations</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Reset">Restore glass defaults</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Advanced">Advanced adjustments</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Advanced.Hide">Hide advanced adjustments</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">Reset Liquid Glass parameters to Balanced defaults?&#xA;Only glass parameters are reset.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity">Card tint / opacity (0–100%)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">Adjusts card background opacity (0% transparent, 100% opaque).</sys:String>

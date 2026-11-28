@@ -1,26 +1,15 @@
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
-using PCL.Core.App.Localization;
-
 namespace PCL;
 
 public partial class PageLinkLeft
 {
     public FormMain.PageSubType pageID = FormMain.PageSubType.LinkHost;
     private bool _isUpdatingSelection;
-    private Brush? _brushReady;
-    private Brush? _brushIdle;
 
     public PageLinkLeft()
     {
         InitializeComponent();
         AnimatedControl = PanItem;
-        Loaded += (_, _) =>
-        {
-            Select(pageID, false);
-            ModMain.frmToolsDirectLink?.PushSidebarStatus();
-        };
+        Loaded += (_, _) => Select(pageID, false);
     }
 
     private void PageCheck(object sender, ModBase.RouteEventArgs e)
@@ -55,21 +44,6 @@ public partial class PageLinkLeft
         }
     }
 
-    public void UpdateSidebarStatus(bool ready, string statusText, string detailText)
-    {
-        if (!CheckAccess())
-        {
-            Dispatcher.BeginInvoke(() => UpdateSidebarStatus(ready, statusText, detailText));
-            return;
-        }
-
-        _brushReady ??= (Brush)FindResource("ColorBrush3");
-        _brushIdle ??= (Brush)FindResource("ColorBrushGray4");
-        ShapeStatusDot.Fill = ready ? _brushReady : _brushIdle;
-        LabStatus.Text = statusText;
-        LabDetail.Text = detailText;
-    }
-
     private void PageChange(FormMain.PageSubType id)
     {
         if (pageID == id) return;
@@ -82,11 +56,5 @@ public partial class PageLinkLeft
             return;
         }
         ModMain.frmMain.PageChange(FormMain.PageType.Link, id);
-    }
-
-    private void BtnRefreshNet_Click(object sender, MouseButtonEventArgs e)
-    {
-        ModMain.frmToolsDirectLink ??= new PageToolsDirectLink();
-        ModMain.frmToolsDirectLink.RefreshIpv6ByUser();
     }
 }

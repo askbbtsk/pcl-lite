@@ -559,8 +559,9 @@
     <sys:String x:Key="Download.Comp.Favorites.Deselect">取消选择</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Download">下载所选</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.EditNote">修改备注</sys:String>
-    <sys:String x:Key="Download.Comp.Favorites.Empty.Description">在资源详细信息界面中可以点击收藏按钮进行收藏</sys:String>
+    <sys:String x:Key="Download.Comp.Favorites.Empty.Description">在资源详情页点「收藏」。</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Empty.Title">还没有收藏内容</sys:String>
+    <sys:String x:Key="Download.Comp.Favorites.Empty.Browse">浏览资源</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.Error.OperationFailed">收藏夹操作失败。请查看错误详情。</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.GetInfoFailed">部分资源在线信息获取失败，点此查看详情</sys:String>
     <sys:String x:Key="Download.Comp.Favorites.LoaderName.BatchDownload">批量下载资源（{0}）</sys:String>
@@ -1830,8 +1831,8 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
 
     <!-- Welcome -->
 
-    <sys:String x:Key="Welcome.Network.Title">网络自主</sys:String>
-    <sys:String x:Key="Welcome.Network.Manage">管理网络白名单</sys:String>
+    <sys:String x:Key="Welcome.Network.Title">网络权限</sys:String>
+    <sys:String x:Key="Welcome.Network.Manage">管理网络权限</sys:String>
     <sys:String x:Key="Welcome.Network.Status.All">已授权全部连接（{0} 项网络用途）</sys:String>
     <sys:String x:Key="Welcome.Network.Status.Partial">已授权 {0} / {1} 个网络用途</sys:String>
     <sys:String x:Key="Welcome.Recent.Title">当前所选实例</sys:String>
@@ -2042,7 +2043,7 @@ Cookie 可以直接粘扩展导出的 cookies.txt（Netscape 格式）整份内�
     <sys:String x:Key="Main.Tab.Settings">设置</sys:String>
     <sys:String x:Key="Main.Tab.Tools">工具</sys:String>
     <sys:String x:Key="Main.Tab.Link">联机</sys:String>
-    <sys:String x:Key="Main.Tab.OverflowShow">展开更多导航</sys:String>
+    <sys:String x:Key="Main.Tab.OverflowShow">更多页面</sys:String>
     <sys:String x:Key="Main.Tab.OverflowHide">收起更多导航</sys:String>
     <sys:String x:Key="Main.Title.GameLog">实时日志</sys:String>
     <sys:String x:Key="Main.Title.InstanceSelect">实例选择</sys:String>
@@ -3092,6 +3093,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Plugin.Install.Failed">插件安装失败：{0}</sys:String>
     <sys:String x:Key="Plugin.Installed.Title">已安装的插件</sys:String>
     <sys:String x:Key="Plugin.Installed.Empty">尚未安装插件。</sys:String>
+    <sys:String x:Key="Plugin.Installed.BrowseMarket">去插件市场</sys:String>
     <sys:String x:Key="Plugin.Installed.Enable">启用</sys:String>
     <sys:String x:Key="Plugin.Installed.Disable">禁用</sys:String>
     <sys:String x:Key="Plugin.Installed.Uninstall">卸载</sys:String>
@@ -3312,15 +3314,15 @@ Release 发布时间：{2}
     <sys:String x:Key="Setup.Ui.Window.Size.Huge">超大 1280 × 760</sys:String>
     <sys:String x:Key="Setup.Ui.Window.Size.Custom">自定义</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">不透明度</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowLogo">打开启动器时显示 PCL Lite 图标</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton">显示右下角全局搜索按钮</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">关闭后隐藏右下角搜索按钮，仍可按 Ctrl+K 打开全局搜索。立即生效。</sys:String>
-    <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在启动游戏时显示"你知道吗"</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowLogo">启动时显示 PCL Lite 图标</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton">在标题栏显示搜索按钮</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowSearchButton.ToolTip">按 Ctrl+K 也能打开全局搜索。</sys:String>
+    <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">启动游戏时显示小知识</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder">界面上的用户文件夹名打码</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.MaskUserFolder.ToolTip">将界面路径中的 Windows 用户名隐藏为 *****，仅影响显示，不改动文件。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">基础</sys:String>
     <sys:String x:Key="Setup.Ui.TopBarCollapse.Title">标题栏页面折叠</sys:String>
-    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">标题栏空间不足时，优先折叠选中的页面；空间足够时显示全部页面。勾选此处的页面会优先收进标题栏右侧的展开区域。</sys:String>
+    <sys:String x:Key="Setup.Ui.TopBarCollapse.Description">标题栏放不下时，优先把选中的页面收进「更多」。</sys:String>
 
     <sys:String x:Key="Plugin.MainPage.Consent.Title">显示插件页面</sys:String>
     <sys:String x:Key="Plugin.MainPage.Consent.Content">{0} 想要在顶部导航中显示 {1} 个主页面。是否同意？</sys:String>
@@ -3598,6 +3600,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Bedrock.Download.Directory">下载目录：{0}</sys:String>
     <sys:String x:Key="Bedrock.Download.DirChanged">下载目录已改为：{0}</sys:String>
     <sys:String x:Key="Bedrock.Download.DeveloperMode">开发者模式</sys:String>
+    <sys:String x:Key="Bedrock.Download.DeveloperMode.Confirm">此版本需要 Windows 开发者模式。继续安装时会尝试开启，可能需要管理员权限。</sys:String>
     <sys:String x:Key="Bedrock.Download.List.Title">可用版本</sys:String>
     <sys:String x:Key="Bedrock.Download.Empty">当前筛选条件下没有版本。换个筛选条件，或者点「刷新列表」重新拉取。</sys:String>
     <sys:String x:Key="Bedrock.Download.Busy">已经有一个下载或安装任务在跑了，等它结束再点。</sys:String>
@@ -3609,6 +3612,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Bedrock.Download.UrlFailed">没能拿到 {0} 的下载地址。商店包需要用微软 FE3 接口换真实地址，可能被网络拦截了。</sys:String>
     <sys:String x:Key="Bedrock.Download.AlreadyInstalled">{0} 已经装好了，去「启动」页就能直接开。</sys:String>
     <sys:String x:Key="Bedrock.Download.Filter.Channel">发布通道</sys:String>
+    <sys:String x:Key="Bedrock.Download.Filter.AllPackages">全部包类型</sys:String>
     <sys:String x:Key="Bedrock.Download.Filter.Search">搜索版本号</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Idle">选好版本点右侧按钮即可下载安装。GDK 包需要内容密钥（CIK）才能解包，没配置时只能下载。</sys:String>
     <sys:String x:Key="Bedrock.Download.Status.Loading">正在获取版本列表…</sys:String>
@@ -3660,7 +3664,8 @@ Release 发布时间：{2}
     <sys:String x:Key="Bedrock.Launch.List.Title">可启动的基岩版</sys:String>
     <sys:String x:Key="Bedrock.Launch.Detecting">正在检测基岩版…</sys:String>
     <sys:String x:Key="Bedrock.Launch.DetectFailed">检测基岩版失败：{0}</sys:String>
-    <sys:String x:Key="Bedrock.Launch.Empty">没有找到基岩版。可以在「下载」页装一个，或者用「添加目录」指定已有的解包目录。</sys:String>
+    <sys:String x:Key="Bedrock.Launch.Empty">下载一个基岩版，或添加已有的解包目录。</sys:String>
+    <sys:String x:Key="Bedrock.Launch.GoToDownload">去下载</sys:String>
     <sys:String x:Key="Bedrock.Launch.Refresh">重新检测</sys:String>
     <sys:String x:Key="Bedrock.Launch.Stop">结束游戏进程</sys:String>
     <sys:String x:Key="Bedrock.Launch.AddFolder">添加目录</sys:String>
@@ -3718,8 +3723,8 @@ Release 发布时间：{2}
     <sys:String x:Key="Link.Sidebar.Ipv6ReadyDetail">网络环境正常，可直接开房或加房</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6">没拿到公网 IPv6</sys:String>
     <sys:String x:Key="Link.Sidebar.NoIpv6Detail">校园网或老路由器常关掉 IPv6，开手机热点一般就有</sys:String>
-    <sys:String x:Key="Link.Env.NoIpv6Title">当前没拿到公网 IPv6</sys:String>
-    <sys:String x:Key="Link.Env.NoIpv6Desc">当前直连基于纯 IPv6，若校园网或路由器未开启 IPv6，可尝试开启路由器 IPv6 或改用手机热点后重试。</sys:String>
+    <sys:String x:Key="Link.Env.NoIpv6Title">未检测到公网 IPv6</sys:String>
+    <sys:String x:Key="Link.Env.NoIpv6Desc">开启路由器的 IPv6，或换用手机热点后重试。</sys:String>
     <sys:String x:Key="Link.Host.Step1Title">1. 开启新房间</sys:String>
     <sys:String x:Key="Link.Host.LanWaiting">进存档点「对局域网开放」，端口会自动填进来；开独立服务端也能手填端口。</sys:String>
     <sys:String x:Key="Link.Host.LanCaptured">已经找到局域网世界「{0}」，端口 {1}</sys:String>
@@ -3849,6 +3854,7 @@ Release 发布时间：{2}
     <sys:String x:Key="Tools.Test.CustomDownload.Aborted">{0}已取消！</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.Description">使用 PCL Lite 的高速多线程下载引擎下载任意文件。请注意，部分网站（例如百度网盘）可能会报错 (403) 已禁止，无法正常下载。</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.FileName">文件名</sys:String>
+    <sys:String x:Key="Tools.Test.CustomDownload.Failed">下载失败。请检查链接能否直接下载，以及保存位置是否可写。若网站拒绝下载（403），请换一个直链。</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.Finished">{0}完成！</sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.LoaderName">自定义下载文件：{0} </sys:String>
     <sys:String x:Key="Tools.Test.CustomDownload.LoaderTitle">自定义下载 ({0}) </sys:String>
@@ -4370,6 +4376,8 @@ Lunar 会话已于 {2} 过期，进游戏后由 IPC 续期</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Tint">玻璃染色比例（0–100%，不影响背景透明度）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Motion">启用按钮按压与跟随动效</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Reset">恢复玻璃默认参数</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Advanced">高级调节</sys:String>
+    <sys:String x:Key="Setup.Ui.LiquidGlass.Advanced.Hide">收起高级调节</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Reset.Confirm">确定将液态玻璃参数恢复为默认（均衡）吗？&#xA;仅重置玻璃参数，不影响其他设置。</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity">卡片染色／不透明度（0–100%）</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardOpacity.Hint">调整卡片半透明底色的不透明度（0% 透明，100% 不透明）。</sys:String>

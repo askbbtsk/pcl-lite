@@ -6,44 +6,16 @@
     <local:MyScrollViewer x:Name="PanBack" HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">
         <StackPanel x:Name="PanMain" Margin="25,10">
-            <local:MyCard Margin="0,15" Title="{DynamicResource Bedrock.Download.Title}">
-                <StackPanel Margin="25,40,25,20">
-                    <TextBlock Text="{DynamicResource Bedrock.Download.Description}" TextWrapping="Wrap" LineHeight="20" />
-                    <!--
-                        按钮统一 Height="35"（项目里其他页面的惯例）。
-                        别用 WrapPanel.ItemHeight 来定高：它只约束面板内的子元素，
-                        不在面板里的按钮就矮一截，看起来一大一小。
-                    -->
-                    <WrapPanel Margin="0,15,0,0">
-                        <local:MyButton x:Name="BtnRefresh" Height="35" MinWidth="120" Margin="0,0,12,0"
-                                        Text="{DynamicResource Bedrock.Download.Refresh}" Click="BtnRefresh_Click" />
-                        <local:MyButton x:Name="BtnOpenFolder" Height="35" MinWidth="130" Margin="0,0,12,0"
+            <local:MyCard Margin="0,15" Title="{DynamicResource Bedrock.Download.List.Title}">
+                <StackPanel Margin="20,38,20,12">
+                    <WrapPanel Margin="6,0,6,4">
+                        <local:MyButton x:Name="BtnRefresh" Height="30" Padding="12,0" Margin="0,0,8,6"
+                                        Text="{DynamicResource Common.Action.Refresh}" Click="BtnRefresh_Click" />
+                        <local:MyButton x:Name="BtnOpenFolder" Height="30" Padding="12,0" Margin="0,0,8,6"
                                         Text="{DynamicResource Bedrock.Download.OpenFolder}" Click="BtnOpenFolder_Click" />
-                        <local:MyButton x:Name="BtnChooseDir" Height="35" MinWidth="150"
+                        <local:MyButton x:Name="BtnChooseDir" Height="30" Padding="12,0" Margin="0,0,0,6"
                                         Text="{DynamicResource Bedrock.Download.ChooseDir}" Click="BtnChooseDir_Click" />
                     </WrapPanel>
-                    <!-- 开发者模式是改系统设置的独立操作，单独一行放，免得和上面的按钮挤成一团 -->
-                    <local:MyButton x:Name="BtnDeveloperMode" Height="35" MinWidth="150" Margin="0,10,0,0"
-                                    HorizontalAlignment="Left"
-                                    Text="{DynamicResource Bedrock.Download.DeveloperMode}"
-                                    Click="BtnDeveloperMode_Click" />
-                    <TextBlock x:Name="LabDir" Margin="0,14,0,0" FontSize="11.5" TextTrimming="CharacterEllipsis"
-                               TextWrapping="NoWrap" Opacity="0.65"
-                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
-                    <!--
-                        状态行必须能换行：失败原因（比如「安装失败：xxx 已经不在微软的下载服务里了…」）
-                        一句话就七八十个字，NoWrap + 省略号等于把关键信息藏起来。
-                        页面本身是纵向滚动的，多占两行不影响任何东西。
-                    -->
-                    <TextBlock x:Name="LabStatus" Margin="0,12,0,0" FontSize="12" MinHeight="17"
-                               TextWrapping="Wrap" LineHeight="18" Opacity="0.7"
-                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
-                               Text="{DynamicResource Bedrock.Download.Status.Idle}" />
-                </StackPanel>
-            </local:MyCard>
-
-            <local:MyCard Margin="0,0,0,15" Title="{DynamicResource Bedrock.Download.List.Title}">
-                <StackPanel Margin="20,40,20,15">
                     <Grid Margin="6,0,6,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -53,17 +25,17 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{DynamicResource Bedrock.Download.Filter.Channel}"
                                    VerticalAlignment="Center" Margin="0,0,10,0" Opacity="0.8" />
-                        <local:MyComboBox Grid.Column="1" x:Name="ComboChannel" MinWidth="120" Height="28"
+                        <local:MyComboBox Grid.Column="1" x:Name="ComboChannel" MinWidth="94" Height="28"
                                           SelectionChanged="ComboFilter_Changed">
                             <local:MyComboBoxItem Content="{DynamicResource Common.Option.All}" Tag="0" IsSelected="True" />
                             <local:MyComboBoxItem Content="{DynamicResource Bedrock.Channel.Release}" Tag="1" />
                             <local:MyComboBoxItem Content="{DynamicResource Bedrock.Channel.Preview}" Tag="2" />
                             <local:MyComboBoxItem Content="{DynamicResource Bedrock.Channel.Beta}" Tag="3" />
                         </local:MyComboBox>
-                        <local:MyComboBox Grid.Column="2" x:Name="ComboKind" MinWidth="120" Height="28"
+                        <local:MyComboBox Grid.Column="2" x:Name="ComboKind" MinWidth="94" Height="28"
                                           Margin="12,0,0,0"
                                           SelectionChanged="ComboFilter_Changed">
-                            <local:MyComboBoxItem Content="{DynamicResource Common.Option.All}" Tag="0" IsSelected="True" />
+                            <local:MyComboBoxItem Content="{DynamicResource Bedrock.Download.Filter.AllPackages}" Tag="0" IsSelected="True" />
                             <local:MyComboBoxItem Content="UWP" Tag="1" />
                             <local:MyComboBoxItem Content="GDK" Tag="2" />
                         </local:MyComboBox>
@@ -78,55 +50,35 @@
                                          TextChanged="TextSearch_TextChanged" />
                     </Grid>
 
+                    <TextBlock x:Name="LabStatus" Margin="6,0,6,6" FontSize="12"
+                               TextWrapping="Wrap" Opacity="0.8"
+                               Text="{DynamicResource Bedrock.Download.Status.Idle}" />
+
                     <ItemsControl x:Name="ListVersions">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Height="62">
+                                <Grid MinHeight="62" Margin="6,0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <!--
-                                            状态列必须定宽。用 Auto 时它的宽度会跟着「正在解包：60.0%」
-                                            这类文案的字数伸缩，标题列（1*）于是每秒被重新分配一次宽度，
-                                            文字跟着反复截断，看起来就是整行在疯狂挤压。
-                                        -->
-                                        <ColumnDefinition Width="185" />
+                                        <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Margin="6,0,12,0" VerticalAlignment="Center">
-                                        <!--
-                                            标题和徽标用 Grid 而不是水平 StackPanel：StackPanel 横向
-                                            不给子元素宽度约束，里面的 TextTrimming 永远不生效，
-                                            窄窗口下标题只会被硬裁掉。
-                                        -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" FontSize="14" FontWeight="Bold"
-                                                       Text="{Binding Title}" TextWrapping="NoWrap"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       ToolTip="{Binding Title}" />
-                                            <TextBlock Grid.Column="1" Margin="8,0,0,0" FontSize="11.5" Opacity="0.6"
-                                                       VerticalAlignment="Center" Text="{Binding Badge}" />
-                                        </Grid>
-                                        <TextBlock Margin="0,3,0,0" FontSize="11.5" Opacity="0.65"
-                                                   Text="{Binding Subtitle}" TextTrimming="CharacterEllipsis" />
+                                    <StackPanel Margin="0,6,12,6" VerticalAlignment="Center">
+                                        <TextBlock FontSize="14" FontWeight="Bold" Text="{Binding Title}" TextWrapping="Wrap" />
+                                        <WrapPanel Margin="0,3,0,0">
+                                            <TextBlock FontSize="11.5" Opacity="0.75" Margin="0,0,10,0" Text="{Binding Subtitle}" />
+                                            <TextBlock FontSize="11.5" Opacity="0.75" Margin="0,0,10,0" Text="{Binding Badge}" />
+                                            <TextBlock FontSize="11.5" Opacity="0.85" TextWrapping="Wrap" Text="{Binding Status}" />
+                                        </WrapPanel>
                                         <Grid Width="220" Height="4" Margin="0,6,0,0" HorizontalAlignment="Left"
                                               Visibility="{Binding ProgressVisibility}">
-                                            <Border Background="{DynamicResource ColorBrushGray4}" Opacity="0.3"
-                                                    CornerRadius="2" />
+                                            <Border Background="{DynamicResource ColorBrushGray4}" Opacity="0.3" CornerRadius="2" />
                                             <Border Background="{DynamicResource ColorBrush3}" CornerRadius="2"
                                                     HorizontalAlignment="Left" Width="{Binding ProgressWidth}" />
                                         </Grid>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" Margin="0,0,12,0" FontSize="11.5" Opacity="0.65"
-                                               VerticalAlignment="Center" Text="{Binding Status}"
-                                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
-                                               ToolTip="{Binding Status}" />
-                                    <local:MyButton Grid.Column="2" Width="110" Height="30" VerticalAlignment="Center"
-                                                    ColorType="Highlight" Text="{Binding ActionText}"
-                                                    IsEnabled="{Binding CanStart}"
+                                    <local:MyButton Grid.Column="1" MinWidth="110" Padding="10,0" Height="30"
+                                                    VerticalAlignment="Center" ColorType="Highlight"
+                                                    Text="{Binding ActionText}" IsEnabled="{Binding CanStart}"
                                                     Tag="{Binding}" Click="BtnAction_Click" />
                                 </Grid>
                             </DataTemplate>

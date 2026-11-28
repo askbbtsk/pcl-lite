@@ -40,6 +40,7 @@ public partial class PageLunarLaunch
     private void Subscribe()
     {
         if (_subscribed) return;
+        TextJvmArgs.Text = Config.Preference.Lunar.JvmArgs;
         ModLunar.StateChanged += RefreshPage;
         ModLunar.LogReceived += AppendLog;
         ModLunar.LogResetRequested += ResetLaunchLog;

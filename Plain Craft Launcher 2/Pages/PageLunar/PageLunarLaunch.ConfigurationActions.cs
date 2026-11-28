@@ -18,6 +18,11 @@ namespace PCL;
 
 public partial class PageLunarLaunch
 {
+    private void TextJvmArgs_OnChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_subscribed) return;
+        Config.Preference.Lunar.JvmArgs = TextJvmArgs.Text;
+    }
 
     /// <summary>换启动目录。选完立刻生效，下次启动就用它。</summary>
     private void BtnPickGameDir_Click(object sender, EventArgs e)

@@ -3984,6 +3984,8 @@ Release 发布时间：{2}
     <sys:String x:Key="Lunar.Field.GameDir">启动目录</sys:String>
     <sys:String x:Key="Lunar.Field.CacheDir">物料目录</sys:String>
     <sys:String x:Key="Lunar.Field.JavaAuto">启动后自动定位</sys:String>
+    <sys:String x:Key="Lunar.Field.GlobalJvmArgs">全局 JVM 参数</sys:String>
+    <sys:String x:Key="Lunar.Tip.GlobalJvmArgs">留空时沿用 Lunar 启动器的参数。按版本设置的 JVM 参数优先。</sys:String>
     <sys:String x:Key="Lunar.Action.OpenDir">打开物料目录</sys:String>
     <sys:String x:Key="Lunar.Action.CopyCommand">复制启动命令</sys:String>
     <sys:String x:Key="Lunar.Card.Social">好友与私聊</sys:String>

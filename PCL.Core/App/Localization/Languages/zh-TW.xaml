@@ -3843,6 +3843,8 @@ Release 發布時間：{2}
     <sys:String x:Key="Lunar.Field.GameDir">啟動目錄</sys:String>
     <sys:String x:Key="Lunar.Field.CacheDir">檔案目錄</sys:String>
     <sys:String x:Key="Lunar.Field.JavaAuto">啟動後自動定位</sys:String>
+    <sys:String x:Key="Lunar.Field.GlobalJvmArgs">全域 JVM 參數</sys:String>
+    <sys:String x:Key="Lunar.Tip.GlobalJvmArgs">留空時沿用 Lunar 啟動器的參數。個別版本的 JVM 參數優先。</sys:String>
     <sys:String x:Key="Lunar.Action.OpenDir">開啟檔案目錄</sys:String>
     <sys:String x:Key="Lunar.Action.CopyCommand">複製啟動指令</sys:String>
     <sys:String x:Key="Lunar.Card.Social">好友與私聊</sys:String>

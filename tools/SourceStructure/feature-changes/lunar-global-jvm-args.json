@@ -1,0 +1,12 @@
+[
+  {
+    "SourcePath": "Plain Craft Launcher 2/Pages/PageLunar/PageLunarLaunch.ProgressAndSessionPresentation.cs",
+    "Sha256": "DEFC4416AC3D21DDB545047F61BFE6304104DC17703C3B5C3E1E71511C5F04A1",
+    "Members": [
+      "PCL.PageLunarLaunch::MethodDeclaration::BtnRefreshVersions_Click(object sender, MouseButtonEventArgs e)",
+      "PCL.PageLunarLaunch::MethodDeclaration::Subscribe()",
+      "PCL.PageLunarLaunch::MethodDeclaration::Unsubscribe()"
+    ],
+    "Reason": "Initialize the Lunar launch page's global JVM field from its saved preference before subscribing. Carry forward the existing hotfix-9 reviews of Unsubscribe and BtnRefreshVersions_Click for this source revision."
+  }
+]

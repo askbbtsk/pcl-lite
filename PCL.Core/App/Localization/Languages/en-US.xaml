@@ -3902,6 +3902,8 @@ This corroborates the current asset against the Release record; it does not veri
     <sys:String x:Key="Lunar.Field.GameDir">Game folder</sys:String>
     <sys:String x:Key="Lunar.Field.CacheDir">Files folder</sys:String>
     <sys:String x:Key="Lunar.Field.JavaAuto">Set on launch</sys:String>
+    <sys:String x:Key="Lunar.Field.GlobalJvmArgs">Global JVM arguments</sys:String>
+    <sys:String x:Key="Lunar.Tip.GlobalJvmArgs">Leave blank to use the Lunar Launcher's arguments. Version-specific JVM arguments take priority.</sys:String>
     <sys:String x:Key="Lunar.Action.OpenDir">Open folder</sys:String>
     <sys:String x:Key="Lunar.Action.CopyCommand">Copy command</sys:String>
     <sys:String x:Key="Lunar.Card.Social">Friends &amp; chat</sys:String>
